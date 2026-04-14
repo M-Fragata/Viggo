@@ -1,3 +1,4 @@
 node_modules
 .env
 /generated/prisma
+postgres_data/
