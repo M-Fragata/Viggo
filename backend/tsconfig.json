@@ -6,11 +6,12 @@
     "outDir": "./dist",
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
-    "module": "nodenext",
-    "target": "esnext",
-    "types": [
-      "node"
-    ],
+    "module": "esnext",
+    "target": "es2023",
+    "types": ["node"],
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "ignoreDeprecations": "6.0",
     // For nodejs:
     "lib": ["esnext"],
     // "types": ["node"],
@@ -38,8 +39,11 @@
     "moduleDetection": "force",
     "skipLibCheck": true,
   },
+  "include": ["src/**/*"],
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "prisma",
+    "prisma.config.ts"
   ]
 }
