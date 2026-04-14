@@ -1,0 +1,12 @@
+services:
+
+  postgres:
+    image: "bitnami/postgresql:latest"
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_NAME: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: viggo
+    volumes:
+        - ./postgres_data:/bitnami/postgresql
