@@ -5,8 +5,8 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL") //Apenas para calar a boca do prisma
 }
-
 enum Role {
   ADMIN
   USER
@@ -20,28 +20,28 @@ model Company {
 }
 
 model User {
-  id              String    @id @default(uuid())
-  name            String
-  email           String    @unique
-  password        String
-  role            Role      @default(USER) // ADMIN ou USER
-  
+  id       String @id @default(uuid())
+  name     String
+  email    String @unique
+  password String
+  role     Role   @default(USER) // ADMIN ou USER
+
   // Biometria: Onde guardaremos o vetor numérico do rosto
   // Usamos Json pois o descritor é um array de números (Float32Array)
-  faceDescriptor  Json?     
+  faceDescriptor Json?
 
-  companyId       String
-  company         Company   @relation(fields: [companyId], references: [id])
-  
-  checkIns        CheckIn[]
-  createdAt       DateTime  @default(now())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  checkIns  CheckIn[]
+  createdAt DateTime  @default(now())
 }
 
 model CheckIn {
-  id         String   @id @default(uuid())
-  timestamp  DateTime @default(now())
-  latitude   Float?
-  longitude  Float?
-  userId     String
-  user       User     @relation(fields: [userId], references: [id])
+  id        String   @id @default(uuid())
+  timestamp DateTime @default(now())
+  latitude  Float?
+  longitude Float?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
 }
