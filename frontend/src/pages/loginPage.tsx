@@ -40,6 +40,18 @@ export function LoginPage() {
         return { message: "Erro ao fazer login, tente novamente em alguns segundos!", payload }
       }
 
+      const data = await response.json();
+
+      console.log(data)
+
+      window.localStorage.setItem("@viggo:user", JSON.stringify(data.user));
+      window.localStorage.setItem("@viggo:token", JSON.stringify(data.token));
+
+
+      alert("Login realizado com sucesso!");
+
+      window.location.href = "/";
+
     } catch (error) {
       return { message: "Erro ao fazer login, tente novamente em alguns segundos!", payload }
     }
