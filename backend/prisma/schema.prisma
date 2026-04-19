@@ -5,7 +5,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL") //Apenas para calar a boca do prisma
+  //url      = env("DATABASE_URL") //Apenas para calar a boca do prisma
 }
 enum Role {
   ADMIN
@@ -17,6 +17,7 @@ model Company {
   name      String
   createdAt DateTime @default(now())
   users     User[]
+  checkIns  CheckIn[]
 }
 
 model User {
@@ -37,11 +38,29 @@ model User {
   createdAt DateTime  @default(now())
 }
 
+enum CheckInType {
+  ENTRY
+  LUNCH_START
+  LUNCH_END
+  EXIT
+}
+
 model CheckIn {
   id        String   @id @default(uuid())
-  timestamp DateTime @default(now())
-  latitude  Float?
-  longitude Float?
+  createdAt DateTime @default(now())
+  type      CheckInType
+
+  latitude  Float
+  longitude Float
+
+  address  String?
+
   userId    String
   user      User     @relation(fields: [userId], references: [id])
+
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([companyId, createdAt])
 }
