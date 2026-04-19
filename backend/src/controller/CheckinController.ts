@@ -25,6 +25,18 @@ export class CheckinController {
                 }
             })
 
+            const today = new Date()
+            const checkinExists = await prisma.checkIn.findFirst({
+                where: {
+                    userId,
+                    createdAt: {
+                        gte: startOfDay(today),
+                        lte: endOfDay(today)
+                    }
+                }
+            })
+            if (checkinExists?.type === type) return res.status(400).json({ message: "Ponto já registrado nesse horário" })
+
             if (!user) return res.status(404).json({ message: "User not found" })
 
             const checkin = await prisma.checkIn.create({
