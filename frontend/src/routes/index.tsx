@@ -13,9 +13,9 @@ export function Routes(){
     function AcessRoute() {
 
         switch(user.role) {
-            case "admin":
+            case "ADMIN":
                 return < AdminRoutes/>
-            case "user":
+            case "USER":
                 return < UserRoutes/>
             default:
                 return < AuthRoutes/>
