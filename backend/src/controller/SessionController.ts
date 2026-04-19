@@ -4,6 +4,7 @@ import { prisma } from "../database/prisma";
 
 import { z } from "zod";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 export class SessionController {
 
@@ -71,15 +72,20 @@ export class SessionController {
                 }
             })
 
-            if (!user) {
-                return res.status(400).json({ message: "Email e/ou senha incorretos" });
-            }
+            if (!user) return res.status(400).json({ message: "Email e/ou senha incorretos" });
 
             const verifyPassword = await bcrypt.compare(password, user.password);
 
-            if (!verifyPassword) {
-                return res.status(400).json({ message: "Email e/ou senha incorretos" });
-            }
+            if (!verifyPassword) return res.status(400).json({ message: "Email e/ou senha incorretos" });
+
+            const { password: _, ...userWithoutPassword } = user
+
+            const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET!, { expiresIn: "7d" });
+
+            return res.status(200).json({
+                user: userWithoutPassword,
+                token
+            });
 
         } catch (error) {
             if (error instanceof z.ZodError) {

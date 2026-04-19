@@ -5,7 +5,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  //url      = env("DATABASE_URL") //Apenas para calar a boca do prisma
+  url      = env("DATABASE_URL") //Apenas para calar a boca do prisma
 }
 enum Role {
   ADMIN
