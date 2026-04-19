@@ -68,7 +68,14 @@ export function PontoPage() {
                     alert("Erro ao registrar o ponto. Tente novamente.");
                 }
             }
-        })
+        }, (error) => {
+            console.error("Erro ao obter localização:", error);
+            alert("Erro ao obter localização. Permita o acesso à localização e tente novamente.");
+        }, {
+            enableHighAccuracy: true, 
+            timeout: 10000,         
+            maximumAge: 0 
+        });
     }
 
 
