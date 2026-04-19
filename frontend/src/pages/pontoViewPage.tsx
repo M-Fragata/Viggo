@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Input } from "../components/Input"
 import { Button } from "../components/Button"
 import { Clock, MapPin, Calendar } from "lucide-react"
@@ -32,7 +32,6 @@ export function PontoViewPage() {
 
             const data = await response.json();
             setCheckins(data)
-            console.log("Pontos buscados com sucesso:", data);
 
         } catch (error) {
             console.error("Erro ao buscar os pontos:", error);
@@ -57,6 +56,25 @@ export function PontoViewPage() {
             minute: '2-digit',
         })
     }
+
+    const horasTrabalhadas = useMemo(() => {
+        if (checkins.length < 2) return "0:00h"
+
+        const index = checkins.length - 1
+        const initial = checkins[0].createdAt
+        const final = checkins[index].createdAt
+
+        const diff = new Date(final).getTime() - new Date(initial).getTime()
+
+        const hours = Math.floor(diff / (1000 * 60 * 60))
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+
+        const h = String(hours).padStart(2, "0")
+        const m = String(minutes).padStart(2, "0")
+
+        return `${h}:${m}h`
+
+    }, [checkins])
 
     useEffect(() => {
         handleGetPontos()
@@ -87,7 +105,7 @@ export function PontoViewPage() {
                 {/* Coluna da Esquerda: Timeline de Pontos */}
                 <div className="md:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                     <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                        <Clock size={18} className="text-blue-500" />
+                        <Clock size={18} className="text-emerald-600" />
                         Linha do tempo
                     </h2>
 
@@ -111,11 +129,14 @@ export function PontoViewPage() {
                                                 {formatType(ponto.type)}
                                             </p>
                                         </div>
-                                        <div className="flex items-center gap-1 text-gray-400 text-xs">
-                                            <MapPin size={12} />
-                                            <Button 
-                                            title="Ver no mapa"
-                                            className="hover:text-emerald-600 cursor-pointer" />
+                                        <div>
+                                            <a className="flex items-center gap-1 text-gray-400 text-xs"
+                                                href={`https://www.google.com/maps/search/?api=1&query=${ponto.latitude},${ponto.longitude}`} target="_blank" rel="noopener noreferrer">
+                                                <MapPin size={12} />
+                                                <Button
+                                                    title="Ver no mapa"
+                                                    className="hover:text-emerald-600 cursor-pointer" />
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
@@ -128,7 +149,7 @@ export function PontoViewPage() {
                 <div className="flex flex-col gap-6">
                     <div className="bg-emerald-600 p-6 rounded-xl text-white shadow-md shadow-emerald-100">
                         <h3 className="text-emerald-100 text-sm font-medium mb-1">Total de Horas</h3>
-                        <p className="text-3xl font-bold">08:15h</p>
+                        <p className="text-3xl font-bold">{horasTrabalhadas}</p>
                         <div className="mt-4 pt-4 border-t border-emerald-500 text-xs text-emerald-100">
                             Cálculo baseado no primeiro e último registro.
                         </div>
