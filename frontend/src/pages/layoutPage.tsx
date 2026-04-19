@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
-import { Link, Outlet, useNavigate } from "react-router";
-import { Clock, LogOut, MapPin, Menu, X } from "lucide-react";
+import { Link, Outlet } from "react-router";
+import { LogOut, MapPin, Menu, X } from "lucide-react";
+
+import logo from "../assets/logo.png"
 
 export function LayoutPage() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -34,15 +36,13 @@ export function LayoutPage() {
             <header className="bg-white border-b border-gray-200 py-4 px-6 shadow-sm sticky top-0 z-50">
                 <div className="max-w-7xl mx-auto flex justify-between items-center">
                     {/* LOGO */}
-                    <div className="flex items-center gap-2">
-                        <div className="bg-emerald-600 p-2 rounded-lg">
+                    <div>
+                        <div>
                             <Link to="/" onClick={closeMenu}>
-                                <Clock className="text-white w-6 h-6" />
+                               <img className="w-28 h-auto"
+                               src={logo} alt="Logo" />
                             </Link>
                         </div>
-                        <h1 className="text-xl font-bold text-gray-800 tracking-tight">
-                             <span className="text-emerald-600">Viggo</span>
-                        </h1>
                     </div>
 
                     <div className="flex justify-center gap-2">
