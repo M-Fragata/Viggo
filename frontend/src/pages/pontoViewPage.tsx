@@ -76,6 +76,106 @@ export function PontoViewPage() {
 
     }, [checkins])
 
+    async function handleGetComprovantes(pontos: any[]) {
+        const printWindow = window.open("", "_blank")
+        if (!printWindow) return
+
+        const user = localStorage.getItem("@viggo:user")
+        const nome = user ? JSON.parse(user).name : "Colaborador"
+
+        const empresa = "Fernanda Kister"
+
+        const dataRelatorio = new Date(date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+
+        const tableRows = pontos.map(ponto => `
+            <tr>
+                <td>${formatTime(ponto.createdAt)}</td>
+                <td>${formatType(ponto.type)}</td>
+                <td style="font-size: 10px;">${ponto.latitude.toFixed(4)}, ${ponto.longitude.toFixed(4)}</td>
+            </tr>
+        `).join("")
+
+        printWindow.document.write(`
+    <html>
+        <head>
+            <title>Frequencia ${dataRelatorio} - Viggo</title>
+            <style>
+                body { font-family: 'Segoe UI', sans-serif; padding: 40px; color: #333; }
+                .report-container { 
+                    max-width: 600px; 
+                    margin: auto; 
+                    border: 1px solid #eee; 
+                    padding: 30px;
+                    border-radius: 8px;
+                }
+                .header { border-bottom: 2px solid #10b981; padding-bottom: 15px; margin-bottom: 25px; }
+                .header h2 { margin: 0; color: #10b981; }
+                .info-section { margin-bottom: 20px; display: flex; justify-content: space-between; font-size: 14px; }
+                
+                table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                th { text-align: left; background: #f9f9f9; padding: 12px; border-bottom: 2px solid #eee; color: #666; font-size: 13px; }
+                td { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }
+                
+                .summary { margin-top: 30px; padding: 15px; background: #f0fdf4; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; }
+                .summary b { color: #10b981; font-size: 18px; }
+                
+                .footer { text-align: center; margin-top: 40px; font-size: 11px; color: #aaa; border-top: 1px solid #eee; pt: 15px; }
+                @media print { .report-container { border: none; } }
+            </style>
+        </head>
+        <body>
+            <div class="report-container">
+                <div class="header">
+                    <h2>Viggo</h2>
+                    <p style="margin: 5px 0 0; color: #666;">Relatório de Frequência Individual</p>
+                </div>
+                
+                <div class="info-section">
+                    <div>
+                        <p><b>Colaborador:</b> ${nome}</p>
+                        <p><b>Data:</b> ${dataRelatorio}</p>
+                    </div>
+                    <div style="text-align: right">
+                        <p><b>Empresa:</b> ${empresa}</p>
+                    </div>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Horário</th>
+                            <th>Evento</th>
+                            <th>Localização (Lat, Long)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableRows}
+                    </tbody>
+                </table>
+
+                <div class="summary">
+                    <span>Total de Horas Calculadas:</span>
+                    <b>${horasTrabalhadas}</b>
+                </div>
+
+                <div class="footer">
+                    <p>Documento gerado digitalmente em ${new Date().toLocaleString('pt-BR')}</p>
+                    <p>Viggo - Maricá, RJ</p>
+                </div>
+            </div>
+            <script>
+                window.onload = () => {
+                    window.print();
+                    setTimeout(() => window.close(), 500);
+                };
+            </script>
+        </body>
+    </html>
+    `);
+        printWindow.document.close();
+
+    }
+
     useEffect(() => {
         handleGetPontos()
     }, [date])
@@ -85,16 +185,16 @@ export function PontoViewPage() {
             {/* Seção de Filtro */}
             <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-800">Meu Histórico</h1>
+                    <h1 className="text-2xl font-bold text-gray-800 text-center md:text-left">Meu Histórico</h1>
                     <p className="text-gray-500">Visualize seus registros diários</p>
                 </div>
-                <div className="flex items-center gap-3 bg-gray-50 p-2 rounded-lg border">
+                <div className="flex items-center gap-3 bg-gray-50 p-2 rounded-lg border w-full md:w-auto">
                     <Calendar className="text-emerald-600 " size={20} />
                     <Input
                         type="date"
                         value={date}
                         onChange={(e) => setDate(e.target.value)}
-                        className="bg-transparent border-none focus:ring-0 text-gray-700 font-medium"
+                        className="bg-transparent border-none focus:ring-0 text-gray-700 font-medium w-full"
                     />
                 </div>
             </section>
@@ -135,7 +235,8 @@ export function PontoViewPage() {
                                                 <MapPin size={12} />
                                                 <Button
                                                     title="Ver no mapa"
-                                                    className="hover:text-emerald-600 cursor-pointer" />
+                                                    className="hover:text-emerald-600 cursor-pointer"
+                                                />
                                             </a>
                                         </div>
                                     </div>
@@ -143,6 +244,11 @@ export function PontoViewPage() {
                             ))}
                         </div>
                     )}
+                    <Button
+                        onClick={() => { handleGetComprovantes(checkins) }}
+                        title="Gerar Comprovante"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white mt-10 w-full cursor-pointer py-2 px-4 rounded-lg transition-colors m-auto"
+                    />
                 </div>
 
                 {/* Coluna da Direita: Resumo/Cards Extras */}
