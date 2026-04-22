@@ -98,4 +98,42 @@ export class SessionController {
 
     }
 
+    async update(req: Request, res: Response) {
+
+        const paramsSchema = z.object({
+            userId: z.uuid()
+        })
+
+        const bodySchema = z.object({
+            faceDescriptor: z.array(z.number())
+        })
+
+        try {
+
+            const { userId } = paramsSchema.parse(req.params)
+            const { faceDescriptor } = bodySchema.parse(req.body)
+
+            await prisma.user.update({
+                where: {
+                    id: userId
+                },
+                data: {
+                    faceDescriptor: JSON.stringify(faceDescriptor)
+                }
+            })
+
+            return res.status(200).json({ message: "Face registrada com sucesso!" });
+
+        } catch (error) {
+
+            if (error instanceof z.ZodError) {
+                return res.status(400).json({ error: "Dados inválidos." })
+            }
+
+            return res.status(500).json({ error: "Erro ao salvar face." });
+
+        }
+
+    }
+
 }
