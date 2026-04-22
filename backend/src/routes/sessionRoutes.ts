@@ -6,5 +6,6 @@ const sessionController = new SessionController();
 
 sessionRoutes.post("/", sessionController.create);
 sessionRoutes.post("/login", sessionController.login);
+sessionRoutes.put("/:userId", sessionController.update)
 
 export { sessionRoutes }
