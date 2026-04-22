@@ -49,6 +49,8 @@ export function PontoPage() {
                     body: JSON.stringify({ type, latitude, longitude })
                 });
 
+                if (response.status === 403) return window.location.href="/register"
+
                 if (!response.ok) {
                     const errorData = await response.json();
                     console.error("Erro ao registrar o ponto:", errorData);
@@ -72,9 +74,9 @@ export function PontoPage() {
             console.error("Erro ao obter localização:", error);
             alert("Erro ao obter localização. Permita o acesso à localização e tente novamente.");
         }, {
-            enableHighAccuracy: true, 
-            timeout: 10000,         
-            maximumAge: 0 
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
         });
     }
 
