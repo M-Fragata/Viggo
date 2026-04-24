@@ -48,4 +48,31 @@ export class EmployeesController {
             res.status(500).json({ error: "Failed to fetch employees" })
         }
     }
+
+    async index(req: Request, res: Response) {
+
+        try {
+            const id = req.user.id
+
+            const user = await prisma.user.findUnique({
+                where: {
+                    id
+                }
+            })
+            console.log(user)
+            if (!user) return res.status(404).json({ message: "User not found" })
+                
+            if (!user.faceDescriptor) return res.status(403).json({ message: "Registro facial pendente. Por favor, cadastre sua face antes de bater o ponto." })
+
+            return res.status(200).json(user.faceDescriptor)
+
+        } catch (error) {
+
+            if (error instanceof z.ZodError) {
+                return res.status(400).json({ message: "Dados inválidos", errors: error.issues });
+            }
+
+            return res.status(500).json({ message: "Erro ao buscar funcionário" });
+        }
+    }
 }
