@@ -25,7 +25,7 @@ export class EmployeesController {
                         gte: startOfDay(parsedDate),
                         lte: endOfDay(parsedDate)
                     }
-                }
+                } as any
             })
 
             const data = employees.map((employee: User) => {
