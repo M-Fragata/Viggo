@@ -1,5 +1,6 @@
 // src/pages/RegisterFace.tsx
 import { FaceAuth } from "../components/FaceAuth";
+import { API_URL } from "../utils/api"
 
 export function RegisterFace() {
     const handleSaveFace = async (descriptor: Float32Array) => {
@@ -16,7 +17,7 @@ export function RegisterFace() {
             const user = JSON.parse(userRaw)
             const token = JSON.parse(tokenRaw)
             
-            const response = await fetch(`http://localhost:3333/sessions/${user.id}`, {
+            const response = await fetch(`${API_URL}}/sessions/${user.id}`, {
                 method: "PUT",
                 headers: { 
                     "Content-type": "application/json",

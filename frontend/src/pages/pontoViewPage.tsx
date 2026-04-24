@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo } from "react"
+import { API_URL } from "../utils/api"
+
 import { Input } from "../components/Input"
 import { Button } from "../components/Button"
 import { Clock, MapPin, Calendar } from "lucide-react"
@@ -15,7 +17,7 @@ export function PontoViewPage() {
 
             if (!token) return window.location.href = "/"
 
-            const response = await fetch(`http://localhost:3333/checkins?date=${date}`, {
+            const response = await fetch(`${API_URL}/checkins?date=${date}`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",

@@ -1,4 +1,5 @@
 import { useActionState } from "react";
+import { API_URL } from "../utils/api"
 import { z } from "zod";
 
 import { Input } from "../components/Input";
@@ -40,7 +41,7 @@ export function SignupPage() {
         return { message: "Senhas não coincidem", payload }
       }
 
-      const response = await fetch("http://localhost:3333/sessions", {
+      const response = await fetch(`${API_URL}/sessions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

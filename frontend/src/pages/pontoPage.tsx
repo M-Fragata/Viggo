@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 
+import { API_URL } from "../utils/api"
+
 import { verificarPonto } from "../components/VerifyDescriptor"
 import * as faceapi from 'face-api.js';
 
@@ -50,7 +52,7 @@ export function PontoPage() {
 
                 bodySchema.parse({ type, latitude, longitude })
 
-                const response = await fetch("http://localhost:3333/checkins", {
+                const response = await fetch(`${API_URL}/checkins`, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -96,7 +98,7 @@ export function PontoPage() {
                 return;
             }
 
-            const response = await fetch("http://localhost:3333/employees/face", {
+            const response = await fetch(`${API_URL}/employees/face`, {
                 method: "GET",
                 headers: {
                     "Content-type": "application/json",

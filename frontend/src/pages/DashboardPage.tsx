@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react"
 
+import { API_URL } from "../utils/api"
+
 import { Button } from "../components/Button";
 import { Input } from "../components/Input";
 import { MapPin, Calendar } from "lucide-react"
@@ -38,7 +40,7 @@ export function DashboardPage() {
         if (!token) return window.location.href = "/"
 
         try {
-            const response = await fetch(`http://localhost:3333/employees?date=${date}`, {
+            const response = await fetch(`${API_URL}/employees?date=${date}`, {
                 method: "GET",
                 headers: {
                     "Content-type": "application/json",

@@ -1,6 +1,8 @@
 import { useActionState } from "react";
 import { z } from "zod";
 
+import { API_URL } from "../utils/api"
+
 import { Input } from "../components/Input";
 import { Button } from "../components/Button";
 
@@ -30,7 +32,7 @@ export function LoginPage() {
 
     try {
 
-      const response = await fetch("http://localhost:3333/sessions/login", {
+      const response = await fetch(`${API_URL}/sessions/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
