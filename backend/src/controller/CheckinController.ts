@@ -25,24 +25,22 @@ export class CheckinController {
 
             if (!user) return res.status(404).json({ message: "User not found" })
 
-            if (!user.faceDescriptor) return res.status(403).json({ message: "Registro facial pendente. Por favor, cadastre sua face antes de bater o ponto." })
-
             const { type, latitude, longitude } = bodySchema.parse(req.body);
-
 
             const today = new Date()
             const checkinExists = await prisma.checkIn.findFirst({
                 where: {
                     userId,
+                    type,
                     createdAt: {
                         gte: startOfDay(today),
                         lte: endOfDay(today)
                     }
                 }
             })
-            if (checkinExists?.type === type) return res.status(400).json({ message: "Ponto já registrado nesse horário" })
-
-
+            if (checkinExists) {
+                return res.status(400).json({ message: `Ponto de ${type} já registrado hoje.` })
+            }
 
             const checkin = await prisma.checkIn.create({
                 data: {
@@ -50,11 +48,16 @@ export class CheckinController {
                     latitude,
                     longitude,
                     userId,
-                    companyId: user.companyId
+                    companyId: user.companyId,
                 }
             })
 
-            return res.status(201).json(checkin)
+            const data = {
+                checkin: { checkin },
+                faceDescriptor: user.faceDescriptor
+            }
+
+            return res.status(201).json(data)
 
         } catch (error) {
 
