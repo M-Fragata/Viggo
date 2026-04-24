@@ -22,25 +22,25 @@ export function LayoutPage() {
     }, []);
 
     return (
-        <div className="min-h-screen flex flex-col bg-gray-50 relative">
-            
+        <div className="min-h-screen flex flex-col overflow-hidden bg-gray-50 relative">
+
             {/* OVERLAY: Aparece apenas quando o menu está aberto */}
             {isMenuOpen && (
-                <div 
+                <div
                     className="fixed inset-0 z-40 bg-black/5 backdrop-blur-[1px] transition-opacity"
-                    onClick={closeMenu} 
+                    onClick={closeMenu}
                 />
             )}
 
             {/* HEADER */}
-            <header className="bg-white border-b border-gray-200 py-4 px-6 shadow-sm sticky top-0 z-50">
+            <header className="bg-white border-b border-gray-200 py-2 px-6 shadow-sm sticky top-0 z-50">
                 <div className="max-w-7xl mx-auto flex justify-between items-center">
                     {/* LOGO */}
                     <div>
                         <div>
                             <Link to="/" onClick={closeMenu}>
-                               <img className="w-28 h-auto"
-                               src={logo} alt="Logo" />
+                                <img className="w-28 h-auto"
+                                    src={logo} alt="Logo" />
                             </Link>
                         </div>
                     </div>
@@ -53,7 +53,7 @@ export function LayoutPage() {
                                 </p>
                             ) : null}
                         </div>
-                        <button 
+                        <button
                             onClick={() => setIsMenuOpen(!isMenuOpen)}
                             className="p-2 text-emerald-600 transition-all duration-300 cursor-pointer rounded-md hover:bg-emerald-50"
                         >
@@ -68,15 +68,15 @@ export function LayoutPage() {
                     ${isMenuOpen ? "max-h-60 opacity-100 border-t border-emerald-600 mt-4" : "max-h-0 opacity-0 pointer-events-none"}
                 `}>
                     <nav className="flex flex-col gap-4 py-4 w-full">
-                        <Link 
-                            to="/" 
+                        <Link
+                            to="/"
                             onClick={closeMenu}
                             className="text-gray-600 hover:text-emerald-600 font-medium px-2 py-1 transition-colors"
                         >
                             Bater Ponto
                         </Link>
-                        <Link 
-                            to="/pontos" 
+                        <Link
+                            to="/pontos"
                             onClick={closeMenu}
                             className="text-gray-600 hover:text-emerald-600 font-medium px-2 py-1 transition-colors"
                         >
@@ -94,20 +94,16 @@ export function LayoutPage() {
             </header>
 
             {/* CONTEÚDO PRINCIPAL */}
-            <main className="flex-1 max-w-7xl w-full mx-auto p-6 z-30">
+            <main className="flex-1 flex flex-col justify-center w-full mx-auto md:p-6 z-30 overflow-y-auto">
                 <Outlet />
             </main>
 
             {/* FOOTER */}
-            <footer className="bg-white border-t border-gray-200 py-6 px-6 mt-auto z-30">
-                <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <footer className="bg-white border-t border-gray-200 py-3 px-6 mt-auto z-30">
+                <div className="max-w-7xl mx-auto">
                     <p className="text-gray-500 text-sm text-center">
                         © 2026 Viggo. Todos os direitos reservados.
                     </p>
-                    <div className="flex items-center gap-2 text-gray-400 text-sm">
-                        <MapPin size={14} />
-                        <span>Maricá, RJ</span>
-                    </div>
                 </div>
             </footer>
         </div>
