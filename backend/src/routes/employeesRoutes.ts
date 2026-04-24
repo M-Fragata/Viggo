@@ -7,5 +7,6 @@ const employeesRoutes = Router();
 const employeesController = new EmployeesController();
 
 employeesRoutes.get("/", authMiddleware, employeesController.getEmployees);
+employeesRoutes.get("/face", authMiddleware, employeesController.index)
 
 export { employeesRoutes }
