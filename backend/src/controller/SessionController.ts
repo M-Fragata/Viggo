@@ -113,12 +113,22 @@ export class SessionController {
             const { userId } = paramsSchema.parse(req.params)
             const { faceDescriptor } = bodySchema.parse(req.body)
 
+            const user = await prisma.user.findUnique({
+                where: { id: userId }
+            })
+
+            if (!user) return res.status(404).json({ error: "User not found" })
+
+            if (!faceDescriptor) return res.status(404).json({ error: "faceDescriptor not found" })
+
+            console.log(faceDescriptor)
+
             await prisma.user.update({
                 where: {
                     id: userId
                 },
                 data: {
-                    faceDescriptor: JSON.stringify(faceDescriptor)
+                    faceDescriptor: faceDescriptor
                 }
             })
 
