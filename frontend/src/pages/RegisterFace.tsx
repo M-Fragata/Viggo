@@ -16,7 +16,7 @@ export function RegisterFace() {
             const user = JSON.parse(userRaw)
             const token = JSON.parse(tokenRaw)
             
-            const response = await fetch(`http://localhost:3333/${user.id}`, {
+            const response = await fetch(`http://localhost:3333/sessions/${user.id}`, {
                 method: "PUT",
                 headers: { 
                     "Content-type": "application/json",
@@ -24,7 +24,7 @@ export function RegisterFace() {
                 },
                 body: JSON.stringify({ faceDescriptor: descriptorArray })
             })
-    
+
             if(!response.ok) return alert("Falha na requisição")
     
             user.faceDescriptor = JSON.stringify(descriptorArray)
