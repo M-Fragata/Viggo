@@ -1,5 +1,5 @@
 import { type Request, type Response } from "express";
-import { prisma } from "../database/prisma";
+import { prisma } from "../database/prisma.js";
 import { type User, type CheckIn } from '@prisma/client';
 import { z } from "zod"
 import { parseISO, startOfDay, endOfDay } from "date-fns"

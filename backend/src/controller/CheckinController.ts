@@ -1,6 +1,6 @@
 import { type Request, type Response } from "express";
 import { z } from "zod"
-import { prisma } from "../database/prisma";
+import { prisma } from "../database/prisma.js";
 
 import { parseISO, startOfDay, endOfDay } from "date-fns"
 

@@ -1,6 +1,6 @@
 import { type Request, type Response } from "express";
 
-import { prisma } from "../database/prisma";
+import { prisma } from "../database/prisma.js";
 
 import { z } from "zod";
 import bcrypt from "bcrypt";
