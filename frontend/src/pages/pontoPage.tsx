@@ -26,8 +26,10 @@ export function PontoPage() {
     const isOutside = status === "Fora do horário de bater ponto";
     const videoRef = useRef<HTMLVideoElement>(null)
 
-    async function handleCheckin(type: string) {
+    const [isValidating, setIsValidating] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
 
+    async function handleCheckin(type: string) {
 
         navigator.geolocation.getCurrentPosition(async (position) => {
             const { latitude, longitude } = position.coords;
@@ -43,12 +45,14 @@ export function PontoPage() {
 
             try {
                 if (!token) {
-                    alert("Token não encontrado. Faça login novamente.");
-                    return;
+                    return window.location.href="/"
                 }
 
                 const verifyFacial = await handleGetEmployee()
                 if (verifyFacial?.success !== true) return
+
+                setIsValidating(true);
+                setMessage("Registrando no sistema...");
 
                 bodySchema.parse({ type, latitude, longitude })
 
@@ -64,9 +68,13 @@ export function PontoPage() {
                 if (!response.ok) {
                     const errorData = await response.json();
                     console.error("Erro ao registrar o ponto:", errorData);
-                    alert("Erro ao registrar o ponto: " + errorData.message);
+                    setMessage("Erro ao registrar ponto!");
                     return;
                 }
+
+                setIsValidating(false);
+                setIsSuccess(true); // Ativa o modal de sucesso
+                setMessage("Ponto registrado com sucesso!");
 
             } catch (error) {
                 if (error instanceof z.ZodError) {
@@ -75,6 +83,12 @@ export function PontoPage() {
                     console.error("Erro ao registrar o ponto:", error);
                     alert("Erro ao registrar o ponto. Tente novamente.");
                 }
+            } finally {
+                // Fecha o vídeo automaticamente após 3 segundos ou no X do modal
+                setTimeout(() => {
+                    setIsSuccess(false);
+                    setVideoOpen(false);
+                }, 3000);
             }
         }, (error) => {
             console.error("Erro ao obter localização:", error);
@@ -92,8 +106,8 @@ export function PontoPage() {
 
         try {
             if (!token) {
-                alert("Token não encontrado. Faça login novamente.");
-                return;
+                 window.location.href="/"
+                 return {success: false}
             }
 
             const response = await fetch(`${API_URL}/employees/face`, {
@@ -139,29 +153,6 @@ export function PontoPage() {
                 }
             } catch (err) {
                 console.error("Erro ao acessar a webcam:", err);
-                alert("Não foi possível abrir a câmera. Verifique as permissões.");
-                return { success: false };
-            }
-
-            let tentativas = 0;
-            let sucessoFacial = false;
-
-            while (tentativas < 10 && !sucessoFacial) {
-                const resultado = await verificarPonto(data, videoRef, setMessage);
-
-                if (resultado?.success) {
-                    sucessoFacial = true;
-                    break;
-                }
-
-                // Espera 500ms antes da próxima tentativa
-                await new Promise(resolve => setTimeout(resolve, 500));
-                tentativas++;
-                console.log(`Tentativda: ${tentativas}`)
-            }
-
-            if (!sucessoFacial) {
-                alert("Não foi possível confirmar sua identidade. Tente novamente em um local iluminado.");
                 return { success: false };
             }
 
@@ -169,8 +160,6 @@ export function PontoPage() {
 
         } catch (error) {
             return { success: false }
-        } finally {
-            setVideoOpen(false)
         }
     }
 
@@ -220,8 +209,8 @@ export function PontoPage() {
                     <div className="relative w-full max-w-2xl bg-slate-900 sm:rounded-3xl overflow-hidden shadow-2xl border border-white/10 flex flex-col h-full sm:h-auto">
 
                         {/* MENSAGEM NO TOPO DO VÍDEO */}
-                        <div className="absolute top-0 left-0 right-0 z-[100] bg-emerald-400 w-full shadow-lg">
-                            <p className="text-white text-sm md:text-lg font-bold px-6 py-2 text-center uppercase tracking-wider">
+                        <div className="absolute top-0 left-0 right-0 z-100 bg-emerald-400 w-full shadow-lg p-3 h-[60px]">
+                            <p className="text-white text-sm md:text-lg font-bold text-center uppercase tracking-wider">
                                 {message}
                             </p>
                         </div>
@@ -232,13 +221,13 @@ export function PontoPage() {
                             autoPlay
                             muted
                             playsInline
-                            className="w-full object-cover h-full sm:h-[60vh] md:h-[500px]"
+                            className="w-[400px] object-cover h-full sm:h-[60vh] md:h-[700px]"
                         />
 
                         {/* MÁSCARA OVAL EMERALD */}
                         <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
                             <div
-                                className="w-[260px] h-[360px] shadow-[0_0_0_9999px_rgba(0,0,0,0.7)] border-4 border-dashed border-emerald-400/60"
+                                className="md:w-[360px] md:h-[460px] w-[80%] h-[60%] shadow-[0_0_0_9999px_rgba(0,0,0,0.7)] border-4 border-dashed border-emerald-400/60"
                                 style={{ borderRadius: '50% / 40%' }}
                             />
                         </div>
@@ -252,6 +241,30 @@ export function PontoPage() {
                                 Cancelar
                             </button>
                         </div>
+                        {!isSuccess && (
+                            <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center">
+                                <div className="relative md:w-[360px] md:h-[460px] w-[80%] h-[60%] border-2 border-emerald-500 rounded-[50%/40%] overflow-hidden">
+                                    {/* Linha de Scanner Animada */}
+                                    <div className="w-full h-1 bg-emerald-500 shadow-[0_0_15px_#34d399] absolute top-0 animate-[scan_2s_linear_infinite]" />
+                                </div>
+                            </div>
+                        )}
+                        {isSuccess && (
+                            <div className="absolute inset-0 z-[110] bg-emerald-500 flex flex-col items-center justify-center animate-in zoom-in duration-300">
+                                <div className="bg-white rounded-full p-4 mb-4 shadow-xl">
+                                    <span className="text-5xl">✅</span>
+                                </div>
+                                <h2 className="text-white text-2xl font-bold">Ponto Concluído!</h2>
+                                <p className="text-emerald-200 mt-2">{new Date().toLocaleTimeString()}</p>
+
+                                <button
+                                    onClick={() => { setVideoOpen(false); setIsSuccess(false); }}
+                                    className="mt-8 bg-white/20 hover:bg-white/30 p-2 rounded-full text-white transition-all"
+                                >
+                                    <span className="text-sm px-4">FECHAR (X)</span>
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
@@ -287,7 +300,7 @@ export function PontoPage() {
                             <Button
                                 title={isOutside ? "Aguarde o horário" : "Registrar Agora"}
                                 onClick={() => handleCheckin(item.type)}
-                                className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-emerald-200 transition-all active:scale-95 disabled:grayscale cursor-pointer"
+                                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-emerald-100 transition-all active:scale-95 disabled:grayscale cursor-pointer"
                             />
                         </section>
                     ))}
