@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react"
 import { verificarPonto } from "../components/VerifyDescriptor"
 import { API_URL } from "../utils/api"
 
+import { LogIn, Utensils, Coffee, LogOut } from "lucide-react"
 import * as faceapi from 'face-api.js';
 
 import { z } from "zod"
@@ -10,20 +11,9 @@ import { Button } from "../components/Button"
 
 export function PontoPage() {
 
-    const [hour, setHour] = useState(new Date().toLocaleTimeString())
     const [videoOpen, setVideoOpen] = useState<boolean>(false)
     const [message, setMessage] = useState<string>("Iniciando validação...")
 
-    const getStatusMessage = () => {
-        if (hour >= "07:50:00" && hour <= "08:20:00") return "Ponto de entrada"
-        if (hour >= "11:50:00" && hour <= "12:20:00") return "Ponto de entrada de almoço"
-        if (hour >= "12:40:00" && hour <= "13:20:00") return "Ponto de retorno de almoço"
-        if (hour >= "17:50:00" && hour <= "18:00:00") return "Ponto de saída"
-        return "Fora do horário de bater ponto"
-    }
-
-    const status = getStatusMessage();
-    const isOutside = status === "Fora do horário de bater ponto";
     const videoRef = useRef<HTMLVideoElement>(null)
 
     const [isSuccess, setIsSuccess] = useState(false);
@@ -44,7 +34,7 @@ export function PontoPage() {
 
             try {
                 if (!token) {
-                    return window.location.href="/"
+                    return window.location.href = "/"
                 }
 
                 const verifyFacial = await handleGetEmployee()
@@ -102,8 +92,8 @@ export function PontoPage() {
 
         try {
             if (!token) {
-                 window.location.href="/"
-                 return {success: false}
+                window.location.href = "/"
+                return { success: false }
             }
 
             const response = await fetch(`${API_URL}/employees/face`, {
@@ -160,13 +150,41 @@ export function PontoPage() {
         }
     }
 
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setHour(new Date().toLocaleTimeString())
-        }, 1000)
+    async function handleGetCheckin() {
+        const token = localStorage.getItem("@viggo:token")
 
-        return () => clearInterval(timer)
-    }, [])
+        try {
+
+            if (!token) return window.location.href = "/"
+
+            const response = await fetch(`${API_URL}/checkins`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "authorization": `Bearer ${JSON.parse(token)}`
+                }
+            })
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error("Erro ao buscar os pontos:", errorData);
+                alert("Erro ao buscar os pontos: " + errorData.message);
+                return;
+            }
+
+            const data = await response.json();
+            console.log(data)
+
+        } catch (error) {
+            console.error("Erro ao buscar os pontos:", error);
+            alert("Erro ao buscar os pontos. Tente novamente.");
+        }
+
+    }
+
+    useEffect(() => {
+        handleGetCheckin()
+    },[])
 
     useEffect(() => {
         const carregarModelos = async () => {
@@ -279,10 +297,10 @@ export function PontoPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 md:gap-6">
                     {[
-                        { label: "Entrada", type: "ENTRY", icon: "🌅" },
-                        { label: "Início Almoço", type: "LUNCH_START", icon: "🍽️" },
-                        { label: "Retorno Almoço", type: "LUNCH_END", icon: "☕" },
-                        { label: "Saída", type: "EXIT", icon: "🏠" },
+                        { label: "Entrada", type: "ENTRY", icon: <LogIn className="text-emerald-500" size={32} /> },
+                        { label: "Início Almoço", type: "LUNCH_START", icon: <Utensils className="text-emerald-500" size={32} /> },
+                        { label: "Retorno Almoço", type: "LUNCH_END", icon: <Coffee className="text-emerald-500" size={32} /> },
+                        { label: "Saída", type: "EXIT", icon: <LogOut className="text-red-500" size={32} /> },
                     ].map((item) => (
                         <section
                             key={item.type}
@@ -295,7 +313,7 @@ export function PontoPage() {
                             </div>
 
                             <Button
-                                title={isOutside ? "Aguarde o horário" : "Registrar Agora"}
+                                title={"Registrar Agora"}
                                 onClick={() => handleCheckin(item.type)}
                                 className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-emerald-100 transition-all active:scale-95 disabled:grayscale cursor-pointer"
                             />
