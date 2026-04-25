@@ -1,5 +1,6 @@
 import { type Request, type Response } from "express";
 import { prisma } from "../database/prisma";
+import { type User, type CheckIn } from '@prisma/client';
 import { z } from "zod"
 import { parseISO, startOfDay, endOfDay } from "date-fns"
 
@@ -27,11 +28,11 @@ export class EmployeesController {
                 } as any
             })
 
-            const data = employees.map((employee) => {
+            const data = employees.map((employee: User) => {
 
                 let checkinUser: any = []
 
-                checkins.map((checkin) => {
+                checkins.map((checkin: CheckIn) => {
                     if (checkin.userId === employee.id) checkinUser.push(checkin)
                 })
 
