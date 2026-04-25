@@ -183,7 +183,7 @@ export function PontoViewPage() {
     }, [date])
 
     return (
-        <div className="max-w-4xl mx-auto flex flex-col gap-6">
+        <div className="max-w-4xl mx-auto flex flex-col gap-6 md:my-0 my-4">
             {/* Seção de Filtro */}
             <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
                 <div>
