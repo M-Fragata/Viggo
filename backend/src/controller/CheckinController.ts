@@ -90,9 +90,9 @@ export class CheckinController {
 
             if (!user) return res.status(404).json({ message: "User not found" })
 
-            if (!date) return res.status(400).json({ message: "Date query parameter is required" })
+            const hoje = date || new Date().toISOString()
 
-            const parsedDate = parseISO(date)
+            const parsedDate = parseISO(hoje)
 
             const checkins = await prisma.checkIn.findMany({
                 where: {
