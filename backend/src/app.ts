@@ -6,10 +6,10 @@ import { routes } from './routes/index.js';
 const app = express();
 
 app.use(cors({
-    origin: process.env.FRONTEND_URL,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-}));
+  origin: "*", // Libera geral para testarmos e garantir que o login passe
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}))
 
 console.log(process.env.FRONTEND_URL)
 
