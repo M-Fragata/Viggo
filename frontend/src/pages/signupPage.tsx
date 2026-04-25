@@ -53,11 +53,6 @@ export function SignupPage() {
         return { message: "Erro ao cadastrar, tente novamente em alguns segundos!", payload }
       }
 
-      const data = await response.json();
-
-      window.localStorage.setItem("@viggo:user", JSON.stringify(data.user));
-      window.localStorage.setItem("@viggo:token", JSON.stringify(data.token));
-
       alert("Cadastro realizado com sucesso!");
 
       window.location.href = "/";
