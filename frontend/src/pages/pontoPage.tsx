@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react"
 
 import { API_URL } from "../utils/api"
 
-import { verificarPonto } from "../components/VerifyDescriptor"
 import * as faceapi from 'face-api.js';
 
 import { z } from "zod"
@@ -26,7 +25,6 @@ export function PontoPage() {
     const isOutside = status === "Fora do horário de bater ponto";
     const videoRef = useRef<HTMLVideoElement>(null)
 
-    const [isValidating, setIsValidating] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
 
     async function handleCheckin(type: string) {
@@ -51,7 +49,6 @@ export function PontoPage() {
                 const verifyFacial = await handleGetEmployee()
                 if (verifyFacial?.success !== true) return
 
-                setIsValidating(true);
                 setMessage("Registrando no sistema...");
 
                 bodySchema.parse({ type, latitude, longitude })
@@ -71,8 +68,7 @@ export function PontoPage() {
                     setMessage("Erro ao registrar ponto!");
                     return;
                 }
-
-                setIsValidating(false);
+                
                 setIsSuccess(true); // Ativa o modal de sucesso
                 setMessage("Ponto registrado com sucesso!");
 
@@ -124,8 +120,6 @@ export function PontoPage() {
             }
 
             if (!response.ok) return alert("erro")
-
-            const data = await response.json()
 
             setVideoOpen(true)
             try {
