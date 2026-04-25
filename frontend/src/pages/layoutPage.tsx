@@ -27,13 +27,13 @@ export function LayoutPage() {
             {/* OVERLAY: Aparece apenas quando o menu está aberto */}
             {isMenuOpen && (
                 <div
-                    className="fixed inset-0 z-40 bg-black/5 backdrop-blur-[1px] transition-opacity"
+                    className="fixed inset-0 z-31 bg-black/5 backdrop-blur-[1px] transition-opacity"
                     onClick={closeMenu}
                 />
             )}
 
             {/* HEADER */}
-            <header className="bg-white border-b border-gray-200 py-2 px-6 shadow-sm sticky top-0 z-50">
+            <header className="bg-white border-b border-gray-200 py-2 px-6 shadow-sm sticky top-0 z-32">
                 <div className="max-w-7xl mx-auto flex justify-between items-center">
                     {/* LOGO */}
                     <div>
@@ -94,7 +94,7 @@ export function LayoutPage() {
             </header>
 
             {/* CONTEÚDO PRINCIPAL */}
-            <main className="flex-1 flex flex-col justify-center w-full mx-auto md:p-6 z-30 overflow-y-auto">
+            <main className={`flex-1 flex flex-col justify-center w-full mx-auto md:p-6 overflow-y-auto ${isMenuOpen ? "z-30" : "z-40"}`}>
                 <Outlet />
             </main>
 
