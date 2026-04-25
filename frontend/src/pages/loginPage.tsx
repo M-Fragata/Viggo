@@ -49,7 +49,6 @@ export function LoginPage() {
       window.localStorage.setItem("@viggo:user", JSON.stringify(data.user));
       window.localStorage.setItem("@viggo:token", JSON.stringify(data.token));
 
-
       alert("Login realizado com sucesso!");
 
       window.location.href = "/";
