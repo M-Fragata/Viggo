@@ -8,7 +8,9 @@ const app = express();
 app.use(cors({
   origin: "*", // Libera geral para testarmos e garantir que o login passe
   methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"]
+  allowedHeaders: ["Content-Type", "Authorization"],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }))
 
 console.log(process.env.FRONTEND_URL)
