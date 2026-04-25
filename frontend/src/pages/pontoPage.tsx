@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react"
 
+import { verificarPonto } from "../components/VerifyDescriptor"
 import { API_URL } from "../utils/api"
 
 import * as faceapi from 'face-api.js';
@@ -64,11 +65,10 @@ export function PontoPage() {
 
                 if (!response.ok) {
                     const errorData = await response.json();
-                    console.error("Erro ao registrar o ponto:", errorData);
-                    setMessage("Erro ao registrar ponto!");
+                    setMessage(errorData.message);
                     return;
                 }
-                
+
                 setIsSuccess(true); // Ativa o modal de sucesso
                 setMessage("Ponto registrado com sucesso!");
 
@@ -149,6 +149,9 @@ export function PontoPage() {
                 console.error("Erro ao acessar a webcam:", err);
                 return { success: false };
             }
+
+            const data = await response.json()
+            await verificarPonto(data, videoRef, setMessage)
 
             return { success: true };
 
