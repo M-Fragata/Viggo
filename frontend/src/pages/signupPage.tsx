@@ -53,8 +53,6 @@ export function SignupPage() {
         return { message: "Erro ao cadastrar, tente novamente em alguns segundos!", payload }
       }
 
-      alert("Cadastro realizado com sucesso!");
-
       window.location.href = "/";
 
     } catch (error) {
@@ -64,7 +62,7 @@ export function SignupPage() {
   }
 
   return (
-    <div className="flex-1 flex items-center justify-center w-full h-full px-2 py-2">
+    <div className="flex items-center justify-center w-dvw h-dvh px-2 py-2">
       {/* Card de Cadastro */}
       <div className="flex flex-col md:flex-row w-full max-w-5xl rounded-r-2xl shadow-2xl overflow-hidden min-h-[500px] md:h-[600px]">
 
