@@ -17,7 +17,7 @@ export function RegisterFace() {
             const user = JSON.parse(userRaw)
             const token = JSON.parse(tokenRaw)
             
-            const response = await fetch(`${API_URL}}/sessions/${user.id}`, {
+            const response = await fetch(`${API_URL}/sessions/${user.id}`, {
                 method: "PUT",
                 headers: { 
                     "Content-type": "application/json",
