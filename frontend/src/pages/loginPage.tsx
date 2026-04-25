@@ -49,8 +49,6 @@ export function LoginPage() {
       window.localStorage.setItem("@viggo:user", JSON.stringify(data.user));
       window.localStorage.setItem("@viggo:token", JSON.stringify(data.token));
 
-      alert("Login realizado com sucesso!");
-
       window.location.href = "/";
 
     } catch (error) {
@@ -60,9 +58,9 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex-1 flex items-center justify-center w-full h-full px-2 py-2">
+    <div className="flex items-center justify-center w-dvw h-dvh px-2 py-2">
       {/* Card de Login */}
-      <div className="flex flex-col md:flex-row w-full max-w-5xl rounded-r-2xl shadow-2xl overflow-hidden min-h-[500px] md:h-[600px]">
+      <div className="flex flex-col md:flex-row w-full max-w-5xl rounded-l-2xl shadow-2xl min-h-[500px] md:h-[600px]">
 
 
         {/* LADO ESQUERDO / TOPO MOBILE: Branding */}
