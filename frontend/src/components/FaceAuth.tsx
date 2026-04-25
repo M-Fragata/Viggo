@@ -62,12 +62,10 @@ export function FaceAuth({ onAuthenticate }: { onAuthenticate: (descriptor: Floa
 
     const handleCapture = async () => {
         if (!videoRef.current) {
-            alert("Vídeo não disponível");
             return;
         }
 
         if (videoRef.current.readyState !== 4) {
-            alert("Aguarde a câmera inicializar completamente");
             return;
         }
 
