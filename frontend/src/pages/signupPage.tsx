@@ -10,7 +10,7 @@ import logo from "../assets/logo.png"
 export function SignupPage() {
 
   const [state, formAction, isDisabled] = useActionState(handleSubmit, {
-    message: null,
+    message: "",
     payload: {
       name: "",
       email: "",

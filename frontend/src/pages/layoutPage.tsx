@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, Outlet } from "react-router";
-import { LogOut, MapPin, Menu, X } from "lucide-react";
+import { LogOut, Menu, X } from "lucide-react";
 
 import logo from "../assets/logo.png"
 

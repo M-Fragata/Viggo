@@ -11,7 +11,7 @@ import logo from "../assets/logo.png"
 export function LoginPage() {
 
   const [state, formAction, isDisabled] = useActionState(handleSubmit, {
-    message: null,
+    message: "",
     payload: {
       email: "",
       password: "",

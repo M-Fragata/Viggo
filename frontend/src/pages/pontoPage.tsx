@@ -68,8 +68,6 @@ export function PontoPage() {
                     return;
                 }
 
-                const data = await response.json();
-
             } catch (error) {
                 if (error instanceof z.ZodError) {
                     console.error("Erro de validação:", error.issues);
