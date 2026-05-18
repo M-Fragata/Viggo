@@ -17,8 +17,11 @@ export function LayoutPage() {
     const closeMenu = () => setIsMenuOpen(false);
 
     useEffect(() => {
-        const user = localStorage.getItem("@viggo:user");
-        setName(user ? JSON.parse(user).name : "");
+        const userRaw = localStorage.getItem("@viggo:user");
+        
+        const user = JSON.parse(userRaw!);
+
+        setName(user ? user.name.split(" ")[0] : "");
     }, []);
 
     return (
