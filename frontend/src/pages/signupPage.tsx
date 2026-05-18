@@ -28,14 +28,16 @@ export function SignupPage() {
       confirmPassword: z.string(),
     })
 
-    const payload = bodySchema.parse({
+    const rawData = {
       name: formData.get("name") as string,
       email: formData.get("email") as string,
       password: formData.get("password") as string,
       confirmPassword: formData.get("confirmPassword") as string,
-    })
+    }
 
     try {
+
+      const payload = bodySchema.parse(rawData);
 
       if (payload.password !== payload.confirmPassword) {
         return { message: "Senhas não coincidem", payload }
@@ -56,7 +58,12 @@ export function SignupPage() {
       window.location.href = "/";
 
     } catch (error) {
-      return { message: "Erro ao cadastrar, tente novamente em alguns segundos!", payload }
+
+      if(error instanceof z.ZodError) {
+        return { message: error.issues[0]?.message || "Dados inválidos", payload: rawData }
+      }
+
+      return { message: "Erro ao cadastrar, tente novamente em alguns segundos!", payload: rawData }
     }
 
   }
