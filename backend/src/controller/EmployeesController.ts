@@ -1,7 +1,7 @@
 import { type Request, type Response } from "express";
 import { prisma } from "../database/prisma.js";
 import { type User, type CheckIn } from '@prisma/client';
-import { z } from "zod"
+import { check, z } from "zod"
 import { parseISO, startOfDay, endOfDay } from "date-fns"
 
 export class EmployeesController {
@@ -17,7 +17,6 @@ export class EmployeesController {
 
             const parsedDate = parseISO(date)
 
-
             const employees = await prisma.user.findMany()
             const checkins = await prisma.checkIn.findMany({
                 where: {
@@ -27,7 +26,7 @@ export class EmployeesController {
                     }
                 } as any
             })
-
+console.log(checkins)
             const data = employees.map((employee: User) => {
 
                 let checkinUser: any = []
