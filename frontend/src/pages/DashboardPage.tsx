@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react"
 import { API_URL } from "../utils/api"
-import { Button } from "../components/Button"
 import { Input } from "../components/Input"
 import { MapPin, Calendar, Users, CheckCircle, Search, LayoutList } from "lucide-react"
 
