@@ -9,10 +9,20 @@ import * as faceapi from 'face-api.js';
 import { z } from "zod"
 import { Button } from "../components/Button"
 
+type ChekinProps = {
+    id: string,
+    createdAt: string,
+    type: "ENTRY" | "LUNCH_START" | "LUNCH_END" | "EXIT",
+    latitude: number,
+    longitude: number,
+}
+
 export function PontoPage() {
 
     const [videoOpen, setVideoOpen] = useState<boolean>(false)
     const [message, setMessage] = useState<string>("Iniciando validação...")
+
+    const [checkins, setCheckins] = useState<ChekinProps[]>([])
 
     const videoRef = useRef<HTMLVideoElement>(null)
 
@@ -173,7 +183,7 @@ export function PontoPage() {
             }
 
             const data = await response.json();
-            console.log(data)
+            setCheckins(data)
 
         } catch (error) {
             console.error("Erro ao buscar os pontos:", error);
@@ -184,7 +194,7 @@ export function PontoPage() {
 
     useEffect(() => {
         handleGetCheckin()
-    },[])
+    }, [])
 
     useEffect(() => {
         const carregarModelos = async () => {
@@ -221,22 +231,23 @@ export function PontoPage() {
         <div className=" bg-slate-50 font-sans antialiased text-slate-900">
             {videoOpen && (
                 <div className="fixed inset-0 z-[999] flex flex-col items-center justify-center bg-black/95 backdrop-blur-md animate-in fade-in duration-300">
-                    <div className="relative w-full max-w-2xl bg-slate-900 sm:rounded-3xl overflow-hidden shadow-2xl border border-white/10 flex flex-col h-full sm:h-auto">
+                    {/* CORREÇÃO 1: h-auto removido no mobile e flex col items-center para garantir alinhamento */}
+                    <div className="relative w-full max-w-2xl bg-slate-900 sm:rounded-3xl overflow-hidden shadow-2xl border border-white/10 flex flex-col justify-center items-center h-[80vh] max-h-[700px]">
 
                         {/* MENSAGEM NO TOPO DO VÍDEO */}
-                        <div className="absolute top-0 left-0 right-0 z-100 bg-emerald-400 w-full shadow-lg p-3 h-[60px]">
+                        <div className="absolute top-0 left-0 right-0 z-[100] bg-emerald-400 w-full shadow-lg p-3 h-[60px] flex items-center justify-center">
                             <p className="text-white text-sm md:text-lg font-bold text-center uppercase tracking-wider">
                                 {message}
                             </p>
                         </div>
 
-                        {/* O VÍDEO */}
+                        {/* O VÍDEO (CORREÇÃO 2: w-full h-full object-cover para preencher o bloco inteiro centralizado) */}
                         <video
                             ref={videoRef}
                             autoPlay
                             muted
                             playsInline
-                            className="w-[400px] object-cover h-full sm:h-[60vh] md:h-[700px]"
+                            className="w-full h-full object-cover"
                         />
 
                         {/* MÁSCARA OVAL EMERALD */}
@@ -256,6 +267,7 @@ export function PontoPage() {
                                 Cancelar
                             </button>
                         </div>
+
                         {!isSuccess && (
                             <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center">
                                 <div className="relative md:w-[360px] md:h-[460px] w-[80%] h-[60%] border-2 border-emerald-500 rounded-[50%/40%] overflow-hidden">
@@ -264,6 +276,7 @@ export function PontoPage() {
                                 </div>
                             </div>
                         )}
+
                         {isSuccess && (
                             <div className="absolute inset-0 z-[110] bg-emerald-500 flex flex-col items-center justify-center animate-in zoom-in duration-300">
                                 <div className="bg-white rounded-full p-4 mb-4 shadow-xl">
@@ -301,24 +314,37 @@ export function PontoPage() {
                         { label: "Início Almoço", type: "LUNCH_START", icon: <Utensils className="text-emerald-500" size={32} /> },
                         { label: "Retorno Almoço", type: "LUNCH_END", icon: <Coffee className="text-emerald-500" size={32} /> },
                         { label: "Saída", type: "EXIT", icon: <LogOut className="text-red-500" size={32} /> },
-                    ].map((item) => (
-                        <section
-                            key={item.type}
-                            className="group relative bg-white border border-slate-200 rounded-3xl p-6 md:p-8 flex flex-col items-center gap-6 transition-all hover:border-emerald-400 hover:shadow-xl hover:shadow-emerald-900/5 shadow-sm"
-                        >
-                            <div className="text-4xl">{item.icon}</div>
-                            <div className="text-center">
-                                <h3 className="text-xl font-bold text-slate-800">{item.label}</h3>
-                                <p className="text-slate-400 text-xs mt-1">Requer validação facial</p>
-                            </div>
+                    ].map((item) => {
+                        const existingCheckin = checkins.find((checkin) => checkin.type === item.type);
+                        const hasRegistered = !!existingCheckin;
 
-                            <Button
-                                title={"Registrar Agora"}
-                                onClick={() => handleCheckin(item.type)}
-                                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-emerald-100 transition-all active:scale-95 disabled:grayscale cursor-pointer"
-                            />
-                        </section>
-                    ))}
+                        // Se existir o check-in, podemos até pegar o horário dele para mostrar na tela se quiser!
+                        const checkinTime = existingCheckin
+                            ? new Date(existingCheckin.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                            : null;
+
+                        return (
+                            <section
+                                key={item.type}
+                                className={`group relative bg-white border border-slate-200 rounded-3xl p-6 md:p-8 flex flex-col items-center gap-6 transition-all hover:shadow-xl hover:shadow-emerald-900/5 shadow-sm ${hasRegistered ? "hover:border-gray-400" : "hover:border-emerald-400 "}`}
+                            >
+                                <div className="text-4xl">{item.icon}</div>
+                                <div className="text-center">
+                                    <h3 className="text-xl font-bold text-slate-800">{item.label}</h3>
+                                    <p className="text-emerald-400 text-xs mt-1">
+                                        {hasRegistered ? `Registrado às ${checkinTime}` : "Requer validação facial"}
+                                    </p>
+                                </div>
+
+                                <Button
+                                    title={hasRegistered ? "Ponto Registrado" : "Registrar Ponto"}
+                                    disabled={hasRegistered}
+                                    onClick={() => handleCheckin(item.type)}
+                                    className={`w-full bg-emerald-600  text-white font-bold py-4 rounded-2xl shadow-lg shadow-emerald-100 transition-all active:scale-95 disabled:grayscale  ${hasRegistered ? "opacity-70 cursor-not-allowed " : "cursor-pointer hover:bg-emerald-700"}`}
+                                />
+                            </section>
+                        );
+                    })}
                 </div>
             </main>
         </div>
