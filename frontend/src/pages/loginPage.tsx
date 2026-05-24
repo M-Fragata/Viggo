@@ -65,11 +65,11 @@ export function LoginPage() {
 
         {/* LADO ESQUERDO / TOPO MOBILE: Branding */}
         <section className="flex flex-col items-center justify-center bg-emerald-400 w-full md:w-1/2 h-1/3 md:h-full p-8 transition-all duration-500 md:rounded-l-2xl md:rounded-t-none rounded-t-2xl">
-          <div className="flex flex-col items-center gap-4 animate-in fade-in slide-in-from-left duration-700">
+          <div className="flex flex-col items-center gap-4 animate-in fade-in slide-in-from-left duration-700 rounded-2xl">
             <img
               src={logo}
               alt="Viggo Logo"
-              className="w-32 md:w-56 h-auto drop-shadow-xl"
+              className="w-32 md:w-56 h-auto drop-shadow-xl rounded-2xl"
             />
           </div>
         </section>
