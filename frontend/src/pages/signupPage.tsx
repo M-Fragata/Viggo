@@ -79,7 +79,7 @@ export function SignupPage() {
             <img
               src={logo}
               alt="Viggo Logo"
-              className="w-32 md:w-56 h-auto drop-shadow-xl"
+              className="w-32 md:w-56 h-auto drop-shadow-xl rounded-2xl"
             />
           </div>
         </section>
