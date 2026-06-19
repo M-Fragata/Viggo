@@ -12,10 +12,12 @@ export async function verificarPonto(faceDescriptor: number[],
     let tentativas = 0;
     let sucessoFacial = false;
 
+    const detectorOptions = new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 });
+
     while (tentativas < 10 && !sucessoFacial) {
 
       const detection = await faceapi
-        .detectSingleFace(videoRef.current)
+        .detectSingleFace(videoRef.current, detectorOptions)
         .withFaceLandmarks()
         .withFaceDescriptor();
 

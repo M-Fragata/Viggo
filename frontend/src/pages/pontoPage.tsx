@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react"
 
 import { verificarPonto } from "../components/VerifyDescriptor"
 import { API_URL } from "../utils/api"
+import { LivenessChallenge } from "../components/LivenessChallenge"
 
 import { LogIn, Utensils, Coffee, LogOut } from "lucide-react"
 import * as faceapi from 'face-api.js';
@@ -27,12 +28,18 @@ export function PontoPage() {
     const videoRef = useRef<HTMLVideoElement>(null)
 
     const [isSuccess, setIsSuccess] = useState(false);
+    const [isRegistering, setIsRegistering] = useState(false);
+    const [livenessDescriptor, setLivenessDescriptor] = useState<Float32Array | null>(null);
+    const [showLiveness, setShowLiveness] = useState(false);
+    const [pendingCheckin, setPendingCheckin] = useState<{
+        type: string;
+        latitude: number;
+        longitude: number;
+    } | null>(null);
 
     async function handleCheckin(type: string) {
-
         navigator.geolocation.getCurrentPosition(async (position) => {
             const { latitude, longitude } = position.coords;
-
 
             const bodySchema = z.object({
                 type: z.enum(["ENTRY", "LUNCH_START", "LUNCH_END", "EXIT"]),
@@ -40,51 +47,24 @@ export function PontoPage() {
                 longitude: z.number()
             })
 
-            const token = localStorage.getItem("@viggo:token")
-
             try {
-                if (!token) {
-                    return window.location.href = "/"
-                }
-
-                const verifyFacial = await handleGetEmployee()
-                if (verifyFacial?.success !== true) return
-
-                setMessage("Registrando no sistema...");
-
                 bodySchema.parse({ type, latitude, longitude })
-
-                const response = await fetch(`${API_URL}/checkins`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "authorization": `Bearer ${JSON.parse(token)}`
-                    },
-                    body: JSON.stringify({ type, latitude, longitude })
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    setMessage(errorData.message);
-                    return;
+                
+                setPendingCheckin({ type, latitude, longitude });
+                
+                const verifyFacial = await handleGetEmployee()
+                if (verifyFacial?.success !== true) {
+                    setPendingCheckin(null);
+                    return
                 }
-
-                setIsSuccess(true); // Ativa o modal de sucesso
-                setMessage("Ponto registrado com sucesso!");
-
             } catch (error) {
                 if (error instanceof z.ZodError) {
                     console.error("Erro de validação:", error.issues);
                 } else {
-                    console.error("Erro ao registrar o ponto:", error);
-                    alert("Erro ao registrar o ponto. Tente novamente.");
+                    console.error("Erro ao preparar check-in:", error);
+                    alert("Erro ao preparar check-in. Tente novamente.");
                 }
-            } finally {
-                // Fecha o vídeo automaticamente após 3 segundos ou no X do modal
-                setTimeout(() => {
-                    setIsSuccess(false);
-                    setVideoOpen(false);
-                }, 3000);
+                setPendingCheckin(null);
             }
         }, (error) => {
             console.error("Erro ao obter localização:", error);
@@ -121,12 +101,17 @@ export function PontoPage() {
 
             if (!response.ok) return alert("erro")
 
+            const data = await response.json()
+            const savedDescriptor = new Float32Array(Object.values(data)) as Float32Array;
+
+            setLivenessDescriptor(savedDescriptor);
             setVideoOpen(true)
+            setShowLiveness(true)
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: {
-                        width: 640,
-                        height: 480,
+                        width: { ideal: 320 },
+                        height: { ideal: 240 },
                         facingMode: "user"
                     }
                 });
@@ -147,18 +132,95 @@ export function PontoPage() {
                 }
             } catch (err) {
                 console.error("Erro ao acessar a webcam:", err);
+                setPendingCheckin(null);
                 return { success: false };
             }
-
-            const data = await response.json()
-            await verificarPonto(data, videoRef, setMessage)
 
             return { success: true };
 
         } catch (error) {
+            setPendingCheckin(null);
             return { success: false }
         }
     }
+
+    const handleLivenessComplete = async (_descriptor: Float32Array) => {
+        if (!pendingCheckin) {
+            setShowLiveness(false);
+            return { success: false };
+        }
+
+        setShowLiveness(false);
+        setIsRegistering(true);
+        setMessage("Verificando identidade...");
+        
+        const verifyResult = await verificarPonto(
+          Array.from(livenessDescriptor!), 
+          videoRef, 
+          setMessage
+        );
+        
+        if (!verifyResult.success) {
+            setIsRegistering(false);
+            setPendingCheckin(null);
+            setMessage("Rosto não reconhecido. Tente novamente.");
+            return { success: false };
+        }
+
+        setMessage("Registrando ponto...");
+        
+        const token = localStorage.getItem("@viggo:token")
+        
+        try {
+            if (!token) {
+                window.location.href = "/"
+                return { success: false }
+            }
+
+            const response = await fetch(`${API_URL}/checkins`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "authorization": `Bearer ${JSON.parse(token)}`
+                },
+                body: JSON.stringify(pendingCheckin)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                setMessage(errorData.message);
+                setIsRegistering(false);
+                return { success: false };
+            }
+
+            setIsSuccess(true);
+            setMessage("Ponto registrado com sucesso!");
+            setPendingCheckin(null);
+            
+            await handleGetCheckin();
+
+            setTimeout(() => {
+                setIsSuccess(false);
+                setIsRegistering(false);
+                setVideoOpen(false);
+            }, 3000);
+
+            return { success: true };
+
+        } catch (error) {
+            console.error("Erro ao registrar o ponto:", error);
+            setMessage("Erro ao registrar o ponto. Tente novamente.");
+            setIsRegistering(false);
+            return { success: false };
+        }
+    };
+
+    const handleLivenessCancel = () => {
+        setShowLiveness(false);
+        setVideoOpen(false);
+        setPendingCheckin(null);
+        setMessage("Validação cancelada");
+    };
 
     async function handleGetCheckin() {
         const token = localStorage.getItem("@viggo:token")
@@ -204,7 +266,7 @@ export function PontoPage() {
                 const MODEL_URL = '/models';
 
                 await Promise.all([
-                    faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
+                    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
                     faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
                     faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
                 ]);
@@ -258,17 +320,30 @@ export function PontoPage() {
                             />
                         </div>
 
-                        {/* BOTÃO CANCELAR */}
-                        <div className="absolute bottom-8 left-0 right-0 z-20 flex justify-center px-4">
-                            <button
-                                onClick={() => setVideoOpen(false)}
-                                className="w-full max-w-[200px] py-3 bg-emerald-400 text-white rounded-full font-bold hover:bg-emerald-500 transition-all active:scale-95 shadow-lg shadow-emerald-900/40 cursor-pointer uppercase text-xs tracking-widest"
-                            >
-                                Cancelar
-                            </button>
-                        </div>
+                        {showLiveness && livenessDescriptor && (
+                          <LivenessChallenge
+                            videoRef={videoRef}
+                            faceDescriptor={livenessDescriptor}
+                            onComplete={handleLivenessComplete}
+                            onCancel={handleLivenessCancel}
+                          />
+                        )}
 
-                        {!isSuccess && (
+                        {isRegistering && (
+                          <div className="absolute inset-0 z-[110] bg-emerald-500/95 flex flex-col items-center justify-center animate-in zoom-in duration-300">
+                              <div className="relative mb-6">
+                                  <div className="w-24 h-24 border-4 border-white/30 rounded-full"></div>
+                                  <div className="absolute inset-0 border-4 border-emerald-300 rounded-full animate-spin border-t-transparent" />
+                              </div>
+                              <h2 className="text-white text-2xl font-bold">Registrando Ponto...</h2>
+                              <p className="text-emerald-200 mt-2">{message}</p>
+                              <div className="w-48 h-1 bg-white/20 rounded-full mt-6 overflow-hidden">
+                                  <div className="h-full bg-emerald-300 rounded-full animate-progress" style={{ width: '60%' }} />
+                              </div>
+                          </div>
+                        )}
+
+                        {!showLiveness && !isSuccess && !isRegistering && (
                             <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center">
                                 <div className="relative md:w-[360px] md:h-[460px] w-[80%] h-[60%] border-2 border-emerald-500 rounded-[50%/40%] overflow-hidden">
                                     {/* Linha de Scanner Animada */}
@@ -292,6 +367,17 @@ export function PontoPage() {
                                     <span className="text-sm px-4">FECHAR (X)</span>
                                 </button>
                             </div>
+                        )}
+
+                        {!showLiveness && !isSuccess && (
+                          <div className="absolute bottom-8 left-0 right-0 z-20 flex justify-center px-4">
+                              <button
+                                  onClick={() => setVideoOpen(false)}
+                                  className="w-full max-w-[200px] py-3 bg-emerald-400 text-white rounded-full font-bold hover:bg-emerald-500 transition-all active:scale-95 shadow-lg shadow-emerald-900/40 cursor-pointer uppercase text-xs tracking-widest"
+                              >
+                                  Cancelar
+                              </button>
+                          </div>
                         )}
                     </div>
                 </div>

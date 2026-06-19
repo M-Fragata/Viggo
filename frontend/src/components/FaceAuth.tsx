@@ -1,44 +1,53 @@
 import * as faceapi from 'face-api.js';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import * as tf from '@tensorflow/tfjs';
 
 export function FaceAuth({ onAuthenticate }: { onAuthenticate: (descriptor: Float32Array) => void }) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [modelsLoaded, setModelsLoaded] = useState(false);
+    const [isLoadingModels, setIsLoadingModels] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [loadingMessage, setLoadingMessage] = useState('Carregando modelos de IA...');
+    const [loadingMessage, setLoadingMessage] = useState('');
 
     useEffect(() => {
-        const loadModels = async () => {
-            try {
-                const MODEL_URL = '/models';
-                
-                setLoadingMessage('Carregando detector de faces...');
-                await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
-
-                setLoadingMessage('Carregando landmark points...');
-                await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-
-                setLoadingMessage('Carregando reconhecimento facial...');
-                await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
-
-                setModelsLoaded(true);
-            } catch (err) {
-                console.error('Erro ao carregar modelos:', err);
-                setError('Falha ao carregar modelos de IA. Atualize a página para tentar novamente.');
-            }
-        };
-        loadModels();
+        tf.setBackend('webgl').then(() => tf.ready());
     }, []);
 
-    useEffect(() => {
-        if (!modelsLoaded) return;
+    const loadModels = useCallback(async () => {
+        if (modelsLoaded || isLoadingModels) return;
+        
+        setIsLoadingModels(true);
+        setError(null);
+        
+        try {
+            const MODEL_URL = '/models';
+            
+            setLoadingMessage('Preparando câmera...');
+            await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
 
+            setLoadingMessage('Carregando pontos de referência...');
+            await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+
+            setLoadingMessage('Finalizando...');
+            await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+
+            setModelsLoaded(true);
+        } catch (err) {
+            console.error('Erro ao carregar modelos:', err);
+            setError('Falha ao preparar validação facial. Tente novamente.');
+        } finally {
+            setIsLoadingModels(false);
+            setLoadingMessage('');
+        }
+    }, [modelsLoaded, isLoadingModels]);
+
+    useEffect(() => {
         const startCamera = async () => {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: {
-                        width: { ideal: 640 },
-                        height: { ideal: 480 },
+                        width: { ideal: 320 },
+                        height: { ideal: 240 },
                         facingMode: 'user'
                     }
                 });
@@ -47,7 +56,7 @@ export function FaceAuth({ onAuthenticate }: { onAuthenticate: (descriptor: Floa
                 }
             } catch (err) {
                 console.error("Erro ao acessar a câmera:", err);
-                setError("Câmera não encontrada ou permissão negada. Allow câmera e atualize.");
+                setError("Câmera não encontrada ou permissão negada. Permita câmera e atualize.");
             }
         };
         startCamera();
@@ -58,7 +67,7 @@ export function FaceAuth({ onAuthenticate }: { onAuthenticate: (descriptor: Floa
                 stream.getTracks().forEach(track => track.stop());
             }
         };
-    }, [modelsLoaded]);
+    }, []);
 
     const handleCapture = async () => {
         if (!videoRef.current) {
@@ -69,9 +78,15 @@ export function FaceAuth({ onAuthenticate }: { onAuthenticate: (descriptor: Floa
             return;
         }
 
+        await loadModels();
+
+        if (!modelsLoaded) {
+            return;
+        }
+
         setError(null);
 
-        const options = new faceapi.SsdMobilenetv1Options({ minConfidence: 0.7 });
+        const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 });
         const detection = await faceapi
             .detectSingleFace(videoRef.current, options)
             .withFaceLandmarks()
@@ -99,19 +114,19 @@ export function FaceAuth({ onAuthenticate }: { onAuthenticate: (descriptor: Floa
                     playsInline
                     className="w-full max-w-sm"
                 />
-                {!modelsLoaded && (
+                {(isLoadingModels || !modelsLoaded) && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/70 text-white p-4 text-center">
-                        {loadingMessage}
+                        {loadingMessage || 'Iniciando...'}
                     </div>
                 )}
             </div>
 
             <button
-                disabled={!modelsLoaded}
+                disabled={isLoadingModels}
                 onClick={handleCapture}
                 className="bg-emerald-600 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-bold shadow-lg transition-all active:scale-95"
             >
-                {modelsLoaded ? "Capturar Biometria" : "Aguarde..."}
+                {isLoadingModels ? loadingMessage : modelsLoaded ? "Capturar Biometria" : "Iniciar Validação"}
             </button>
         </div>
     );
