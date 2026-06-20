@@ -19,8 +19,8 @@
 | Reduzir resolução captura: 640x480 → 320x240 | `FaceAuth.tsx`, `pontoPage.tsx` | 4x menos pixels | ✅ **Concluído** |
 | **Lazy-load real (on-click)** | `FaceAuth.tsx` | Inicialização instantânea | ✅ **Concluído** (melhor que planejado) |
 | Forçar backend WebGL: `tf.setBackend('webgl')` | `FaceAuth.tsx` | Usa GPU do device | ✅ **Concluído** |
-| Throttle loop de verificação (requestAnimationFrame) | `VerifyDescriptor.tsx` | Menos lag visual | ⏳ **Pendente** |
-| Quantizar modelos para FP16/INT8 | Script offline + `/public/models` | ~30% mais rápido | ⏳ **Pendente** |
+| Throttle loop de verificação (requestAnimationFrame) | `VerifyDescriptor.tsx` | Menos lag visual | ✅ **Concluído** |
+| Quantizar modelos para FP16/INT8 | Script offline + `/public/models` | ~30% mais rápido | ⏳ **Pendente** (opcional) |
 
 ### Fase 1.5: Liveness Detection Guiado (Implementado - Não Planejado)
 | Feature | Arquivos | Status |
@@ -67,11 +67,15 @@ services:
 ```
 
 ### Fase 3: Hardening SaaS (Semana 4)
-- Multi-tenancy: filtro `companyId` no embedding search
-- Rate limiting por empresa/usuário
-- Logs estruturados + métricas (Prometheus)
-- Health checks no Docker
-- CI/CD: build + deploy automático
+- **Multi-tenancy:** Prisma Client Extension + middleware global para injetar `companyId` automaticamente em todas as queries (`prisma.$extends({ query: { $allModels: { $allOperations: { args.where = { ...args.where, companyId: getCurrentCompanyId() } } } } })`)
+- **Rate Limiting (Duas Camadas):**
+  - Edge: Cloudflare Rate Limiting Rules (IP + path `/checkins`, `/employees/face`)
+  - Application: `express-rate-limit` com `keyGenerator` por `userId` + `companyId` nas rotas sensíveis
+- **Observabilidade:** Prometheus + Grafana em containers Docker isolados (`prom/prometheus`, `grafana/grafana`, `prom/node-exporter`, `google/cadvisor`)
+- **Logs Estruturados:** JSON logs com correlation IDs, request/response sanitizados
+- **Audit Logs:** Tabela `AuditLog { id, userId, companyId, action, entity, entityId, oldData, newData, ip, userAgent, createdAt }` + Prisma middleware para capturar create/update/delete
+- **Health Checks:** `/health` (liveness) + `/ready` (readiness) no backend + Docker healthcheck
+- **CI/CD:** GitHub Actions → test → build → deploy to VPS via SSH (Docker Compose)
 
 ---
 
@@ -104,13 +108,13 @@ services:
 
 ## Próximos Passos (Aprovação Necessária)
 
-1. **Testar mobile real** - Ajustar thresholds de yaw/pitch/blink
-2. **RegisterFace.tsx** - Aplicar mesmo liveness no cadastro inicial?
-3. **VerifyDescriptor.tsx** - Implementar throttle (requestAnimationFrame) no loop
-4. **Quantização modelos** - Script FP16/INT8 para `/public/models`
-5. **Decidir Fase 2:** Modelo insightface (`buffalo_l` ~60MB vs `arcface_r100` ~100MB)?
-6. **Validar:** Estrutura de pastas para `face-api/` (novo microserviço)?
-7. **Alinhar:** Threshold de similaridade inicial (sugestão: 0.45-0.5 cosine)?
+1. **Testar mobile real** - Ajustar thresholds de yaw/pitch/blink (`YAW_THRESHOLD_FRONT=25`, `YAW_THRESHOLD_SIDE=30`)
+2. **RegisterFace.tsx** - Aplicar LivenessChallenge no cadastro inicial
+3. **Quantização modelos** - Script FP16/INT8 para `/public/models` (opcional, ganho marginal)
+4. **Decidir Fase 2:** Modelo insightface (`buffalo_l` ~60MB vs `arcface_r100` ~100MB)? Só se volume ≥ 1k/dia
+5. **Validar:** Estrutura de pastas para `face-api/` (novo microserviço)?
+6. **Alinhar:** Threshold de similaridade inicial (sugestão: 0.45-0.5 cosine)?
+7. **Implementar Fase 3:** Rate limiting, Prometheus/Grafana, Audit logs, CI/CD
 
 ---
 
@@ -126,9 +130,11 @@ services:
 - `frontend/package.json` - **Modificado** (`@tensorflow/tfjs` adicionado)
 
 ### ⏳ **Pendentes Fase 1:**
-- `frontend/src/components/VerifyDescriptor.tsx` - Throttle loop
 - `frontend/src/pages/RegisterFace.tsx` - Liveness no cadastro
-- Script quantização modelos FP16/INT8
+- Script quantização modelos FP16/INT8 (opcional)
+
+### ✅ **Concluídos Fase 1 (Recentes):**
+- `frontend/src/components/VerifyDescriptor.tsx` - Throttle com requestAnimationFrame ✅
 
 ### 📦 **Fase 2 (Futuro):**
 - `face-api/Dockerfile`
