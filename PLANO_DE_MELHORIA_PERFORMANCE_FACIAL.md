@@ -40,6 +40,14 @@
 | Reset blink ao mudar etapa/cancelar | `LivenessChallenge.tsx` | Estado limpo |
 | UI: ícone blink apenas no frontal | `LivenessChallenge.tsx` | Visual limpo |
 
+### Melhoria Recente: Progress Logic Otimizado
+| Mudança | Arquivo | Detalhe |
+|---------|---------|---------|
+| Incremento: 2% → 25% | `LivenessChallenge.tsx` | 4 frames = 400ms para completar |
+| Decay linear: -5% após 4s sem incremento | `LivenessChallenge.tsx` | Apenas no front step |
+| Decay apenas no front step | `LivenessChallenge.tsx` | Laterais sem decay |
+| Reset timer ao trocar etapa | `LivenessChallenge.tsx` | Estado limpo |
+
 ### Fase 2: Backend Leve em Docker (Semana 2-3) - 0 custo extra
 **Arquitetura:**
 ```

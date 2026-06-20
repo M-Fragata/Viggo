@@ -46,6 +46,7 @@ export function LivenessChallenge({
   const [progress, setProgress] = useState(0);
   const [blinkValidated, setBlinkValidated] = useState(false);
   const [frontStepStartTime, setFrontStepStartTime] = useState(Date.now());
+  const [lastIncrementTime, setLastIncrementTime] = useState(Date.now());
   const [message, setMessage] = useState('Iniciando validação...');
   const [bestFrameDescriptor, setBestFrameDescriptor] = useState<Float32Array | null>(null);
   const [modelsLoaded, setModelsLoaded] = useState(false);
@@ -77,6 +78,7 @@ export function LivenessChallenge({
   useEffect(() => {
     setBlinkValidated(false);
     setFrontStepStartTime(Date.now());
+    setLastIncrementTime(Date.now());
     if (modelsLoaded) {
       setMessage(stepConfig.instruction);
       setProgress(0);
@@ -127,7 +129,9 @@ export function LivenessChallenge({
         }
 
         if (stepPassed) {
-          setProgress(prev => Math.min(100, prev + 2));
+          // Increment: +25% on valid frame
+          setProgress(prev => Math.min(100, prev + 25));
+          setLastIncrementTime(Date.now());
           
           if (progress >= 80) {
             if (faceDescriptor) {
@@ -153,7 +157,13 @@ export function LivenessChallenge({
             }
           }
         } else {
-          setProgress(prev => Math.max(0, prev - 1));
+          // Decay: Only on front step, linear -5% after 4 seconds of no increment
+          if (currentStep === 'front') {
+            const timeSinceIncrement = Date.now() - lastIncrementTime;
+            if (timeSinceIncrement > 4000) {
+              setProgress(prev => Math.max(0, prev - 5));
+            }
+          }
         }
 
         const yawDeg = Math.round(headPose.yaw);
@@ -182,6 +192,7 @@ export function LivenessChallenge({
     progress, 
     blinkValidated,
     frontStepStartTime,
+    lastIncrementTime,
     faceDescriptor,
     getHeadPose,
     isLookingFront,
