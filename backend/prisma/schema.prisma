@@ -54,3 +54,21 @@ enum CheckInType {
   LUNCH_END
   EXIT
 }
+
+model AuditLog {
+  id          String    @id @default(uuid())
+  userId      String
+  companyId   String
+  action      String
+  entity      String
+  entityId    String?
+  oldData     Json?
+  newData     Json?
+  ip          String?
+  userAgent   String?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId, createdAt])
+  @@index([companyId, createdAt])
+  @@index([entity, entityId])
+}

@@ -66,16 +66,17 @@ services:
           memory: 2G
 ```
 
-### Fase 3: Hardening SaaS (Semana 4)
-- **Multi-tenancy:** Prisma Client Extension + middleware global para injetar `companyId` automaticamente em todas as queries (`prisma.$extends({ query: { $allModels: { $allOperations: { args.where = { ...args.where, companyId: getCurrentCompanyId() } } } } })`)
+### Fase 3: Hardening SaaS (Semana 4) ✅ **CONCLUÍDA**
+- **Multi-tenancy:** Prisma Client Extension + middleware global para injetar `companyId` automaticamente em todas as queries (`backend/src/database/prisma-extensions.ts`)
 - **Rate Limiting (Duas Camadas):**
   - Edge: Cloudflare Rate Limiting Rules (IP + path `/checkins`, `/employees/face`)
-  - Application: `express-rate-limit` com `keyGenerator` por `userId` + `companyId` nas rotas sensíveis
-- **Observabilidade:** Prometheus + Grafana em containers Docker isolados (`prom/prometheus`, `grafana/grafana`, `prom/node-exporter`, `google/cadvisor`)
-- **Logs Estruturados:** JSON logs com correlation IDs, request/response sanitizados
-- **Audit Logs:** Tabela `AuditLog { id, userId, companyId, action, entity, entityId, oldData, newData, ip, userAgent, createdAt }` + Prisma middleware para capturar create/update/delete
-- **Health Checks:** `/health` (liveness) + `/ready` (readiness) no backend + Docker healthcheck
-- **CI/CD:** GitHub Actions → test → build → deploy to VPS via SSH (Docker Compose)
+  - Application: `express-rate-limit` com `keyGenerator` por `userId` + `companyId` nas rotas sensíveis (`backend/src/middleware/RateLimitMiddleware.ts`)
+- **Observabilidade:** Prometheus + Grafana em containers Docker isolados (`prom/prometheus`, `grafana/grafana`, `prom/node-exporter`, `google/cadvisor`) - `backend/docker-compose.yml`
+- **Logs Estruturados:** JSON logs com correlation IDs, request/response sanitizados (`backend/src/middleware/LoggingMiddleware.ts`)
+- **Audit Logs:** Tabela `AuditLog` + Prisma middleware para capturar create/update/delete (`backend/src/middleware/AuditMiddleware.ts`)
+- **Health Checks:** `/health` (liveness) + `/ready` (readiness) no backend (`backend/src/middleware/HealthCheckMiddleware.ts`)
+- **CI/CD:** GitHub Actions → test → build → deploy to VPS via SSH (Docker Compose) (`.github/workflows/ci-cd.yml`)
+- **Métricas Prometheus:** `/metrics` endpoint com contadores, histogramas e gauges (`backend/src/middleware/MetricsMiddleware.ts`)
 
 ---
 
@@ -109,12 +110,12 @@ services:
 ## Próximos Passos (Aprovação Necessária)
 
 1. **Testar mobile real** - Ajustar thresholds de yaw/pitch/blink (`YAW_THRESHOLD_FRONT=25`, `YAW_THRESHOLD_SIDE=30`)
-2. **RegisterFace.tsx** - Aplicar LivenessChallenge no cadastro inicial
-3. **Quantização modelos** - Script FP16/INT8 para `/public/models` (opcional, ganho marginal)
-4. **Decidir Fase 2:** Modelo insightface (`buffalo_l` ~60MB vs `arcface_r100` ~100MB)? Só se volume ≥ 1k/dia
-5. **Validar:** Estrutura de pastas para `face-api/` (novo microserviço)?
-6. **Alinhar:** Threshold de similaridade inicial (sugestão: 0.45-0.5 cosine)?
-7. **Implementar Fase 3:** Rate limiting, Prometheus/Grafana, Audit logs, CI/CD
+2. **Quantização modelos** - Script FP16/INT8 para `/public/models` (opcional, ganho marginal)
+3. **Decidir Fase 2:** Modelo insightface (`buffalo_l` ~60MB vs `arcface_r100` ~100MB)? Só se volume ≥ 1k/dia
+4. **Validar:** Estrutura de pastas para `face-api/` (novo microserviço)?
+5. **Alinhar:** Threshold de similaridade inicial (sugestão: 0.45-0.5 cosine)?
+
+**✅ FASE 1, 1.5 e 3 CONCLUÍDAS**
 
 ---
 
@@ -130,11 +131,28 @@ services:
 - `frontend/package.json` - **Modificado** (`@tensorflow/tfjs` adicionado)
 
 ### ⏳ **Pendentes Fase 1:**
-- `frontend/src/pages/RegisterFace.tsx` - Liveness no cadastro
 - Script quantização modelos FP16/INT8 (opcional)
 
 ### ✅ **Concluídos Fase 1 (Recentes):**
 - `frontend/src/components/VerifyDescriptor.tsx` - Throttle com requestAnimationFrame ✅
+- `frontend/src/pages/RegisterFace.tsx` - Liveness no cadastro ✅
+
+### ✅ **Concluídos Fase 3 (Hardening SaaS):**
+- `backend/src/database/prisma-extensions.ts` - Multi-tenancy extension ✅
+- `backend/src/middleware/RateLimitMiddleware.ts` - Rate limiting (auth, checkin, face, general) ✅
+- `backend/src/middleware/LoggingMiddleware.ts` - Pino logging + correlation IDs ✅
+- `backend/src/middleware/MetricsMiddleware.ts` - Prometheus metrics ✅
+- `backend/src/middleware/HealthCheckMiddleware.ts` - Health/readiness checks ✅
+- `backend/src/middleware/AuditMiddleware.ts` - Audit logging ✅
+- `backend/docker-compose.yml` - Prometheus, Grafana, node-exporter, cadvisor ✅
+- `backend/prometheus.yml` - Prometheus config ✅
+- `backend/grafana/provisioning/datasources/prometheus.yml` - Grafana datasource ✅
+- `backend/prisma/schema.prisma` - AuditLog model ✅
+- `backend/src/database/prisma-extensions.ts` - Multi-tenancy ✅
+- `backend/src/middleware/AuthMiddleware.ts` - CompanyId injection ✅
+- `backend/src/routes/*.ts` - Rate limiters aplicados ✅
+- `.github/workflows/ci-cd.yml` - GitHub Actions CI/CD ✅
+- `backend/package.json` - Dependencies (express-rate-limit, prom-client, pino, uuid) ✅
 
 ### 📦 **Fase 2 (Futuro):**
 - `face-api/Dockerfile`
