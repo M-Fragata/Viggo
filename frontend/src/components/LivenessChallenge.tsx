@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useHeadPose, calculateEAR, BLINK_THRESHOLD, YAW_THRESHOLD_FRONT, YAW_THRESHOLD_SIDE } from '../hooks/useHeadPose';
+import { useHeadPose, calculateEAR, BLINK_THRESHOLD_FRONT, YAW_THRESHOLD_FRONT, YAW_THRESHOLD_SIDE } from '../hooks/useHeadPose';
 import type { HeadPose } from '../hooks/useHeadPose';
 import * as faceapi from 'face-api.js';
 
@@ -44,7 +44,8 @@ export function LivenessChallenge({
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [pose, setPose] = useState<HeadPose>({ yaw: 0, pitch: 0, roll: 0 });
   const [progress, setProgress] = useState(0);
-  const [blinkDetected, setBlinkDetected] = useState(false);
+  const [blinkValidated, setBlinkValidated] = useState(false);
+  const [frontStepStartTime, setFrontStepStartTime] = useState(Date.now());
   const [message, setMessage] = useState('Iniciando validação...');
   const [bestFrameDescriptor, setBestFrameDescriptor] = useState<Float32Array | null>(null);
   const [modelsLoaded, setModelsLoaded] = useState(false);
@@ -72,6 +73,16 @@ export function LivenessChallenge({
     loadModels();
   }, []);
 
+  // Reset blink state when step changes
+  useEffect(() => {
+    setBlinkValidated(false);
+    setFrontStepStartTime(Date.now());
+    if (modelsLoaded) {
+      setMessage(stepConfig.instruction);
+      setProgress(0);
+    }
+  }, [currentStepIndex, modelsLoaded, stepConfig.instruction]);
+
   const checkPose = useCallback(async () => {
     if (!videoRef.current || !modelsLoaded || videoRef.current.readyState !== 4) {
       return;
@@ -93,25 +104,26 @@ export function LivenessChallenge({
         setPose(headPose);
 
         const ear = calculateEAR(detection.landmarks);
-        const blinked = ear < BLINK_THRESHOLD;
-
-        if (blinked && !blinkDetected) {
-          setBlinkDetected(true);
-          setTimeout(() => setBlinkDetected(false), 500);
-        }
 
         let stepPassed = false;
 
-        switch (currentStep) {
-          case 'front':
-            stepPassed = isLookingFront(headPose, YAW_THRESHOLD_FRONT);
-            break;
-          case 'left':
-            stepPassed = isLookingLeft(headPose, YAW_THRESHOLD_SIDE);
-            break;
-          case 'right':
-            stepPassed = isLookingRight(headPose, YAW_THRESHOLD_SIDE);
-            break;
+        if (currentStep === 'front') {
+          // Front step: pose + blink validation (threshold 0.30)
+          const poseOk = isLookingFront(headPose, YAW_THRESHOLD_FRONT);
+          const blinked = ear < BLINK_THRESHOLD_FRONT; // 0.30 - mais tolerante
+          const timeInFront = Date.now() - frontStepStartTime;
+
+          if (blinked) {
+            setBlinkValidated(true);
+          }
+
+          // Front step passes if: pose OK + (blink validated OR 10s timeout)
+          stepPassed = poseOk && (blinkValidated || timeInFront > 10000);
+        } else {
+          // Left/Right steps: ONLY head pose (no blink required)
+          stepPassed = currentStep === 'left' 
+            ? isLookingLeft(headPose, YAW_THRESHOLD_SIDE)
+            : isLookingRight(headPose, YAW_THRESHOLD_SIDE);
         }
 
         if (stepPassed) {
@@ -128,10 +140,9 @@ export function LivenessChallenge({
             }
 
             if (currentStepIndex < STEPS.length - 1) {
-              const nextStep = STEPS[currentStepIndex + 1];
               setCurrentStepIndex(prev => prev + 1);
               setProgress(0);
-              setMessage(STEP_CONFIG[nextStep].instruction);
+              // Message will be set by the step change useEffect
             } else {
               setMessage('Validação concluída!');
               setTimeout(() => {
@@ -169,7 +180,8 @@ export function LivenessChallenge({
     currentStep, 
     currentStepIndex, 
     progress, 
-    blinkDetected,
+    blinkValidated,
+    frontStepStartTime,
     faceDescriptor,
     getHeadPose,
     isLookingFront,
@@ -182,15 +194,12 @@ export function LivenessChallenge({
   useEffect(() => {
     if (!modelsLoaded) return;
 
-    setMessage(stepConfig.instruction);
-    setProgress(0);
-
     const interval = setInterval(checkPose, 100);
 
     return () => {
       clearInterval(interval);
     };
-  }, [modelsLoaded, currentStepIndex, checkPose]);
+  }, [modelsLoaded, checkPose]);
 
   if (!modelsLoaded) {
     return (
@@ -241,12 +250,16 @@ export function LivenessChallenge({
       </div>
 
       <div className="flex items-center gap-3 mb-8 px-4">
-        <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center ${
-          blinkDetected ? 'border-emerald-500 bg-emerald-500/20' : 'border-white/30'
-        }`}>
-          <span className="text-white text-lg">{blinkDetected ? '✓' : '👁'}</span>
-        </div>
-        <span className="text-white text-sm">Pisque para confirmar</span>
+        {currentStep === 'front' && (
+          <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center ${
+            blinkValidated ? 'border-emerald-500 bg-emerald-500/20' : 'border-white/30'
+          }`}>
+            <span className="text-white text-lg">{blinkValidated ? '✓' : '👁'}</span>
+          </div>
+        )}
+        {currentStep === 'front' && (
+          <span className="text-white text-sm">Pisque para confirmar</span>
+        )}
         
         <div className="ml-auto flex items-center gap-2">
           <span className="text-white/70 text-xs font-mono">

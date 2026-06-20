@@ -93,6 +93,7 @@ export function calculateEAR(landmarks: faceapi.FaceLandmarks68): number {
 }
 
 export const BLINK_THRESHOLD = 0.25;
+export const BLINK_THRESHOLD_FRONT = 0.30;
 export const YAW_THRESHOLD_FRONT = 25;
 export const YAW_THRESHOLD_SIDE = 30;
 export const PITCH_THRESHOLD = 20;

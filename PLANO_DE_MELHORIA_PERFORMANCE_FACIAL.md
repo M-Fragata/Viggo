@@ -26,10 +26,19 @@
 | Feature | Arquivos | Status |
 |---------|----------|--------|
 | Head pose detection (yaw/pitch/roll) via landmarks 68 | `src/hooks/useHeadPose.ts` | ✅ **Concluído** |
-| Blink detection (EAR - Eye Aspect Ratio) | `src/hooks/useHeadPose.ts` | ✅ **Concluído** |
+| Blink detection (EAR - Eye Aspect Ratio) - **Simplificado: apenas frontal** | `src/hooks/useHeadPose.ts`, `src/components/LivenessChallenge.tsx` | ✅ **Concluído** |
 | Componente animação guiada: Frente → Esquerda → Direita | `src/components/LivenessChallenge.tsx` | ✅ **Concluído** |
 | Integração no fluxo check-in (pontoPage) | `src/pages/pontoPage.tsx` | ✅ **Concluído** |
 | Validação similaridade durante desafio (distance < 0.5) | `LivenessChallenge.tsx` | ✅ **Concluído** |
+
+### Melhoria Recente: Blink Detection Simplificado
+| Mudança | Arquivo | Detalhe |
+|---------|---------|---------|
+| Blink apenas na etapa frontal (threshold 0.30) | `useHeadPose.ts`, `LivenessChallenge.tsx` | Mais tolerante |
+| Laterais: apenas head pose (sem blink) | `LivenessChallenge.tsx` | Remove friction |
+| Timeout 10s fallback no frontal | `LivenessChallenge.tsx` | Auto-avança se não piscar |
+| Reset blink ao mudar etapa/cancelar | `LivenessChallenge.tsx` | Estado limpo |
+| UI: ícone blink apenas no frontal | `LivenessChallenge.tsx` | Visual limpo |
 
 ### Fase 2: Backend Leve em Docker (Semana 2-3) - 0 custo extra
 **Arquitetura:**
