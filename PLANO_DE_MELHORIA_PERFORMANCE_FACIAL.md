@@ -48,6 +48,22 @@
 | Decay apenas no front step | `LivenessChallenge.tsx` | Laterais sem decay |
 | Reset timer ao trocar etapa | `LivenessChallenge.tsx` | Estado limpo |
 
+### Nova Implementação: Ball Animation Liveness (Framer Motion) ✅ **CONCLUÍDA**
+| Feature | Arquivo | Detalhe |
+|---------|---------|---------|
+| Ball animation com Framer Motion | `LivenessChallenge.tsx` | Bola branca → verde esmeralda (ok) / vermelho sutil (erro) | ✅
+| Anel de progresso circular animado | `LivenessChallenge.tsx` | w-28 (112px), stroke 6, progresso linear 0-100% | ✅
+| Feedback háptico (vibrate) | `LivenessChallenge.tsx` | navigator.vibrate() em transições e confirmações | ✅
+| Target visual lateral | `LivenessChallenge.tsx` | Bola arrasta para lateral, alvo indica posição correta (25°) | ✅
+| Transições suaves entre etapas | `LivenessChallenge.tsx` | Spring animation stiffness 400 damping 35 | ✅
+| Debug overlay (dev only) | `LivenessChallenge.tsx` | Yaw, pitch, progress, step, device info | ✅
+| Threshold lateral ajustado | `useHeadPose.ts` | `YAW_THRESHOLD_SIDE = 25` (era 30, mais confortável) | ✅
+| Feedback visual de erro sutil | `LivenessChallenge.tsx` | Vermelho sutil quando sai da posição | ✅
+| Cores: bola branca → verde esmeralda (ok) / vermelho sutil (erro) | `LivenessChallenge.tsx` | Design system consistente | ✅
+| Tamanho: w-28 (112px) | `LivenessChallenge.tsx` | Compacto e visível | ✅
+| Sem som, apenas vibrate | `LivenessChallenge.tsx` | navigator.vibrate() apenas | ✅
+| Performance: cleanup animations no unmount | `LivenessChallenge.tsx` | animate().stop() no cleanup | ✅
+
 ### Fase 2: Backend Leve em Docker (Semana 2-3) - 0 custo extra
 **Arquitetura:**
 ```
@@ -126,13 +142,13 @@ services:
 
 ## Próximos Passos (Aprovação Necessária)
 
-1. **Testar mobile real** - Ajustar thresholds de yaw/pitch/blink (`YAW_THRESHOLD_FRONT=25`, `YAW_THRESHOLD_SIDE=30`)
+1. **Testar mobile real** - Ajustar thresholds de yaw/pitch/blink se necessário (`YAW_THRESHOLD_FRONT=25`, `YAW_THRESHOLD_SIDE=25`, `BLINK_THRESHOLD=0.30`) — **Pronto para teste**
 2. **Quantização modelos** - Script FP16/INT8 para `/public/models` (opcional, ganho marginal)
 3. **Decidir Fase 2:** Modelo insightface (`buffalo_l` ~60MB vs `arcface_r100` ~100MB)? Só se volume ≥ 1k/dia
 4. **Validar:** Estrutura de pastas para `face-api/` (novo microserviço)?
 5. **Alinhar:** Threshold de similaridade inicial (sugestão: 0.45-0.5 cosine)?
 
-**✅ FASE 1, 1.5 e 3 CONCLUÍDAS**
+**✅ FASE 1, 1.5, 3 e Ball Animation Liveness CONCLUÍDAS**
 
 ---
 
@@ -153,6 +169,7 @@ services:
 ### ✅ **Concluídos Fase 1 (Recentes):**
 - `frontend/src/components/VerifyDescriptor.tsx` - Throttle com requestAnimationFrame ✅
 - `frontend/src/pages/RegisterFace.tsx` - Liveness no cadastro ✅
+- `frontend/src/components/LivenessChallenge.tsx` - Ball Animation Liveness (Framer Motion) ✅
 
 ### ✅ **Concluídos Fase 3 (Hardening SaaS):**
 - `backend/src/database/prisma-extensions.ts` - Multi-tenancy extension ✅
