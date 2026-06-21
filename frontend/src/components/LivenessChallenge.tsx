@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useHeadPose, calculateEAR, BLINK_THRESHOLD_FRONT, YAW_THRESHOLD_FRONT, YAW_THRESHOLD_SIDE } from '../hooks/useHeadPose';
 import type { HeadPose } from '../hooks/useHeadPose';
 import * as faceapi from 'face-api.js';
+import { motion, useMotionValue, useSpring, useTransform, animate } from 'framer-motion';
 
 type LivenessStep = 'front' | 'left' | 'right' | 'complete';
 
@@ -12,28 +13,108 @@ interface LivenessChallengeProps {
   faceDescriptor?: Float32Array;
 }
 
-const STEP_CONFIG: Record<Exclude<LivenessStep, 'complete'>, { label: string; instruction: string; icon: string; color: string }> = {
+const STEP_CONFIG: Record<Exclude<LivenessStep, 'complete'>, { 
+  label: string; 
+  instruction: string; 
+  icon: string; 
+  color: string; 
+  targetX: number;
+  targetY: number;
+  requiresBlink: boolean;
+  threshold: number;
+}> = {
   front: {
     label: 'Olhe para frente',
-    instruction: 'Mantenha o rosto centralizado',
+    instruction: 'Centralize o rosto no círculo',
     icon: '👁️',
-    color: 'bg-emerald-500',
+    color: 'emerald',
+    targetX: 0,
+    targetY: 0,
+    requiresBlink: true,
+    threshold: 25,
   },
   left: {
     label: 'Vire para a esquerda',
-    instruction: 'Devagar, até o limite confortável',
+    instruction: 'Vire o rosto até a bola chegar ao alvo (≈25°)',
     icon: '◀️',
-    color: 'bg-blue-500',
+    color: 'blue',
+    targetX: -1,
+    targetY: 0,
+    requiresBlink: false,
+    threshold: 25,
   },
   right: {
     label: 'Vire para a direita',
-    instruction: 'Devagar, até o limite confortável',
+    instruction: 'Vire o rosto até a bola chegar ao alvo (≈25°)',
     icon: '▶️',
-    color: 'bg-blue-500',
+    color: 'blue',
+    targetX: 1,
+    targetY: 0,
+    requiresBlink: false,
+    threshold: 25,
   },
 };
 
 const STEPS: Exclude<LivenessStep, 'complete'>[] = ['front', 'left', 'right'];
+
+const RING_RADIUS = 54;
+const RING_STROKE = 6;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+
+function BallVisual({
+  ballXPercent,
+  ballYPercent,
+  ringOffset,
+  isCorrectPose,
+}: {
+  ballXPercent: import('framer-motion').MotionValue<string>;
+  ballYPercent: import('framer-motion').MotionValue<string>;
+  ringOffset: import('framer-motion').MotionValue<number>;
+  isCorrectPose: boolean;
+}) {
+  return (
+    <motion.div className="relative w-28 h-28 flex items-center justify-center">
+      <svg width="120" height="120" viewBox="0 0 120 120" className="transform -rotate-90">
+        <circle
+          cx="60"
+          cy="60"
+          r={RING_RADIUS}
+          fill="none"
+          stroke="rgba(255,255,255,0.15)"
+          strokeWidth={RING_STROKE}
+        />
+        <motion.circle
+          cx="60"
+          cy="60"
+          r={RING_RADIUS}
+          fill="none"
+          stroke={isCorrectPose ? '#10b981' : '#ef4444'}
+          strokeWidth={RING_STROKE}
+          strokeLinecap="round"
+          strokeDasharray={RING_CIRCUMFERENCE}
+          style={{ strokeDashoffset: ringOffset }}
+        />
+      </svg>
+      <motion.div
+        className="absolute w-10 h-10 rounded-full shadow-lg"
+        style={{
+          x: ballXPercent,
+          y: ballYPercent,
+          backgroundColor: isCorrectPose ? '#10b981' : '#f87171',
+        }}
+        animate={isCorrectPose ? { boxShadow: '0 0 20px rgba(16, 185, 129, 0.5)' } : { boxShadow: '0 0 8px rgba(248, 113, 113, 0.3)' }}
+      />
+      {isCorrectPose && (
+        <motion.div
+          className="absolute w-2.5 h-2.5 rounded-full bg-white/20 border border-white/30"
+          initial={{ opacity: 0, scale: 0 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0 }}
+        />
+      )}
+    </motion.div>
+  );
+}
 
 export function LivenessChallenge({ 
   videoRef, 
@@ -41,6 +122,7 @@ export function LivenessChallenge({
   onCancel,
   faceDescriptor 
 }: LivenessChallengeProps) {
+  const animationRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [pose, setPose] = useState<HeadPose>({ yaw: 0, pitch: 0, roll: 0 });
   const [progress, setProgress] = useState(0);
@@ -50,8 +132,35 @@ export function LivenessChallenge({
   const [message, setMessage] = useState('Iniciando validação...');
   const [bestFrameDescriptor, setBestFrameDescriptor] = useState<Float32Array | null>(null);
   const [modelsLoaded, setModelsLoaded] = useState(false);
+  const [wasCorrectPose, setWasCorrectPose] = useState(false);
+  const [ballColorState, setBallColorState] = useState<'neutral' | 'correct' | 'error'>('neutral');
+  const progressRef = useRef(0);
+  const currentStepRef = useRef(currentStep);
+  const currentStepIndexRef = useRef(currentStepIndex);
+
+  progressRef.current = progress;
+  currentStepRef.current = currentStep;
+  currentStepIndexRef.current = currentStepIndex;
 
   const { getHeadPose, isLookingFront, isLookingLeft, isLookingRight } = useHeadPose();
+
+  // Framer Motion values
+  const ballX = useMotionValue(0);
+  const ballY = useMotionValue(0);
+
+  const ringMotionVal = useMotionValue(0);
+
+  // Spring animations for smooth movement
+  const ballXSpring = useSpring(ballX, { stiffness: 400, damping: 35, mass: 0.8 });
+  const ballYSpring = useSpring(ballY, { stiffness: 400, damping: 35, mass: 0.8 });
+  const ringSpring = useSpring(ringMotionVal, { stiffness: 200, damping: 25 });
+
+  // Transform for ball position (normalized -1 to 1 -> percentage for CSS)
+  const ballXPercent = useTransform(ballXSpring, [-1, 1], ['-80%', '80%']);
+  const ballYPercent = useTransform(ballYSpring, [-1, 1], ['-80%', '80%']);
+  
+  // Ring progress transform (0-100 -> stroke-dashoffset)
+  const ringOffset = useTransform(ringSpring, [0, 100], [RING_CIRCUMFERENCE, 0]);
 
   const currentStep = STEPS[currentStepIndex];
   const stepConfig = STEP_CONFIG[currentStep];
@@ -74,16 +183,32 @@ export function LivenessChallenge({
     loadModels();
   }, []);
 
-  // Reset blink state when step changes
+  // Reset state when step changes
   useEffect(() => {
     setBlinkValidated(false);
     setFrontStepStartTime(Date.now());
-    setLastIncrementTime(Date.now());
+    setBallColorState('neutral');
     if (modelsLoaded) {
       setMessage(stepConfig.instruction);
       setProgress(0);
+      ringMotionVal.set(0);
+      animate(ballX, stepConfig.targetX, {
+        type: 'spring',
+        stiffness: 400,
+        damping: 35,
+        mass: 0.8,
+      });
+      animate(ballY, stepConfig.targetY, {
+        type: 'spring',
+        stiffness: 400,
+        damping: 35,
+        mass: 0.8,
+      });
+      if ('vibrate' in navigator) {
+        navigator.vibrate(30);
+      }
     }
-  }, [currentStepIndex, modelsLoaded, stepConfig.instruction]);
+  }, [currentStepIndex, modelsLoaded, stepConfig.instruction, stepConfig.targetX, stepConfig.targetY]);
 
   const checkPose = useCallback(async () => {
     if (!videoRef.current || !modelsLoaded || videoRef.current.readyState !== 4) {
@@ -91,9 +216,9 @@ export function LivenessChallenge({
     }
 
     try {
-      const detectorOptions = new faceapi.TinyFaceDetectorOptions({ 
-        inputSize: 320, 
-        scoreThreshold: 0.5 
+      const detectorOptions = new faceapi.TinyFaceDetectorOptions({
+        inputSize: 320,
+        scoreThreshold: 0.5,
       });
 
       const detection = await faceapi
@@ -108,32 +233,41 @@ export function LivenessChallenge({
         const ear = calculateEAR(detection.landmarks);
 
         let stepPassed = false;
+        const step = currentStepRef.current;
 
-        if (currentStep === 'front') {
-          // Front step: pose + blink validation (threshold 0.30)
+        if (step === 'front') {
           const poseOk = isLookingFront(headPose, YAW_THRESHOLD_FRONT);
-          const blinked = ear < BLINK_THRESHOLD_FRONT; // 0.30 - mais tolerante
+          const blinked = ear < BLINK_THRESHOLD_FRONT;
           const timeInFront = Date.now() - frontStepStartTime;
 
           if (blinked) {
             setBlinkValidated(true);
           }
 
-          // Front step passes if: pose OK + (blink validated OR 10s timeout)
           stepPassed = poseOk && (blinkValidated || timeInFront > 10000);
         } else {
-          // Left/Right steps: ONLY head pose (no blink required)
-          stepPassed = currentStep === 'left' 
+          stepPassed = step === 'left'
             ? isLookingLeft(headPose, YAW_THRESHOLD_SIDE)
             : isLookingRight(headPose, YAW_THRESHOLD_SIDE);
         }
 
+        // Drive ball position from actual yaw (normalized to thresholds)
+        const normalizedYaw = Math.max(-1, Math.min(1, headPose.yaw / YAW_THRESHOLD_SIDE));
+        animate(ballX, normalizedYaw, {
+          type: 'spring',
+          stiffness: 400,
+          damping: 35,
+          mass: 0.8,
+        });
+
         if (stepPassed) {
-          // Increment: +25% on valid frame
-          setProgress(prev => Math.min(100, prev + 25));
+          const newProgress = Math.min(100, progressRef.current + 25);
+          setProgress(newProgress);
+          ringMotionVal.set(newProgress);
           setLastIncrementTime(Date.now());
-          
-          if (progress >= 80) {
+          setBallColorState('correct');
+
+          if (newProgress >= 80) {
             if (faceDescriptor) {
               const distance = faceapi.euclideanDistance(detection.descriptor, faceDescriptor);
               if (distance < 0.5) {
@@ -143,12 +277,20 @@ export function LivenessChallenge({
               setBestFrameDescriptor(detection.descriptor);
             }
 
-            if (currentStepIndex < STEPS.length - 1) {
-              setCurrentStepIndex(prev => prev + 1);
+            const stepIdx = currentStepIndexRef.current;
+            if (stepIdx < STEPS.length - 1) {
+              setCurrentStepIndex(stepIdx + 1);
               setProgress(0);
-              // Message will be set by the step change useEffect
+              if ('vibrate' in navigator) {
+                navigator.vibrate([30, 50, 30]);
+              }
             } else {
               setMessage('Validação concluída!');
+              ringMotionVal.set(100);
+              setProgress(100);
+              if ('vibrate' in navigator) {
+                navigator.vibrate(200);
+              }
               setTimeout(() => {
                 if (bestFrameDescriptor) {
                   onComplete(bestFrameDescriptor);
@@ -157,39 +299,42 @@ export function LivenessChallenge({
             }
           }
         } else {
-          // Decay: Only on front step, linear -5% after 4 seconds of no increment
-          if (currentStep === 'front') {
+          setBallColorState('error');
+          if (step === 'front') {
             const timeSinceIncrement = Date.now() - lastIncrementTime;
             if (timeSinceIncrement > 4000) {
-              setProgress(prev => Math.max(0, prev - 5));
+              const newProgress = Math.max(0, progressRef.current - 5);
+              setProgress(newProgress);
+              ringMotionVal.set(newProgress);
             }
           }
         }
 
         const yawDeg = Math.round(headPose.yaw);
-        
+
         if (!stepPassed) {
-          if (currentStep === 'front') {
+          if (step === 'front') {
             setMessage(`Centralize o rosto (Yaw: ${yawDeg}°)`);
-          } else if (currentStep === 'left') {
+          } else if (step === 'left') {
             setMessage(`Vire mais para a esquerda (Yaw: ${yawDeg}°)`);
-          } else if (currentStep === 'right') {
+          } else if (step === 'right') {
             setMessage(`Vire mais para a direita (Yaw: ${yawDeg}°)`);
           }
         }
+        setWasCorrectPose(stepPassed);
       } else {
         setMessage('Rosto não detectado. Posicione-se frente à câmera.');
+        setBallColorState('neutral');
+        ringMotionVal.set(0);
         setProgress(0);
+        setWasCorrectPose(false);
       }
     } catch (err) {
       console.error('Erro na detecção:', err);
     }
   }, [
-    videoRef, 
-    modelsLoaded, 
-    currentStep, 
-    currentStepIndex, 
-    progress, 
+    videoRef,
+    modelsLoaded,
     blinkValidated,
     frontStepStartTime,
     lastIncrementTime,
@@ -199,16 +344,21 @@ export function LivenessChallenge({
     isLookingLeft,
     isLookingRight,
     onComplete,
-    bestFrameDescriptor
+    bestFrameDescriptor,
+    ballX,
   ]);
 
   useEffect(() => {
     if (!modelsLoaded) return;
 
     const interval = setInterval(checkPose, 100);
+    animationRef.current = interval;
 
     return () => {
       clearInterval(interval);
+      animationRef.current = null;
+      animate(ballX, 0, { type: 'spring', stiffness: 400, damping: 35 });
+      ringMotionVal.set(0);
     };
   }, [modelsLoaded, checkPose]);
 
@@ -239,20 +389,22 @@ export function LivenessChallenge({
               <div
                 key={step}
                 className={`w-8 h-2 rounded transition-colors ${
-                  idx < currentStepIndex 
-                    ? 'bg-emerald-500' 
-                    : idx === currentStepIndex 
-                    ? 'bg-yellow-500' 
+                  idx < currentStepIndex
+                    ? 'bg-emerald-500'
+                    : idx === currentStepIndex
+                    ? 'bg-yellow-500'
                     : 'bg-white/30'
                 }`}
               />
             ))}
           </div>
         </div>
-        
+
         <div className="w-full h-2 bg-white/20 rounded overflow-hidden">
           <div
-            className={`h-full ${stepConfig.color} transition-all duration-300`}
+            className={`h-full transition-all duration-300 ${
+              ballColorState === 'correct' ? 'bg-emerald-500' : ballColorState === 'error' ? 'bg-red-500' : 'bg-blue-500'
+            }`}
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -260,18 +412,25 @@ export function LivenessChallenge({
         <p className="text-white text-center mt-2 text-sm">{message}</p>
       </div>
 
+      <BallVisual
+        ballXPercent={ballXPercent}
+        ballYPercent={ballYPercent}
+        ringOffset={ringOffset}
+        isCorrectPose={wasCorrectPose}
+      />
+
       <div className="flex items-center gap-3 mb-8 px-4">
         {currentStep === 'front' && (
-          <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center ${
-            blinkValidated ? 'border-emerald-500 bg-emerald-500/20' : 'border-white/30'
-          }`}>
-            <span className="text-white text-lg">{blinkValidated ? '✓' : '👁'}</span>
-          </div>
+          <>
+            <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center ${
+              blinkValidated ? 'border-emerald-500 bg-emerald-500/20' : 'border-white/30'
+            }`}>
+              <span className="text-white text-lg">{blinkValidated ? '✓' : '👁'}</span>
+            </div>
+            <span className="text-white text-sm">Pisque para confirmar</span>
+          </>
         )}
-        {currentStep === 'front' && (
-          <span className="text-white text-sm">Pisque para confirmar</span>
-        )}
-        
+
         <div className="ml-auto flex items-center gap-2">
           <span className="text-white/70 text-xs font-mono">
             Yaw: {Math.round(pose.yaw)}°
@@ -288,6 +447,16 @@ export function LivenessChallenge({
       >
         Cancelar
       </button>
+
+      {import.meta.env.DEV && (
+        <div className="fixed top-2 left-2 z-50 bg-black/80 text-white text-xs font-mono p-3 rounded-lg pointer-events-none">
+          <div>Step: {currentStep} ({currentStepIndex + 1}/{STEPS.length})</div>
+          <div>Yaw: {Math.round(pose.yaw)}° | Pitch: {Math.round(pose.pitch)}° | Roll: {Math.round(pose.roll)}°</div>
+          <div>Progress: {progress}% | Blink: {String(blinkValidated)}</div>
+          <div>Ball: {ballColorState}</div>
+          <div>Device: {navigator.userAgent.match(/Mobile|Android|iPhone/) ? 'Mobile' : 'Desktop'}</div>
+        </div>
+      )}
     </div>
   );
 }
