@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, Outlet } from "react-router";
 import { LogOut, Menu, X } from "lucide-react";
 
@@ -6,7 +6,16 @@ import logo from "../assets/logo.png"
 
 export function LayoutPage() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [name, setName] = useState("");
+    const [name, _setName] = useState(() => {
+        const userRaw = localStorage.getItem("@viggo:user");
+        if (!userRaw) return "";
+        try {
+            const user = JSON.parse(userRaw);
+            return user ? user.name.split(" ")[0] : "";
+        } catch {
+            return "";
+        }
+    });
 
     const handleLogout = () => {
         localStorage.removeItem("@viggo:token");
@@ -15,14 +24,6 @@ export function LayoutPage() {
     };
 
     const closeMenu = () => setIsMenuOpen(false);
-
-    useEffect(() => {
-        const userRaw = localStorage.getItem("@viggo:user");
-        
-        const user = JSON.parse(userRaw!);
-
-        setName(user ? user.name.split(" ")[0] : "");
-    }, []);
 
     return (
         <div className="min-h-screen flex flex-col overflow-hidden bg-gray-50 relative">

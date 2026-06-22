@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
 import { useHeadPose, calculateEAR, BLINK_THRESHOLD_FRONT, YAW_THRESHOLD_FRONT, YAW_THRESHOLD_SIDE } from '../hooks/useHeadPose';
 import type { HeadPose } from '../hooks/useHeadPose';
 import * as faceapi from 'face-api.js';
@@ -117,9 +117,9 @@ function BallVisual({
       {/* Actual head position ball */}
       <motion.div
         className="absolute w-10 h-10 rounded-full shadow-lg"
-        x={ballXPercent}
-        y={ballYPercent}
         style={{
+          x: ballXPercent,
+          y: ballYPercent,
           backgroundColor: isCorrectPose ? '#10b981' : '#f87171',
         }}
         animate={isCorrectPose ? { boxShadow: '0 0 20px rgba(16, 185, 129, 0.5)' } : { boxShadow: '0 0 8px rgba(248, 113, 113, 0.3)' }}
@@ -147,8 +147,8 @@ export function LivenessChallenge({
   const [pose, setPose] = useState<HeadPose>({ yaw: 0, pitch: 0, roll: 0 });
   const [progress, setProgress] = useState(0);
   const [blinkValidated, setBlinkValidated] = useState(false);
-  const [frontStepStartTime, setFrontStepStartTime] = useState(Date.now());
-  const [lastIncrementTime, setLastIncrementTime] = useState(Date.now());
+  const [frontStepStartTime, setFrontStepStartTime] = useState(() => Date.now());
+  const [lastIncrementTime, setLastIncrementTime] = useState(() => Date.now());
   const [message, setMessage] = useState('Iniciando validação...');
   const [bestFrameDescriptor, setBestFrameDescriptor] = useState<Float32Array | null>(null);
   const [modelsLoaded, setModelsLoaded] = useState(false);
@@ -158,9 +158,11 @@ export function LivenessChallenge({
   const currentStepRef = useRef<LivenessStep>('front');
   const currentStepIndexRef = useRef(0);
 
-  progressRef.current = progress;
-  currentStepRef.current = STEPS[currentStepIndex];
-  currentStepIndexRef.current = currentStepIndex;
+  useLayoutEffect(() => {
+    progressRef.current = progress;
+    currentStepRef.current = STEPS[currentStepIndex];
+    currentStepIndexRef.current = currentStepIndex;
+  }, [progress, currentStepIndex]);
 
   const { getHeadPose, isLookingFront, isLookingLeft, isLookingRight } = useHeadPose();
 

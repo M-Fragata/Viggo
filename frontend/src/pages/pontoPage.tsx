@@ -82,7 +82,7 @@ export function PontoPage() {
 
         try {
             if (!token) {
-                window.location.href = "/"
+                window.location.assign("/")
                 return { success: false }
             }
 
@@ -95,7 +95,7 @@ export function PontoPage() {
             })
 
             if (response.status === 403) {
-                window.location.href = "/register"
+                window.location.assign("/register")
                 return { success: false }
             }
 
@@ -138,13 +138,13 @@ export function PontoPage() {
 
             return { success: true };
 
-        } catch (error) {
+        } catch {
             setPendingCheckin(null);
             return { success: false }
         }
     }
 
-    const handleLivenessComplete = async (_descriptor: Float32Array) => {
+    const handleLivenessComplete = async (__descriptor: Float32Array) => {
         if (!pendingCheckin) {
             setShowLiveness(false);
             return { success: false };
@@ -173,7 +173,7 @@ export function PontoPage() {
         
         try {
             if (!token) {
-                window.location.href = "/"
+                window.location.assign("/")
                 return { success: false }
             }
 
@@ -227,7 +227,7 @@ export function PontoPage() {
 
         try {
 
-            if (!token) return window.location.href = "/"
+            if (!token) return window.location.assign("/")
 
             const response = await fetch(`${API_URL}/checkins`, {
                 method: "GET",

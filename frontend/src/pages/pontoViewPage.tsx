@@ -1,21 +1,29 @@
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { API_URL } from "../utils/api"
 
 import { Input } from "../components/Input"
 import { Button } from "../components/Button"
 import { Clock, MapPin, Calendar } from "lucide-react"
 
+type Checkin = {
+  id: string;
+  createdAt: string;
+  type: string;
+  latitude: number;
+  longitude: number;
+};
+
 export function PontoViewPage() {
     const [date, setDate] = useState(new Date().toISOString().split("T")[0])
-    const [checkins, setCheckins] = useState<any[]>([])
+    const [checkins, setCheckins] = useState<Checkin[]>([])
 
-    async function handleGetPontos() {
+    const handleGetPontos = useCallback(async () => {
 
         const token = localStorage.getItem("@viggo:token")
 
         try {
 
-            if (!token) return window.location.href = "/"
+            if (!token) return window.location.assign("/")
 
             const response = await fetch(`${API_URL}/checkins?date=${date}`, {
                 method: "GET",
@@ -40,7 +48,7 @@ export function PontoViewPage() {
             alert("Erro ao buscar os pontos. Tente novamente.");
         }
 
-    }
+    }, [date])
 
     const formatType = (type: string) => {
         const labels: Record<string, string> = {
@@ -78,7 +86,7 @@ export function PontoViewPage() {
 
     }, [checkins])
 
-    async function handleGetComprovantes(pontos: any[]) {
+    async function handleGetComprovantes(pontos: Checkin[]) {
         const printWindow = window.open("", "_blank")
         if (!printWindow) return
 
@@ -180,7 +188,7 @@ export function PontoViewPage() {
 
     useEffect(() => {
         handleGetPontos()
-    }, [date])
+    }, [handleGetPontos])
 
     return (
         <div className="max-w-4xl mx-auto flex flex-col gap-6 md:my-0 my-4">

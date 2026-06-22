@@ -18,7 +18,7 @@ export function LoginPage() {
     }
   });
 
-  async function handleSubmit(_: any, formData: FormData) {
+  async function handleSubmit(_prevState: unknown, formData: FormData) {
 
     const bodySchema = z.object({
       email: z.email("Email inválido"),
@@ -51,7 +51,7 @@ export function LoginPage() {
 
       window.location.href = "/";
 
-    } catch (error) {
+    } catch {
       return { message: "Erro ao fazer login, tente novamente em alguns segundos!", payload }
     }
 

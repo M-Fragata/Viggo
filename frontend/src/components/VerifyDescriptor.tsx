@@ -5,7 +5,6 @@ export function verificarPonto(faceDescriptor: number[],
 
   if (!videoRef.current) return Promise.resolve({ success: false });
 
-  try {
     setMessage("Buscando rosto...")
 
     const detectorOptions = new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 });
@@ -80,9 +79,4 @@ export function verificarPonto(faceDescriptor: number[],
 
       processFrame();
     });
-
-  } catch (error) {
-    setMessage("Erro no sensor de biometria.");
-    return Promise.resolve({ success: false });
-  }
 }

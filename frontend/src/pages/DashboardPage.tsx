@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { API_URL } from "../utils/api"
 import { Input } from "../components/Input"
 import { MapPin, Calendar, Users, CheckCircle, Search, LayoutList } from "lucide-react"
@@ -30,7 +30,7 @@ export function DashboardPage() {
     const [dashboardNav, setDashboardNav] = useState("Funcionários")
     const [date, setDate] = useState(new Date().toISOString().split("T")[0])
 
-    async function handleGetFuncionarios() {
+    const handleGetFuncionarios = useCallback(async () => {
         const token = localStorage.getItem("@viggo:token")
         if (!token) return window.location.href = "/"
 
@@ -48,7 +48,7 @@ export function DashboardPage() {
         } catch (error) {
             console.error("Error fetching employees:", error)
         }
-    }
+    }, [date])
 
     // Filtra apenas funcionários que têm checkins no dia para alimentar a aba "Presentes"
     const presentEmployees = employees.filter(emp => emp.checkins && emp.checkins.length > 0)
@@ -68,7 +68,7 @@ export function DashboardPage() {
 
     useEffect(() => {
         handleGetFuncionarios()
-    }, [date])
+    }, [handleGetFuncionarios])
 
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 overflow-x-hidden"> {/* Container principal - evita scroll horizontal na página */}

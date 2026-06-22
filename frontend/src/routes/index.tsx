@@ -4,28 +4,25 @@ import { AuthRoutes } from "./AuthRoutes"
 import { AdminRoutes } from "./AdminRoutes"
 import { UserRoutes } from "./UserRoutes"
 
-export function Routes(){
+function AccessRoute({ userRole }: { userRole: string }) {
+    switch (userRole) {
+        case "ADMIN":
+            return <AdminRoutes />
+        case "USER":
+            return <UserRoutes />
+        default:
+            return <AuthRoutes />
+    }
+}
 
+export function Routes() {
     const storageUser = localStorage.getItem("@viggo:user")
 
     const user = storageUser ? JSON.parse(storageUser) : { role: "" }
 
-    function AcessRoute() {
-
-        switch(user.role) {
-            case "ADMIN":
-                return < AdminRoutes/>
-            case "USER":
-                return < UserRoutes/>
-            default:
-                return < AuthRoutes/>
-        }
-
-    }
-
     return (
         <BrowserRouter>
-            <AcessRoute />
+            <AccessRoute userRole={user.role} />
         </BrowserRouter>
     )
 }

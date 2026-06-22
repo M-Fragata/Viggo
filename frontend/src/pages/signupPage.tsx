@@ -19,7 +19,7 @@ export function SignupPage() {
     }
   });
 
-  async function handleSubmit(_: any, formData: FormData) {
+  async function handleSubmit(_prevState: unknown, formData: FormData) {
 
     const bodySchema = z.object({
       name: z.string().min(3, "O nome deve conter no mínimo 3 caracteres"),
