@@ -66,12 +66,19 @@ function BallVisual({
   ballYPercent,
   ringOffset,
   isCorrectPose,
+  targetX,
+  targetY,
 }: {
   ballXPercent: import('framer-motion').MotionValue<string>;
   ballYPercent: import('framer-motion').MotionValue<string>;
   ringOffset: import('framer-motion').MotionValue<number>;
   isCorrectPose: boolean;
+  targetX: number;
+  targetY: number;
 }) {
+  const targetXPercent = `${targetX * 80}%`;
+  const targetYPercent = `${targetY * 80}%`;
+
   return (
     <motion.div className="relative w-28 h-28 flex items-center justify-center">
       <svg width="120" height="120" viewBox="0 0 120 120" className="transform -rotate-90">
@@ -95,11 +102,24 @@ function BallVisual({
           style={{ strokeDashoffset: ringOffset }}
         />
       </svg>
+      {/* Target marker - shows where user should look */}
+      <motion.div
+        className="absolute w-10 h-10 rounded-full border-2 border-dashed"
+        style={{
+          x: targetXPercent,
+          y: targetYPercent,
+          borderColor: isCorrectPose ? '#10b981' : '#fbbf24',
+          backgroundColor: 'transparent',
+        }}
+        animate={{ opacity: [0.6, 1, 0.6] }}
+        transition={{ duration: 1.5, repeat: Infinity }}
+      />
+      {/* Actual head position ball */}
       <motion.div
         className="absolute w-10 h-10 rounded-full shadow-lg"
+        x={ballXPercent}
+        y={ballYPercent}
         style={{
-          x: ballXPercent,
-          y: ballYPercent,
           backgroundColor: isCorrectPose ? '#10b981' : '#f87171',
         }}
         animate={isCorrectPose ? { boxShadow: '0 0 20px rgba(16, 185, 129, 0.5)' } : { boxShadow: '0 0 8px rgba(248, 113, 113, 0.3)' }}
@@ -135,11 +155,11 @@ export function LivenessChallenge({
   const [wasCorrectPose, setWasCorrectPose] = useState(false);
   const [ballColorState, setBallColorState] = useState<'neutral' | 'correct' | 'error'>('neutral');
   const progressRef = useRef(0);
-  const currentStepRef = useRef(currentStep);
-  const currentStepIndexRef = useRef(currentStepIndex);
+  const currentStepRef = useRef<LivenessStep>('front');
+  const currentStepIndexRef = useRef(0);
 
   progressRef.current = progress;
-  currentStepRef.current = currentStep;
+  currentStepRef.current = STEPS[currentStepIndex];
   currentStepIndexRef.current = currentStepIndex;
 
   const { getHeadPose, isLookingFront, isLookingLeft, isLookingRight } = useHeadPose();
@@ -192,23 +212,11 @@ export function LivenessChallenge({
       setMessage(stepConfig.instruction);
       setProgress(0);
       ringMotionVal.set(0);
-      animate(ballX, stepConfig.targetX, {
-        type: 'spring',
-        stiffness: 400,
-        damping: 35,
-        mass: 0.8,
-      });
-      animate(ballY, stepConfig.targetY, {
-        type: 'spring',
-        stiffness: 400,
-        damping: 35,
-        mass: 0.8,
-      });
       if ('vibrate' in navigator) {
         navigator.vibrate(30);
       }
     }
-  }, [currentStepIndex, modelsLoaded, stepConfig.instruction, stepConfig.targetX, stepConfig.targetY]);
+  }, [currentStepIndex, modelsLoaded, stepConfig.instruction]);
 
   const checkPose = useCallback(async () => {
     if (!videoRef.current || !modelsLoaded || videoRef.current.readyState !== 4) {
@@ -417,6 +425,8 @@ export function LivenessChallenge({
         ballYPercent={ballYPercent}
         ringOffset={ringOffset}
         isCorrectPose={wasCorrectPose}
+        targetX={stepConfig.targetX}
+        targetY={stepConfig.targetY}
       />
 
       <div className="flex items-center gap-3 mb-8 px-4">

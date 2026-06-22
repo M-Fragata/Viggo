@@ -59,12 +59,12 @@ export function useHeadPose() {
     return Math.abs(pose.yaw) < threshold && Math.abs(pose.pitch) < threshold;
   }, []);
 
-  const isLookingLeft = useCallback((pose: HeadPose, threshold = 20): boolean => {
-    return pose.yaw < -threshold && Math.abs(pose.pitch) < 20;
+  const isLookingLeft = useCallback((pose: HeadPose, threshold = 18): boolean => {
+    return pose.yaw < -threshold && Math.abs(pose.pitch) < 25;
   }, []);
 
-  const isLookingRight = useCallback((pose: HeadPose, threshold = 20): boolean => {
-    return pose.yaw > threshold && Math.abs(pose.pitch) < 20;
+  const isLookingRight = useCallback((pose: HeadPose, threshold = 18): boolean => {
+    return pose.yaw > threshold && Math.abs(pose.pitch) < 25;
   }, []);
 
   return { getHeadPose, isLookingFront, isLookingLeft, isLookingRight };
@@ -95,5 +95,5 @@ export function calculateEAR(landmarks: faceapi.FaceLandmarks68): number {
 export const BLINK_THRESHOLD = 0.25;
 export const BLINK_THRESHOLD_FRONT = 0.30;
 export const YAW_THRESHOLD_FRONT = 25;
-export const YAW_THRESHOLD_SIDE = 25;
-export const PITCH_THRESHOLD = 20;
+export const YAW_THRESHOLD_SIDE = 18;
+export const PITCH_THRESHOLD = 25;
