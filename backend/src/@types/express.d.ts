@@ -4,6 +4,8 @@ declare namespace Express {
             id: string;
             role: string;
             companyId?: string;
+            planTier?: string;
+            isMaster?: boolean;
         }
     }
 }
