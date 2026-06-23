@@ -1,0 +1,315 @@
+import { API_URL } from "../utils/api";
+
+interface FetchOptions extends RequestInit {
+  requiresAuth?: boolean;
+}
+
+async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {
+  const { requiresAuth = true, headers = {}, ...restOptions } = options;
+
+  const token = requiresAuth ? localStorage.getItem("@viggo:token") : null;
+
+  const response = await fetch(`${API_URL}${endpoint}`, {
+    ...restOptions,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token && { Authorization: `Bearer ${JSON.parse(token)}` }),
+      ...headers,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: "Erro na requisição" }));
+    throw new Error(error.message || `Erro ${response.status}`);
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  return response.json();
+}
+
+export const api = {
+  auth: {
+    login: (email: string, password: string) =>
+      fetchApi<{ user: User; token: string }>("/sessions/login", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+        requiresAuth: false,
+      }),
+
+    signup: (data: SignupCompanyDto) =>
+      fetchApi<SignupCompanyResponse>("/companies/signup", {
+        method: "POST",
+        body: JSON.stringify(data),
+        requiresAuth: false,
+      }),
+  },
+
+  company: {
+    getMe: () => fetchApi<CompanyResponse>("/companies/me"),
+    updateMe: (data: UpdateCompanyDto) =>
+      fetchApi<CompanyResponse>("/companies/me", {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    getUsage: () => fetchApi<UsageResponse>("/companies/me/usage"),
+
+    invites: {
+      list: () => fetchApi<InviteResponse[]>("/companies/me/invites"),
+      create: (data: CreateInviteDto) =>
+        fetchApi<{ invite: InviteWithUrl }>("/companies/me/invites", {
+          method: "POST",
+          body: JSON.stringify(data),
+        }),
+      cancel: (id: string) =>
+        fetchApi<{ message: string }>(`/companies/me/invites/${id}`, {
+          method: "DELETE",
+        }),
+    },
+
+    public: {
+      getInviteByToken: (token: string) =>
+        fetchApi<PublicInviteResponse>(`/companies/invites/${token}`, {
+          requiresAuth: false,
+        }),
+      acceptInvite: (data: AcceptInviteDto) =>
+        fetchApi<{ user: User; company: Company; token: string }>(
+          "/companies/invites/accept",
+          {
+            method: "POST",
+            body: JSON.stringify(data),
+            requiresAuth: false,
+          }
+        ),
+    },
+  },
+
+  master: {
+    listCompanies: (params?: MasterListParams) => {
+      const searchParams = new URLSearchParams();
+      if (params?.page) searchParams.set("page", params.page.toString());
+      if (params?.limit) searchParams.set("limit", params.limit.toString());
+      if (params?.status) searchParams.set("status", params.status);
+      if (params?.plan) searchParams.set("plan", params.plan);
+      if (params?.search) searchParams.set("search", params.search);
+      return fetchApi<MasterCompaniesResponse>(
+        `/master/companies?${searchParams.toString()}`
+      );
+    },
+    getCompany: (id: string) => fetchApi<MasterCompanyDetail>(`/master/companies/${id}`),
+    getMetrics: () => fetchApi<MasterMetricsResponse>("/master/metrics"),
+    updatePlan: (id: string, planTier: PlanTier) =>
+      fetchApi<{ company: Company }>(`/master/companies/${id}/plan`, {
+        method: "PUT",
+        body: JSON.stringify({ planTier }),
+      }),
+    updateStatus: (id: string, status: CompanyStatus) =>
+      fetchApi<{ company: Company }>(`/master/companies/${id}/status`, {
+        method: "PUT",
+        body: JSON.stringify({ status }),
+      }),
+    extendTrial: (id: string, days: number) =>
+      fetchApi<{ company: Company }>(`/master/companies/${id}/extend-trial`, {
+        method: "POST",
+        body: JSON.stringify({ days }),
+      }),
+  },
+};
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  companyId: string;
+  cpf?: string;
+  createdAt: string;
+}
+
+export interface Company {
+  id: string;
+  name: string;
+  cnpj: string | null;
+  plan: PlanTier;
+  status: CompanyStatus;
+  planExpiresAt: string | null;
+  maxEmployees: number;
+  settings: CompanySettings;
+  trialUsed: boolean;
+  createdAt: string;
+}
+
+export interface CompanySettings {
+  logo?: string | null;
+  primaryColor?: string;
+  timezone?: string;
+  checkinToleranceMinutes?: number;
+  lunchToleranceMinutes?: number;
+  requirePhoto?: boolean;
+  requireBiometry?: boolean;
+}
+
+export interface SignupCompanyDto {
+  name: string;
+  email: string;
+  cpf: string;
+  cnpj?: string;
+  companyName: string;
+  password: string;
+  confirmPassword: string;
+}
+
+export interface SignupCompanyResponse {
+  user: User;
+  company: Company;
+  token: string;
+}
+
+export interface CompanyResponse {
+  id: string;
+  name: string;
+  cnpj: string | null;
+  plan: PlanTier;
+  status: CompanyStatus;
+  planExpiresAt: string | null;
+  maxEmployees: number;
+  currentEmployees: number;
+  employeeUsagePercent: number;
+  canCreateEmployee: boolean;
+  settings: CompanySettings;
+  trialUsed: boolean;
+  createdAt: string;
+}
+
+export interface UpdateCompanyDto {
+  name?: string;
+  settings?: Partial<CompanySettings>;
+}
+
+export interface UsageResponse {
+  employees: {
+    current: number;
+    limit: number;
+    percentage: number;
+  };
+  checkins: {
+    thisMonth: number;
+    total: number;
+  };
+  apiLimits: {
+    general: number;
+    checkin: number;
+    faceValidation: number;
+  };
+  plan: PlanTier;
+}
+
+export interface CreateInviteDto {
+  email: string;
+  role: "ENTERPRISE_ADMIN" | "EMPLOYEE";
+}
+
+export interface InviteResponse {
+  id: string;
+  email: string;
+  role: UserRole;
+  expiresAt: string;
+  usedAt: string | null;
+  createdAt: string;
+}
+
+export interface InviteWithUrl extends InviteResponse {
+  inviteUrl: string;
+}
+
+export interface PublicInviteResponse {
+  email: string;
+  role: UserRole;
+  company: {
+    id: string;
+    name: string;
+    plan: PlanTier;
+    settings: CompanySettings;
+  };
+  expiresAt: string;
+}
+
+export interface AcceptInviteDto {
+  token: string;
+  name: string;
+  password: string;
+  confirmPassword: string;
+}
+
+export interface MasterListParams {
+  page?: number;
+  limit?: number;
+  status?: CompanyStatus;
+  plan?: PlanTier;
+  search?: string;
+}
+
+export interface MasterCompaniesResponse {
+  data: MasterCompanyListItem[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+export interface MasterCompanyListItem {
+  id: string;
+  name: string;
+  cnpj: string | null;
+  plan: PlanTier;
+  status: CompanyStatus;
+  planExpiresAt: string | null;
+  maxEmployees: number;
+  currentEmployees: number;
+  employeeUsagePercent: number;
+  settings: CompanySettings;
+  createdAt: string;
+}
+
+export interface MasterCompanyDetail extends MasterCompanyListItem {
+  users: User[];
+  subscriptions: Subscription[];
+}
+
+export interface Subscription {
+  id: string;
+  companyId: string;
+  planTier: PlanTier;
+  price: number;
+  status: string;
+  asaasSubscriptionId: string | null;
+  startedAt: string;
+  expiresAt: string | null;
+  cancelledAt: string | null;
+  createdAt: string;
+}
+
+export interface MasterMetricsResponse {
+  totalCompanies: number;
+  activeCompanies: number;
+  trialCompanies: number;
+  cancelledCompanies: number;
+  mrr: number;
+  planDistribution: Record<PlanTier, number>;
+  growth: {
+    thisMonth: number;
+    lastMonth: number;
+  };
+  churn: {
+    thisMonth: number;
+    lastMonth: number;
+  };
+}
+
+export type UserRole = "MASTER" | "ENTERPRISE_ADMIN" | "EMPLOYEE";
+export type PlanTier = "TIER_I" | "TIER_II" | "TIER_III" | "ENTERPRISE_CUSTOM";
+export type CompanyStatus = "TRIAL" | "ACTIVE" | "SUSPENDED" | "CANCELLED";

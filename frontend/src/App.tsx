@@ -1,8 +1,8 @@
-import { Routes } from './routes/index.tsx'
+import { AppRoutes } from './routes/index.tsx'
 
 export function App() {
 
   return (
-    <Routes />
+    <AppRoutes />
   )
 }
