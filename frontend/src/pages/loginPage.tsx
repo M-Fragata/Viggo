@@ -22,7 +22,7 @@ export function LoginPage() {
 
   async function handleSubmit(_prevState: unknown, formData: FormData) {
     const bodySchema = z.object({
-      email: z.string().email("Email inválido"),
+      email: z.email("Email inválido"),
       password: z.string().min(6, "A senha deve conter no mínimo 6 caracteres"),
     });
 
@@ -39,6 +39,8 @@ export function LoginPage() {
         },
         body: JSON.stringify(payload),
       });
+
+      console.log(response)
 
       if (!response.ok) {
         return { message: "Erro ao fazer login, tente novamente em alguns segundos!", payload };
