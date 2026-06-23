@@ -24,15 +24,37 @@ Validações:
 - Termos de uso + LGPD checkbox
 
 Sucesso:
-- Cria empresa + admin no backend
+- Cria empresa + admin no backend (POST /companies/signup)
 - Login automático + redirect para /admin
 - Toast "Empresa criada! Trial de 30 dias iniciado."
 ```
 
 ### 1.2 Login Page Atualizado
-- Detectar se email é MASTER (redireciona para /master)
-- Detectar se empresa está SUSPENDED/CANCELLED (bloquear + mensagem)
-- Mostrar dias restantes de trial no dashboard
+- Detectar se email é MASTER (`isMaster: true`) → redirect para `/master`
+- Detectar se empresa está `SUSPENDED`/`CANCELLED` → bloquear + mensagem
+- Detectar trial expirado (`planExpiresAt` < now) → avisar upgrade
+- Mostrar dias restantes de trial no dashboard (header/banner)
+
+### 1.3 Invite Flow - Página Pública
+**Rota**: `/accept-invite/:token` (pública, sem auth)
+
+```
+FLUXO:
+1. Admin cria convite: POST /companies/me/invites { email, role }
+   → Retorna inviteUrl = "/accept-invite/:token"
+
+2. Funcionário acessa /accept-invite/:token
+   → GET /companies/invites/:token (público)
+   → Mostra: Nome empresa, role, expiração
+
+3. Funcionário preenche: Nome + Senha + Confirmação
+   → POST /companies/invites/accept { token, name, password }
+   → Cria User + Login automático + Redirect /admin
+
+ADMIN ACTIONS:
+- Cancelar convite (DELETE /companies/me/invites/:id)
+- Reenviar = Cancelar + Criar novo (gera novo token/link)
+```
 
 ---
 
@@ -43,7 +65,7 @@ Sucesso:
 ┌─────────────────────────────────────────────────────────────┐
 │  Viggo Logo    Olá, [Nome]    [Menu ☰]                      │
 ├─────────────────────────────────────────────────────────────┤
-│  [Funcionários] [Presentes] [Total] [Plano] [Config] [Conv] │
+│  [Funcionários] [Presentes] [Total] [Plano] [Convites]      │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  CONTEÚDO DA ABA SELECIONADA                                │
@@ -53,41 +75,24 @@ Sucesso:
 
 ### 2.2 Novas Abas
 
-#### **ABA: Plano & Cobrança** (`/admin?tab=plan`)
+#### **ABA: Plano** (`/admin?tab=plan`)
 | Seção | Conteúdo |
 |-------|----------|
 | **Plano Atual** | Badge do tier (I/II/III/Custom), preço mensal |
 | **Trial/Validade** | Contagem regressiva (ex: "15 dias restantes") ou "Renova em DD/MM" |
-| **Limite Funcionários** | Progress bar: `X / Y` funcionários |
+| **Limite Funcionários** | Progress bar: `X / Y` funcionários + % uso |
 | **Botão Upgrade** | Abre modal com comparação de tiers |
-| **Histórico** | Tabela: Plano, Período, Valor, Status, Fatura (link PDF) |
-| **Aviso** | Se trial: "Adicione forma de pagamento para continuar" |
-
-#### **ABA: Configurações** (`/admin?tab=settings`)
-| Seção | Campos |
-|-------|--------|
-| **Identidade** | Logo upload, Nome fantasia, Razão social, CNPJ |
-| **Aparência** | Cor primária (color picker), Modo escuro/claro |
-| **Regras de Ponto** | Tolerância entrada (min), Tolerância almoço (min), Fuso horário |
-| **Notificações** | Email lembrete ponto, WhatsApp (futuro), Push |
-| **Segurança** | Exigir foto no check-in, Biometria obrigatória |
-| **Integrações** | Webhook URLs, API Key (futuro) |
+| **Status** | Badge: TRIAL / ACTIVE / SUSPENDED |
 
 #### **ABA: Convites** (`/admin?tab=invites`)
 | Funcionalidade | Detalhes |
 |----------------|----------|
-| **Enviar Convite** | Modal: Email, Role (Admin/Funcionário), Mensagem custom |
+| **Enviar Convite** | Modal: Email, Role (Admin/Funcionário) |
 | **Lista Pendentes** | Tabela: Email, Role, Enviado em, Expira em, Status, Ações |
-| **Ações** | Reenviar, Cancelar, Copiar link |
+| **Ações** | Cancelar (DELETE), Copiar link |
 | **Validação** | Limite por plano (TIER_I: 10, TIER_II: 50, etc.) |
 
-#### **ABA: Uso & API** (`/admin?tab=usage`)
-| Métrica | Exibição |
-|---------|----------|
-| **Rate Limit** | Barras: API Geral, Check-in, Face Validation |
-| **Uso Diário** | Gráfico últimos 30 dias |
-| **Webhooks** | Lista configurados + status último envio |
-| **Logs** | Últimas 50 ações (auditoria simplificada) |
+> **Nota**: Aba "Configurações" e "Uso & API" deixadas para implementação futura.
 
 ---
 
@@ -96,30 +101,24 @@ Sucesso:
 ### 3.1 Novos Componentes
 ```typescript
 // components/plan/
-PlanBadge.tsx           // Badge visual do tier (cores por tier)
-PlanComparisonModal.tsx // Modal lado a lado dos tiers
-UsageProgressBar.tsx    // Barra X/Y com cor de alerta
-TrialCountdown.tsx      // Contagem regressiva animada
+PlanBadge.tsx              // Badge visual do tier (cores por tier)
+PlanComparisonModal.tsx    // Modal lado a lado dos tiers
+UsageProgressBar.tsx       // Barra X/Y com cor de alerta
+TrialCountdown.tsx         // Contagem regressiva animada
 
 // components/company/
-InviteModal.tsx         // Form enviar convite
-InviteTable.tsx         // Lista convites com ações
-SettingsForm.tsx        // Form configurações empresa
-CompanyLogoUpload.tsx   // Upload + preview + crop
-
-// components/master/ (apenas role MASTER)
-MasterCompanyCard.tsx   // Card na lista de empresas
-MasterMetricsCards.tsx  // KPIs globais
-MasterPlanSelector.tsx  // Dropdown override plano
+InviteModal.tsx            // Form enviar convite (email + role)
+InviteTable.tsx            // Lista convites com ações (cancelar, copiar link)
+AcceptInvitePage.tsx       // Página /accept-invite/:token
 ```
 
 ### 3.2 Hooks Novos
 ```typescript
 // hooks/
-useCompany.ts           // Dados da empresa + plano + limites
-usePlanLimits.ts        // Limites do tier atual
-useInvites.ts           // CRUD convites
-useMaster.ts            // Apenas MASTER: listar empresas, métricas
+useCompany.ts           // GET /companies/me + GET /companies/me/usage
+usePlanLimits.ts        // Limites do tier atual (static ou fetched)
+useInvites.ts           // CRUD convites (list, create, cancel)
+useAuth.ts              // Login, logout, detect isMaster/status
 ```
 
 ---
@@ -127,12 +126,12 @@ useMaster.ts            // Apenas MASTER: listar empresas, métricas
 ## FASE 4: Master Dashboard (Semana 3-4)
 
 ### 4.1 Nova Rota: `/master`
-**Acesso**: Apenas `role === MASTER`
+**Acesso**: Apenas `role === MASTER` (detectado no login)
 
 ### 4.2 Layout Master
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  Viggo Master    [Métricas] [Empresas] [Config] [Sair]      │
+│  Viggo Master    [Métricas] [Empresas] [Sair]               │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  KPIs:  [Total: 47]  [Ativas: 42]  [Trial: 3]  [MRR: R$]   │
@@ -150,20 +149,19 @@ useMaster.ts            // Apenas MASTER: listar empresas, métricas
 ```
 
 ### 4.3 Ações Master por Empresa
-- Ver detalhes (readonly)
-- Alterar plano (override: cortesia, upgrade, downgrade)
-- Suspender/Reativar
-- Estender trial (+7, +15, +30 dias)
-- Ver logs de auditoria
-- Impersonar (login como admin da empresa)
+- Ver detalhes (readonly) - `GET /master/companies/:id`
+- Alterar plano - `PUT /master/companies/:id/plan` (override: cortesia, upgrade, downgrade)
+- Suspender/Reativar - `PUT /master/companies/:id/status`
+- Estender trial - `POST /master/companies/:id/extend-trial` (+7, +15, +30 dias)
+
+> **Nota**: "Impersonar" (login como admin da empresa) deixado para implementação futura.
 
 ---
 
 ## FASE 5: Validações & UX (Contínuo)
 
 ### 5.1 Validações Frontend
-- CPF/CNPJ: Máscara + validação dígito verificador
-- CNPJ: Consulta ReceitaWS (opcional, preenchimento auto)
+- CPF/CNPJ: Máscara + validação dígito verificador (usar `cpfCnpjValidator` logic)
 - Senha: Medidor de força visual
 - Email: Verificação de domínio temporário (block)
 
@@ -180,10 +178,27 @@ useMaster.ts            // Apenas MASTER: listar empresas, métricas
 
 ---
 
-## Integração Backend - Contratos de API
+## Integração Backend - Contratos de API (Baseados no Backend Real)
 
 ### Company Endpoints
 ```typescript
+// POST /companies/signup
+interface SignupCompanyDto {
+  name: string           // nome do dono
+  email: string
+  cpf: string            // CPF formatado
+  cnpj?: string          // CNPJ formatado (opcional)
+  companyName: string
+  password: string
+  confirmPassword: string
+}
+
+interface SignupCompanyResponse {
+  user: { id, name, email, role, companyId, cpf }
+  company: { id, name, plan, status, planExpiresAt, maxEmployees }
+  token: string
+}
+
 // GET /companies/me
 interface CompanyResponse {
   id: string
@@ -194,8 +209,11 @@ interface CompanyResponse {
   planExpiresAt: string | null
   maxEmployees: number
   currentEmployees: number
+  employeeUsagePercent: number
+  canCreateEmployee: boolean
   settings: CompanySettings
   trialUsed: boolean
+  createdAt: string
 }
 
 // PUT /companies/me
@@ -204,65 +222,34 @@ interface UpdateCompanyDto {
   settings?: Partial<CompanySettings>
 }
 
+interface CompanySettings {
+  logo?: string | null
+  primaryColor?: string
+  timezone?: string
+  checkinToleranceMinutes?: number
+  lunchToleranceMinutes?: number
+  requirePhoto?: boolean
+  requireBiometry?: boolean
+}
+
 // GET /companies/me/usage
 interface UsageResponse {
   employees: { current: number, limit: number, percentage: number }
-  apiCalls: { general: number, checkin: number, face: number }
-  period: { start: string, end: string }
+  checkins: { thisMonth: number, total: number }
+  apiLimits: { general: number, checkin: number, faceValidation: number }
+  plan: PlanTier
 }
 
 // POST /companies/me/invites
 interface CreateInviteDto {
   email: string
   role: 'ENTERPRISE_ADMIN' | 'EMPLOYEE'
-  message?: string
 }
 
-// GET /companies/me/invites
 interface InviteResponse {
   id: string
   email: string
   role: UserRole
   expiresAt: string
-  usedAt: string | null
-  createdAt: string
-}
-```
-
-### Master Endpoints
-```typescript
-// GET /master/companies
-interface MasterCompanyListItem {
-  id: string
-  name: string
-  cnpj: string | null
-  plan: PlanTier
-  status: CompanyStatus
-  planExpiresAt: string | null
-  employeesCount: number
-  maxEmployees: number
-  createdAt: string
-  lastActivityAt: string | null
-}
-
-// GET /master/metrics
-interface MasterMetrics {
-  totalCompanies: number
-  activeCompanies: number
-  trialCompanies: number
-  suspendedCompanies: number
-  mrr: number
-  churnRate: number
-  dailyCheckins: number
-  planDistribution: Record<PlanTier, number>
-}
-```
-
----
-
-## Arquivos a Criar/Modificar
-
-```
-frontend/src/
-├── pages/
-│   ├── S
+  inviteUrl: string
+  createdA
