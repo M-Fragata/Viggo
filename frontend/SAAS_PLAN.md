@@ -5,37 +5,19 @@ Adaptar o frontend para suportar multi-tenancy, fluxo de signup self-service, da
 
 ---
 
-## FASE 1: Auth Flow & Landing (Semana 1-2)
+## FASE 1: Auth Flow & Landing (Semana 1-2) ✅ CONCLUÍDA
 
 ### 1.1 Landing Page → Signup Flow
-**Nova página**: `/signup-company` (ou modal no landing)
-```
-Campos:
-- Nome completo (dono)
-- Email
-- CPF (validação único + máscara)
-- CNPJ (opcional, máscara, validação único)
-- Nome da empresa
-- Senha + confirmação
+**Nova página**: `/signup-company` (ou modal no landing) - **PENDENTE** (deixado para o final conforme decisão)
 
-Validações:
-- CPF/CNPJ únicos (chamada API real-time)
-- Senha forte (min 8 chars, maiúscula, número, especial)
-- Termos de uso + LGPD checkbox
-
-Sucesso:
-- Cria empresa + admin no backend (POST /companies/signup)
-- Login automático + redirect para /admin
-- Toast "Empresa criada! Trial de 30 dias iniciado."
-```
-
-### 1.2 Login Page Atualizado
+### 1.2 Login Page Atualizado ✅ CONCLUÍDA
 - Detectar se email é MASTER (`isMaster: true`) → redirect para `/master`
 - Detectar se empresa está `SUSPENDED`/`CANCELLED` → bloquear + mensagem
 - Detectar trial expirado (`planExpiresAt` < now) → avisar upgrade
 - Mostrar dias restantes de trial no dashboard (header/banner)
+- Removido link "Criar conta" para `/signup`
 
-### 1.3 Invite Flow - Página Pública
+### 1.3 Invite Flow - Página Pública ✅ CONCLUÍDA
 **Rota**: `/accept-invite/:token` (pública, sem auth)
 
 ```
@@ -56,11 +38,13 @@ ADMIN ACTIONS:
 - Reenviar = Cancelar + Criar novo (gera novo token/link)
 ```
 
+**Implementado**: `AcceptInvitePage.tsx` - página completa com validação de token, expiração, formulário com react-hook-form + Zod
+
 ---
 
-## FASE 2: Admin Dashboard - Abas Novas (Semana 2-3)
+## FASE 2: Admin Dashboard - Abas Novas (Semana 2-3) ✅ CONCLUÍDA
 
-### 2.1 Estrutura de Abas Atualizada
+### 2.1 Estrutura de Abas Atualizada ✅
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  Viggo Logo    Olá, [Nome]    [Menu ☰]                      │
@@ -73,9 +57,9 @@ ADMIN ACTIONS:
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### 2.2 Novas Abas
+### 2.2 Novas Abas ✅
 
-#### **ABA: Plano** (`/admin?tab=plan`)
+#### **ABA: Plano** (`/admin?tab=plan`) ✅
 | Seção | Conteúdo |
 |-------|----------|
 | **Plano Atual** | Badge do tier (I/II/III/Custom), preço mensal |
@@ -84,7 +68,7 @@ ADMIN ACTIONS:
 | **Botão Upgrade** | Abre modal com comparação de tiers |
 | **Status** | Badge: TRIAL / ACTIVE / SUSPENDED |
 
-#### **ABA: Convites** (`/admin?tab=invites`)
+#### **ABA: Convites** (`/admin?tab=invites`) ✅
 | Funcionalidade | Detalhes |
 |----------------|----------|
 | **Enviar Convite** | Modal: Email, Role (Admin/Funcionário) |
@@ -96,9 +80,9 @@ ADMIN ACTIONS:
 
 ---
 
-## FASE 3: Componentes Compartilhados (Semana 2)
+## FASE 3: Componentes Compartilhados (Semana 2) ✅ CONCLUÍDA
 
-### 3.1 Novos Componentes
+### 3.1 Novos Componentes ✅
 ```typescript
 // components/plan/
 PlanBadge.tsx              // Badge visual do tier (cores por tier)
@@ -112,23 +96,34 @@ InviteTable.tsx            // Lista convites com ações (cancelar, copiar link)
 AcceptInvitePage.tsx       // Página /accept-invite/:token
 ```
 
-### 3.2 Hooks Novos
+### 3.2 Hooks Novos ✅
 ```typescript
 // hooks/
 useCompany.ts           // GET /companies/me + GET /companies/me/usage
-usePlanLimits.ts        // Limites do tier atual (static ou fetched)
+usePlanLimits.ts        // Limites do tier atual (static)
 useInvites.ts           // CRUD convites (list, create, cancel)
 useAuth.ts              // Login, logout, detect isMaster/status
+useToast.ts             // Wrapper sonner para toasts
+useMaster.ts            // Master dashboard hooks
+```
+
+### 3.3 Service Layer ✅
+```typescript
+// services/api.ts - Todos os endpoints tipados
+- auth: login, signup
+- company: getMe, updateMe, getUsage, invites (list, create, cancel)
+- company.public: getInviteByToken, acceptInvite
+- master: listCompanies, getCompany, getMetrics, updatePlan, updateStatus, extendTrial
 ```
 
 ---
 
-## FASE 4: Master Dashboard (Semana 3-4)
+## FASE 4: Master Dashboard (Semana 3-4) ✅ CONCLUÍDA
 
-### 4.1 Nova Rota: `/master`
-**Acesso**: Apenas `role === MASTER` (detectado no login)
+### 4.1 Nova Rota: `/master` ✅
+**Acesso**: Apenas `role === MASTER` (detectado no login via `isMaster`)
 
-### 4.2 Layout Master
+### 4.2 Layout Master ✅
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  Viggo Master    [Métricas] [Empresas] [Sair]               │
@@ -148,108 +143,69 @@ useAuth.ts              // Login, logout, detect isMaster/status
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### 4.3 Ações Master por Empresa
+### 4.3 Ações Master por Empresa ✅
 - Ver detalhes (readonly) - `GET /master/companies/:id`
 - Alterar plano - `PUT /master/companies/:id/plan` (override: cortesia, upgrade, downgrade)
 - Suspender/Reativar - `PUT /master/companies/:id/status`
-- Estender trial - `POST /master/companies/:id/extend-trial` (+7, +15, +30 dias)
+- Estender trial - `POST /master/companies/:id/extend-trial` (+7 a +90 dias)
 
 > **Nota**: "Impersonar" (login como admin da empresa) deixado para implementação futura.
 
+### 4.4 Páginas Implementadas ✅
+- `MasterDashboard.tsx` - KPIs, distribuição por plano, churn/crescimento
+- `MasterCompanies.tsx` - Tabela paginada com filtros, ações dropdown
+- `MasterLayout.tsx` - Layout com navegação lateral responsiva
+
 ---
 
-## FASE 5: Validações & UX (Contínuo)
+## FASE 5: Validações & UX (Contínuo) ✅ PARCIALMENTE CONCLUÍDA
 
 ### 5.1 Validações Frontend
-- CPF/CNPJ: Máscara + validação dígito verificador (usar `cpfCnpjValidator` logic)
-- Senha: Medidor de força visual
-- Email: Verificação de domínio temporário (block)
+- ✅ Senha: Mínimo 8 chars, validação Zod em tempo real
+- ✅ Email: Validação Zod email format
+- ⏳ CPF/CNPJ: Máscara + validação dígito verificador (pendente - usar lógica do backend)
+- ⏳ Email: Verificação de domínio temporário (pendente)
 
-### 5.2 Estados de Loading/Error
-- Skeleton loaders nas tabelas
-- Toast padronizado (sucesso, erro, aviso, info)
-- Empty states ilustrados
-- Error boundaries por feature
+### 5.2 Estados de Loading/Error ✅
+- ✅ Skeleton loaders nas tabelas (spinner simples)
+- ✅ Toast padronizado via sonner (sucesso, erro, aviso, info)
+- ✅ Empty states ilustrados (ex: sem convites, sem funcionários)
+- ⏳ Error boundaries por feature (pendente)
 
-### 5.3 Responsividade
-- Mobile: Abas viram accordion
-- Tabelas: Horizontal scroll + sticky first column
-- Modais: Full screen em mobile
+### 5.3 Responsividade ✅
+- ✅ Mobile: Abas com scroll horizontal
+- ✅ Tabelas: Horizontal scroll + sticky first column
+- ✅ Modais: Usam `<dialog>` nativo, responsivos
+- ✅ Master layout: Menu hamburger em mobile
 
 ---
 
-## Integração Backend - Contratos de API (Baseados no Backend Real)
+## Decisões Técnicas Implementadas ✅
 
-### Company Endpoints
-```typescript
-// POST /companies/signup
-interface SignupCompanyDto {
-  name: string           // nome do dono
-  email: string
-  cpf: string            // CPF formatado
-  cnpj?: string          // CNPJ formatado (opcional)
-  companyName: string
-  password: string
-  confirmPassword: string
-}
+| Item | Decisão | Status |
+|------|---------|--------|
+| Toast library | **sonner** | ✅ |
+| Modal/Dialog | **`<dialog>` nativo** | ✅ |
+| Form validation | **react-hook-form + @hookform/resolvers (Zod)** | ✅ |
+| Date handling | **date-fns** (consistente com backend) | ✅ |
+| Pagination Master | **Server-side tradicional** | ✅ |
+| Routing | **react-router v7** com rotas protegidas | ✅ |
+| State management | **React hooks + localStorage** (token/user) | ✅ |
 
-interface SignupCompanyResponse {
-  user: { id, name, email, role, companyId, cpf }
-  company: { id, name, plan, status, planExpiresAt, maxEmployees }
-  token: string
-}
+---
 
-// GET /companies/me
-interface CompanyResponse {
-  id: string
-  name: string
-  cnpj: string | null
-  plan: PlanTier
-  status: CompanyStatus
-  planExpiresAt: string | null
-  maxEmployees: number
-  currentEmployees: number
-  employeeUsagePercent: number
-  canCreateEmployee: boolean
-  settings: CompanySettings
-  trialUsed: boolean
-  createdAt: string
-}
+## Estrutura de Arquivos Implementada ✅
 
-// PUT /companies/me
-interface UpdateCompanyDto {
-  name?: string
-  settings?: Partial<CompanySettings>
-}
-
-interface CompanySettings {
-  logo?: string | null
-  primaryColor?: string
-  timezone?: string
-  checkinToleranceMinutes?: number
-  lunchToleranceMinutes?: number
-  requirePhoto?: boolean
-  requireBiometry?: boolean
-}
-
-// GET /companies/me/usage
-interface UsageResponse {
-  employees: { current: number, limit: number, percentage: number }
-  checkins: { thisMonth: number, total: number }
-  apiLimits: { general: number, checkin: number, faceValidation: number }
-  plan: PlanTier
-}
-
-// POST /companies/me/invites
-interface CreateInviteDto {
-  email: string
-  role: 'ENTERPRISE_ADMIN' | 'EMPLOYEE'
-}
-
-interface InviteResponse {
-  id: string
-  email: string
-  role: UserRole
-  expiresAt: string
-  inviteUrl: string
-  createdA
+```
+frontend/src/
+├── services/
+│   └── api.ts                    # Todos os endpoints tipados
+├── hooks/
+│   ├── useAuth.ts               # Auth + company status
+│   ├── useCompany.ts            # Company data + plan limits
+│   ├── useInvites.ts            # Invites CRUD + public accept
+│   ├── useMaster.ts             # Master dashboard hooks
+│   └── useToast.ts              # Sonner wrapper
+├── components/
+│   ├── plan/
+│   │
