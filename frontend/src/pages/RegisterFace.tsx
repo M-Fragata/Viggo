@@ -68,21 +68,7 @@ export function RegisterFace() {
         }
 
         try {
-            const response = await fetch(`${api.auth.login.toString().replace("/sessions/login", "")}/sessions/${user.id}`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
-                },
-                body: JSON.stringify({ faceDescriptor: Array.from(descriptor) })
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                setMessage(errorData.message || "Falha na requisição");
-                setIsRegistering(false);
-                return;
-            }
+            await api.employees.updateFaceDescriptor(user.id, Array.from(descriptor));
 
             const updatedUser = { ...user, faceDescriptor: JSON.stringify(Array.from(descriptor)) };
             localStorage.setItem("@viggo:user", JSON.stringify(updatedUser));

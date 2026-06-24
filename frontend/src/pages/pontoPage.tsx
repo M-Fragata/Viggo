@@ -10,6 +10,7 @@ import * as faceapi from 'face-api.js';
 
 import { z } from "zod"
 import { Button } from "../components/Button"
+import type { FaceDescriptorResponse, CheckinCreateDto } from "../services/api"
 
 type ChekinProps = {
     id: string,
@@ -51,9 +52,9 @@ export function PontoPage() {
 
             try {
                 bodySchema.parse({ type, latitude, longitude })
-                
+
                 setPendingCheckin({ type, latitude, longitude });
-                
+
                 const verifyFacial = await handleGetEmployee()
                 if (verifyFacial?.success !== true) {
                     setPendingCheckin(null);
@@ -86,23 +87,8 @@ export function PontoPage() {
                 return { success: false }
             }
 
-            const response = await fetch(`${api.auth.login.toString().replace("/sessions/login", "")}/employees/face`, {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json",
-                    "authorization": `Bearer ${token}`
-                }
-            })
-
-            if (response.status === 403) {
-                window.location.assign("/register")
-                return { success: false }
-            }
-
-            if (!response.ok) return alert("erro")
-
-            const data = await response.json()
-            const savedDescriptor = new Float32Array(Object.values(data)) as Float32Array;
+            const data = await api.employees.getFaceDescriptor()
+            const savedDescriptor = new Float32Array(Object.values(data as FaceDescriptorResponse)) as Float32Array;
 
             setLivenessDescriptor(savedDescriptor);
             setVideoOpen(true)
@@ -144,7 +130,7 @@ export function PontoPage() {
         }
     }
 
-    const handleLivenessComplete = async (__descriptor: Float32Array) => {
+    async function handleLivenessComplete(__descriptor: Float32Array) {
         if (!pendingCheckin) {
             setShowLiveness(false);
             return { success: false };
@@ -153,13 +139,13 @@ export function PontoPage() {
         setShowLiveness(false);
         setIsRegistering(true);
         setMessage("Verificando identidade...");
-        
+
         const verifyResult = await verificarPonto(
-          Array.from(livenessDescriptor!), 
-          videoRef, 
-          setMessage
+            Array.from(livenessDescriptor!),
+            videoRef,
+            setMessage
         );
-        
+
         if (!verifyResult.success) {
             setIsRegistering(false);
             setPendingCheckin(null);
@@ -168,34 +154,19 @@ export function PontoPage() {
         }
 
         setMessage("Registrando ponto...");
-        
+
         try {
             if (!token) {
                 window.location.assign("/")
                 return { success: false }
             }
 
-            const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3333";
-            const response = await fetch(`${baseUrl}/checkins`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "authorization": `Bearer ${token}`
-                },
-                body: JSON.stringify(pendingCheckin)
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                setMessage(errorData.message);
-                setIsRegistering(false);
-                return { success: false };
-            }
+            await api.checkins.create(pendingCheckin as CheckinCreateDto);
 
             setIsSuccess(true);
             setMessage("Ponto registrado com sucesso!");
             setPendingCheckin(null);
-            
+
             await handleGetCheckin();
 
             setTimeout(() => {
@@ -224,26 +195,9 @@ export function PontoPage() {
     async function handleGetCheckin() {
 
         try {
-
             if (!token) return window.location.assign("/")
 
-            const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3333";
-            const response = await fetch(`${baseUrl}/checkins`, {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json",
-                    "authorization": `Bearer ${token}`
-                }
-            })
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error("Erro ao buscar os pontos:", errorData);
-                alert("Erro ao buscar os pontos: " + errorData.message);
-                return;
-            }
-
-            const data = await response.json();
+            const data = await api.checkins.list();
             setCheckins(data)
 
         } catch (error) {
@@ -260,10 +214,7 @@ export function PontoPage() {
     useEffect(() => {
         const carregarModelos = async () => {
             try {
-                // O caminho '/models' deve conter os arquivos .json e .bin da face-api
-                // Verifique se essa pasta está dentro da sua pasta 'public'
                 const MODEL_URL = '/models';
-
                 await Promise.all([
                     faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
                     faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
@@ -320,26 +271,26 @@ export function PontoPage() {
                         </div>
 
                         {showLiveness && livenessDescriptor && (
-                          <LivenessChallenge
-                            videoRef={videoRef}
-                            faceDescriptor={livenessDescriptor}
-                            onComplete={handleLivenessComplete}
-                            onCancel={handleLivenessCancel}
-                          />
+                            <LivenessChallenge
+                                videoRef={videoRef}
+                                faceDescriptor={livenessDescriptor}
+                                onComplete={handleLivenessComplete}
+                                onCancel={handleLivenessCancel}
+                            />
                         )}
 
                         {isRegistering && (
-                          <div className="absolute inset-0 z-[110] bg-emerald-500/95 flex flex-col items-center justify-center animate-in zoom-in duration-300">
-                              <div className="relative mb-6">
-                                  <div className="w-24 h-24 border-4 border-white/30 rounded-full"></div>
-                                  <div className="absolute inset-0 border-4 border-emerald-300 rounded-full animate-spin border-t-transparent" />
-                              </div>
-                              <h2 className="text-white text-2xl font-bold">Registrando Ponto...</h2>
-                              <p className="text-emerald-200 mt-2">{message}</p>
-                              <div className="w-48 h-1 bg-white/20 rounded-full mt-6 overflow-hidden">
-                                  <div className="h-full bg-emerald-300 rounded-full animate-progress" style={{ width: '60%' }} />
-                              </div>
-                          </div>
+                            <div className="absolute inset-0 z-[110] bg-emerald-500/95 flex flex-col items-center justify-center animate-in zoom-in duration-300">
+                                <div className="relative mb-6">
+                                    <div className="w-24 h-24 border-4 border-white/30 rounded-full"></div>
+                                    <div className="absolute inset-0 border-4 border-emerald-300 rounded-full animate-spin border-t-transparent" />
+                                </div>
+                                <h2 className="text-white text-2xl font-bold">Registrando Ponto...</h2>
+                                <p className="text-emerald-200 mt-2">{message}</p>
+                                <div className="w-48 h-1 bg-white/20 rounded-full mt-6 overflow-hidden">
+                                    <div className="h-full bg-emerald-300 rounded-full animate-progress" style={{ width: '60%' }} />
+                                </div>
+                            </div>
                         )}
 
                         {!showLiveness && !isSuccess && !isRegistering && (
@@ -369,14 +320,14 @@ export function PontoPage() {
                         )}
 
                         {!showLiveness && !isSuccess && (
-                          <div className="absolute bottom-8 left-0 right-0 z-20 flex justify-center px-4">
-                              <button
-                                  onClick={() => setVideoOpen(false)}
-                                  className="w-full max-w-[200px] py-3 bg-emerald-400 text-white rounded-full font-bold hover:bg-emerald-500 transition-all active:scale-95 shadow-lg shadow-emerald-900/40 cursor-pointer uppercase text-xs tracking-widest"
-                              >
-                                  Cancelar
-                              </button>
-                          </div>
+                            <div className="absolute bottom-8 left-0 right-0 z-20 flex justify-center px-4">
+                                <button
+                                    onClick={() => setVideoOpen(false)}
+                                    className="w-full max-w-[200px] py-3 bg-emerald-400 text-white rounded-full font-bold hover:bg-emerald-500 transition-all active:scale-95 shadow-lg shadow-emerald-900/40 cursor-pointer uppercase text-xs tracking-widest"
+                                >
+                                    Cancelar
+                                </button>
+                            </div>
                         )}
                     </div>
                 </div>

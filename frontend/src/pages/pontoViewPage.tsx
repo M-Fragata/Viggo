@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react"
 
 import { useAuth } from "../hooks/useAuth"
+import { api } from "../services/api"
 
 import { Input } from "../components/Input"
 import { Button } from "../components/Button"
@@ -25,23 +26,7 @@ export function PontoViewPage() {
 
             if (!token) return window.location.assign("/")
 
-            const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3333";
-            const response = await fetch(`${baseUrl}/checkins?date=${date}`, {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json",
-                    "authorization": `Bearer ${token}`
-                }
-            })
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error("Erro ao buscar os pontos:", errorData);
-                alert("Erro ao buscar os pontos: " + errorData.message);
-                return;
-            }
-
-            const data = await response.json();
+            const data = await api.checkins.list(date);
             setCheckins(data)
 
         } catch (error) {

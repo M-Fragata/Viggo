@@ -93,6 +93,25 @@ export const api = {
     },
   },
 
+  employees: {
+    getFaceDescriptor: () => fetchApi<FaceDescriptorResponse>("/employees/face"),
+    updateFaceDescriptor: (userId: string, descriptor: number[]) =>
+      fetchApi<User>(`/sessions/${userId}`, {
+        method: "PUT",
+        body: JSON.stringify({ faceDescriptor: descriptor }),
+      }),
+  },
+
+  checkins: {
+    create: (data: CheckinCreateDto) =>
+      fetchApi<CheckinResponse>("/checkins", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    list: (date?: string) =>
+      fetchApi<CheckinResponse[]>(`/checkins${date ? `?date=${date}` : ""}`),
+  },
+
   master: {
     listCompanies: (params?: MasterListParams) => {
       const searchParams = new URLSearchParams();
@@ -315,6 +334,26 @@ export interface MasterMetricsResponse {
     thisMonth: number;
     lastMonth: number;
   };
+}
+
+export interface FaceDescriptorResponse {
+  [key: string]: number;
+}
+
+export interface CheckinCreateDto {
+  type: "ENTRY" | "LUNCH_START" | "LUNCH_END" | "EXIT";
+  latitude: number;
+  longitude: number;
+}
+
+export interface CheckinResponse {
+  id: string;
+  createdAt: string;
+  type: "ENTRY" | "LUNCH_START" | "LUNCH_END" | "EXIT";
+  latitude: number;
+  longitude: number;
+  userId: string;
+  companyId: string;
 }
 
 export type UserRole = "MASTER" | "ENTERPRISE_ADMIN" | "EMPLOYEE";
