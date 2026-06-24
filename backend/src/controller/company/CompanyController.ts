@@ -11,7 +11,6 @@ import { addDays } from 'date-fns';
 export class CompanyController {
 
   async signup(req: Request, res: Response) {
-    
     const bodySchema = z.object({
       name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
       email: z.email('Email inválido'),
@@ -553,5 +552,5 @@ export class CompanyController {
       return res.status(500).json({ message: 'Erro ao buscar convite' });
     }
   }
-
+  
 }
