@@ -8,11 +8,11 @@ import { Button } from "../components/Button"
 import { Clock, MapPin, Calendar } from "lucide-react"
 
 type Checkin = {
-  id: string;
-  createdAt: string;
-  type: string;
-  latitude: number;
-  longitude: number;
+    id: string;
+    createdAt: string;
+    type: string;
+    latitude: number;
+    longitude: number;
 };
 
 export function PontoViewPage() {
@@ -259,8 +259,8 @@ export function PontoViewPage() {
 
                     <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
                         <h3 className="text-gray-800 font-semibold mb-3 text-sm">Status do Dia</h3>
-                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold uppercase">
-                            Completo
+                        <span className={`px-3 py-1  rounded-full text-xs font-bold uppercase ${checkins.length === 4 ? "text-green-700 bg-green-100" : "text-red-700 bg-red-100"}`}>
+                            {checkins && checkins.length === 4 ? "Completo" : "Incompleto"}
                         </span>
                     </div>
                 </div>
