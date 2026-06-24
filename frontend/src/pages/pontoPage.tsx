@@ -221,7 +221,6 @@ export function PontoPage() {
                     faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
                 ]);
 
-                console.log("Modelos da Face-API carregados com sucesso!");
             } catch (error) {
                 console.error("Erro ao carregar modelos:", error);
             }
