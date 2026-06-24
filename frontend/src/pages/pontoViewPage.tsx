@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react"
-import { api } from "../services/api"
+
 import { useAuth } from "../hooks/useAuth"
 
 import { Input } from "../components/Input"
