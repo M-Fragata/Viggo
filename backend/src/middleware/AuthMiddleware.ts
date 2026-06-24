@@ -3,11 +3,11 @@ import jwt from "jsonwebtoken";
 import { setCurrentCompanyId, setCurrentUserId, clearPrismaContext } from "../database/prisma-extensions.js";
 
 interface JWTPayload {
-  id: string;
-  role: string;
-  companyId: string;
-  planTier?: string;
-  isMaster?: boolean;
+    id: string;
+    role: string;
+    companyId: string;
+    planTier?: string;
+    isMaster?: boolean;
 }
 
 export function authMiddleware(req: Request, res: Response, next: NextFunction) {
@@ -23,17 +23,17 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JWTPayload;
-        const { id, role, companyId, planTier, isMaster } = decoded;
+        const { id, role, companyId, planTier } = decoded;
 
-        const user: typeof req.user = { 
-            id, 
-            role, 
+        const user: typeof req.user = {
+            id,
+            role,
             companyId,
         };
         if (planTier) user.planTier = planTier;
-        if (isMaster !== undefined) user.isMaster = isMaster;
+
         req.user = user;
-        
+
         if (companyId) {
             setCurrentCompanyId(companyId);
         }

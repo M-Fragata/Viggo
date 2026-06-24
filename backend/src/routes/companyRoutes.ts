@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { CompanyController } from '../modules/company/CompanyController.js';
+import { CompanyController } from '../controller/company/CompanyController.js';
 import { authMiddleware } from '../middleware/AuthMiddleware.js';
 import { requireEnterpriseAdmin } from '../middleware/RoleGuard.js';
 import { planMiddleware, requireEmployeeLimit } from '../middleware/PlanMiddleware.js';

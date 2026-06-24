@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { MasterController } from '../modules/master/MasterController.js';
+import { MasterController } from '../controller/master/MasterController.js';
 import { authMiddleware } from '../middleware/AuthMiddleware.js';
 import { requireMaster } from '../middleware/RoleGuard.js';
 

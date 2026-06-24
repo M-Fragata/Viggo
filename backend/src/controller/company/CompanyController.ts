@@ -9,7 +9,9 @@ import { getPlanLimits, TRIAL_DAYS, PlanTier, CompanyStatus } from '../../utils/
 import { addDays } from 'date-fns';
 
 export class CompanyController {
+
   async signup(req: Request, res: Response) {
+    
     const bodySchema = z.object({
       name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
       email: z.email('Email inválido'),
@@ -98,12 +100,12 @@ export class CompanyController {
 
       const { password: _, ...userWithoutPassword } = user;
       const token = jwt.sign(
-        { 
-          id: user.id, 
-          role: user.role, 
+        {
+          id: user.id,
+          role: user.role,
           companyId: company.id,
           planTier: company.plan,
-          isMaster: false 
+          isMaster: false
         },
         process.env.JWT_SECRET!,
         { expiresIn: '7d' }
@@ -289,7 +291,7 @@ export class CompanyController {
     try {
       const companyId = req.user?.companyId;
       const userRole = req.user?.role;
-      
+
       if (!companyId || userRole !== 'ENTERPRISE_ADMIN') {
         return res.status(403).json({ message: 'Apenas admins da empresa podem convidar' });
       }
@@ -305,7 +307,7 @@ export class CompanyController {
 
       const limits = getPlanLimits(company.plan as PlanTier);
       if (limits.maxEmployees !== null && company._count.users >= limits.maxEmployees) {
-        return res.status(403).json({ 
+        return res.status(403).json({
           message: 'Limite de funcionários atingido',
           code: 'EMPLOYEE_LIMIT_REACHED',
         });
@@ -479,12 +481,12 @@ export class CompanyController {
 
       const { password: _, ...userWithoutPassword } = user;
       const authToken = jwt.sign(
-        { 
-          id: user.id, 
-          role: user.role, 
+        {
+          id: user.id,
+          role: user.role,
           companyId: invite.companyId,
           planTier: invite.company.plan,
-          isMaster: false 
+          isMaster: false
         },
         process.env.JWT_SECRET!,
         { expiresIn: '7d' }
@@ -551,4 +553,5 @@ export class CompanyController {
       return res.status(500).json({ message: 'Erro ao buscar convite' });
     }
   }
+
 }
