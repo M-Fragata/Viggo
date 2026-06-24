@@ -69,6 +69,9 @@ export class SessionController {
             const user = await prisma.user.findUnique({
                 where: {
                     email
+                },
+                include: {
+                    company: true
                 }
             })
 
@@ -80,7 +83,13 @@ export class SessionController {
 
             const { password: _, ...userWithoutPassword } = user
 
-            const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET!, { expiresIn: "7d" });
+            const token = jwt.sign({
+                id: user.id,
+                role: user.role,
+                companyId: user.companyId,
+                planTier: user.company?.plan || "TIER_I",
+                isMaster: user.role === "MASTER"
+            }, process.env.JWT_SECRET!, { expiresIn: "7d" });
 
             return res.status(200).json({
                 user: userWithoutPassword,

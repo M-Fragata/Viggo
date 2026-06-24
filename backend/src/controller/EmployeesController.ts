@@ -62,7 +62,7 @@ console.log(checkins)
             console.log(user)
             if (!user) return res.status(404).json({ message: "User not found" })
                 
-            if (!user.faceDescriptor) return res.status(403).json({ message: "Registro facial pendente. Por favor, cadastre sua face antes de bater o ponto." })
+            if (!user.faceDescriptor) return res.status(403).json({ code: "FACE_NOT_REGISTERED", message: "Registro facial pendente. Por favor, cadastre sua face antes de bater o ponto." })
 
             return res.status(200).json(user.faceDescriptor)
 

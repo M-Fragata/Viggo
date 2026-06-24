@@ -13,7 +13,7 @@ async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promis
     ...restOptions,
     headers: {
       "Content-Type": "application/json",
-      ...(token && { Authorization: `Bearer ${JSON.parse(token)}` }),
+      ...(token && { Authorization: `Bearer ${token}` }),
       ...headers,
     },
   });
@@ -23,6 +23,15 @@ async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promis
     localStorage.removeItem("@viggo:user");
     window.location.href = "/";
     return new Promise<T>(() => { }) as Promise<T>;
+  }
+
+  if (response.status === 403) {
+    const error = await response.json().catch(() => ({}));
+    if (error.code === "FACE_NOT_REGISTERED") {
+      window.location.href = "/register";
+      return new Promise<T>(() => { }) as Promise<T>;
+    }
+    throw new Error(error.message || `Erro ${response.status}`);
   }
 
   if (!response.ok) {
