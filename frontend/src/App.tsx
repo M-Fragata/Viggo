@@ -1,8 +1,10 @@
 import { AppRoutes } from './routes/index.tsx'
+import { AuthProvider } from './contexts/AuthContext'
 
 export function App() {
-
   return (
-    <AppRoutes />
+    <AuthProvider>
+      <AppRoutes />
+    </AuthProvider>
   )
 }

@@ -1,27 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, Outlet } from "react-router";
 import { LogOut, Menu, X } from "lucide-react";
 
 import logo from "../assets/logo.png"
+import { useAuth } from "../hooks/useAuth";
 
 export function LayoutPage() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [name, _setName] = useState(() => {
-        const userRaw = localStorage.getItem("@viggo:user");
-        if (!userRaw) return "";
-        try {
-            const user = JSON.parse(userRaw);
-            return user ? user.name.split(" ")[0] : "";
-        } catch {
-            return "";
-        }
-    });
-
-    const handleLogout = () => {
-        localStorage.removeItem("@viggo:token");
-        localStorage.removeItem("@viggo:user");
-        window.location.href = "/";
-    };
+    const { user, logout } = useAuth();
+    const name = user?.name.split(" ")[0] ?? "";
 
     const closeMenu = () => setIsMenuOpen(false);
 
@@ -94,7 +81,7 @@ export function LayoutPage() {
                             Painel Admin
                         </Link>
                         <button
-                            onClick={handleLogout}
+                            onClick={logout}
                             className="flex justify-center items-center gap-2 text-red-500 font-medium px-2 py-1 hover:text-red-600 transition-colors cursor-pointer border-t border-gray-100 mt-2 pt-4"
                         >
                             <LogOut size={20} />

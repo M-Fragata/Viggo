@@ -18,6 +18,13 @@ async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promis
     },
   });
 
+  if (response.status === 401) {
+    localStorage.removeItem("@viggo:token");
+    localStorage.removeItem("@viggo:user");
+    window.location.href = "/";
+    return new Promise<T>(() => { }) as Promise<T>;
+  }
+
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: "Erro na requisição" }));
     throw new Error(error.message || `Erro ${response.status}`);

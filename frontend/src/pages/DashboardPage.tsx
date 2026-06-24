@@ -72,11 +72,10 @@ export function DashboardPage() {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === tab
+            className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm transition-all cursor-pointer whitespace-nowrap ${activeTab === tab
                 ? "bg-white text-emerald-600 shadow-sm"
                 : "text-slate-500 hover:text-slate-800"
-            }`}
+              }`}
           >
             {tab === "Funcionários" && <Users size={18} className="shrink-0" />}
             {tab === "Presentes" && <CheckCircle size={18} className="shrink-0" />}
@@ -175,9 +174,8 @@ function EmployeeTab({ company, usage, planLimit }: { company: any; usage: any; 
                     <td className="p-4 font-semibold text-slate-800">{emp.name}</td>
                     <td className="p-4 text-slate-500">{emp.email}</td>
                     <td className="p-4">
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${
-                        emp.role === "ENTERPRISE_ADMIN" ? "bg-purple-100 text-purple-700" : "bg-slate-100 text-slate-600"
-                      }`}>
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${emp.role === "ENTERPRISE_ADMIN" ? "bg-purple-100 text-purple-700" : "bg-slate-100 text-slate-600"
+                        }`}>
                         {emp.role === "ENTERPRISE_ADMIN" ? "Admin" : "Funcionário"}
                       </span>
                     </td>

@@ -2,15 +2,15 @@ import { useActionState } from "react";
 import { z } from "zod";
 import { Link, useNavigate } from "react-router";
 
-import { API_URL } from "../utils/api";
-
 import { Input } from "../components/Input";
 import { Button } from "../components/Button";
+import { useAuth } from "../hooks/useAuth";
 
 import logo from "../assets/logo.png";
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const [state, formAction, isDisabled] = useActionState(handleSubmit, {
     message: "",
@@ -32,28 +32,11 @@ export function LoginPage() {
     });
 
     try {
-      const response = await fetch(`${API_URL}/sessions/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+      const user = await login(payload.email, payload.password);
 
-      console.log(response)
-
-      if (!response.ok) {
-        return { message: "Erro ao fazer login, tente novamente em alguns segundos!", payload };
-      }
-
-      const data = await response.json();
-
-      window.localStorage.setItem("@viggo:user", JSON.stringify(data.user));
-      window.localStorage.setItem("@viggo:token", JSON.stringify(data.token));
-
-      if (data.user.isMaster) {
+      if (user.role === "MASTER") {
         navigate("/master");
-      } else if (data.user.role === "ENTERPRISE_ADMIN") {
+      } else if (user.role === "ENTERPRISE_ADMIN") {
         navigate("/admin");
       } else {
         navigate("/");

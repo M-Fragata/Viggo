@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { LivenessChallenge } from "../components/LivenessChallenge";
-import { API_URL } from "../utils/api";
+import { api } from "../services/api";
+import { useAuth } from "../hooks/useAuth";
 
 export function RegisterFace() {
     const [videoOpen, setVideoOpen] = useState(false);
@@ -9,6 +10,7 @@ export function RegisterFace() {
     const [isSuccess, setIsSuccess] = useState(false);
     const [isRegistering, setIsRegistering] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
+    const { user, token, refreshUser } = useAuth();
 
     useEffect(() => {
         const initCamera = async () => {
@@ -36,7 +38,7 @@ export function RegisterFace() {
 
                     await new Promise(resolve => setTimeout(resolve, 500));
                 }
-                
+
                 setShowLiveness(true);
                 setMessage("Posicione seu rosto no oval");
             } catch (err) {
@@ -60,23 +62,17 @@ export function RegisterFace() {
         setIsRegistering(true);
         setMessage("Salvando cadastro facial...");
 
-        const userRaw = localStorage.getItem("@viggo:user");
-        const tokenRaw = localStorage.getItem("@viggo:token");
-
-        if (!userRaw || !tokenRaw) {
+        if (!user || !token) {
             window.location.href = "/";
             return;
         }
 
         try {
-            const user = JSON.parse(userRaw);
-            const token = JSON.parse(tokenRaw);
-
-            const response = await fetch(`${API_URL}/sessions/${user.id}`, {
+            const response = await fetch(`${api.auth.login.toString().replace("/sessions/login", "")}/sessions/${user.id}`, {
                 method: "PUT",
-                headers: { 
-                    "Content-type": "application/json",
-                    "Authorization": `Bearer ${token}` 
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
                 },
                 body: JSON.stringify({ faceDescriptor: Array.from(descriptor) })
             });
@@ -88,8 +84,9 @@ export function RegisterFace() {
                 return;
             }
 
-            user.faceDescriptor = JSON.stringify(Array.from(descriptor));
-            localStorage.setItem("@viggo:user", JSON.stringify(user));
+            const updatedUser = { ...user, faceDescriptor: JSON.stringify(Array.from(descriptor)) };
+            localStorage.setItem("@viggo:user", JSON.stringify(updatedUser));
+            refreshUser();
 
             setIsSuccess(true);
             setMessage("Cadastro facial concluído!");

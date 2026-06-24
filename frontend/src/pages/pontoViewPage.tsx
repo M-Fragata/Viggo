@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react"
-import { API_URL } from "../utils/api"
+import { api } from "../services/api"
+import { useAuth } from "../hooks/useAuth"
 
 import { Input } from "../components/Input"
 import { Button } from "../components/Button"
@@ -14,22 +15,22 @@ type Checkin = {
 };
 
 export function PontoViewPage() {
+    const { token } = useAuth();
     const [date, setDate] = useState(new Date().toISOString().split("T")[0])
     const [checkins, setCheckins] = useState<Checkin[]>([])
 
     const handleGetPontos = useCallback(async () => {
 
-        const token = localStorage.getItem("@viggo:token")
-
         try {
 
             if (!token) return window.location.assign("/")
 
-            const response = await fetch(`${API_URL}/checkins?date=${date}`, {
+            const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3333";
+            const response = await fetch(`${baseUrl}/checkins?date=${date}`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
-                    "authorization": `Bearer ${JSON.parse(token)}`
+                    "authorization": `Bearer ${token}`
                 }
             })
 

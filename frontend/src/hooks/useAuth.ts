@@ -1,62 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
-import { api, type User, type CompanyStatus } from "../services/api";
-
-export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const loadUser = useCallback(() => {
-    const stored = localStorage.getItem("@viggo:user");
-    if (stored) {
-      try {
-        setUser(JSON.parse(stored));
-      } catch {
-        localStorage.removeItem("@viggo:user");
-        localStorage.removeItem("@viggo:token");
-      }
-    }
-    setIsLoading(false);
-  }, []);
-
-  useEffect(() => {
-    loadUser();
-  }, [loadUser]);
-
-  const login = useCallback(
-    async (email: string, password: string) => {
-      const { user, token } = await api.auth.login(email, password);
-      localStorage.setItem("@viggo:user", JSON.stringify(user));
-      localStorage.setItem("@viggo:token", JSON.stringify(token));
-      setUser(user);
-      return user;
-    },
-    []
-  );
-
-  const logout = useCallback(() => {
-    localStorage.removeItem("@viggo:token");
-    localStorage.removeItem("@viggo:user");
-    setUser(null);
-    window.location.href = "/";
-  }, []);
-
-  const isMaster = user?.role === "MASTER";
-  const isEnterpriseAdmin = user?.role === "ENTERPRISE_ADMIN";
-  const isEmployee = user?.role === "EMPLOYEE";
-  const isAdminOrMaster = isEnterpriseAdmin || isMaster;
-
-  return {
-    user,
-    isLoading,
-    login,
-    logout,
-    isMaster,
-    isEnterpriseAdmin,
-    isEmployee,
-    isAdminOrMaster,
-    refreshUser: loadUser,
-  };
-}
+export { useAuth } from "../contexts/AuthContext";
 
 export function useCompanyStatus() {
   const isTrialExpired = (planExpiresAt: string | null, status: CompanyStatus) => {
@@ -78,3 +20,7 @@ export function useCompanyStatus() {
 
   return { isTrialExpired, getTrialDaysRemaining, canAccess };
 }
+
+export type UserRole = "MASTER" | "ENTERPRISE_ADMIN" | "EMPLOYEE";
+export type PlanTier = "TIER_I" | "TIER_II" | "TIER_III" | "ENTERPRISE_CUSTOM";
+export type CompanyStatus = "TRIAL" | "ACTIVE" | "SUSPENDED" | "CANCELLED";

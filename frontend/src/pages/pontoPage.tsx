@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react"
 
 import { verificarPonto } from "../components/VerifyDescriptor"
-import { API_URL } from "../utils/api"
+import { api } from "../services/api"
 import { LivenessChallenge } from "../components/LivenessChallenge"
+import { useAuth } from "../hooks/useAuth"
 
 import { LogIn, Utensils, Coffee, LogOut } from "lucide-react"
 import * as faceapi from 'face-api.js';
@@ -19,6 +20,7 @@ type ChekinProps = {
 }
 
 export function PontoPage() {
+    const { token } = useAuth();
 
     const [videoOpen, setVideoOpen] = useState<boolean>(false)
     const [message, setMessage] = useState<string>("Iniciando validação...")
@@ -78,19 +80,17 @@ export function PontoPage() {
 
     async function handleGetEmployee() {
 
-        const token = localStorage.getItem("@viggo:token")
-
         try {
             if (!token) {
                 window.location.assign("/")
                 return { success: false }
             }
 
-            const response = await fetch(`${API_URL}/employees/face`, {
+            const response = await fetch(`${api.auth.login.toString().replace("/sessions/login", "")}/employees/face`, {
                 method: "GET",
                 headers: {
-                    "Content-type": "application/json",
-                    "authorization": `Bearer ${JSON.parse(token)}`
+                    "Content-Type": "application/json",
+                    "authorization": `Bearer ${token}`
                 }
             })
 
@@ -169,19 +169,18 @@ export function PontoPage() {
 
         setMessage("Registrando ponto...");
         
-        const token = localStorage.getItem("@viggo:token")
-        
         try {
             if (!token) {
                 window.location.assign("/")
                 return { success: false }
             }
 
-            const response = await fetch(`${API_URL}/checkins`, {
+            const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3333";
+            const response = await fetch(`${baseUrl}/checkins`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "authorization": `Bearer ${JSON.parse(token)}`
+                    "authorization": `Bearer ${token}`
                 },
                 body: JSON.stringify(pendingCheckin)
             });
@@ -223,17 +222,17 @@ export function PontoPage() {
     };
 
     async function handleGetCheckin() {
-        const token = localStorage.getItem("@viggo:token")
 
         try {
 
             if (!token) return window.location.assign("/")
 
-            const response = await fetch(`${API_URL}/checkins`, {
+            const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3333";
+            const response = await fetch(`${baseUrl}/checkins`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
-                    "authorization": `Bearer ${JSON.parse(token)}`
+                    "authorization": `Bearer ${token}`
                 }
             })
 

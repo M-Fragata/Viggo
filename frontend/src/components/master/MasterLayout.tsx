@@ -2,16 +2,12 @@ import { Outlet, Link, useLocation } from "react-router";
 import { useState } from "react";
 import { LogOut, Menu, X, BarChart2, Building2 } from "lucide-react";
 import logo from "../../assets/logo.png";
+import { useAuth } from "../../hooks/useAuth";
 
 export function MasterLayout() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
-
-  const handleLogout = () => {
-    localStorage.removeItem("@viggo:token");
-    localStorage.removeItem("@viggo:user");
-    window.location.href = "/";
-  };
+  const { logout } = useAuth();
 
   const closeMenu = () => setIsMenuOpen(false);
 

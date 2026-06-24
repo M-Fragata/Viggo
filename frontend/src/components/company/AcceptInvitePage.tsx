@@ -6,6 +6,7 @@ import { z } from "zod";
 import { Loader2, Shield, User, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { usePublicInvite } from "../../hooks/useInvites";
 import { useToast } from "../../hooks/useToast";
+import { useAuth } from "../../hooks/useAuth";
 import logo from "../../assets/logo.png";
 
 const acceptInviteSchema = z.object({
@@ -23,6 +24,7 @@ export function AcceptInvitePage() {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { setSession } = useAuth();
   const { invite, isLoading, error, fetchInvite, acceptInvite } = usePublicInvite();
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -47,8 +49,7 @@ export function AcceptInvitePage() {
     setIsSubmitting(true);
     try {
       const result = await acceptInvite({ token, name: data.name, password: data.password, confirmPassword: data.confirmPassword });
-      localStorage.setItem("@viggo:user", JSON.stringify(result.user));
-      localStorage.setItem("@viggo:token", JSON.stringify(result.token));
+      setSession(result.user, result.token);
       toast.success("Conta criada com sucesso!");
       navigate("/admin");
     } catch (err) {
