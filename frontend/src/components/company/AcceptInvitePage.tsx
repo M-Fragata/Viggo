@@ -129,15 +129,7 @@ export function AcceptInvitePage() {
       <div className="flex flex-col md:flex-row w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden min-h-[500px] md:h-[600px]">
         {/* LADO ESQUERDO: Info da empresa */}
         <section className="flex flex-col items-center justify-center bg-emerald-400 w-full md:w-1/2 h-1/3 md:h-full p-8 transition-all duration-500 md:rounded-l-2xl md:rounded-t-none rounded-t-2xl">
-          <div className="flex flex-col items-center gap-4 animate-in fade-in slide-in-from-left duration-700 max-w-xs">
-            <img src={logo} alt="Viggo Logo" className="w-32 md:w-56 h-auto drop-shadow-xl rounded-2xl" />
-            <div className="text-center text-white">
-              <h2 className="text-2xl font-bold">Bem-vindo à</h2>
-              <p className="text-xl font-semibold mt-1">{company.name}</p>
-              <p className="text-emerald-100 mt-2">Cargo: <span className="font-bold">Funcionário</span></p>
-              <p className="text-emerald-100 text-sm mt-1">Expira em {new Date(expiresAt).toLocaleDateString("pt-BR")}</p>
-            </div>
-          </div>
+          <img src={logo} alt="Viggo Logo" className="w-32 md:w-56 h-auto drop-shadow-xl rounded-2xl" />
         </section>
 
         {/* LADO DIREITO: Form de cadastro */}
