@@ -119,7 +119,7 @@ export function InviteTokenTable({ tokens, onRevoke, onCopy }: InviteTokenTableP
                       <button
                         onClick={() => handleCopy(token.inviteUrl, token.id)}
                         disabled={copyingId === token.id}
-                        className="p-2 text-slate-500 hover:text-emerald-500 hover:bg-emerald-50 rounded-lg transition-colors disabled:opacity-50"
+                        className="cursor-pointer p-2 text-slate-500 hover:text-emerald-500 hover:bg-emerald-50 rounded-lg transition-colors disabled:opacity-50"
                         title="Copiar link"
                       >
                         {copyingId === token.id ? (
@@ -130,7 +130,7 @@ export function InviteTokenTable({ tokens, onRevoke, onCopy }: InviteTokenTableP
                       </button>
                       <button
                         onClick={() => toggleExpand(token.id)}
-                        className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors ml-1"
+                        className="cursor-pointer p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors ml-1"
                         aria-label={isExpanded ? "Recolher detalhes" : "Expandir detalhes"}
                       >
                         {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -139,7 +139,7 @@ export function InviteTokenTable({ tokens, onRevoke, onCopy }: InviteTokenTableP
                         <button
                           onClick={() => handleRevoke(token.id)}
                           disabled={revokingId === token.id}
-                          className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 ml-1"
+                          className="cursor-pointer p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 ml-1"
                           title="Revogar token"
                         >
                           {revokingId === token.id ? (
@@ -156,22 +156,6 @@ export function InviteTokenTable({ tokens, onRevoke, onCopy }: InviteTokenTableP
                   <tr className="bg-slate-50">
                     <td colSpan={6} className="p-0">
                       <div className="p-6 border-t border-slate-200 animate-in slide-in-from-top duration-200">
-                        <div className="mb-4 p-4 bg-white rounded-xl border border-slate-200">
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium text-slate-700">Link do convite:</span>
-                            <button
-                              onClick={() => handleCopy(token.inviteUrl, token.id)}
-                              disabled={copyingId === token.id}
-                              className="flex items-center gap-1 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-sm font-medium hover:bg-emerald-100 transition-colors disabled:opacity-50"
-                            >
-                              <Copy className="w-3.5 h-3.5" />
-                              Copiar
-                            </button>
-                          </div>
-                          <code className="block w-full mt-2 p-3 bg-slate-50 rounded-lg text-sm text-slate-600 break-all font-mono">
-                            {token.inviteUrl}
-                          </code>
-                        </div>
 
                         {token.usedByUsers.length > 0 && (
                           <div>
