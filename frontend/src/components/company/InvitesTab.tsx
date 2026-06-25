@@ -59,7 +59,7 @@ export function InvitesTab() {
         <button
           onClick={handleGenerateToken}
           disabled={isGenerating || employeeLimitReached || !canCreateEmployee}
-          className="px-4 py-2.5 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed flex items-center gap-2"
+          className="cursor-pointer px-4 py-2.5 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed flex items-center gap-2"
         >
           <Plus size={18} />
           {isGenerating ? (
