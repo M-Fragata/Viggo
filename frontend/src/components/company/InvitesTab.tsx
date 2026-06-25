@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Loader2 } from "lucide-react";
 import { useInviteTokens } from "../../hooks/useInviteTokens";
 import { useCompany, usePlanLimits } from "../../hooks/useCompany";
@@ -9,9 +9,13 @@ export function InvitesTab() {
   const { company, isLoading: companyLoading } = useCompany();
   const { getPlanLimit } = usePlanLimits();
   const { toast } = useToast();
-  const { tokens, createToken, revokeToken } = useInviteTokens();
+  const { tokens, fetchTokens, createToken, revokeToken } = useInviteTokens();
 
   const [isGenerating, setIsGenerating] = useState(false);
+
+  useEffect(() => {
+    fetchTokens();
+  }, [fetchTokens]);
 
   const plan = company?.plan;
   const planLimit = plan ? getPlanLimit(plan) : null;
