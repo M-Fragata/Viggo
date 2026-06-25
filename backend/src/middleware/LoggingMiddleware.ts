@@ -2,7 +2,9 @@ import pino from 'pino';
 import type { Request, Response, NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 
-const isDevelopment = process.env.NODE_ENV !== 'production';
+import { Env } from "../utils/environment.js"
+
+const isDevelopment = Env.NODE_ENV === 'DEV';
 
 const prettyTransport = isDevelopment ? {
   target: 'pino-pretty',

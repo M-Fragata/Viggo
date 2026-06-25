@@ -6,6 +6,8 @@ import { z } from "zod";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
+import { Env } from "../utils/environment.js"
+
 export class SessionController {
 
     async create(req: Request, res: Response) {
@@ -89,7 +91,7 @@ export class SessionController {
                 companyId: user.companyId,
                 planTier: user.company?.plan || "TIER_I",
                 isMaster: user.role === "MASTER"
-            }, process.env.JWT_SECRET!, { expiresIn: "7d" });
+            }, Env.JWT_SECRET!, { expiresIn: "7d" });
 
             return res.status(200).json({
                 user: userWithoutPassword,

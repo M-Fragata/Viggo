@@ -2,6 +2,8 @@ import { type Request, type Response, type NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { setCurrentCompanyId, setCurrentUserId, clearPrismaContext } from "../database/prisma-extensions.js";
 
+import { Env } from "../utils/environment.js"
+
 interface JWTPayload {
     id: string;
     role: string;
@@ -22,7 +24,7 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
     if (!token) return res.status(401).json({ message: "Token não fornecido" });
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JWTPayload;
+        const decoded = jwt.verify(token, Env.JWT_SECRET!) as JWTPayload;
         const { id, role, companyId, planTier } = decoded;
 
         const user: typeof req.user = {

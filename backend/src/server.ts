@@ -1,6 +1,7 @@
 import { app } from './app.js';
+import { Env } from './utils/environment.js'
 
-const PORT = process.env.PORT || 3333;
+const PORT = Env.PORT
 
 app.use((err: any, req: any, res: any, next: any) => {
   console.error("=== ERRO NO SERVIDOR ===");

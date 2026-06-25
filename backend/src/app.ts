@@ -7,10 +7,12 @@ import { generalApiLimiter } from './middleware/RateLimitMiddleware.js';
 import { metricsMiddleware, metricsEndpoint } from './middleware/MetricsMiddleware.js';
 import { healthCheck, readinessCheck, setReady } from './middleware/HealthCheckMiddleware.js';
 
+import { Env } from "./utils/environment.js"
+
 const app = express();
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL,
+  origin: Env.FRONTEND_URL,
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }))
