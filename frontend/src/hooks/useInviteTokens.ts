@@ -1,52 +1,52 @@
 import { useState, useCallback } from "react";
-import { api, type InviteResponse, type CreateInviteDto, type PublicInviteResponse, type AcceptInviteDto } from "../services/api";
+import { api, type InviteTokenResponse, type CreateInviteTokenDto, type PublicInviteResponse, type AcceptInviteDto } from "../services/api";
 import { useToast } from "./useToast";
 
-export function useInvites() {
-  const [invites, setInvites] = useState<InviteResponse[]>([]);
+export function useInviteTokens() {
+  const [tokens, setTokens] = useState<InviteTokenResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const fetchInvites = useCallback(async () => {
+  const fetchTokens = useCallback(async () => {
     try {
       setIsLoading(true);
-      const data = await api.company.invites.list();
-      setInvites(data);
+      const data = await api.company.inviteTokens.list();
+      setTokens(data);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao carregar convites");
+      setError(err instanceof Error ? err.message : "Erro ao carregar tokens de convite");
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const createInvite = useCallback(
-    async (data: CreateInviteDto) => {
-      const { invite } = await api.company.invites.create(data);
-      setInvites((prev) => [invite, ...prev]);
-      toast.success("Convite enviado", { description: `Convite enviado para ${data.email}` });
-      return invite;
+  const createToken = useCallback(
+    async (data: CreateInviteTokenDto) => {
+      const token = await api.company.inviteTokens.create(data);
+      setTokens((prev) => [token, ...prev]);
+      toast.success("Link de convite gerado", { description: "Copie e compartilhe o link" });
+      return token;
     },
     [toast]
   );
 
-  const cancelInvite = useCallback(
+  const revokeToken = useCallback(
     async (id: string) => {
-      await api.company.invites.cancel(id);
-      setInvites((prev) => prev.filter((invite) => invite.id !== id));
-      toast.success("Convite cancelado");
+      await api.company.inviteTokens.revoke(id);
+      setTokens((prev) => prev.map((t) => (t.id === id ? { ...t, revokedAt: new Date().toISOString(), isActive: false } : t)));
+      toast.success("Token de convite revogado");
     },
     [toast]
   );
 
   return {
-    invites,
+    tokens,
     isLoading,
     error,
-    fetchInvites,
-    createInvite,
-    cancelInvite,
+    fetchTokens,
+    createToken,
+    revokeToken,
   };
 }
 

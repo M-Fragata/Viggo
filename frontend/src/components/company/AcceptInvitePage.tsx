@@ -4,12 +4,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2, Shield, User, Mail, Lock, Eye, EyeOff } from "lucide-react";
-import { usePublicInvite } from "../../hooks/useInvites";
+import { usePublicInvite } from "../../hooks/useInviteTokens";
 import { useToast } from "../../hooks/useToast";
 import { useAuth } from "../../hooks/useAuth";
 import logo from "../../assets/logo.png";
 
 const acceptInviteSchema = z.object({
+  email: z.email("Email inválido"),
   name: z.string().min(3, "O nome deve conter no mínimo 3 caracteres"),
   password: z.string().min(8, "A senha deve conter no mínimo 8 caracteres"),
   confirmPassword: z.string(),
@@ -35,6 +36,12 @@ export function AcceptInvitePage() {
     formState: { errors },
   } = useForm<AcceptInviteFormData>({
     resolver: zodResolver(acceptInviteSchema),
+    defaultValues: {
+      email: "",
+      name: "",
+      password: "",
+      confirmPassword: "",
+    },
   });
 
   useEffect(() => {
@@ -48,10 +55,10 @@ export function AcceptInvitePage() {
 
     setIsSubmitting(true);
     try {
-      const result = await acceptInvite({ token, name: data.name, password: data.password, confirmPassword: data.confirmPassword });
+      const result = await acceptInvite({ token, email: data.email, name: data.name, password: data.password, confirmPassword: data.confirmPassword });
       setSession(result.user, result.token);
       toast.success("Conta criada com sucesso!");
-      navigate("/admin");
+      navigate("/");
     } catch (err) {
       toast.error("Erro ao aceitar convite", { description: err instanceof Error ? err.message : "Tente novamente" });
     } finally {
@@ -91,7 +98,7 @@ export function AcceptInvitePage() {
     );
   }
 
-  const { email, role, company, expiresAt } = invite;
+  const { company, expiresAt } = invite;
   const isExpired = new Date(expiresAt) < new Date();
 
   if (isExpired) {
@@ -127,7 +134,7 @@ export function AcceptInvitePage() {
             <div className="text-center text-white">
               <h2 className="text-2xl font-bold">Bem-vindo à</h2>
               <p className="text-xl font-semibold mt-1">{company.name}</p>
-              <p className="text-emerald-100 mt-2">Convite para: <span className="font-bold">{role === "ENTERPRISE_ADMIN" ? "Administrador" : "Funcionário"}</span></p>
+              <p className="text-emerald-100 mt-2">Cargo: <span className="font-bold">Funcionário</span></p>
               <p className="text-emerald-100 text-sm mt-1">Expira em {new Date(expiresAt).toLocaleDateString("pt-BR")}</p>
             </div>
           </div>
@@ -146,6 +153,19 @@ export function AcceptInvitePage() {
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div className="space-y-4">
                 <div className="relative group">
+                  <label htmlFor="email" className="sr-only">Email</label>
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                  <input
+                    {...register("email")}
+                    id="email"
+                    type="email"
+                    placeholder="Seu email"
+                    className="w-full pl-12 pr-4 py-3 border-2 border-slate-100 focus:border-emerald-400 rounded-2xl outline-none transition-all"
+                  />
+                  {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
+                </div>
+
+                <div className="relative group">
                   <label htmlFor="name" className="sr-only">Seu nome</label>
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
                   <input
@@ -156,18 +176,6 @@ export function AcceptInvitePage() {
                     className="w-full pl-12 pr-4 py-3 border-2 border-slate-100 focus:border-emerald-400 rounded-2xl outline-none transition-all"
                   />
                   {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
-                </div>
-
-                <div className="relative group">
-                  <label htmlFor="email" className="sr-only">Email</label>
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-                  <input
-                    id="email"
-                    type="email"
-                    value={email}
-                    readOnly
-                    className="w-full pl-12 pr-4 py-3 border-2 border-slate-100 bg-slate-50 rounded-2xl outline-none text-slate-600"
-                  />
                 </div>
 
                 <div className="relative group">

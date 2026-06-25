@@ -26,20 +26,21 @@ model Company {
 }
 
 model User {
-  id             String    @id @default(uuid())
-  name           String
-  email          String    @unique
-  password       String
-  role           UserRole  @default(EMPLOYEE)
-  cpf            String?   @unique
-  faceDescriptor Json?
-  companyId      String
-  enterpriseId   String?
-  lastLoginAt    DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  checkIns       CheckIn[]
-  company        Company   @relation(fields: [companyId], references: [id])
+  id                 String    @id @default(uuid())
+  name               String
+  email              String    @unique
+  password           String
+  role               UserRole  @default(EMPLOYEE)
+  cpf                String?   @unique
+  faceDescriptor     Json?
+  companyId          String
+  enterpriseId       String?
+  lastLoginAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  checkIns           CheckIn[]
+  company            Company   @relation(fields: [companyId], references: [id])
+  inviteTokenUsages  InviteTokenUsage[]
 }
 
 model CheckIn {
@@ -76,18 +77,31 @@ model Subscription {
 }
 
 model InviteToken {
-  id        String    @id @default(uuid())
-  email     String
-  companyId String
-  company   Company   @relation(fields: [companyId], references: [id])
-  role      UserRole  @default(EMPLOYEE)
-  token     String    @unique
-  expiresAt DateTime
-  usedAt    DateTime?
-  createdAt DateTime  @default(now())
-
+  id              String    @id @default(uuid())
+  companyId       String
+  company         Company   @relation(fields: [companyId], references: [id])
+  token           String    @unique
+  maxUses         Int?
+  currentUses     Int       @default(0)
+  expiresAt       DateTime
+  revokedAt       DateTime?
+  createdAt       DateTime  @default(now())
+  usedByUsers     InviteTokenUsage[]
+  
   @@index([companyId])
-  @@index([email])
+}
+
+model InviteTokenUsage {
+  id             String      @id @default(uuid())
+  inviteTokenId  String
+  inviteToken    InviteToken @relation(fields: [inviteTokenId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime    @default(now())
+  
+  @@unique([inviteTokenId, userId])
+  @@index([inviteTokenId])
+  @@index([userId])
 }
 
 model AuditLog {

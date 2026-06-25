@@ -1,11 +1,9 @@
 import { useState } from "react";
 import { useCompany, usePlanLimits } from "../hooks/useCompany";
-import { useInvites } from "../hooks/useInvites";
 import { useAuth, useCompanyStatus } from "../hooks/useAuth";
 import { PlanBadge, PlanComparisonModal, UsageProgressBar, TrialCountdown } from "../components/plan";
-import { InviteModal, InviteTable } from "../components/company";
-import { useToast } from "../hooks/useToast";
-import { Users, CheckCircle, LayoutList, CreditCard, Mail, Plus, ArrowUpRight, Building2 } from "lucide-react";
+import { InvitesTab } from "../components/company";
+import { Users, CheckCircle, LayoutList, CreditCard, Mail, ArrowUpRight, Building2 } from "lucide-react";
 
 const TABS = ["Funcionários", "Presentes", "Total", "Plano", "Convites"] as const;
 type Tab = (typeof TABS)[number];
@@ -13,36 +11,15 @@ type Tab = (typeof TABS)[number];
 export function DashboardPage() {
   useAuth();
   const { company, usage, isLoading } = useCompany();
-  const { invites, isLoading: invitesLoading, fetchInvites, createInvite, cancelInvite } = useInvites();
   const { getPlanLimit, getPlanColor, getPlanLabel } = usePlanLimits();
-  const { toast } = useToast();
   const { isTrialExpired, getTrialDaysRemaining } = useCompanyStatus();
 
   const [activeTab, setActiveTab] = useState<Tab>("Funcionários");
   const [showPlanModal, setShowPlanModal] = useState(false);
-  const [showInviteModal, setShowInviteModal] = useState(false);
 
   const plan = company?.plan;
   const planLimit = plan ? getPlanLimit(plan) : null;
   const planColor = plan ? getPlanColor(plan) : "gray";
-  const canCreateEmployee = company?.canCreateEmployee ?? false;
-  const employeeLimitReached = !canCreateEmployee && (company?.currentEmployees ?? 0) >= (planLimit?.maxEmployees ?? 0);
-
-  const handleCreateInvite = async (data: { email: string; role: "ENTERPRISE_ADMIN" | "EMPLOYEE" }) => {
-    await createInvite(data);
-    fetchInvites();
-    setShowInviteModal(false);
-  };
-
-  const handleCancelInvite = async (id: string) => {
-    await cancelInvite(id);
-    fetchInvites();
-  };
-
-  const handleCopyInviteLink = (url: string) => {
-    navigator.clipboard.writeText(url);
-    toast.success("Link copiado!");
-  };
 
   if (isLoading) {
     return (
@@ -114,28 +91,10 @@ export function DashboardPage() {
       )}
 
       {activeTab === "Convites" && (
-        <InvitesTab
-          invites={invites}
-          isLoading={invitesLoading}
-          fetchInvites={fetchInvites}
-          canCreateEmployee={canCreateEmployee}
-          employeeLimitReached={employeeLimitReached}
-          showInviteModal={showInviteModal}
-          setShowInviteModal={setShowInviteModal}
-          onCreateInvite={handleCreateInvite}
-          onCancelInvite={handleCancelInvite}
-          onCopyLink={handleCopyInviteLink}
-          baseUrl={window.location.origin}
-        />
+        <InvitesTab />
       )}
 
       <PlanComparisonModal isOpen={showPlanModal} onClose={() => setShowPlanModal(false)} currentPlan={plan!} />
-      <InviteModal
-        isOpen={showInviteModal}
-        onClose={() => setShowInviteModal(false)}
-        canCreateEmployee={canCreateEmployee}
-        employeeLimitReached={employeeLimitReached}
-      />
     </div>
   );
 }
@@ -317,45 +276,6 @@ function PlanTab({
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function InvitesTab({
-  invites,
-  canCreateEmployee,
-  employeeLimitReached,
-  setShowInviteModal,
-  onCancelInvite,
-  onCopyLink,
-  baseUrl,
-}: any) {
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 className="text-lg font-bold text-slate-800">Convites Pendentes</h2>
-        <button
-          onClick={() => setShowInviteModal(true)}
-          disabled={employeeLimitReached || !canCreateEmployee}
-          className="px-4 py-2.5 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed flex items-center gap-2"
-        >
-          <Plus size={18} />
-          Convidar Funcionário
-        </button>
-      </div>
-
-      {!canCreateEmployee && !employeeLimitReached && (
-        <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-700">
-          Seu plano não permite adicionar mais funcionários. <button onClick={() => setShowInviteModal(true)} className="font-bold underline">Faça upgrade</button> para convidar.
-        </div>
-      )}
-
-      <InviteTable
-        invites={invites}
-        onCancel={onCancelInvite}
-        onCopyLink={onCopyLink}
-        baseUrl={baseUrl}
-      />
     </div>
   );
 }

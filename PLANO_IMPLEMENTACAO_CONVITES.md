@@ -182,6 +182,7 @@ export function usePublicInvite() {
   - Remove campo role (fixo "Funcionário" no display)
   - Display mostra: "Cargo: Funcionário" (não editável)
 - **Submit**: Envia `email` no `acceptInvite`
+- **Redirect**: Após sucesso, role=EMPLOYEE → redirect para `/` (página de ponto)
 
 ---
 
@@ -190,13 +191,13 @@ export function usePublicInvite() {
 ```
 1. Admin acessa aba "Convites"
 2. Clica "Gerar Link de Convite"
-3. Backend cria token → retorna inviteUrl (ex: app.com/accept-invite/xyz789)
+3. Backend cria token (companyId vem do auth do admin) → retorna inviteUrl (ex: app.com/accept-invite/xyz789)
 4. Frontend mostra card inline: link + botão copiar + seta ▼
 5. Admin compartilha link (WhatsApp, email, etc)
 6. Candidato clica → AcceptInvitePage carrega empresa + expiração
 7. Candidato preenche: Email, Nome, Senha, Confirmar Senha
 8. Submit → Backend valida, cria user (role=EMPLOYEE), registra uso, incrementa currentUses
-9. Redirect para /admin logado
+9. Redirect para "/" (página de ponto/checkin - role EMPLOYEE)
 10. Na aba Convites: token mostra "1/∞" uso, card expansível mostra o novo funcionário
 ```
 
@@ -210,6 +211,7 @@ export function usePublicInvite() {
 | Max usos | Ilimitado (null) |
 | Role padrão | EMPLOYEE |
 | Exibição link gerado | Card inline expansível |
+| Redirect pós-aceite | `/` (página de ponto) |
 
 ---
 
@@ -236,15 +238,15 @@ export function usePublicInvite() {
 
 ## 10. Checklist de Implementação
 
-- [ ] Migration Prisma (`InviteToken` + `InviteTokenUsage`)
-- [ ] Controller: create, list, revoke, getByToken, accept
-- [ ] Rotas protegidas (admin) + públicas
-- [ ] Tipos TypeScript + endpoints api.ts
-- [ ] Hook `useInviteTokens`
-- [ ] `InviteTokenTable` com card expansível
-- [ ] `InvitesTab` integrado
-- [ ] `AcceptInvitePage` com campo email
-- [ ] Testes manuais: gerar → copiar → acessar → registrar → ver uso na tabela
+- [x] Migration Prisma (`InviteToken` + `InviteTokenUsage`)
+- [x] Controller: create, list, revoke, getByToken, accept
+- [x] Rotas protegidas (admin) + públicas
+- [x] Tipos TypeScript + endpoints api.ts
+- [x] Hook `useInviteTokens`
+- [x] `InviteTokenTable` com card expansível
+- [x] `InvitesTab` integrado
+- [x] `AcceptInvitePage` com campo email
+- [x] Testes manuais: gerar → copiar → acessar → registrar → ver uso na tabela
 
 ---
 
@@ -256,3 +258,5 @@ export function usePublicInvite() {
 4. **Dados no card expansível**: Nome, email, data de uso (suficiente)
 5. **Migração**: Implementação nova, sem convites antigos
 6. **Role**: Fixa `EMPLOYEE` no aceite, admin altera depois se necessário
+7. **companyId no token**: Vem do auth do admin logado (não do body)
+8. **Redirect pós-aceite**: `/` para EMPLOYEE (página de ponto/checkin)

@@ -72,15 +72,15 @@ export const api = {
       }),
     getUsage: () => fetchApi<UsageResponse>("/companies/me/usage"),
 
-    invites: {
-      list: () => fetchApi<InviteResponse[]>("/companies/me/invites"),
-      create: (data: CreateInviteDto) =>
-        fetchApi<{ invite: InviteWithUrl }>("/companies/me/invites", {
+    inviteTokens: {
+      list: () => fetchApi<InviteTokenResponse[]>("/companies/me/invite-tokens"),
+      create: (data: CreateInviteTokenDto) =>
+        fetchApi<InviteTokenResponse>("/companies/me/invite-token", {
           method: "POST",
           body: JSON.stringify(data),
         }),
-      cancel: (id: string) =>
-        fetchApi<{ message: string }>(`/companies/me/invites/${id}`, {
+      revoke: (id: string) =>
+        fetchApi<{ message: string }>(`/companies/me/invite-tokens/${id}`, {
           method: "DELETE",
         }),
     },
@@ -241,27 +241,31 @@ export interface UsageResponse {
   plan: PlanTier;
 }
 
-export interface CreateInviteDto {
-  email: string;
-  role: "ENTERPRISE_ADMIN" | "EMPLOYEE";
+export interface CreateInviteTokenDto {
+  expiresInDays?: number;
+  maxUses?: number | null;
 }
 
-export interface InviteResponse {
+export interface InviteTokenResponse {
   id: string;
-  email: string;
-  role: UserRole;
-  expiresAt: string;
-  usedAt: string | null;
-  createdAt: string;
-}
-
-export interface InviteWithUrl extends InviteResponse {
+  token: string;
+  tokenMasked: string;
   inviteUrl: string;
+  maxUses: number | null;
+  currentUses: number;
+  expiresAt: string;
+  revokedAt: string | null;
+  createdAt: string;
+  isActive: boolean;
+  usedByUsers: {
+    id: string;
+    name: string;
+    email: string;
+    createdAt: string;
+  }[];
 }
 
 export interface PublicInviteResponse {
-  email: string;
-  role: UserRole;
   company: {
     id: string;
     name: string;
@@ -269,10 +273,13 @@ export interface PublicInviteResponse {
     settings: CompanySettings;
   };
   expiresAt: string;
+  maxUses: number | null;
+  currentUses: number;
 }
 
 export interface AcceptInviteDto {
   token: string;
+  email: string;
   name: string;
   password: string;
   confirmPassword: string;

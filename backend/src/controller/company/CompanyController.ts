@@ -8,6 +8,8 @@ import { validateDocument } from '../../utils/cpfCnpjValidator.js';
 import { getPlanLimits, TRIAL_DAYS, PlanTier, CompanyStatus } from '../../utils/planLimits.js';
 import { addDays } from 'date-fns';
 
+import { Env } from "../../utils/environment.js"
+
 export class CompanyController {
 
   async signup(req: Request, res: Response) {
@@ -106,7 +108,7 @@ export class CompanyController {
           planTier: company.plan,
           isMaster: false
         },
-        process.env.JWT_SECRET!,
+        Env.JWT_SECRET!,
         { expiresIn: '7d' }
       );
 
@@ -280,11 +282,10 @@ export class CompanyController {
     }
   }
 
-  async createInvite(req: Request, res: Response) {
+  async createInviteToken(req: Request, res: Response) {
     const bodySchema = z.object({
-      email: z.email('Email inválido'),
-      role: z.enum(['ENTERPRISE_ADMIN', 'EMPLOYEE']).default('EMPLOYEE'),
-      message: z.string().max(500).optional(),
+      expiresInDays: z.number().int().min(1).max(365).optional().default(7),
+      maxUses: z.number().int().min(1).optional().nullable(),
     });
 
     try {
@@ -292,7 +293,7 @@ export class CompanyController {
       const userRole = req.user?.role;
 
       if (!companyId || userRole !== 'ENTERPRISE_ADMIN') {
-        return res.status(403).json({ message: 'Apenas admins da empresa podem convidar' });
+        return res.status(403).json({ message: 'Apenas admins da empresa podem gerar tokens de convite' });
       }
 
       const company = await prisma.company.findUnique({
@@ -312,83 +313,91 @@ export class CompanyController {
         });
       }
 
-      const { email, role, message } = bodySchema.parse(req.body);
+      const { expiresInDays, maxUses } = bodySchema.parse(req.body);
 
-      const existingUser = await prisma.user.findUnique({ where: { email } });
-      if (existingUser) {
-        return res.status(400).json({ message: 'Usuário já cadastrado' });
-      }
+      const token = crypto.randomBytes(16).toString('hex');
+      const expiresAt = addDays(new Date(), expiresInDays);
 
-      const existingInvite = await prisma.inviteToken.findFirst({
-        where: { email, companyId, usedAt: null, expiresAt: { gt: new Date() } },
-      });
-      if (existingInvite) {
-        return res.status(400).json({ message: 'Convite pendente para este email' });
-      }
-
-      const token = crypto.randomBytes(32).toString('hex');
-      const expiresAt = addDays(new Date(), 7);
-
-      const invite = await prisma.inviteToken.create({
+      const inviteToken = await prisma.inviteToken.create({
         data: {
-          email,
           companyId,
-          role: role as any,
           token,
           expiresAt,
+          maxUses: maxUses ?? null,
         },
       });
 
-      const inviteUrl = `${process.env.FRONTEND_URL}/accept-invite/${token}`;
+      const inviteUrl = `${Env.FRONTEND_URL}/accept-invite/${token}`;
+      const tokenMasked = `${token.slice(0, 8)}...`;
 
       return res.status(201).json({
-        invite: {
-          id: invite.id,
-          email: invite.email,
-          role: invite.role,
-          expiresAt: invite.expiresAt,
-          inviteUrl,
-        },
+        id: inviteToken.id,
+        token,
+        tokenMasked,
+        inviteUrl,
+        maxUses: inviteToken.maxUses,
+        currentUses: inviteToken.currentUses,
+        expiresAt: inviteToken.expiresAt,
+        revokedAt: inviteToken.revokedAt,
+        createdAt: inviteToken.createdAt,
+        isActive: !inviteToken.revokedAt && inviteToken.expiresAt > new Date(),
+        usedByUsers: [],
       });
-
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: 'Dados inválidos', errors: error.issues });
       }
-      console.error('Erro ao criar convite:', error);
-      return res.status(500).json({ message: 'Erro ao criar convite' });
+      console.error('Erro ao criar token de convite:', error);
+      return res.status(500).json({ message: 'Erro ao criar token de convite' });
     }
   }
 
-  async listInvites(req: Request, res: Response) {
+  async listInviteTokens(req: Request, res: Response) {
     try {
       const companyId = req.user?.companyId;
       if (!companyId) {
         return res.status(401).json({ message: 'Empresa não identificada' });
       }
 
-      const invites = await prisma.inviteToken.findMany({
+      const tokens = await prisma.inviteToken.findMany({
         where: { companyId },
         orderBy: { createdAt: 'desc' },
-        select: {
-          id: true,
-          email: true,
-          role: true,
-          expiresAt: true,
-          usedAt: true,
-          createdAt: true,
+        include: {
+          usedByUsers: {
+            include: {
+              user: { select: { id: true, name: true, email: true, createdAt: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+          },
         },
       });
 
-      return res.json(invites);
+      const now = new Date();
+      const response = tokens.map((t) => ({
+        id: t.id,
+        tokenMasked: `${t.token.slice(0, 8)}...`,
+        maxUses: t.maxUses,
+        currentUses: t.currentUses,
+        expiresAt: t.expiresAt,
+        revokedAt: t.revokedAt,
+        createdAt: t.createdAt,
+        isActive: !t.revokedAt && t.expiresAt > now,
+        usedByUsers: t.usedByUsers.map((u) => ({
+          id: u.user.id,
+          name: u.user.name,
+          email: u.user.email,
+          createdAt: u.createdAt,
+        })),
+      }));
 
+      return res.json(response);
     } catch (error) {
-      console.error('Erro ao listar convites:', error);
-      return res.status(500).json({ message: 'Erro ao listar convites' });
+      console.error('Erro ao listar tokens de convite:', error);
+      return res.status(500).json({ message: 'Erro ao listar tokens de convite' });
     }
   }
 
-  async cancelInvite(req: Request, res: Response) {
+  async revokeInviteToken(req: Request, res: Response) {
     const paramsSchema = z.object({ id: z.uuid() });
 
     try {
@@ -399,114 +408,30 @@ export class CompanyController {
 
       const { id } = paramsSchema.parse(req.params);
 
-      const invite = await prisma.inviteToken.findFirst({
+      const token = await prisma.inviteToken.findFirst({
         where: { id, companyId },
       });
 
-      if (!invite) {
-        return res.status(404).json({ message: 'Convite não encontrado' });
+      if (!token) {
+        return res.status(404).json({ message: 'Token de convite não encontrado' });
       }
 
-      if (invite.usedAt) {
-        return res.status(400).json({ message: 'Convite já foi usado' });
+      if (token.revokedAt) {
+        return res.status(400).json({ message: 'Token já foi revogado' });
       }
-
-      await prisma.inviteToken.delete({ where: { id } });
-
-      return res.json({ message: 'Convite cancelado' });
-
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: 'Dados inválidos', errors: error.issues });
-      }
-      console.error('Erro ao cancelar convite:', error);
-      return res.status(500).json({ message: 'Erro ao cancelar convite' });
-    }
-  }
-
-  async acceptInvite(req: Request, res: Response) {
-    const bodySchema = z.object({
-      token: z.string(),
-      name: z.string().min(3),
-      password: z.string().min(8),
-      confirmPassword: z.string(),
-    });
-
-    try {
-      const { token, name, password, confirmPassword } = bodySchema.parse(req.body);
-
-      if (password !== confirmPassword) {
-        return res.status(400).json({ message: 'Senhas não conferem' });
-      }
-
-      const invite = await prisma.inviteToken.findUnique({
-        where: { token },
-        include: { company: true },
-      });
-
-      if (!invite) {
-        return res.status(404).json({ message: 'Convite inválido' });
-      }
-
-      if (invite.usedAt) {
-        return res.status(400).json({ message: 'Convite já foi usado' });
-      }
-
-      if (invite.expiresAt < new Date()) {
-        return res.status(400).json({ message: 'Convite expirado' });
-      }
-
-      const existingUser = await prisma.user.findUnique({ where: { email: invite.email } });
-      if (existingUser) {
-        return res.status(400).json({ message: 'Usuário já cadastrado' });
-      }
-
-      const passwordHash = await bcrypt.hash(password, 10);
-
-      const user = await prisma.user.create({
-        data: {
-          name,
-          email: invite.email,
-          password: passwordHash,
-          role: invite.role,
-          companyId: invite.companyId,
-        },
-      });
 
       await prisma.inviteToken.update({
-        where: { id: invite.id },
-        data: { usedAt: new Date() },
+        where: { id },
+        data: { revokedAt: new Date() },
       });
 
-      const { password: _, ...userWithoutPassword } = user;
-      const authToken = jwt.sign(
-        {
-          id: user.id,
-          role: user.role,
-          companyId: invite.companyId,
-          planTier: invite.company.plan,
-          isMaster: false
-        },
-        process.env.JWT_SECRET!,
-        { expiresIn: '7d' }
-      );
-
-      return res.json({
-        user: userWithoutPassword,
-        company: {
-          id: invite.company.id,
-          name: invite.company.name,
-          plan: invite.company.plan,
-        },
-        token: authToken,
-      });
-
+      return res.json({ message: 'Token de convite revogado' });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: 'Dados inválidos', errors: error.issues });
       }
-      console.error('Erro ao aceitar convite:', error);
-      return res.status(500).json({ message: 'Erro ao aceitar convite' });
+      console.error('Erro ao revogar token de convite:', error);
+      return res.status(500).json({ message: 'Erro ao revogar token de convite' });
     }
   }
 
@@ -516,7 +441,7 @@ export class CompanyController {
     try {
       const { token } = paramsSchema.parse(req.params);
 
-      const invite = await prisma.inviteToken.findUnique({
+      const inviteToken = await prisma.inviteToken.findUnique({
         where: { token },
         include: {
           company: {
@@ -525,32 +450,139 @@ export class CompanyController {
         },
       });
 
-      if (!invite) {
-        return res.status(404).json({ message: 'Convite não encontrado' });
+      if (!inviteToken) {
+        return res.status(404).json({ message: 'Token de convite não encontrado' });
       }
 
-      if (invite.usedAt) {
-        return res.status(400).json({ message: 'Convite já foi usado' });
+      const now = new Date();
+      if (inviteToken.revokedAt) {
+        return res.status(400).json({ message: 'Token de convite revogado' });
       }
 
-      if (invite.expiresAt < new Date()) {
-        return res.status(400).json({ message: 'Convite expirado' });
+      if (inviteToken.expiresAt < now) {
+        return res.status(400).json({ message: 'Token de convite expirado' });
+      }
+
+      if (inviteToken.maxUses !== null && inviteToken.currentUses >= inviteToken.maxUses) {
+        return res.status(400).json({ message: 'Token de convite atingiu o limite de usos' });
       }
 
       return res.json({
-        email: invite.email,
-        role: invite.role,
-        company: invite.company,
-        expiresAt: invite.expiresAt,
+        company: inviteToken.company,
+        expiresAt: inviteToken.expiresAt,
+        maxUses: inviteToken.maxUses,
+        currentUses: inviteToken.currentUses,
       });
-
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: 'Dados inválidos', errors: error.issues });
       }
-      console.error('Erro ao buscar convite:', error);
-      return res.status(500).json({ message: 'Erro ao buscar convite' });
+      console.error('Erro ao buscar token de convite:', error);
+      return res.status(500).json({ message: 'Erro ao buscar token de convite' });
     }
   }
-  
+
+  async acceptInvite(req: Request, res: Response) {
+    const bodySchema = z.object({
+      token: z.string(),
+      email: z.email('Email inválido'),
+      name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
+      password: z.string().min(8, 'Senha deve ter no mínimo 8 caracteres'),
+      confirmPassword: z.string(),
+    });
+
+    try {
+      const { token, email, name, password, confirmPassword } = bodySchema.parse(req.body);
+
+      if (password !== confirmPassword) {
+        return res.status(400).json({ message: 'Senhas não conferem' });
+      }
+
+      const inviteToken = await prisma.inviteToken.findUnique({
+        where: { token },
+        include: { company: true },
+      });
+
+      if (!inviteToken) {
+        return res.status(404).json({ message: 'Token de convite não encontrado' });
+      }
+
+      const now = new Date();
+      if (inviteToken.revokedAt) {
+        return res.status(400).json({ message: 'Token de convite revogado' });
+      }
+
+      if (inviteToken.expiresAt < now) {
+        return res.status(400).json({ message: 'Token de convite expirado' });
+      }
+
+      if (inviteToken.maxUses !== null && inviteToken.currentUses >= inviteToken.maxUses) {
+        return res.status(400).json({ message: 'Token de convite atingiu o limite de usos' });
+      }
+
+      const existingUser = await prisma.user.findUnique({ where: { email } });
+      if (existingUser) {
+        return res.status(400).json({ message: 'Email já cadastrado' });
+      }
+
+      const passwordHash = await bcrypt.hash(password, 10);
+
+      const result = await prisma.$transaction(async (tx) => {
+        const user = await tx.user.create({
+          data: {
+            name,
+            email,
+            password: passwordHash,
+            role: 'EMPLOYEE',
+            companyId: inviteToken.companyId,
+          },
+        });
+
+        await tx.inviteTokenUsage.create({
+          data: {
+            inviteTokenId: inviteToken.id,
+            userId: user.id,
+          },
+        });
+
+        await tx.inviteToken.update({
+          where: { id: inviteToken.id },
+          data: { currentUses: { increment: 1 } },
+        });
+
+        return { user, inviteToken };
+      });
+
+      const { user, inviteToken: updatedToken } = result;
+
+      const { password: _, ...userWithoutPassword } = user;
+      const authToken = jwt.sign(
+        {
+          id: user.id,
+          role: user.role,
+          companyId: inviteToken.companyId,
+          planTier: inviteToken.company.plan,
+          isMaster: false,
+        },
+        Env.JWT_SECRET!,
+        { expiresIn: '7d' }
+      );
+
+      return res.json({
+        user: userWithoutPassword,
+        company: {
+          id: inviteToken.company.id,
+          name: inviteToken.company.name,
+          plan: inviteToken.company.plan,
+        },
+        token: authToken,
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Dados inválidos', errors: error.issues });
+      }
+      console.error('Erro ao aceitar convite:', error);
+      return res.status(500).json({ message: 'Erro ao aceitar convite' });
+    }
+  }
 }
