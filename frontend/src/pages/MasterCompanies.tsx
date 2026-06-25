@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { Search, MoreVertical, Building2, CheckCircle, Clock, XCircle } from "lucide-react";
+import { Search, MoreVertical, Building2, CheckCircle, Clock, XCircle, UserCheck } from "lucide-react";
 import { useMasterCompanies, useMasterActions } from "../hooks/useMaster";
 import { PlanBadge, TrialCountdown } from "../components/plan";
 import { useToast } from "../hooks/useToast";
+import { useAuth } from "../hooks/useAuth";
 import type { CompanyStatus, PlanTier } from "../services/api";
 
 const STATUS_LABELS: Record<CompanyStatus, string> = {
@@ -21,8 +22,9 @@ const STATUS_COLORS: Record<CompanyStatus, string> = {
 
 export function MasterCompanies() {
   const { companies, pagination, isLoading, error, fetchCompanies } = useMasterCompanies();
-  const { updatePlan, updateStatus, extendTrial } = useMasterActions();
+  const { updatePlan, updateStatus, extendTrial, impersonate } = useMasterActions();
   const { toast } = useToast();
+  const { isMaster } = useAuth();
 
   const [page, setPage] = useState(1);
   const [limit] = useState(20);
@@ -45,7 +47,7 @@ export function MasterCompanies() {
       setShowActions(null);
       setActionCompany(null);
       fetchCompanies({ page, limit, status: statusFilter || undefined, plan: planFilter || undefined, search: search || undefined });
-    } catch (err) {
+    } catch {
       toast.error("Erro ao alterar status");
     }
   };
@@ -58,7 +60,7 @@ export function MasterCompanies() {
       setShowActions(null);
       setActionCompany(null);
       fetchCompanies({ page, limit, status: statusFilter || undefined, plan: planFilter || undefined, search: search || undefined });
-    } catch (err) {
+    } catch {
       toast.error("Erro ao alterar plano");
     }
   };
@@ -71,8 +73,20 @@ export function MasterCompanies() {
       setShowActions(null);
       setActionCompany(null);
       fetchCompanies({ page, limit, status: statusFilter || undefined, plan: planFilter || undefined, search: search || undefined });
-    } catch (err) {
+    } catch {
       toast.error("Erro ao estender trial");
+    }
+  };
+
+  const handleImpersonate = async () => {
+    if (!actionCompany) return;
+    try {
+      const result = await impersonate(actionCompany.id, actionCompany.name);
+      const { startImpersonation } = await import("../hooks/useAuth").then(m => m.useAuth());
+      startImpersonation(result.token, result.user, result.companyName);
+      window.location.href = "/admin";
+    } catch {
+      toast.error("Erro ao iniciar impersonação");
     }
   };
 
@@ -237,6 +251,17 @@ export function MasterCompanies() {
                                   </button>
                                 ))}
                               </div>
+                              {isMaster && (
+                                <>
+                                  <hr className="my-1 border-slate-100" />
+                                  <button
+                                    onClick={handleImpersonate}
+                                    className="w-full px-4 py-2 text-left text-sm flex items-center gap-2 hover:bg-slate-50 text-emerald-600"
+                                  >
+                                    <UserCheck size={16} /> Impersonar
+                                  </button>
+                                </>
+                              )}
                               {company.status === "TRIAL" && (
                                 <>
                                   <hr className="my-1 border-slate-100" />

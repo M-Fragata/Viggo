@@ -150,6 +150,10 @@ export const api = {
         method: "POST",
         body: JSON.stringify({ days }),
       }),
+    impersonate: (companyId: string) =>
+      fetchApi<{ token: string; user: User; expiresIn: number }>(`/master/companies/${companyId}/impersonate`, {
+        method: "POST",
+      }),
   },
 };
 

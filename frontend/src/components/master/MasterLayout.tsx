@@ -3,6 +3,7 @@ import { useState } from "react";
 import { LogOut, Menu, X, BarChart2, Building2 } from "lucide-react";
 import logo from "../../assets/logo.png";
 import { useAuth } from "../../hooks/useAuth";
+import { ImpersonationBanner } from "./ImpersonationBanner";
 
 export function MasterLayout() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -18,6 +19,7 @@ export function MasterLayout() {
 
   return (
     <div className="min-h-screen flex flex-col overflow-hidden bg-gray-50 relative">
+      <ImpersonationBanner />
       {isMenuOpen && (
         <div className="fixed inset-0 z-31 bg-black/5 backdrop-blur-[1px] transition-opacity" onClick={closeMenu} />
       )}

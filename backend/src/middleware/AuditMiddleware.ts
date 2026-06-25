@@ -52,6 +52,7 @@ const AUDIT_ACTIONS = {
   CHECKIN: 'CHECKIN',
   FACE_VALIDATION: 'FACE_VALIDATION',
   FACE_REGISTER: 'FACE_REGISTER',
+  IMPERSONATE: 'IMPERSONATE',
 } as const;
 
 export function auditMiddleware(req: Request, res: Response, next: NextFunction) {

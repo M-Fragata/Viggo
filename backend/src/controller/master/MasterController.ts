@@ -3,6 +3,9 @@ import { prisma } from '../../database/prisma.js';
 import { z } from 'zod';
 import { PlanTier, CompanyStatus, getPlanLimits } from '../../utils/planLimits.js';
 import { startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import jwt from 'jsonwebtoken';
+import { Env } from '../../utils/environment.js';
+import { createAuditLog } from '../../middleware/AuditMiddleware.js';
 
 export class MasterController {
   async listCompanies(req: Request, res: Response) {
@@ -166,6 +169,91 @@ export class MasterController {
       if (error instanceof z.ZodError) return res.status(400).json({ message: 'Dados inválidos', errors: error.issues });
       console.error('Erro ao estender trial:', error);
       return res.status(500).json({ message: 'Erro ao estender trial' });
+    }
+  }
+
+  async impersonate(req: Request, res: Response) {
+    const paramsSchema = z.object({ id: z.uuid() });
+    try {
+      const { id: companyId } = paramsSchema.parse(req.params);
+      const masterUserId = req.user!.id;
+
+      const company = await prisma.company.findUnique({
+        where: { id: companyId },
+        select: { id: true, name: true, plan: true, status: true },
+      });
+
+      if (!company) {
+        return res.status(404).json({ message: 'Empresa não encontrada' });
+      }
+
+      if (company.status === CompanyStatus.CANCELLED) {
+        return res.status(400).json({ message: 'Não é possível impersonar uma empresa cancelada' });
+      }
+
+      const targetUser = await prisma.user.findFirst({
+        where: {
+          companyId,
+          role: { in: ['ENTERPRISE_ADMIN', 'EMPLOYEE'] },
+        },
+        orderBy: { role: 'desc' },
+        select: { id: true, name: true, email: true, role: true },
+      });
+
+      if (!targetUser) {
+        return res.status(404).json({ message: 'Nenhum usuário encontrado na empresa' });
+      }
+
+      const token = jwt.sign(
+        {
+          id: masterUserId,
+          role: 'ENTERPRISE_ADMIN',
+          companyId: company.id,
+          planTier: company.plan,
+          isMaster: false,
+          isImpersonated: true,
+          impersonatedBy: masterUserId,
+          impersonatedCompanyName: company.name,
+        },
+        Env.JWT_SECRET!,
+        { expiresIn: '1h' }
+      );
+
+      await createAuditLog({
+        userId: masterUserId,
+        companyId: company.id,
+        action: 'IMPERSONATE',
+        entity: 'User',
+        entityId: targetUser.id,
+        oldData: null,
+        newData: {
+          targetCompanyId: company.id,
+          targetCompanyName: company.name,
+          targetUserId: targetUser.id,
+          targetUserRole: targetUser.role,
+        },
+        ip: req.ip ?? null,
+        userAgent: req.get('user-agent') ?? null,
+      });
+
+      return res.json({
+        token,
+        user: {
+          id: targetUser.id,
+          name: targetUser.name,
+          email: targetUser.email,
+          role: 'ENTERPRISE_ADMIN',
+          companyId: company.id,
+          companyName: company.name,
+        },
+        expiresIn: 3600,
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Parâmetros inválidos', errors: error.issues });
+      }
+      console.error('Erro ao impersonar:', error);
+      return res.status(500).json({ message: 'Erro ao impersonar' });
     }
   }
 }

@@ -36,3 +36,12 @@ export const generalApiLimiter = rateLimit({
   legacyHeaders: false,
   keyGenerator: (req: Request) => req.user?.id ?? req.ip ?? 'unknown',
 });
+
+export const impersonateRateLimit = rateLimit({
+  windowMs: 60 * 1000,
+  max: 5,
+  message: { message: 'Muitas tentativas de impersonação. Tente novamente em 1 minuto.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req: Request) => req.user?.id ?? req.ip ?? 'unknown',
+});

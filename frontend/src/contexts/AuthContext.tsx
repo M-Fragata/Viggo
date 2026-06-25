@@ -14,13 +14,22 @@ interface AuthContextType {
   isEnterpriseAdmin: boolean;
   isEmployee: boolean;
   isAdminOrMaster: boolean;
+  isImpersonated: boolean;
+  impersonatedCompanyName: string | null;
+  startImpersonation: (token: string, user: User, companyName: string) => void;
+  stopImpersonation: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+interface JWTPayload {
+  exp: number;
+  [key: string]: unknown;
+}
+
 function validateToken(token: string): boolean {
   try {
-    const decoded: any = jwtDecode(token);
+    const decoded = jwtDecode<JWTPayload>(token);
     const agora = Math.floor(Date.now() / 1000);
     return decoded.exp >= agora;
   } catch {
@@ -32,22 +41,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isImpersonated, setIsImpersonated] = useState(false);
+  const [impersonatedCompanyName, setImpersonatedCompanyName] = useState<string | null>(null);
 
   const clearSession = useCallback(() => {
     localStorage.removeItem("@viggo:token");
     localStorage.removeItem("@viggo:user");
+    localStorage.removeItem("@viggo:masterToken");
+    localStorage.removeItem("@viggo:masterUser");
     setUser(null);
     setToken(null);
+    setIsImpersonated(false);
+    setImpersonatedCompanyName(null);
   }, []);
 
   const loadSession = useCallback(() => {
     const storedUser = localStorage.getItem("@viggo:user");
     const storedToken = localStorage.getItem("@viggo:token");
+    const storedMasterToken = localStorage.getItem("@viggo:masterToken");
+    const storedMasterUser = localStorage.getItem("@viggo:masterUser");
 
     if (storedUser && storedToken && validateToken(storedToken)) {
       try {
         setUser(JSON.parse(storedUser));
         setToken(storedToken);
+        if (storedMasterToken && storedMasterUser) {
+          setIsImpersonated(true);
+          const masterUser = JSON.parse(storedMasterUser);
+          setImpersonatedCompanyName(masterUser.companyName || null);
+        }
       } catch {
         clearSession();
       }
@@ -90,7 +112,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUser = useCallback(() => {
     loadSession();
-  }, [loadSession]);''
+  }, [loadSession]);
+
+  const startImpersonation = useCallback((newToken: string, newUser: User, companyName: string) => {
+    localStorage.setItem("@viggo:masterToken", token!);
+    localStorage.setItem("@viggo:masterUser", JSON.stringify({ ...user, companyName }));
+    localStorage.setItem("@viggo:token", newToken);
+    localStorage.setItem("@viggo:user", JSON.stringify(newUser));
+    setToken(newToken);
+    setUser(newUser);
+    setIsImpersonated(true);
+    setImpersonatedCompanyName(companyName);
+  }, [token, user]);
+
+  const stopImpersonation = useCallback(() => {
+    const masterToken = localStorage.getItem("@viggo:masterToken");
+    const masterUser = localStorage.getItem("@viggo:masterUser");
+    if (masterToken && masterUser) {
+      localStorage.setItem("@viggo:token", masterToken);
+      localStorage.setItem("@viggo:user", masterUser);
+      localStorage.removeItem("@viggo:masterToken");
+      localStorage.removeItem("@viggo:masterUser");
+      setToken(masterToken);
+      setUser(JSON.parse(masterUser));
+    }
+    setIsImpersonated(false);
+    setImpersonatedCompanyName(null);
+    window.location.href = "/master/companies";
+  }, []);
 
   const isMaster = user?.role === "MASTER";
   const isEnterpriseAdmin = user?.role === "ENTERPRISE_ADMIN";
@@ -111,6 +160,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isEnterpriseAdmin,
         isEmployee,
         isAdminOrMaster,
+        isImpersonated,
+        impersonatedCompanyName,
+        startImpersonation,
+        stopImpersonation,
       }}
     >
       {children}

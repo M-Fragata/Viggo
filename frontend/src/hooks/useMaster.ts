@@ -83,5 +83,13 @@ export function useMasterActions() {
     [toast]
   );
 
-  return { updatePlan, updateStatus, extendTrial };
+  const impersonate = useCallback(
+    async (companyId: string, companyName: string) => {
+      const result = await api.master.impersonate(companyId);
+      return { ...result, companyName };
+    },
+    []
+  );
+
+  return { updatePlan, updateStatus, extendTrial, impersonate };
 }
