@@ -1,3 +1,4 @@
+/*
 import { vi, beforeEach, beforeAll, afterAll } from 'vitest';
 import { prismaMock } from './mocks/prisma.mock.js';
 import { jwtMock } from './mocks/jwt.mock.js';
@@ -22,3 +23,4 @@ afterAll(() => {
 });
 
 global.vi = vi;
+*/
