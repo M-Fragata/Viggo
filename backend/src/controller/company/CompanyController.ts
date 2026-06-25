@@ -375,7 +375,9 @@ export class CompanyController {
       const now = new Date();
       const response = tokens.map((t) => ({
         id: t.id,
+        token: t.token,
         tokenMasked: `${t.token.slice(0, 8)}...`,
+        inviteUrl: `${Env.FRONTEND_URL}/accept-invite/${t.token}`,
         maxUses: t.maxUses,
         currentUses: t.currentUses,
         expiresAt: t.expiresAt,
