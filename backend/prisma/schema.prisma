@@ -7,18 +7,18 @@ datasource db {
 }
 
 model Company {
-  id              String    @id @default(uuid())
+  id              String         @id @default(uuid())
   name            String
-  cnpj            String?   @unique
-  plan            PlanTier  @default(TIER_I)
-  status          CompanyStatus @default(TRIAL)
+  cnpj            String?        @unique
+  plan            PlanTier       @default(TIER_I)
+  status          CompanyStatus  @default(TRIAL)
   planExpiresAt   DateTime?
-  maxEmployees    Int       @default(10)
+  maxEmployees    Int            @default(10)
   asaasCustomerId String?
   settings        Json?
-  trialUsed       Boolean   @default(false)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  trialUsed       Boolean        @default(false)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
   checkIns        CheckIn[]
   users           User[]
   subscriptions   Subscription[]
@@ -26,21 +26,20 @@ model Company {
 }
 
 model User {
-  id                 String    @id @default(uuid())
-  name               String
-  email              String    @unique
-  password           String
-  role               UserRole  @default(EMPLOYEE)
-  cpf                String?   @unique
-  faceDescriptor     Json?
-  companyId          String
-  enterpriseId       String?
-  lastLoginAt        DateTime?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-  checkIns           CheckIn[]
-  company            Company   @relation(fields: [companyId], references: [id])
-  inviteTokenUsages  InviteTokenUsage[]
+  id                String             @id @default(uuid())
+  name              String
+  email             String             @unique
+  password          String
+  role              UserRole           @default(EMPLOYEE)
+  cpf               String?            @unique
+  faceDescriptor    Json?
+  companyId         String
+  lastLoginAt       DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  checkIns          CheckIn[]
+  company           Company            @relation(fields: [companyId], references: [id])
+  inviteTokenUsages InviteTokenUsage[]
 }
 
 model CheckIn {
@@ -60,62 +59,62 @@ model CheckIn {
 }
 
 model Subscription {
-  id                    String      @id @default(uuid())
-  companyId             String
-  company               Company     @relation(fields: [companyId], references: [id])
-  planTier              PlanTier
-  price                 Decimal     @db.Decimal(10, 2)
-  status                String
-  asaasSubscriptionId   String?
-  startedAt             DateTime    @default(now())
-  expiresAt             DateTime?
-  cancelledAt           DateTime?
-  createdAt             DateTime    @default(now())
+  id                  String    @id @default(uuid())
+  companyId           String
+  company             Company   @relation(fields: [companyId], references: [id])
+  planTier            PlanTier
+  price               Decimal   @db.Decimal(10, 2)
+  status              String
+  asaasSubscriptionId String?
+  startedAt           DateTime  @default(now())
+  expiresAt           DateTime?
+  cancelledAt         DateTime?
+  createdAt           DateTime  @default(now())
 
   @@index([companyId])
   @@index([status])
 }
 
 model InviteToken {
-  id              String    @id @default(uuid())
-  companyId       String
-  company         Company   @relation(fields: [companyId], references: [id])
-  token           String    @unique
-  maxUses         Int?
-  currentUses     Int       @default(0)
-  expiresAt       DateTime
-  revokedAt       DateTime?
-  createdAt       DateTime  @default(now())
-  usedByUsers     InviteTokenUsage[]
-  
+  id          String             @id @default(uuid())
+  companyId   String
+  company     Company            @relation(fields: [companyId], references: [id])
+  token       String             @unique
+  maxUses     Int?
+  currentUses Int                @default(0)
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  createdAt   DateTime           @default(now())
+  usedByUsers InviteTokenUsage[]
+
   @@index([companyId])
 }
 
 model InviteTokenUsage {
-  id             String      @id @default(uuid())
-  inviteTokenId  String
-  inviteToken    InviteToken @relation(fields: [inviteTokenId], references: [id], onDelete: Cascade)
-  userId         String
-  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt      DateTime    @default(now())
-  
+  id            String      @id @default(uuid())
+  inviteTokenId String
+  inviteToken   InviteToken @relation(fields: [inviteTokenId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+
   @@unique([inviteTokenId, userId])
   @@index([inviteTokenId])
   @@index([userId])
 }
 
 model AuditLog {
-  id          String    @id @default(uuid())
-  userId      String
-  companyId   String
-  action      String
-  entity      String
-  entityId    String?
-  oldData     Json?
-  newData     Json?
-  ip          String?
-  userAgent   String?
-  createdAt   DateTime  @default(now())
+  id        String   @id @default(uuid())
+  userId    String
+  companyId String
+  action    String
+  entity    String
+  entityId  String?
+  oldData   Json?
+  newData   Json?
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
 
   @@index([userId, createdAt])
   @@index([companyId, createdAt])
