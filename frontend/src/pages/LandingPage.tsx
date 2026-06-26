@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 import { TypewriterText } from "../components/TypewriterText";
 import { PricingSection } from "../components/PricingSection";
+import { HeroMedia } from "../components/HeroMedia";
 import { TRIAL_DAYS } from "../../../shared/plans";
 
 const HERO_WORDS = [
@@ -32,40 +33,65 @@ export function LandingPage() {
       </header>
 
       <main>
-        <section className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-32">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-6xl ">
-              Controle de ponto com{" "}
-              <span>
-              <TypewriterText
-                words={HERO_WORDS}
-                className="text-emerald-600"
-                typeSpeed={80}
-                deleteSpeed={40}
-                pauseDuration={2000}
-                cursorClassName="text-emerald-500"
-              />
-              </span>
-            </h1>
-            <p className="mt-6 text-lg leading-8 text-slate-600 max-w-2xl mx-auto">
-              Elimine fraudes, ganhe agilidade e tenha total conformidade legal.
-              Setup em minutos, sem hardware extra.
-            </p>
-            <div className="mt-10 flex items-center justify-center gap-4">
-              <Link
-                to="/company/signup"
-                className="rounded-xl bg-emerald-600 px-8 py-3.5 text-base font-semibold text-white shadow-sm hover:bg-emerald-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 transition-colors"
-              >
-                Começar trial de {TRIAL_DAYS} dias
-              </Link>
-              <Link
-                to="/login"
-                className="rounded-xl border border-slate-300 bg-white px-8 py-3.5 text-base font-semibold text-slate-700 shadow-sm hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-600 transition-colors"
-              >
-                Já tenho conta
-              </Link>
+        <section className="relative mx-auto max-w-7xl px-4 pt-20 sm:px-6 lg:px-8 lg:pb-20">
+          <div className="flex flex-col lg:flex-row items-stretch justify-around lg:gap-5">
+            <div className="hidden lg:flex justify-center">
+              <picture>
+                <img
+                  src="/celular na mao.png"
+                  alt="Viggo - Controle de ponto com reconhecimento facial"
+                  className="h-auto object-cover rounded-2xl shadow-xl"
+                  loading="eager"
+                  fetchPriority="high"
+                />
+              </picture>
+            </div>
+            <div className="text-center lg:text-left flex-1 max-w-2xl flex flex-col justify-center gap-5">
+              <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-5xl">
+                Controle de ponto com{" "} <br />
+                <span>
+                  <TypewriterText
+                    words={HERO_WORDS}
+                    className="text-emerald-600"
+                    typeSpeed={80}
+                    deleteSpeed={40}
+                    pauseDuration={2000}
+                    cursorClassName="text-emerald-500"
+                  />
+                </span>
+              </h1>
+              <p className="mt-6 text-lg text-slate-600 max-w-xl lg:mx-0">
+                Elimine fraudes, ganhe agilidade e tenha total conformidade legal.
+                Setup em minutos, sem hardware extra.
+              </p>
+              <div className="mt-10 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+                <Link
+                  to="/company/signup"
+                  className="rounded-xl bg-emerald-600 px-8 py-3.5 text-base font-semibold text-white shadow-sm hover:bg-emerald-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 transition-colors"
+                >
+                  Começar trial de {TRIAL_DAYS} dias
+                </Link>
+                <Link
+                  to="/login"
+                  className="rounded-xl border border-slate-300 bg-white px-8 py-3.5 text-base font-semibold text-slate-700 shadow-sm hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-600 transition-colors"
+                >
+                  Já tenho conta
+                </Link>
+              </div>
             </div>
           </div>
+
+          <div className="lg:hidden mt-12 mb-12 w-[300px] m-auto">
+              <picture>
+                <img
+                  src="/celular.png"
+                  alt="Viggo - Controle de ponto com reconhecimento facial"
+                  className="w-full h-auto object-cover rounded-2xl shadow-xl"
+                  loading="eager"
+                  fetchPriority="high"
+                />
+              </picture>
+            </div>
         </section>
 
         <section className="bg-slate-50 py-20">

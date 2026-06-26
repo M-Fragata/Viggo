@@ -10,16 +10,16 @@ export function PricingCard({ plan, onCtaClick }: PricingCardProps) {
 
   const cardBase = `
     relative rounded-2xl p-8 transition-all duration-300
-    bg-white border
+    bg-white border shadow-xl
     flex flex-col h-full
     hover:scale-x-101 hover:scale-y-101
     transition-transform duration-300
   `;
 
   const highlightedStyles = `
-    border-emerald-400 ring-4 ring-emerald-100 shadow-xl
+    border-emerald-400 ring-emerald-100 
     scale-[1.02] z-10
-    -mt-8
+    lg:-mt-8
     hover:scale-x-103 hover:scale-y-103
   `;
 
