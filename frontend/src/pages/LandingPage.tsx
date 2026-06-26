@@ -5,9 +5,9 @@ import { TRIAL_DAYS } from "../../../shared/plans";
 
 const HERO_WORDS = [
   "reconhecimento facial",
-  "controle de localização",
-  "anti-fraude em tempo real",
-  "conformidade CLT automática",
+  "geolocalização",
+  "anti-fraude",
+  "conformidade CLT",
 ];
 
 export function LandingPage() {
@@ -34,8 +34,9 @@ export function LandingPage() {
       <main>
         <section className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-32">
           <div className="text-center">
-            <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-6xl">
+            <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-6xl ">
               Controle de ponto com{" "}
+              <span>
               <TypewriterText
                 words={HERO_WORDS}
                 className="text-emerald-600"
@@ -44,6 +45,7 @@ export function LandingPage() {
                 pauseDuration={2000}
                 cursorClassName="text-emerald-500"
               />
+              </span>
             </h1>
             <p className="mt-6 text-lg leading-8 text-slate-600 max-w-2xl mx-auto">
               Elimine fraudes, ganhe agilidade e tenha total conformidade legal.
