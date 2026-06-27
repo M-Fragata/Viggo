@@ -1,7 +1,6 @@
 import { Link } from "react-router";
 import { TypewriterText } from "../components/TypewriterText";
 import { PricingSection } from "../components/PricingSection";
-import { HeroMedia } from "../components/HeroMedia";
 import { TRIAL_DAYS } from "../../../shared/plans";
 
 const HERO_WORDS = [
