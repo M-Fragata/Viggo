@@ -132,8 +132,6 @@ export class SessionController {
 
             if (!faceDescriptor) return res.status(404).json({ error: "faceDescriptor not found" })
 
-            console.log(faceDescriptor)
-
             await prisma.user.update({
                 where: {
                     id: userId

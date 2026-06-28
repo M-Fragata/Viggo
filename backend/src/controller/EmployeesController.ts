@@ -26,7 +26,7 @@ export class EmployeesController {
                     }
                 } as any
             })
-console.log(checkins)
+
             const data = employees.map((employee: User) => {
 
                 let checkinUser: any = []
@@ -59,7 +59,7 @@ console.log(checkins)
                     id
                 }
             })
-            console.log(user)
+
             if (!user) return res.status(404).json({ message: "User not found" })
                 
             if (!user.faceDescriptor) return res.status(403).json({ code: "FACE_NOT_REGISTERED", message: "Registro facial pendente. Por favor, cadastre sua face antes de bater o ponto." })
