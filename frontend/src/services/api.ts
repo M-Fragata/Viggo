@@ -315,7 +315,7 @@ export interface MasterCompanyListItem {
   status: CompanyStatus;
   planExpiresAt: string | null;
   maxEmployees: number;
-  currentEmployees: number;
+  employeesCount: number;
   employeeUsagePercent: number;
   settings: CompanySettings;
   createdAt: string;
@@ -340,19 +340,28 @@ export interface Subscription {
 }
 
 export interface MasterMetricsResponse {
-  totalCompanies: number;
-  activeCompanies: number;
-  trialCompanies: number;
-  cancelledCompanies: number;
-  mrr: number;
-  planDistribution: Record<PlanTier, number>;
-  growth: {
+  companies: {
+    total: number;
+    active: number;
+    trial: number;
+    suspended: number;
+    cancelled: number;
+  };
+  users: {
+    total: number;
+  };
+  checkins: {
     thisMonth: number;
     lastMonth: number;
+    growthRate: number;
+  };
+  revenue: {
+    mrr: number;
+    planDistribution: Record<PlanTier, number>;
   };
   churn: {
-    thisMonth: number;
-    lastMonth: number;
+    rate: number;
+    cancelled: number;
   };
 }
 
