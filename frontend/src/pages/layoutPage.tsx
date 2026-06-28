@@ -7,8 +7,7 @@ import { useAuth } from "../hooks/useAuth";
 
 export function LayoutPage() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const { user, logout } = useAuth();
-    const name = user?.name.split(" ")[0] ?? "";
+    const { name, logout } = useAuth();
 
     const closeMenu = () => setIsMenuOpen(false);
 

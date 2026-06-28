@@ -8,8 +8,7 @@ import { ImpersonationBanner } from "./ImpersonationBanner";
 export function MasterLayout() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
-  const { logout, user } = useAuth();
-  const name = user?.name.split(" ")[0] ?? "";
+  const { logout, name } = useAuth();
 
   const closeMenu = () => setIsMenuOpen(false);
 
