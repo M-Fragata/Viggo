@@ -103,7 +103,7 @@ export function MasterCompanies() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 mx-auto">
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Empresas</h1>
@@ -194,7 +194,7 @@ export function MasterCompanies() {
                     <td className="p-4">
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-xl text-xs">
-                          {company.currentEmployees}/{company.maxEmployees === null ? "∞" : company.maxEmployees}
+                          {company.employeesCount}/{company.maxEmployees === null ? "∞" : company.maxEmployees}
                         </span>
                         <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden max-w-[100px]">
                           <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${company.employeeUsagePercent}%` }} />
