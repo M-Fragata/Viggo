@@ -83,7 +83,18 @@ export class SessionController {
 
             if (!verifyPassword) return res.status(400).json({ message: "Email e/ou senha incorretos" });
 
-            const { password: _, ...userWithoutPassword } = user
+            const companyUser = await prisma.company.findUnique({
+                where: { id: user.companyId }
+            })
+
+            if (!companyUser) return res.status(400).json({ message: "Trabalhador sem empresa" })
+
+            const data = {
+                id: user.id,
+                name: user.name,
+                role: user.role,
+                companyId: user.companyId,
+            }
 
             const token = jwt.sign({
                 id: user.id,
@@ -94,7 +105,8 @@ export class SessionController {
             }, Env.JWT_SECRET!, { expiresIn: "7d" });
 
             return res.status(200).json({
-                user: userWithoutPassword,
+                user: data,
+                company: companyUser.name,
                 token
             });
 
