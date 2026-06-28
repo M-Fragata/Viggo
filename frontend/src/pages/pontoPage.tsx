@@ -1,12 +1,10 @@
 import { useState, useEffect, useRef } from "react"
 
-import { verificarPonto } from "../components/VerifyDescriptor"
 import { api } from "../services/api"
 import { LivenessChallenge } from "../components/LivenessChallenge"
 import { useAuth } from "../hooks/useAuth"
 
 import { LogIn, Utensils, Coffee, LogOut } from "lucide-react"
-import * as faceapi from 'face-api.js';
 
 import { z } from "zod"
 import { Button } from "../components/Button"
@@ -130,36 +128,34 @@ export function PontoPage() {
         }
     }
 
-    async function handleLivenessComplete(__descriptor: Float32Array) {
+    function stopCamera() {
+        if (videoRef.current && videoRef.current.srcObject) {
+            const stream = videoRef.current.srcObject as MediaStream;
+            stream.getTracks().forEach((track) => track.stop());
+            videoRef.current.srcObject = null;
+        }
+    }
+
+    async function handleLivenessComplete(_descriptor: Float32Array) {
         if (!pendingCheckin) {
             setShowLiveness(false);
-            return { success: false };
+            setIsRegistering(false);
+            stopCamera();
+            setVideoOpen(false);
+            return;
         }
 
+        stopCamera();
         setShowLiveness(false);
         setIsRegistering(true);
-        setMessage("Verificando identidade...");
-
-        const verifyResult = await verificarPonto(
-            Array.from(livenessDescriptor!),
-            videoRef,
-            setMessage
-        );
-
-        if (!verifyResult.success) {
-            setIsRegistering(false);
-            setPendingCheckin(null);
-            setMessage("Rosto não reconhecido. Tente novamente.");
-            return { success: false };
-        }
-
-        setVideoOpen(false);
         setMessage("Registrando ponto...");
 
         try {
             if (!token) {
-                window.location.assign("/")
-                return { success: false }
+                setIsRegistering(false);
+                setVideoOpen(false);
+                window.location.assign("/");
+                return;
             }
 
             await api.checkins.create(pendingCheckin as CheckinCreateDto);
@@ -167,6 +163,7 @@ export function PontoPage() {
             setIsSuccess(true);
             setMessage("Ponto registrado com sucesso!");
             setPendingCheckin(null);
+            setLivenessDescriptor(null);
 
             await handleGetCheckin();
 
@@ -175,21 +172,22 @@ export function PontoPage() {
                 setIsRegistering(false);
                 setVideoOpen(false);
             }, 3000);
-
-            return { success: true };
-
         } catch (error) {
             console.error("Erro ao registrar o ponto:", error);
-            setMessage("Erro ao registrar o ponto. Tente novamente.");
             setIsRegistering(false);
-            return { success: false };
+            setVideoOpen(false);
+            setPendingCheckin(null);
+            setLivenessDescriptor(null);
+            setMessage("Erro ao registrar o ponto. Tente novamente.");
         }
-    };
+    }
 
     const handleLivenessCancel = () => {
+        stopCamera();
         setShowLiveness(false);
         setVideoOpen(false);
         setPendingCheckin(null);
+        setLivenessDescriptor(null);
         setMessage("Validação cancelada");
     };
 
@@ -211,24 +209,6 @@ export function PontoPage() {
     useEffect(() => {
         handleGetCheckin()
     }, [])
-
-    useEffect(() => {
-        const carregarModelos = async () => {
-            try {
-                const MODEL_URL = '/models';
-                await Promise.all([
-                    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-                    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-                    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
-                ]);
-
-            } catch (error) {
-                console.error("Erro ao carregar modelos:", error);
-            }
-        };
-
-        carregarModelos();
-    }, []);
 
     useEffect(() => {
         if (videoOpen) {
