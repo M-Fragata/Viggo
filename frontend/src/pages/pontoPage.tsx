@@ -153,6 +153,7 @@ export function PontoPage() {
             return { success: false };
         }
 
+        setVideoOpen(false);
         setMessage("Registrando ponto...");
 
         try {
