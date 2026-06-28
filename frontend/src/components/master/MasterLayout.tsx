@@ -40,8 +40,8 @@ export function MasterLayout() {
                   to={item.path}
                   onClick={closeMenu}
                   className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-colors ${location.pathname === item.path
-                      ? "bg-emerald-50 text-emerald-600"
-                      : "text-gray-600 hover:text-emerald-600 hover:bg-emerald-50"
+                    ? "bg-emerald-50 text-emerald-600"
+                    : "text-gray-600 hover:text-emerald-600 hover:bg-emerald-50"
                     }`}
                 >
                   <item.icon size={18} />
@@ -49,12 +49,12 @@ export function MasterLayout() {
                 </Link>
               ))}
             </nav>
-
             <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="md:hidden p-2 text-emerald-600 transition-all duration-300 cursor-pointer rounded-md hover:bg-emerald-50"
+              onClick={logout}
+              className="flex justify-center items-center gap-2 text-red-500 font-medium px-4 py-3 hover:text-red-600 transition-colors cursor-pointer border-t border-gray-100 mt-2"
             >
-              {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
+              <LogOut size={20} />
+              <span>Sair</span>
             </button>
           </div>
         </div>
@@ -67,8 +67,8 @@ export function MasterLayout() {
                 to={item.path}
                 onClick={closeMenu}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors ${location.pathname === item.path
-                    ? "bg-emerald-50 text-emerald-600"
-                    : "text-gray-600 hover:text-emerald-600 hover:bg-emerald-50"
+                  ? "bg-emerald-50 text-emerald-600"
+                  : "text-gray-600 hover:text-emerald-600 hover:bg-emerald-50"
                   }`}
               >
                 <item.icon size={20} />
