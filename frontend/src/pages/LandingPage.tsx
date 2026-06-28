@@ -37,9 +37,9 @@ export function LandingPage() {
             <div className="hidden lg:flex justify-center">
               <picture>
                 <img
-                  src="/celular na mao.png"
+                  src="/viggo front.png"
                   alt="Viggo - Controle de ponto com reconhecimento facial"
-                  className="h-auto object-cover rounded-2xl shadow-xl"
+                  className="h-auto object-cover rounded-[52px] shadow-xl w-[300px]"
                   loading="eager"
                   fetchPriority="high"
                 />
@@ -83,9 +83,9 @@ export function LandingPage() {
           <div className="lg:hidden mt-12 mb-12 w-[300px] m-auto">
               <picture>
                 <img
-                  src="/celular.png"
+                  src="/viggo front.png"
                   alt="Viggo - Controle de ponto com reconhecimento facial"
-                  className="w-full h-auto object-cover rounded-2xl shadow-xl"
+                  className="w-full h-auto object-cover rounded-[52px] shadow-xl"
                   loading="eager"
                   fetchPriority="high"
                 />
