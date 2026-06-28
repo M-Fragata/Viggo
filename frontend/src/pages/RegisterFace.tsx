@@ -119,6 +119,7 @@ export function RegisterFace() {
                     muted
                     playsInline
                     className="w-full h-full object-cover"
+                    style={{ transform: 'scaleX(-1)' }}
                 />
 
                 <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">

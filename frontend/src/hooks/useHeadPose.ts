@@ -56,15 +56,15 @@ export function useHeadPose() {
   }, []);
 
   const isLookingFront = useCallback((pose: HeadPose, threshold = 15): boolean => {
-    return Math.abs(pose.yaw) < threshold && Math.abs(pose.pitch) < threshold;
+    return Math.abs(pose.yaw) < threshold && Math.abs(pose.pitch) < PITCH_THRESHOLD;
   }, []);
 
   const isLookingLeft = useCallback((pose: HeadPose, threshold = 18): boolean => {
-    return pose.yaw < -threshold && Math.abs(pose.pitch) < 25;
+    return pose.yaw < -threshold && Math.abs(pose.pitch) < PITCH_THRESHOLD;
   }, []);
 
   const isLookingRight = useCallback((pose: HeadPose, threshold = 18): boolean => {
-    return pose.yaw > threshold && Math.abs(pose.pitch) < 25;
+    return pose.yaw > threshold && Math.abs(pose.pitch) < PITCH_THRESHOLD;
   }, []);
 
   return { getHeadPose, isLookingFront, isLookingLeft, isLookingRight };

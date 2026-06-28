@@ -262,7 +262,7 @@ export function LivenessChallenge({
         }
 
         // Drive ball position from actual yaw (normalized to thresholds)
-        const normalizedYaw = Math.max(-1, Math.min(1, headPose.yaw / YAW_THRESHOLD_SIDE));
+        const normalizedYaw = Math.max(-1, Math.min(1, -headPose.yaw / YAW_THRESHOLD_SIDE));
         animate(ballX, normalizedYaw, {
           type: 'spring',
           stiffness: 400,
