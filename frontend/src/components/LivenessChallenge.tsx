@@ -13,11 +13,11 @@ interface LivenessChallengeProps {
   faceDescriptor?: Float32Array;
 }
 
-const STEP_CONFIG: Record<Exclude<LivenessStep, 'complete'>, { 
-  label: string; 
-  instruction: string; 
-  icon: string; 
-  color: string; 
+const STEP_CONFIG: Record<Exclude<LivenessStep, 'complete'>, {
+  label: string;
+  instruction: string;
+  icon: string;
+  color: string;
   targetX: number;
   targetY: number;
   requiresBlink: boolean;
@@ -38,7 +38,7 @@ const STEP_CONFIG: Record<Exclude<LivenessStep, 'complete'>, {
     instruction: 'Vire o rosto até a bola chegar ao alvo (≈20°)',
     icon: '◀️',
     color: 'blue',
-    targetX: 1,
+    targetX: -1,
     targetY: 0,
     requiresBlink: false,
     threshold: 25,
@@ -48,7 +48,7 @@ const STEP_CONFIG: Record<Exclude<LivenessStep, 'complete'>, {
     instruction: 'Vire o rosto até a bola chegar ao alvo (≈20°)',
     icon: '▶️',
     color: 'blue',
-    targetX: -1,
+    targetX: 1,
     targetY: 0,
     requiresBlink: false,
     threshold: 25,
@@ -136,11 +136,11 @@ function BallVisual({
   );
 }
 
-export function LivenessChallenge({ 
-  videoRef, 
-  onComplete, 
+export function LivenessChallenge({
+  videoRef,
+  onComplete,
   onCancel,
-  faceDescriptor 
+  faceDescriptor
 }: LivenessChallengeProps) {
   const animationRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -180,7 +180,7 @@ export function LivenessChallenge({
   // Transform for ball position (normalized -1 to 1 -> percentage for CSS)
   const ballXPercent = useTransform(ballXSpring, [-1, 1], ['-80%', '80%']);
   const ballYPercent = useTransform(ballYSpring, [-1, 1], ['-80%', '80%']);
-  
+
   // Ring progress transform (0-100 -> stroke-dashoffset)
   const ringOffset = useTransform(ringSpring, [0, 100], [RING_CIRCUMFERENCE, 0]);
 
@@ -262,7 +262,7 @@ export function LivenessChallenge({
         }
 
         // Drive ball position from actual yaw (normalized to thresholds)
-        const normalizedYaw = Math.max(-1, Math.min(1, headPose.yaw / YAW_THRESHOLD_SIDE));
+        const normalizedYaw = Math.max(-1, Math.min(1, -headPose.yaw / YAW_THRESHOLD_SIDE));
         animate(ballX, normalizedYaw, {
           type: 'spring',
           stiffness: 400,
@@ -398,13 +398,12 @@ export function LivenessChallenge({
             {STEPS.map((step, idx) => (
               <div
                 key={step}
-                className={`w-8 h-2 rounded transition-colors ${
-                  idx < currentStepIndex
-                    ? 'bg-emerald-500'
-                    : idx === currentStepIndex
+                className={`w-8 h-2 rounded transition-colors ${idx < currentStepIndex
+                  ? 'bg-emerald-500'
+                  : idx === currentStepIndex
                     ? 'bg-yellow-500'
                     : 'bg-white/30'
-                }`}
+                  }`}
               />
             ))}
           </div>
@@ -412,9 +411,8 @@ export function LivenessChallenge({
 
         <div className="w-full h-2 bg-white/20 rounded overflow-hidden">
           <div
-            className={`h-full transition-all duration-300 ${
-              ballColorState === 'correct' ? 'bg-emerald-500' : ballColorState === 'error' ? 'bg-red-500' : 'bg-blue-500'
-            }`}
+            className={`h-full transition-all duration-300 ${ballColorState === 'correct' ? 'bg-emerald-500' : ballColorState === 'error' ? 'bg-red-500' : 'bg-blue-500'
+              }`}
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -431,12 +429,12 @@ export function LivenessChallenge({
         targetY={stepConfig.targetY}
       />
 
+      {/*
       <div className="flex items-center gap-3 mb-8 px-4">
         {currentStep === 'front' && (
           <>
-            <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center ${
-              blinkValidated ? 'border-emerald-500 bg-emerald-500/20' : 'border-white/30'
-            }`}>
+            <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center ${blinkValidated ? 'border-emerald-500 bg-emerald-500/20' : 'border-white/30'
+              }`}>
               <span className="text-white text-lg">{blinkValidated ? '✓' : '👁'}</span>
             </div>
             <span className="text-white text-sm">Pisque para confirmar</span>
@@ -452,7 +450,8 @@ export function LivenessChallenge({
           </span>
         </div>
       </div>
-
+      */}
+      
       <button
         onClick={onCancel}
         className="w-full max-w-[200px] py-3 bg-white/10 hover:bg-white/20 text-white rounded-full font-bold transition-all active:scale-95 pointer-events-auto"
