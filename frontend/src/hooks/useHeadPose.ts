@@ -96,5 +96,5 @@ export const BLINK_THRESHOLD = 0.25;
 export const BLINK_THRESHOLD_FRONT = 0.30;
 export const YAW_THRESHOLD_FRONT = 15; // Angulo minimo para validação frontal
 export const YAW_THRESHOLD_SIDE = 20; // Angulo mínimo para validação lateral
-export const PITCH_THRESHOLD = 25;
+export const PITCH_THRESHOLD = 30;
 export const FRONT_TIMEOUT_MS = 10000;
