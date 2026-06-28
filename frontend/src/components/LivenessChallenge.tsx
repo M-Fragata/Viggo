@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
-import { useHeadPose, calculateEAR, BLINK_THRESHOLD_FRONT, YAW_THRESHOLD_FRONT, YAW_THRESHOLD_SIDE } from '../hooks/useHeadPose';
+import { useHeadPose, calculateEAR, BLINK_THRESHOLD_FRONT, YAW_THRESHOLD_FRONT, YAW_THRESHOLD_SIDE, FRONT_TIMEOUT_MS } from '../hooks/useHeadPose';
 import type { HeadPose } from '../hooks/useHeadPose';
 import * as faceapi from 'face-api.js';
 import { motion, useMotionValue, useSpring, useTransform, animate } from 'framer-motion';
@@ -254,7 +254,7 @@ export function LivenessChallenge({
             setBlinkValidated(true);
           }
 
-          stepPassed = poseOk && (blinkValidated || timeInFront > 10000);
+          stepPassed = poseOk && (blinkValidated || timeInFront > FRONT_TIMEOUT_MS);
         } else {
           stepPassed = step === 'left'
             ? isLookingLeft(headPose, YAW_THRESHOLD_SIDE)

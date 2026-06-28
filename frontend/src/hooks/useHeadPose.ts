@@ -55,15 +55,15 @@ export function useHeadPose() {
     return { yaw, pitch, roll };
   }, []);
 
-  const isLookingFront = useCallback((pose: HeadPose, threshold = 15): boolean => {
+  const isLookingFront = useCallback((pose: HeadPose, threshold = YAW_THRESHOLD_FRONT): boolean => {
     return Math.abs(pose.yaw) < threshold && Math.abs(pose.pitch) < PITCH_THRESHOLD;
   }, []);
 
-  const isLookingLeft = useCallback((pose: HeadPose, threshold = 18): boolean => {
+  const isLookingLeft = useCallback((pose: HeadPose, threshold = YAW_THRESHOLD_SIDE): boolean => {
     return pose.yaw < -threshold && Math.abs(pose.pitch) < PITCH_THRESHOLD;
   }, []);
 
-  const isLookingRight = useCallback((pose: HeadPose, threshold = 18): boolean => {
+  const isLookingRight = useCallback((pose: HeadPose, threshold = YAW_THRESHOLD_SIDE): boolean => {
     return pose.yaw > threshold && Math.abs(pose.pitch) < PITCH_THRESHOLD;
   }, []);
 
@@ -94,6 +94,7 @@ export function calculateEAR(landmarks: faceapi.FaceLandmarks68): number {
 
 export const BLINK_THRESHOLD = 0.25;
 export const BLINK_THRESHOLD_FRONT = 0.30;
-export const YAW_THRESHOLD_FRONT = 25;
-export const YAW_THRESHOLD_SIDE = 18;
+export const YAW_THRESHOLD_FRONT = 30;
+export const YAW_THRESHOLD_SIDE = 35;
 export const PITCH_THRESHOLD = 25;
+export const FRONT_TIMEOUT_MS = 10000;
