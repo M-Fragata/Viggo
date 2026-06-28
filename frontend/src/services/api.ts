@@ -49,7 +49,7 @@ async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promis
 export const api = {
   auth: {
     login: (email: string, password: string) =>
-      fetchApi<{ user: User; token: string }>("/sessions/login", {
+      fetchApi<{ user: User; token: string; company: string }>("/sessions/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
         requiresAuth: false,

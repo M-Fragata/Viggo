@@ -16,7 +16,7 @@ type Checkin = {
 };
 
 export function PontoViewPage() {
-    const { token } = useAuth();
+    const { token, company, user } = useAuth();
     const [date, setDate] = useState(new Date().toISOString().split("T")[0])
     const [checkins, setCheckins] = useState<Checkin[]>([])
 
@@ -76,10 +76,7 @@ export function PontoViewPage() {
         const printWindow = window.open("", "_blank")
         if (!printWindow) return
 
-        const user = localStorage.getItem("@viggo:user")
-        const nome = user ? JSON.parse(user).name : "Colaborador"
-
-        const empresa = "Fernanda Kister"
+        const nome = user?.name ?? "Colaborador"
 
         const dataRelatorio = new Date(date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
 
@@ -132,7 +129,7 @@ export function PontoViewPage() {
                         <p><b>Data:</b> ${dataRelatorio}</p>
                     </div>
                     <div style="text-align: right">
-                        <p><b>Empresa:</b> ${empresa}</p>
+                        <p><b>Empresa:</b> ${company}</p>
                     </div>
                 </div>
 

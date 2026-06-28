@@ -6,9 +6,10 @@ interface AuthContextType {
   user: User | null;
   name: string | null;
   token: string | null;
+  company: string | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<User>;
-  setSession: (user: User, token: string) => void;
+  setSession: (user: User, token: string, company: string) => void;
   logout: () => void;
   refreshUser: () => void;
   isMaster: boolean;
@@ -40,6 +41,7 @@ function validateToken(token: string): boolean {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [company, setCompany] = useState<string | null>(null)
   const [name, setName] = useState<string | null>(null)
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -51,9 +53,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("@viggo:user");
     localStorage.removeItem("@viggo:masterToken");
     localStorage.removeItem("@viggo:masterUser");
+    localStorage.removeItem("@viggo:company")
     setUser(null);
     setName(null)
     setToken(null);
+    setCompany(null)
     setIsImpersonated(false);
     setImpersonatedCompanyName(null);
   }, []);
@@ -61,13 +65,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadSession = useCallback(() => {
     const storedUser = localStorage.getItem("@viggo:user");
     const storedToken = localStorage.getItem("@viggo:token");
+    const storedCompany = localStorage.getItem("@viggo:company")
     const storedMasterToken = localStorage.getItem("@viggo:masterToken");
     const storedMasterUser = localStorage.getItem("@viggo:masterUser");
 
-    if (storedUser && storedToken && validateToken(storedToken)) {
+    if (storedUser && storedToken && validateToken(storedToken) && storedCompany) {
       try {
         setUser(JSON.parse(storedUser));
         setToken(storedToken);
+        setCompany(storedCompany)
         if (storedMasterToken && storedMasterUser) {
           setIsImpersonated(true);
           const masterUser = JSON.parse(storedMasterUser);
@@ -96,28 +102,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (email: string, password: string) => {
-      const { user, token } = await api.auth.login(email, password);
+      const { user, token, company } = await api.auth.login(email, password);
       localStorage.setItem("@viggo:user", JSON.stringify(user));
       localStorage.setItem("@viggo:token", token);
+      localStorage.setItem("@viggo:company", company)
       setUser(user);
       setToken(token);
+      setCompany(company);
       return user;
     },
     []
   );
 
-  const setSession = useCallback((newUser: User, newToken: string) => {
+  const setSession = useCallback((newUser: User, newToken: string, newCompany: string) => {
     localStorage.setItem("@viggo:user", JSON.stringify(newUser));
     localStorage.setItem("@viggo:token", newToken);
+    localStorage.setItem("@viggo:token", newCompany);
     setUser(newUser);
     setToken(newToken);
+    setCompany(newCompany)
   }, []);
 
   const logout = useCallback(() => {
     localStorage.removeItem("@viggo:token");
     localStorage.removeItem("@viggo:user");
+    localStorage.removeItem("@viggo:company");
     setUser(null);
     setToken(null);
+    setCompany(null)
     window.location.href = "/";
   }, []);
 
@@ -131,6 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("@viggo:token", newToken);
     localStorage.setItem("@viggo:user", JSON.stringify(newUser));
     setToken(newToken);
+    setCompany(null)
     setUser(newUser);
     setIsImpersonated(true);
     setImpersonatedCompanyName(companyName);
@@ -147,6 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setToken(masterToken);
       setUser(JSON.parse(masterUser));
     }
+    setCompany(company)
     setIsImpersonated(false);
     setImpersonatedCompanyName(null);
     window.location.href = "/master/companies";
@@ -163,6 +177,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         name,
         token,
+        company,
         isLoading,
         login,
         setSession,

@@ -56,7 +56,7 @@ export function AcceptInvitePage() {
     setIsSubmitting(true);
     try {
       const result = await acceptInvite({ token, email: data.email, name: data.name, password: data.password, confirmPassword: data.confirmPassword });
-      setSession(result.user, result.token);
+      setSession(result.user, result.token, result.company.name);
       toast.success("Conta criada com sucesso!");
       navigate("/");
     } catch (err) {

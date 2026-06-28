@@ -68,7 +68,7 @@ export function CompanySignupPage() {
         confirmPassword: rawData.confirmPassword,
       });
 
-      setSession(response.user, response.token);
+      setSession(response.user, response.token, response.company.name);
       navigate("/admin");
     } catch (error) {
       const err = error as Error;
