@@ -4,6 +4,7 @@ import { jwtDecode } from "jwt-decode";
 
 interface AuthContextType {
   user: User | null;
+  name: string | null;
   token: string | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<User>;
@@ -39,6 +40,7 @@ function validateToken(token: string): boolean {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [name, setName] = useState<string | null>(null)
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isImpersonated, setIsImpersonated] = useState(false);
@@ -50,6 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("@viggo:masterToken");
     localStorage.removeItem("@viggo:masterUser");
     setUser(null);
+    setName(null)
     setToken(null);
     setIsImpersonated(false);
     setImpersonatedCompanyName(null);
@@ -70,6 +73,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const masterUser = JSON.parse(storedMasterUser);
           setImpersonatedCompanyName(masterUser.companyName || null);
         }
+
+        setName(() => {
+          const firstName = JSON.parse(storedUser)?.name.split(" ")[0];
+          const firstLetter = firstName?.slice(0, 1)
+          const restName = firstName?.slice(1)
+          return `${firstLetter?.toUpperCase()}${restName?.toLowerCase()}`
+        })
+
       } catch {
         clearSession();
       }
@@ -150,6 +161,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
+        name,
         token,
         isLoading,
         login,
