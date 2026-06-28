@@ -1,6 +1,6 @@
 import { Outlet, Link, useLocation } from "react-router";
 import { useState } from "react";
-import { LogOut, Menu, X, BarChart2, Building2 } from "lucide-react";
+import { LogOut, BarChart2, Building2 } from "lucide-react";
 import logo from "../../assets/logo.png";
 import { useAuth } from "../../hooks/useAuth";
 import { ImpersonationBanner } from "./ImpersonationBanner";
