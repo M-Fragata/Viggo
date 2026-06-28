@@ -35,20 +35,20 @@ const STEP_CONFIG: Record<Exclude<LivenessStep, 'complete'>, {
   },
   left: {
     label: 'Vire para a esquerda',
-    instruction: 'Vire o rosto até a bola chegar ao alvo (≈25°)',
+    instruction: 'Vire o rosto até a bola chegar ao alvo (≈20°)',
     icon: '◀️',
     color: 'blue',
-    targetX: -1,
+    targetX: 1,
     targetY: 0,
     requiresBlink: false,
     threshold: 25,
   },
   right: {
     label: 'Vire para a direita',
-    instruction: 'Vire o rosto até a bola chegar ao alvo (≈25°)',
+    instruction: 'Vire o rosto até a bola chegar ao alvo (≈20°)',
     icon: '▶️',
     color: 'blue',
-    targetX: 1,
+    targetX: -1,
     targetY: 0,
     requiresBlink: false,
     threshold: 25,
@@ -262,7 +262,7 @@ export function LivenessChallenge({
         }
 
         // Drive ball position from actual yaw (normalized to thresholds)
-        const normalizedYaw = Math.max(-1, Math.min(1, -headPose.yaw / YAW_THRESHOLD_SIDE));
+        const normalizedYaw = Math.max(-1, Math.min(1, headPose.yaw / YAW_THRESHOLD_SIDE));
         animate(ballX, normalizedYaw, {
           type: 'spring',
           stiffness: 400,
@@ -320,7 +320,7 @@ export function LivenessChallenge({
           }
         }
 
-        const yawDeg = Math.round(headPose.yaw);
+        const yawDeg = Math.round(-headPose.yaw);
 
         if (!stepPassed) {
           if (step === 'front') {
@@ -445,7 +445,7 @@ export function LivenessChallenge({
 
         <div className="ml-auto flex items-center gap-2">
           <span className="text-white/70 text-xs font-mono">
-            Yaw: {Math.round(pose.yaw)}°
+            Yaw: {Math.round(-pose.yaw)}°
           </span>
           <span className="text-white/70 text-xs font-mono">
             Pitch: {Math.round(pose.pitch)}°
