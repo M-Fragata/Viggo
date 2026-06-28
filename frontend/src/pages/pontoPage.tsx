@@ -5,7 +5,7 @@ import { LivenessChallenge } from "../components/LivenessChallenge"
 import { useAuth } from "../hooks/useAuth"
 
 import { LogIn, Utensils, Coffee, LogOut } from "lucide-react"
-
+import { PontoPageSkeleton } from "../components/PontoPageSkeleton"
 import { z } from "zod"
 import { Button } from "../components/Button"
 import type { FaceDescriptorResponse, CheckinCreateDto } from "../services/api"
@@ -25,6 +25,7 @@ export function PontoPage() {
     const [message, setMessage] = useState<string>("Iniciando validação...")
 
     const [checkins, setCheckins] = useState<ChekinProps[]>([])
+    const [isLoadingCheckins, setIsLoadingCheckins] = useState(true)
 
     const videoRef = useRef<HTMLVideoElement>(null)
 
@@ -38,7 +39,7 @@ export function PontoPage() {
         longitude: number;
     } | null>(null);
 
-    async function handleCheckin(type: string) {
+    async function handlePostCheckin(type: string) {
         navigator.geolocation.getCurrentPosition(async (position) => {
             const { latitude, longitude } = position.coords;
 
@@ -78,7 +79,6 @@ export function PontoPage() {
     }
 
     async function handleGetEmployee() {
-
         try {
             if (!token) {
                 window.location.assign("/")
@@ -192,6 +192,7 @@ export function PontoPage() {
     };
 
     async function handleGetCheckin() {
+        setIsLoadingCheckins(true)
 
         try {
             if (!token) return window.location.assign("/")
@@ -202,6 +203,8 @@ export function PontoPage() {
         } catch (error) {
             console.error("Erro ao buscar os pontos:", error);
             alert("Erro ao buscar os pontos. Tente novamente.");
+        } finally {
+            setIsLoadingCheckins(false)
         }
 
     }
@@ -325,44 +328,49 @@ export function PontoPage() {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 md:gap-6">
-                    {[
-                        { label: "Entrada", type: "ENTRY", icon: <LogIn className="text-emerald-500" size={32} /> },
-                        { label: "Início Almoço", type: "LUNCH_START", icon: <Utensils className="text-emerald-500" size={32} /> },
-                        { label: "Retorno Almoço", type: "LUNCH_END", icon: <Coffee className="text-emerald-500" size={32} /> },
-                        { label: "Saída", type: "EXIT", icon: <LogOut className="text-red-500" size={32} /> },
-                    ].map((item) => {
-                        const existingCheckin = checkins.find((checkin) => checkin.type === item.type);
-                        const hasRegistered = !!existingCheckin;
+                {isLoadingCheckins ? (
+                    <PontoPageSkeleton />
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 md:gap-6">
+                        {[
+                            { label: "Entrada", type: "ENTRY", icon: <LogIn className="text-emerald-500" size={32} /> },
+                            { label: "Início Almoço", type: "LUNCH_START", icon: <Utensils className="text-emerald-500" size={32} /> },
+                            { label: "Retorno Almoço", type: "LUNCH_END", icon: <Coffee className="text-emerald-500" size={32} /> },
+                            { label: "Saída", type: "EXIT", icon: <LogOut className="text-red-500" size={32} /> },
+                        ].map((item) => {
+                            const existingCheckin = checkins.find((checkin) => checkin.type === item.type);
+                            const hasRegistered = !!existingCheckin;
 
-                        // Se existir o check-in, podemos até pegar o horário dele para mostrar na tela se quiser!
-                        const checkinTime = existingCheckin
-                            ? new Date(existingCheckin.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                            : null;
+                            // Se existir o check-in, podemos até pegar o horário dele para mostrar na tela se quiser!
+                            const checkinTime = existingCheckin
+                                ? new Date(existingCheckin.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                                : null;
 
-                        return (
-                            <section
-                                key={item.type}
-                                className={`group relative bg-white border border-slate-200 rounded-3xl p-6 md:p-8 flex flex-col items-center gap-6 transition-all hover:shadow-xl hover:shadow-emerald-900/5 shadow-sm ${hasRegistered ? "hover:border-gray-400" : "hover:border-emerald-400 "}`}
-                            >
-                                <div className="text-4xl">{item.icon}</div>
-                                <div className="text-center">
-                                    <h3 className="text-xl font-bold text-slate-800">{item.label}</h3>
-                                    <p className="text-emerald-400 text-xs mt-1">
-                                        {hasRegistered ? `Registrado às ${checkinTime}` : "Requer validação facial"}
-                                    </p>
-                                </div>
+                            return (
+                                <section
+                                    key={item.type}
+                                    className={`group relative bg-white border border-slate-200 rounded-3xl p-6 md:p-8 flex flex-col items-center gap-6 transition-all hover:shadow-xl hover:shadow-emerald-900/5 shadow-sm ${hasRegistered ? "hover:border-gray-400" : "hover:border-emerald-400 "}`}
+                                >
+                                    <div className="text-4xl">{item.icon}</div>
+                                    <div className="text-center">
+                                        <h3 className="text-xl font-bold text-slate-800">{item.label}</h3>
+                                        <p className="text-emerald-400 text-xs mt-1">
+                                            {hasRegistered ? `Registrado às ${checkinTime}` : "Requer validação facial"}
+                                        </p>
+                                    </div>
 
-                                <Button
-                                    title={hasRegistered ? "Ponto Registrado" : "Registrar Ponto"}
-                                    disabled={hasRegistered}
-                                    onClick={() => handleCheckin(item.type)}
-                                    className={`w-full bg-emerald-600  text-white font-bold py-4 rounded-2xl shadow-lg shadow-emerald-100 transition-all active:scale-95 disabled:grayscale  ${hasRegistered ? "opacity-70 cursor-not-allowed " : "cursor-pointer hover:bg-emerald-700"}`}
-                                />
-                            </section>
-                        );
-                    })}
-                </div>
+                                    <Button
+                                        title={hasRegistered ? "Ponto Registrado" : "Registrar Ponto"}
+                                        disabled={hasRegistered}
+                                        onClick={() => handlePostCheckin(item.type)}
+                                        className={`w-full bg-emerald-600  text-white font-bold py-4 rounded-2xl shadow-lg shadow-emerald-100 transition-all active:scale-95 disabled:grayscale  ${hasRegistered ? "opacity-70 cursor-not-allowed " : "cursor-pointer hover:bg-emerald-700"}`}
+                                    />
+
+                                </section>
+                            );
+                        })}
+                    </div>
+                )}
             </main>
         </div>
     );
