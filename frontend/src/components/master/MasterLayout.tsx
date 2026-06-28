@@ -9,6 +9,7 @@ export function MasterLayout() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const { logout, user } = useAuth();
+  const name = user?.name.split(" ")[0] ?? "";
 
   const closeMenu = () => setIsMenuOpen(false);
 
@@ -38,9 +39,9 @@ export function MasterLayout() {
 
           <div className="flex justify-center gap-2">
             <div className="flex flex-col justify-center">
-              {user?.name ? (
+              {name ? (
                 <p className="text-sm sm:text-base text-gray-600">
-                  Olá, <strong className="text-emerald-600">{user.name}</strong>
+                  Olá, <strong className="text-emerald-600">{name}</strong>
                 </p>
               ) : null}
             </div>
