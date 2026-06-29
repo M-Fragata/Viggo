@@ -32,16 +32,20 @@ export function DashboardPage() {
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
-      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 sm:p-6 rounded-3xl border border-slate-200 shadow-sm">
+      <header className="flex flex-col sm:flex-row justify-between items-start gap-2 sm:items-center bg-white p-4 sm:p-6 rounded-3xl border border-slate-200 shadow-sm">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-800">Painel de Controle</h1>
           <p className="text-xs sm:text-sm text-slate-400">Gerenciamento de frequência e auditoria biométrica</p>
         </div>
-        <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 px-4 py-2 rounded-2xl w-full sm:w-auto">
-          <Building2 className="text-emerald-600 shrink-0" size={20} />
-          <span className="font-medium text-slate-700">{company?.name}</span>
-          <PlanBadge plan={plan!} size="sm" />
-          <TrialCountdown planExpiresAt={company?.planExpiresAt ?? null} status={company?.status!} size="sm" />
+        <div className="flex flex-col items-center gap-3 bg-slate-50 border border-slate-200 px-3 py-2 rounded-2xl w-full sm:w-auto md:flex-row">
+          <div className="flex gap-2">
+            <Building2 className="text-emerald-600 shrink-0" size={20} />
+            <span className="font-medium text-slate-700">{company?.name}</span>
+          </div>
+          <div className=" flex gap-2">
+            <PlanBadge plan={plan!} size="sm" />
+            <TrialCountdown planExpiresAt={company?.planExpiresAt ?? null} status={company?.status!} size="sm" />
+          </div>
         </div>
       </header>
 
@@ -51,8 +55,8 @@ export function DashboardPage() {
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm transition-all cursor-pointer whitespace-nowrap ${activeTab === tab
-                ? "bg-white text-emerald-600 shadow-sm"
-                : "text-slate-500 hover:text-slate-800"
+              ? "bg-white text-emerald-600 shadow-sm"
+              : "text-slate-500 hover:text-slate-800"
               }`}
           >
             {tab === "Funcionários" && <Users size={18} className="shrink-0" />}
