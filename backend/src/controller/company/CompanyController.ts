@@ -7,6 +7,7 @@ import crypto from 'crypto';
 import { validateDocument } from '../../utils/cpfCnpjValidator.js';
 import { getPlanLimits, TRIAL_DAYS, PlanTier, CompanyStatus } from '../../utils/planLimits.js';
 import { addDays } from 'date-fns';
+import { FormattName } from "../../utils/formattName.js"
 
 import { Env } from "../../utils/environment.js"
 
@@ -77,17 +78,7 @@ export class CompanyController {
         },
       });
 
-      const nameUser = name.split(" ").map((nome) => {
-        const name = nome.toLowerCase()
-
-        const conectivos = ["de", "da", "do", "dos", "das", "e"]
-
-        if(conectivos.includes(name)) return name
-
-        const firstName = name.slice(0, 1)
-        const restName = name.slice(1)
-        return `${firstName.toUpperCase()}${restName}`
-      }).join(" ")
+      const nameUser = FormattName(name)
 
       const user = await prisma.user.create({
         data: {
@@ -557,10 +548,12 @@ export class CompanyController {
 
       const passwordHash = await bcrypt.hash(password, 10);
 
+      const nameUser = FormattName(name)
+
       const result = await prisma.$transaction(async (tx) => {
         const user = await tx.user.create({
           data: {
-            name,
+            name: nameUser,
             email,
             password: passwordHash,
             role: 'EMPLOYEE',
