@@ -262,11 +262,27 @@ export class CompanyController {
         },
       });
 
+      const employeesData = await prisma.user.findMany({
+        where: { companyId }
+      })
+
+      const users = employeesData.map((employee) => {
+        return {
+          id: employee.id,
+          name: employee.name,
+          role: employee.role,
+          email: employee.email,
+          companyId: employee.companyId,
+          createdAt: employee.createdAt
+        }
+      })
+
       return res.json({
         employees: {
           current: company._count.users,
           limit: limits.maxEmployees,
           percentage: limits.maxEmployees ? Math.round((company._count.users / limits.maxEmployees) * 100) : 0,
+          users
         },
         checkins: {
           thisMonth: checkinsThisMonth,
