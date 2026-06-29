@@ -23,6 +23,7 @@ export function useCompany() {
       setError(err instanceof Error ? err.message : "Erro ao carregar empresa");
     } finally {
       setIsLoading(false);
+
     }
   }, []);
 
@@ -96,3 +97,5 @@ export function usePlanLimits() {
 
   return { limits, getPlanLimit, getPlanColor, getPlanLabel };
 }
+
+
