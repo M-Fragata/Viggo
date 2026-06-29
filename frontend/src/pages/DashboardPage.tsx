@@ -3,7 +3,7 @@ import { useCompany, usePlanLimits } from "../hooks/useCompany";
 import { useAuth, useCompanyStatus } from "../hooks/useAuth";
 import { PlanBadge, PlanComparisonModal, UsageProgressBar, TrialCountdown } from "../components/plan";
 import { InvitesTab } from "../components/company";
-import { Users, CheckCircle, LayoutList, CreditCard, Mail, ArrowUpRight, Building2 } from "lucide-react";
+import { Users, CheckCircle, LayoutList, CreditCard, Mail, ArrowUpRight, Building2, ChevronDown, ChevronUp } from "lucide-react";
 import type { CompanyResponse, UsageResponse, User } from "../services/api";
 
 const TABS = ["Funcionários", "Presentes", "Total", "Plano", "Convites"] as const;
@@ -100,7 +100,9 @@ export function DashboardPage() {
   );
 }
 
-function EmployeeTab({ company, usage, planLimit }: { company: CompanyResponse; usage: UsageResponse; planLimit: any }) {
+function EmployeeTab({ company, usage, planLimit }: { company: CompanyResponse | null; usage: UsageResponse | null; planLimit: any }) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
   return (
     <div className="space-y-6">
       <div className="bg-white border border-slate-200 rounded-3xl shadow-sm p-6">
@@ -113,7 +115,46 @@ function EmployeeTab({ company, usage, planLimit }: { company: CompanyResponse; 
             size="md"
           />
         </div>
-        <div className="overflow-x-auto">
+        <div className="sm:hidden space-y-3">
+          {usage?.employees?.current === 0 ? (
+            <div className="p-8 text-center text-slate-400">Nenhum funcionário cadastrado</div>
+          ) : (
+            usage?.employees?.users?.map((emp: User) => {
+              const isExpanded = expandedId === emp.id;
+              return (
+                <div key={emp.id} className="border border-slate-200 rounded-2xl overflow-hidden">
+                  <div
+                    onClick={() => setExpandedId(isExpanded ? null : emp.id)}
+                    className="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50 transition-colors"
+                  >
+                    <span className="font-semibold text-slate-800">{emp.name}</span>
+                    {isExpanded ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
+                  </div>
+                  {isExpanded && (
+                    <div className="px-4 pb-4 border-t border-slate-100 pt-3 space-y-3">
+                      <div>
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">E-mail</span>
+                        <span className="text-sm text-slate-600">{emp.email}</span>
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Cargo</span>
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${emp.role === "ENTERPRISE_ADMIN" ? "bg-purple-100 text-purple-700" : "bg-slate-100 text-slate-600"}`}>
+                          {emp.role === "ENTERPRISE_ADMIN" ? "Admin" : "Funcionário"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Status</span>
+                        <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Ativo</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        <div className="hidden sm:block overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[700px]">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100 text-slate-400 text-xs font-bold uppercase tracking-wider">

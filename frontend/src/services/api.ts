@@ -232,7 +232,7 @@ export interface UsageResponse {
     current: number;
     limit: number;
     percentage: number;
-    users: User
+    users: User[]
   };
   checkins: {
     thisMonth: number;
