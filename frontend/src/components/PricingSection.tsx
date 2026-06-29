@@ -17,7 +17,7 @@ export function PricingSection() {
   };
 
   return (
-    <section className="py-20 bg-white" aria-labelledby="pricing-heading">
+    <section className="py-20 bg-white " aria-labelledby="pricing-heading">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <header className="text-center mb-16">
           <h2 id="pricing-heading" className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">

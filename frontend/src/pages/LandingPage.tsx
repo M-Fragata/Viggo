@@ -32,7 +32,7 @@ export function LandingPage() {
       </header>
 
       <main>
-        <section className="relative mx-auto max-w-7xl px-4 pt-20 sm:px-6 lg:px-8 lg:pb-20">
+        <section className="h-dvh relative mx-auto max-w-7xl px-4 pt-20 sm:px-6 lg:px-8 lg:pb-20">
           <div className="flex flex-col lg:flex-row items-stretch justify-around lg:gap-5">
             <div className="hidden lg:flex justify-center">
               <picture>
@@ -93,37 +93,91 @@ export function LandingPage() {
             </div>
         </section>
 
-        <section className="bg-slate-50 py-20">
+        <section className="bg-white">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-              {[
-                {
-                  icon: "🔒",
-                  title: "Anti-fraude",
-                  desc: "Validação facial ao vivo impede buddy punching e marcações indevidas.",
-                },
-                {
-                  icon: "📍",
-                  title: "Localização",
-                  desc: "GPS preciso valida se o colaborador está no local autorizado.",
-                },
-                {
-                  icon: "📱",
-                  title: "Sem hardware",
-                  desc: "Funciona no celular do colaborador. Zero custo com equipamentos.",
-                },
-                {
-                  icon: "🚀",
-                  title: "Setup rápido",
-                  desc: "Empresa cadastrada em minutos. Convide a equipe por link ou QR code.",
-                },
-              ].map((feature, i) => (
-                <div key={i} className="rounded-2xl bg-white p-6 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="text-3xl mb-3">{feature.icon}</div>
-                  <h3 className="text-lg font-semibold text-slate-900">{feature.title}</h3>
-                  <p className="mt-2 text-slate-600">{feature.desc}</p>
-                </div>
-              ))}
+            <div className="text-center mb-16">
+              <h2 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
+                Feito para você e para sua empresa
+              </h2>
+              <p className="mt-4 text-lg text-slate-500 max-w-2xl mx-auto">
+                Tudo que você precisa para registrar, controlar e gerenciar jornadas de trabalho — em um só lugar.
+              </p>
+            </div>
+
+            <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16 h-dvh">
+              <div className="w-full lg:w-2/5">
+                <img
+                  src="/celular na mao.webp"
+                  alt="Viggo no celular - Registro de ponto com verificação facial"
+                  className="w-full h-auto rounded-2xl shadow-xl object-cover"
+                  loading="lazy"
+                />
+              </div>
+              <div className="w-full lg:w-3/5">
+                <span className="inline-block rounded-full bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-700">
+                  Para você
+                </span>
+                <h3 className="mt-4 text-xl font-semibold text-slate-900">
+                  Seu ponto com segurança e praticidade
+                </h3>
+                <ul className="mt-6 space-y-4">
+                  {[
+                    { title: "Verificação facial ao vivo", desc: "Biometria facial garante que só você registra seu ponto." },
+                    { title: "Registro geográfico", desc: "GPS registra sua localização exata no momento da marcação." },
+                    { title: "Comprovante instantâneo", desc: "Receba comprovante de cada ponto batido em tempo real." },
+                    { title: "Histórico completo", desc: "Acesse todos os seus registros a qualquer momento." },
+                    { title: "Sem hardware", desc: "Use seu próprio celular. Zero custo com equipamentos." },
+                  ].map((feature, i) => (
+                    <li key={i} className="flex items-start gap-3">
+                      <svg className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div>
+                        <span className="font-medium text-slate-900">{feature.title}</span>
+                        <span className="text-slate-500"> — {feature.desc}</span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <div className="mt-16 flex flex-col-reverse lg:flex-row items-center gap-12 lg:gap-16">
+              <div className="w-full lg:w-3/5">
+                <span className="inline-block rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700">
+                  Para sua empresa
+                </span>
+                <h3 className="mt-4 text-xl font-semibold text-slate-900">
+                  Controle total da jornada de trabalho
+                </h3>
+                <ul className="mt-6 space-y-4">
+                  {[
+                    { title: "Dashboard completo", desc: "Visão geral de colaboradores, pontos, pendências e métricas em tempo real." },
+                    { title: "Verificação real dos pontos", desc: "Foto, localização e horário exato de cada marcação registrada." },
+                    { title: "Criação de funcionários e convites", desc: "Cadastre colaboradores e envie convite para criação de conta." },
+                    { title: "Folha de ponto mensal", desc: "Gere automaticamente a folha individual por funcionário." },
+                    { title: "Conformidade CLT", desc: "Processos dentro das exigências legais, sem dor de cabeça." },
+                  ].map((feature, i) => (
+                    <li key={i} className="flex items-start gap-3">
+                      <svg className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div>
+                        <span className="font-medium text-slate-900">{feature.title}</span>
+                        <span className="text-slate-500"> — {feature.desc}</span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="w-full lg:w-2/5">
+                <img
+                  src="/viggo front.png"
+                  alt="Viggo - Painel administrativo para gestão de ponto"
+                  className="w-full h-auto rounded-2xl shadow-xl object-cover"
+                  loading="lazy"
+                />
+              </div>
             </div>
           </div>
         </section>
@@ -153,7 +207,7 @@ export function LandingPage() {
       <footer className="border-t border-slate-200 bg-slate-50">
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           <p className="text-center text-sm text-slate-500">
-            © 2024 Viggo. Todos os direitos reservados.
+            © 2026 Viggo. Todos os direitos reservados.
           </p>
         </div>
       </footer>
