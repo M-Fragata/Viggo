@@ -4,6 +4,7 @@ import { useAuth, useCompanyStatus } from "../hooks/useAuth";
 import { PlanBadge, PlanComparisonModal, UsageProgressBar, TrialCountdown } from "../components/plan";
 import { InvitesTab } from "../components/company";
 import { Users, CheckCircle, LayoutList, CreditCard, Mail, ArrowUpRight, Building2 } from "lucide-react";
+import type { CompanyResponse, UsageResponse, User } from "../services/api";
 
 const TABS = ["Funcionários", "Presentes", "Total", "Plano", "Convites"] as const;
 type Tab = (typeof TABS)[number];
@@ -99,7 +100,7 @@ export function DashboardPage() {
   );
 }
 
-function EmployeeTab({ company, usage, planLimit }: { company: any; usage: any; planLimit: any }) {
+function EmployeeTab({ company, usage, planLimit }: { company: CompanyResponse; usage: UsageResponse; planLimit: any }) {
   return (
     <div className="space-y-6">
       <div className="bg-white border border-slate-200 rounded-3xl shadow-sm p-6">
@@ -128,7 +129,7 @@ function EmployeeTab({ company, usage, planLimit }: { company: any; usage: any; 
                   <td colSpan={4} className="p-8 text-center text-slate-400">Nenhum funcionário cadastrado</td>
                 </tr>
               ) : (
-                company?.users?.map((emp: any) => (
+                usage?.employees.users?.map((emp: User) => (
                   <tr key={emp.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="p-4 font-semibold text-slate-800">{emp.name}</td>
                     <td className="p-4 text-slate-500">{emp.email}</td>
