@@ -1,6 +1,6 @@
 import { type Request, type Response } from "express";
 import { z } from "zod"
-import { prisma } from "../database/prisma.js";
+import { extendedPrisma } from "../database/prisma-extensions.js";
 
 import { parseISO, startOfDay, endOfDay } from "date-fns"
 
@@ -17,7 +17,7 @@ export class CheckinController {
 
             const userId = req.user.id
 
-            const user = await prisma.user.findUnique({
+            const user = await extendedPrisma.user.findUnique({
                 where: {
                     id: userId
                 }
@@ -28,7 +28,7 @@ export class CheckinController {
             const { type, latitude, longitude } = bodySchema.parse(req.body);
 
             const today = new Date()
-            const checkinExists = await prisma.checkIn.findFirst({
+            const checkinExists = await extendedPrisma.checkIn.findFirst({
                 where: {
                     userId,
                     type,
@@ -42,7 +42,7 @@ export class CheckinController {
                 return res.status(400).json({ message: `Ponto de ${type} já registrado hoje.` })
             }
 
-            const checkin = await prisma.checkIn.create({
+            const checkin = await extendedPrisma.checkIn.create({
                 data: {
                     type,
                     latitude,
@@ -61,7 +61,7 @@ export class CheckinController {
 
         } catch (error) {
 
-            console.error("ERRO COMPLETO DO PRISMA:", error);
+            console.error("Erro ao registrar ponto:", error);
 
             if (error instanceof z.ZodError) {
                 return res.status(400).json({ message: "Invalid request body", errors: error.issues })
@@ -82,7 +82,7 @@ export class CheckinController {
 
             const userId = req.user.id
 
-            const user = await prisma.user.findUnique({
+            const user = await extendedPrisma.user.findUnique({
                 where: {
                     id: userId
                 }
@@ -94,7 +94,7 @@ export class CheckinController {
 
             const parsedDate = parseISO(hoje)
 
-            const checkins = await prisma.checkIn.findMany({
+            const checkins = await extendedPrisma.checkIn.findMany({
                 where: {
                     userId,
                     createdAt: {
@@ -107,7 +107,7 @@ export class CheckinController {
             return res.status(200).json(checkins)
 
         } catch (error) {
-            console.error("ERRO COMPLETO DO PRISMA:", error);
+            console.error("Erro ao buscar pontos:", error);
 
             if (error instanceof z.ZodError) {
                 return res.status(400).json({ message: "Invalid request body", errors: error.issues })

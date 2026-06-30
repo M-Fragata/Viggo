@@ -1,5 +1,5 @@
 import { type Request, type Response } from "express";
-import { prisma } from "../database/prisma.js";
+import { extendedPrisma } from "../database/prisma-extensions.js";
 import { type User, type CheckIn } from '@prisma/client';
 import { check, z } from "zod"
 import { parseISO, startOfDay, endOfDay } from "date-fns"
@@ -18,28 +18,28 @@ export class EmployeesController {
 
             const parsedDate = parseISO(date)
 
-            const employees = await prisma.user.findMany()
-            const checkins = await prisma.checkIn.findMany({
+            const employees = await extendedPrisma.user.findMany({
+                select: { id: true, name: true, email: true, role: true, companyId: true, faceDescriptor: true, createdAt: true, updatedAt: true }
+            })
+            const checkins = await extendedPrisma.checkIn.findMany({
                 where: {
                     createdAt: {
                         gte: startOfDay(parsedDate),
                         lte: endOfDay(parsedDate)
                     }
-                } as any
+                }
             })
 
-            const data = employees.map((employee: User) => {
+            const data = employees.map((employee) => {
 
-                let checkinUser: any = []
+                let checkinUser: CheckIn[] = []
 
                 checkins.map((checkin: CheckIn) => {
                     if (checkin.userId === employee.id) checkinUser.push(checkin)
                 })
 
-                const { password, ...employeeWithoutPassword } = employee
-
                 return {
-                    ...employeeWithoutPassword,
+                    ...employee,
                     checkins: checkinUser
                 }
             })
@@ -55,7 +55,7 @@ export class EmployeesController {
         try {
             const id = req.user.id
 
-            const user = await prisma.user.findUnique({
+            const user = await extendedPrisma.user.findUnique({
                 where: {
                     id
                 }
@@ -86,7 +86,7 @@ export class EmployeesController {
             const userId = req.user.id
             const { descriptor } = bodySchema.parse(req.body)
 
-            const user = await prisma.user.findUnique({
+            const user = await extendedPrisma.user.findUnique({
                 where: { id: userId }
             })
 

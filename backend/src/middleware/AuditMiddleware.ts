@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import { prisma } from '../database/prisma.js';
+import { extendedPrisma } from '../database/prisma-extensions.js';
 
 interface AuditLogData {
   userId: string;
@@ -25,7 +25,7 @@ function toNullableStringRequired(value: string | string[] | undefined): string 
 
 export async function createAuditLog(data: AuditLogData) {
   try {
-    await prisma.auditLog.create({
+    await extendedPrisma.auditLog.create({
       data: {
         userId: data.userId,
         companyId: data.companyId,

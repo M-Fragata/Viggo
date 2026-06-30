@@ -117,7 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const setSession = useCallback((newUser: User, newToken: string, newCompany: string) => {
     localStorage.setItem("@viggo:user", JSON.stringify(newUser));
     localStorage.setItem("@viggo:token", newToken);
-    localStorage.setItem("@viggo:token", newCompany);
+    localStorage.setItem("@viggo:company", newCompany);
     setUser(newUser);
     setToken(newToken);
     setCompany(newCompany)

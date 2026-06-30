@@ -1,6 +1,6 @@
 import { type Request, type Response, type NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { setCurrentCompanyId, setCurrentUserId, clearPrismaContext } from "../database/prisma-extensions.js";
+import { prismaContextStore } from "../database/prisma-extensions.js";
 
 import { Env } from "../utils/environment.js"
 
@@ -24,7 +24,7 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
     if (!token) return res.status(401).json({ message: "Token não fornecido" });
 
     try {
-        const decoded = jwt.verify(token, Env.JWT_SECRET!) as JWTPayload;
+        const decoded = jwt.verify(token, Env.JWT_SECRET!, { algorithms: ['HS256'] }) as JWTPayload;
         const { id, role, companyId, planTier } = decoded;
 
         const user: typeof req.user = {
@@ -36,21 +36,15 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
 
         req.user = user;
 
-        if (companyId) {
-            setCurrentCompanyId(companyId);
-        }
-        setCurrentUserId(id);
+        const store = { companyId: companyId ?? "", userId: id };
 
-        res.on('finish', () => {
-            clearPrismaContext();
+        prismaContextStore.run(store, () => {
+            next();
         });
-
-        next();
 
     } catch (error: any) {
         return res.status(401).json({
-            message: "Token inválido",
-            details: error.message
+            message: "Token inválido"
         });
     }
 }
