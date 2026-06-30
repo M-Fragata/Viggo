@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
-import { useHeadPose, calculateEAR, BLINK_THRESHOLD_FRONT, YAW_THRESHOLD_FRONT, YAW_THRESHOLD_SIDE, FRONT_TIMEOUT_MS } from '../hooks/useHeadPose';
+import { useHeadPose, calculateEAR, BLINK_THRESHOLD_FRONT, YAW_THRESHOLD_FRONT, YAW_THRESHOLD_SIDE } from '../hooks/useHeadPose';
 import type { HeadPose } from '../hooks/useHeadPose';
 import * as faceapi from 'face-api.js';
 import { motion, useMotionValue, useSpring, useTransform, animate } from 'framer-motion';
@@ -22,8 +22,7 @@ const STEP_CONFIG: Record<Exclude<LivenessStep, 'complete'>, {
   targetX: number;
   targetY: number;
   requiresBlink: boolean;
-  fillDuration: number;
-  progressTarget: number;
+  holdDuration: number;
   validationsNeeded: number;
 }> = {
   front: {
@@ -34,9 +33,8 @@ const STEP_CONFIG: Record<Exclude<LivenessStep, 'complete'>, {
     targetX: 0,
     targetY: 0,
     requiresBlink: true,
-    fillDuration: 1000,
-    progressTarget: 50,
-    validationsNeeded: 2,
+    holdDuration: 4000,
+    validationsNeeded: 1,
   },
   left: {
     label: 'Vire para a esquerda',
@@ -46,8 +44,7 @@ const STEP_CONFIG: Record<Exclude<LivenessStep, 'complete'>, {
     targetX: -1,
     targetY: 0,
     requiresBlink: false,
-    fillDuration: 2000,
-    progressTarget: 100,
+    holdDuration: 2000,
     validationsNeeded: 1,
   },
   right: {
@@ -58,8 +55,7 @@ const STEP_CONFIG: Record<Exclude<LivenessStep, 'complete'>, {
     targetX: 1,
     targetY: 0,
     requiresBlink: false,
-    fillDuration: 2000,
-    progressTarget: 100,
+    holdDuration: 2000,
     validationsNeeded: 1,
   },
 };
@@ -70,7 +66,6 @@ const RING_RADIUS = 54;
 const RING_STROKE = 6;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 const SPIN_SEGMENT = RING_CIRCUMFERENCE * 0.25;
-const POSE_HOLD_DURATION_MS = 2000;
 
 /*
 function DevOverlay({
@@ -243,7 +238,6 @@ export function LivenessChallenge({
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [, setPose] = useState<HeadPose>({ yaw: 0, pitch: 0, roll: 0 });
   const [blinkValidated, setBlinkValidated] = useState(false);
-  const [frontStepStartTime, setFrontStepStartTime] = useState(() => Date.now());
   const [message, setMessage] = useState('');
   const [bestFrameDescriptor, setBestFrameDescriptor] = useState<Float32Array | null>(null);
   const [modelsLoaded, setModelsLoaded] = useState(false);
@@ -259,6 +253,7 @@ export function LivenessChallenge({
   const ringValueRef = useRef(0);
   const poseHoldStartRef = useRef(0);
   const isValidatingRef = useRef(false);
+  const waitingForBlinkRef = useRef(false);
 
   useLayoutEffect(() => {
     bestFrameDescriptorRef.current = bestFrameDescriptor;
@@ -358,7 +353,6 @@ export function LivenessChallenge({
 
   useEffect(() => {
     setBlinkValidated(false);
-    setFrontStepStartTime(Date.now());
     setWasCorrectPose(false);
     setMessage('');
     validationsCountRef.current = 0;
@@ -368,6 +362,7 @@ export function LivenessChallenge({
     ringValueRef.current = 0;
     poseHoldStartRef.current = 0;
     isValidatingRef.current = false;
+    waitingForBlinkRef.current = false;
     if (modelsLoaded && 'vibrate' in navigator) {
       navigator.vibrate(30);
     }
@@ -403,8 +398,6 @@ export function LivenessChallenge({
 
     if (count >= needed) {
       playTransitionAnimation(advanceToNextStep);
-    } else if (count === 1 && needed > 1) {
-      ringMotionVal.set(config.progressTarget);
     }
 
     setMessage('');
@@ -434,19 +427,33 @@ export function LivenessChallenge({
 
         const ear = calculateEAR(detection.landmarks);
 
-        let stepPassed = false;
         const step = currentStepRef.current;
+        const config = STEP_CONFIG[step as keyof typeof STEP_CONFIG];
+
+        // Se está aguardando blink após backend success no front
+        if (waitingForBlinkRef.current && step === 'front') {
+          const blinked = ear < BLINK_THRESHOLD_FRONT;
+          if (blinked) {
+            setBlinkValidated(true);
+            waitingForBlinkRef.current = false;
+            handleValidationSuccess(detection.descriptor);
+          }
+          return;
+        }
+
+        let stepPassed = false;
 
         if (step === 'front') {
           const poseOk = isLookingFront(headPose, YAW_THRESHOLD_FRONT);
           const blinked = ear < BLINK_THRESHOLD_FRONT;
-          const timeInFront = Date.now() - frontStepStartTime;
 
           if (blinked) {
             setBlinkValidated(true);
           }
 
-          stepPassed = poseOk && (blinkValidated || timeInFront > FRONT_TIMEOUT_MS);
+          // Para front: stepPassed depende APENAS da pose (não do blink)
+          // O blink será validado após o backend retornar sucesso
+          stepPassed = poseOk;
         } else {
           stepPassed = step === 'left'
             ? isLookingLeft(headPose, YAW_THRESHOLD_SIDE)
@@ -467,21 +474,38 @@ export function LivenessChallenge({
           }
 
           const heldTime = Date.now() - poseHoldStartRef.current;
-          const holdProgress = Math.min(100, (heldTime / POSE_HOLD_DURATION_MS) * 100);
+          const holdProgress = Math.min(100, (heldTime / config.holdDuration) * 100);
 
           ringMotionVal.set(holdProgress);
           setWasCorrectPose(true);
           setMessage('');
 
-          if (heldTime >= POSE_HOLD_DURATION_MS && !isValidatingRef.current) {
+          if (heldTime >= config.holdDuration && !isValidatingRef.current) {
             isValidatingRef.current = true;
 
             const backendResult = await validateDescriptorWithBackend(detection.descriptor);
 
             if (backendResult.success) {
+              // Após backend success no front: verificar blink
+              if (step === 'front' && !blinkValidated) {
+                // Case 1: Backend OK mas blink ainda não validado
+                // Aguarda o blink no próximo ciclo
+                waitingForBlinkRef.current = true;
+                // NÃO reseta poseHoldStartRef - mantém a pose
+                setMessage('Pisque para confirmar');
+                isValidatingRef.current = false;
+                return;
+              }
+              // Case 2: Blink já validado OU não é step front
               handleValidationSuccess(detection.descriptor);
             } else if (backendResult.distance >= 0) {
               if (fallbackLocalComparison(detection.descriptor)) {
+                if (step === 'front' && !blinkValidated) {
+                  waitingForBlinkRef.current = true;
+                  setMessage('Pisque para confirmar');
+                  isValidatingRef.current = false;
+                  return;
+                }
                 handleValidationSuccess(detection.descriptor);
               } else {
                 poseHoldStartRef.current = 0;
@@ -490,6 +514,12 @@ export function LivenessChallenge({
               }
             } else {
               if (fallbackLocalComparison(detection.descriptor)) {
+                if (step === 'front' && !blinkValidated) {
+                  waitingForBlinkRef.current = true;
+                  setMessage('Pisque para confirmar');
+                  isValidatingRef.current = false;
+                  return;
+                }
                 handleValidationSuccess(detection.descriptor);
               } else {
                 poseHoldStartRef.current = 0;
@@ -502,6 +532,7 @@ export function LivenessChallenge({
           }
         } else {
           poseHoldStartRef.current = 0;
+          waitingForBlinkRef.current = false;
           setWasCorrectPose(false);
 
           ringMotionVal.set(0);
@@ -527,7 +558,6 @@ export function LivenessChallenge({
     modelsLoaded,
     isTransitioning,
     blinkValidated,
-    frontStepStartTime,
     faceDescriptor,
     getHeadPose,
     isLookingFront,
