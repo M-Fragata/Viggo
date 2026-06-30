@@ -49,8 +49,8 @@ export function RegisterFace() {
                 window.location.href = "/";
             }
         };
-        
-        if(!check) initCamera();
+
+        if (!check) initCamera();
 
         return () => {
             if (videoRef.current && videoRef.current.srcObject) {
@@ -88,9 +88,7 @@ export function RegisterFace() {
             setIsSuccess(true);
             setMessage("Cadastro facial concluído!");
 
-            setTimeout(() => {
-                window.location.href = "/";
-            }, 2000);
+            window.location.href = "/";
 
         } catch (error) {
             console.error("Erro ao salvar cadastro:", error);

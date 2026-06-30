@@ -211,7 +211,7 @@ export function PontoPage() {
     }
 
     useEffect(() => {
-        setHasFaceRegistered(user?.hasFaceDescriptor !== false);
+        setHasFaceRegistered(user?.hasFaceDescriptor ? true : false);
         handleGetCheckin()
     }, [])
 
