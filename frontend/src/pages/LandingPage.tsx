@@ -1,9 +1,11 @@
 import { Link } from "react-router";
 import { TypewriterText } from "../components/TypewriterText";
 import { PricingSection } from "../components/PricingSection";
+import { useScrollReveal } from "../hooks/useScrollReveal";
 import { TRIAL_DAYS } from "../../../shared/plans";
 
 import logo from "../assets/logo.png";
+import "../scroll-animations.css";
 
 const HERO_WORDS = [
   "reconhecimento facial",
@@ -44,6 +46,8 @@ function CheckIcon() {
 }
 
 export function LandingPage() {
+  useScrollReveal();
+
   return (
     <div className="min-h-screen bg-canvas">
       <header className="border-b border-hairline">
@@ -69,17 +73,17 @@ export function LandingPage() {
           <div className="mx-auto max-w-7xl px-8 relative z-10">
             <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
               <div className="hidden lg:flex justify-center lg:w-2/5">
-                <picture>
+                <picture className="parallax-slow">
                   <img
                     src="/viggo front.png"
                     alt="Viggo - Controle de ponto com reconhecimento facial"
-                    className="h-auto max-w-[360px] w-full object-cover rounded-lg border border-hairline-dark shadow-[0_24px_48px_-8px_rgba(0,0,0,0.12)]"
+                    className="h-auto max-w-[360px] w-full object-cover rounded-lg border border-hairline-dark shadow-[0_24px_48px_-8px_rgba(0,0,0,0.12)] reveal-scale"
                     loading="eager"
                     fetchPriority="high"
                   />
                 </picture>
               </div>
-              <div className="text-center lg:text-left lg:w-3/5 max-w-2xl flex flex-col justify-center gap-5">
+              <div className="text-center lg:text-left lg:w-3/5 max-w-2xl flex flex-col justify-center gap-5 reveal">
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-on-dark leading-[1.1]">
                   Controle de ponto com{" "}<br />
                   <span className="text-brand-green">
@@ -130,7 +134,7 @@ export function LandingPage() {
 
         <section className="bg-surface py-24">
           <div className="mx-auto max-w-7xl px-8">
-            <div className="text-center mb-16">
+            <div className="text-center mb-16 reveal">
               <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-ink leading-[1.2]">
                 Feito para você e para sua empresa
               </h2>
@@ -140,7 +144,7 @@ export function LandingPage() {
             </div>
 
             <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
-              <div className="w-full lg:w-2/5">
+              <div className="w-full lg:w-2/5 reveal-left">
                 <img
                   src="/celular na mao.webp"
                   alt="Viggo no celular - Registro de ponto com verificação facial"
@@ -148,14 +152,14 @@ export function LandingPage() {
                   loading="lazy"
                 />
               </div>
-              <div className="w-full lg:w-3/5">
+              <div className="w-full lg:w-3/5 reveal-right">
                 <span className="inline-block rounded-full bg-brand-green/15 px-3 py-1 text-sm font-medium text-brand-green">
                   Para você
                 </span>
                 <h3 className="mt-4 text-xl font-semibold text-ink leading-[1.3]">
                   Seu ponto com segurança e praticidade
                 </h3>
-                <ul className="mt-6 space-y-4">
+                <ul className="mt-6 space-y-4 reveal-stagger">
                   {USER_FEATURES.map((feature, i) => (
                     <li key={i} className="flex items-start gap-3">
                       <CheckIcon />
@@ -174,14 +178,14 @@ export function LandingPage() {
         <section className="bg-[#1a3d4a] py-24">
           <div className="mx-auto max-w-7xl px-8">
             <div className="mt-24 flex flex-col-reverse lg:flex-row items-center gap-12 lg:gap-16">
-              <div className="w-full lg:w-3/5">
+              <div className="w-full lg:w-3/5 reveal-left">
                 <span className="inline-block rounded-full bg-primary/5 px-3 py-1 text-sm font-medium text-slate">
                   Para sua empresa
                 </span>
                 <h3 className="mt-4 text-xl font-semibold text-on-dark leading-[1.3]">
                   Controle total da jornada de trabalho
                 </h3>
-                <ul className="mt-6 space-y-4">
+                <ul className="mt-6 space-y-4 reveal-stagger">
                   {COMPANY_FEATURES.map((feature, i) => (
                     <li key={i} className="flex items-start gap-3">
                       <CheckIcon />
@@ -193,7 +197,7 @@ export function LandingPage() {
                   ))}
                 </ul>
               </div>
-              <div className="w-full lg:w-2/5">
+              <div className="w-full lg:w-2/5 reveal-right">
                 <img
                   src="/viggo front.png"
                   alt="Viggo - Painel administrativo para gestão de ponto"
@@ -208,7 +212,7 @@ export function LandingPage() {
         <PricingSection />
 
         <section className="py-24 bg-canvas-dark">
-          <div className="mx-auto max-w-7xl px-8 text-center">
+          <div className="mx-auto max-w-7xl px-8 text-center reveal">
             <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-on-dark leading-[1.2]">
               Pronto para modernizar seu controle de ponto?
             </h2>

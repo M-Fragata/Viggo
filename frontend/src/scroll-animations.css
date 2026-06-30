@@ -1,0 +1,175 @@
+/*
+ * Scroll-driven Animations (CSS)
+ * Uses animation-timeline: view() and scroll() for 60 FPS
+ * Only animates transform and opacity for compositor thread
+ */
+
+/* ─── Reveal Animations (view timeline) ─── */
+
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  animation: reveal-up linear both;
+  animation-timeline: view();
+  animation-range: entry 0% entry 100%;
+}
+
+.reveal-left {
+  opacity: 0;
+  transform: translateX(-60px);
+  animation: reveal-left linear both;
+  animation-timeline: view();
+  animation-range: entry 0% entry 100%;
+}
+
+.reveal-right {
+  opacity: 0;
+  transform: translateX(60px);
+  animation: reveal-right linear both;
+  animation-timeline: view();
+  animation-range: entry 0% entry 100%;
+}
+
+.reveal-scale {
+  opacity: 0;
+  transform: scale(0.92);
+  animation: reveal-scale linear both;
+  animation-timeline: view();
+  animation-range: entry 0% entry 100%;
+}
+
+/* ─── Staggered Reveals ─── */
+
+.reveal-stagger > * {
+  opacity: 0;
+  transform: translateY(30px);
+  animation: reveal-up linear both;
+  animation-timeline: view();
+  animation-range: entry 0% entry 100%;
+}
+
+.reveal-stagger > *:nth-child(1) { animation-range: entry 0% entry 40%; }
+.reveal-stagger > *:nth-child(2) { animation-range: entry 5% entry 50%; }
+.reveal-stagger > *:nth-child(3) { animation-range: entry 10% entry 60%; }
+.reveal-stagger > *:nth-child(4) { animation-range: entry 15% entry 70%; }
+.reveal-stagger > *:nth-child(5) { animation-range: entry 20% entry 80%; }
+.reveal-stagger > *:nth-child(6) { animation-range: entry 25% entry 90%; }
+
+/* ─── Parallax (scroll timeline) ─── */
+
+.parallax-slow {
+  animation: parallax-slow linear both;
+  animation-timeline: scroll();
+  animation-range: 0% 100%;
+}
+
+.parallax-medium {
+  animation: parallax-medium linear both;
+  animation-timeline: scroll();
+  animation-range: 0% 100%;
+}
+
+.parallax-fast {
+  animation: parallax-fast linear both;
+  animation-timeline: scroll();
+  animation-range: 0% 100%;
+}
+
+/* ─── Keyframes ─── */
+
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes reveal-left {
+  from {
+    opacity: 0;
+    transform: translateX(-60px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes reveal-right {
+  from {
+    opacity: 0;
+    transform: translateX(60px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes reveal-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes parallax-slow {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-30px);
+  }
+}
+
+@keyframes parallax-medium {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-60px);
+  }
+}
+
+@keyframes parallax-fast {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-100px);
+  }
+}
+
+/* ─── Reduced Motion ─── */
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .reveal-left,
+  .reveal-right,
+  .reveal-scale,
+  .reveal-stagger > *,
+  .parallax-slow,
+  .parallax-medium,
+  .parallax-fast {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ─── Feature Detection ─── */
+@supports (animation-timeline: view()) {
+  .reveal-fallback {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}

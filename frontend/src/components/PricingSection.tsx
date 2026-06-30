@@ -19,7 +19,7 @@ export function PricingSection() {
   return (
     <section className="py-24 bg-canvas-dark" aria-labelledby="pricing-heading">
       <div className="mx-auto max-w-7xl px-8">
-        <header className="text-center mb-16">
+        <header className="text-center mb-16 reveal">
           <h2 id="pricing-heading" className="text-4xl font-semibold tracking-tight text-on-dark leading-[1.2]">
             Planos simples e transparentes
           </h2>
@@ -35,6 +35,7 @@ export function PricingSection() {
               grid gap-8
               lg:grid-cols-3
               lg:items-start
+              reveal-stagger
               ${highlightedPlan ? "lg:pt-8" : ""}
             `}
             role="list"
@@ -70,7 +71,7 @@ export function PricingSection() {
         </div>
 
         {customPlan && (
-          <div className="mt-16">
+          <div className="mt-16 reveal">
             <div className="rounded-lg border border-hairline bg-surface p-8 md:p-12 text-center">
               <div className="mx-auto max-w-2xl">
                 <h3 className="text-3xl font-semibold text-ink leading-snug sm:text-4xl">
