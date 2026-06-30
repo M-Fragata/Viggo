@@ -109,6 +109,11 @@ export const api = {
         method: "PUT",
         body: JSON.stringify({ faceDescriptor: descriptor }),
       }),
+    verifyFace: (descriptor: number[]) =>
+      fetchApi<VerifyFaceResponse>("/employees/face/verify", {
+        method: "POST",
+        body: JSON.stringify({ descriptor }),
+      }),
   },
 
   checkins: {
@@ -368,6 +373,12 @@ export interface MasterMetricsResponse {
 
 export interface FaceDescriptorResponse {
   [key: string]: number;
+}
+
+export interface VerifyFaceResponse {
+  success: boolean;
+  distance: number;
+  message?: string;
 }
 
 export interface CheckinCreateDto {
