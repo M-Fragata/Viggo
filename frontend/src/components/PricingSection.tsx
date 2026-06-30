@@ -17,13 +17,13 @@ export function PricingSection() {
   };
 
   return (
-    <section className="py-24 bg-[#0a0a0a]" aria-labelledby="pricing-heading">
+    <section className="py-24 bg-canvas-dark" aria-labelledby="pricing-heading">
       <div className="mx-auto max-w-7xl px-8">
         <header className="text-center mb-16">
-          <h2 id="pricing-heading" className="text-4xl font-semibold tracking-tight text-[#0a0a0a] leading-[1.2]">
+          <h2 id="pricing-heading" className="text-4xl font-semibold tracking-tight text-on-dark leading-[1.2]">
             Planos simples e transparentes
           </h2>
-          <p className="mt-4 text-lg leading-relaxed text-[#5a5a5c] max-w-2xl mx-auto">
+          <p className="mt-4 text-lg leading-relaxed text-on-dark-muted max-w-2xl mx-auto">
             Todos os planos incluem trial de 30 dias, sem cartão de crédito.
             Cancele quando quiser.
           </p>
@@ -71,19 +71,19 @@ export function PricingSection() {
 
         {customPlan && (
           <div className="mt-16">
-            <div className="rounded-lg border border-[#e5e5e5] bg-[#f7f7f7] p-8 md:p-12 text-center">
+            <div className="rounded-lg border border-hairline bg-surface p-8 md:p-12 text-center">
               <div className="mx-auto max-w-2xl">
-                <h3 className="text-3xl font-semibold text-[#0a0a0a] leading-snug sm:text-4xl">
+                <h3 className="text-3xl font-semibold text-ink leading-snug sm:text-4xl">
                   Precisa de algo maior?
                 </h3>
-                <p className="mt-4 text-lg leading-relaxed text-[#5a5a5c]">
+                <p className="mt-4 text-lg leading-relaxed text-steel">
                   {customPlan.features[0].text}, integrações customizadas,
                   deploy on-premise, SLA personalizado e muito mais.
                 </p>
                 <div className="mt-8">
                   <Link
                     to="/planos/custom"
-                    className="inline-flex items-center justify-center rounded-full bg-[#0a0a0a] px-8 py-3.5 text-sm font-medium text-white hover:bg-[#1c1c1e] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0a0a0a] transition-colors"
+                    className="inline-flex items-center justify-center rounded-full bg-primary px-8 py-3.5 text-sm font-medium text-on-primary hover:bg-charcoal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors"
                   >
                     {customPlan.ctaText}
                   </Link>
