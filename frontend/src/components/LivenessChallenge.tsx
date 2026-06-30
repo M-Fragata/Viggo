@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
+import { useState, useEffect, useCallback, useRef, useLayoutEffect, useMemo } from 'react';
 import { useHeadPose, calculateEAR, BLINK_THRESHOLD_FRONT, YAW_THRESHOLD_FRONT, YAW_THRESHOLD_SIDE } from '../hooks/useHeadPose';
 import type { HeadPose } from '../hooks/useHeadPose';
 import * as faceapi from 'face-api.js';
 import { motion, useMotionValue, useSpring, useTransform, animate } from 'framer-motion';
 import { api } from '../services/api';
 
-type LivenessStep = 'front' | 'left' | 'right' | 'complete';
+type LivenessStep = 'front' | 'left' | 'right';
 
 interface LivenessChallengeProps {
   videoRef: React.RefObject<HTMLVideoElement | null>;
@@ -14,14 +14,12 @@ interface LivenessChallengeProps {
   faceDescriptor?: Float32Array;
 }
 
-const STEP_CONFIG: Record<Exclude<LivenessStep, 'complete'>, {
+const STEP_CONFIG: Record<LivenessStep, {
   label: string;
   instruction: string;
   icon: string;
-  color: string;
   targetX: number;
   targetY: number;
-  requiresBlink: boolean;
   holdDuration: number;
   validationsNeeded: number;
 }> = {
@@ -29,10 +27,8 @@ const STEP_CONFIG: Record<Exclude<LivenessStep, 'complete'>, {
     label: 'Olhe para frente',
     instruction: 'Centralize o rosto no círculo',
     icon: '👁️',
-    color: 'emerald',
     targetX: 0,
     targetY: 0,
-    requiresBlink: true,
     holdDuration: 4000,
     validationsNeeded: 1,
   },
@@ -40,10 +36,8 @@ const STEP_CONFIG: Record<Exclude<LivenessStep, 'complete'>, {
     label: 'Vire para a esquerda',
     instruction: 'Vire o rosto até a bola chegar ao alvo (≈20°)',
     icon: '◀️',
-    color: 'blue',
     targetX: -1,
     targetY: 0,
-    requiresBlink: false,
     holdDuration: 2000,
     validationsNeeded: 1,
   },
@@ -51,16 +45,13 @@ const STEP_CONFIG: Record<Exclude<LivenessStep, 'complete'>, {
     label: 'Vire para a direita',
     instruction: 'Vire o rosto até a bola chegar ao alvo (≈20°)',
     icon: '▶️',
-    color: 'blue',
     targetX: 1,
     targetY: 0,
-    requiresBlink: false,
     holdDuration: 2000,
     validationsNeeded: 1,
   },
 };
 
-const STEPS: Exclude<LivenessStep, 'complete'>[] = ['front', 'left', 'right'];
 
 const RING_RADIUS = 54;
 const RING_STROKE = 6;
@@ -113,6 +104,7 @@ function FeedbackVisual({
   isTransitioning,
   currentStepIndex,
   ringStrokeMode,
+  steps,
 }: {
   ballXPercent: import('framer-motion').MotionValue<string>;
   ringOffset: import('framer-motion').MotionValue<number>;
@@ -123,6 +115,7 @@ function FeedbackVisual({
   isTransitioning: boolean;
   currentStepIndex: number;
   ringStrokeMode: 'progress' | 'spin';
+  steps: LivenessStep[];
 }) {
   const targetXPercent = `${targetX * 80}%`;
   const targetYPercent = `${targetY * 80}%`;
@@ -207,7 +200,7 @@ function FeedbackVisual({
       </motion.div>
 
       <div className="flex items-center gap-2">
-        {STEPS.map((step, idx) => (
+        {steps.map((step, idx) => (
           <motion.div
             key={step}
             className="w-2.5 h-2.5 rounded-full transition-colors"
@@ -234,6 +227,11 @@ export function LivenessChallenge({
   onCancel,
   faceDescriptor
 }: LivenessChallengeProps) {
+  const steps: LivenessStep[] = useMemo(() => faceDescriptor
+    ? ['front', 'left', 'right']
+    : ['front'],
+  [faceDescriptor]);
+
   const animationRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [, setPose] = useState<HeadPose>({ yaw: 0, pitch: 0, roll: 0 });
@@ -245,12 +243,10 @@ export function LivenessChallenge({
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [ringStrokeMode, setRingStrokeMode] = useState<'progress' | 'spin'>('progress');
 
-  const progressRef = useRef(0);
   const currentStepRef = useRef<LivenessStep>('front');
   const currentStepIndexRef = useRef(0);
   const bestFrameDescriptorRef = useRef<Float32Array | null>(null);
   const validationsCountRef = useRef(0);
-  const ringValueRef = useRef(0);
   const poseHoldStartRef = useRef(0);
   const isValidatingRef = useRef(false);
   const waitingForBlinkRef = useRef(false);
@@ -260,9 +256,9 @@ export function LivenessChallenge({
   }, [bestFrameDescriptor]);
 
   useLayoutEffect(() => {
-    currentStepRef.current = STEPS[currentStepIndex];
+    currentStepRef.current = steps[currentStepIndex];
     currentStepIndexRef.current = currentStepIndex;
-  }, [currentStepIndex]);
+  }, [currentStepIndex, steps]);
 
   const { getHeadPose, isLookingFront, isLookingLeft, isLookingRight } = useHeadPose();
 
@@ -276,20 +272,8 @@ export function LivenessChallenge({
   const ballXPercent = useTransform(ballXSpring, [-1, 1], ['-80%', '80%']);
   const ringOffset = useTransform(ringSpring, [0, 100], [RING_CIRCUMFERENCE, 0]);
 
-  const currentStep = STEPS[currentStepIndex];
+  const currentStep = steps[currentStepIndex];
   const stepConfig = STEP_CONFIG[currentStep];
-
-  useEffect(() => {
-    const unsubscribe = ringMotionVal.on('change', (v) => {
-      ringValueRef.current = v;
-      progressRef.current = v;
-    });
-    return unsubscribe;
-  }, [ringMotionVal]);
-
-  const cancelFillAnimation = useCallback(() => {
-    // No longer used - kept for compatibility with existing references
-  }, []);
 
   const playTransitionAnimation = useCallback((onCompleteTransition: () => void) => {
     setIsTransitioning(true);
@@ -314,7 +298,7 @@ export function LivenessChallenge({
 
   const advanceToNextStep = useCallback(() => {
     const stepIdx = currentStepIndexRef.current;
-    if (stepIdx < STEPS.length - 1) {
+    if (stepIdx < steps.length - 1) {
       setCurrentStepIndex(stepIdx + 1);
       if ('vibrate' in navigator) {
         navigator.vibrate([30, 50, 30]);
@@ -331,7 +315,7 @@ export function LivenessChallenge({
         }
       }, 500);
     }
-  }, [ringMotionVal, onComplete]);
+  }, [ringMotionVal, onComplete, steps.length]);
 
   useEffect(() => {
     const loadModels = async () => {
@@ -356,17 +340,14 @@ export function LivenessChallenge({
     setWasCorrectPose(false);
     setMessage('');
     validationsCountRef.current = 0;
-    cancelFillAnimation();
     ringMotionVal.set(0);
-    progressRef.current = 0;
-    ringValueRef.current = 0;
     poseHoldStartRef.current = 0;
     isValidatingRef.current = false;
     waitingForBlinkRef.current = false;
     if (modelsLoaded && 'vibrate' in navigator) {
       navigator.vibrate(30);
     }
-  }, [currentStepIndex, modelsLoaded, ringMotionVal, cancelFillAnimation]);
+  }, [currentStepIndex, modelsLoaded, ringMotionVal]);
 
   const validateDescriptorWithBackend = useCallback(async (descriptor: Float32Array): Promise<{ success: boolean; distance: number }> => {
     try {
@@ -628,6 +609,7 @@ export function LivenessChallenge({
             isTransitioning={isTransitioning}
             currentStepIndex={currentStepIndex}
             ringStrokeMode={ringStrokeMode}
+            steps={steps}
           />
 
           <button
