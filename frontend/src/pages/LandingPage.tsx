@@ -15,19 +15,19 @@ const HERO_WORDS = [
 ];
 
 const USER_FEATURES = [
-  { title: "Verificação facial ao vivo", desc: "Biometria facial garante que só você registra seu ponto." },
-  { title: "Registro geográfico", desc: "GPS registra sua localização exata no momento da marcação." },
-  { title: "Comprovante instantâneo", desc: "Receba comprovante de cada ponto batido em tempo real." },
-  { title: "Histórico completo", desc: "Acesse todos os seus registros a qualquer momento." },
-  { title: "Sem hardware", desc: "Use seu próprio celular. Zero custo com equipamentos." },
+  { title: "Cara, ponto.", desc: "Câmera frontal confirma que é você. Sem chance de terceiros baterem seu ponto." },
+  { title: "GPS no momento certo", desc: "Localização capturada só na hora da marcação. Sem rastreamento em background." },
+  { title: "Comprovante na hora", desc: "Cada ponto gera um recibo. Você vê, baixa, guarda." },
+  { title: "Linha do tempo", desc: "Todos os seus registros num histórico limpo. Filtra por data, exporta quando quiser." },
+  { title: "Celular é suficiente", desc: "Sem terminais, sem biometria dedicada. Seu android ou iPhone resolve." },
 ];
 
 const COMPANY_FEATURES = [
-  { title: "Dashboard completo", desc: "Visão geral de colaboradores, pontos, pendências e métricas em tempo real." },
-  { title: "Verificação real dos pontos", desc: "Foto, localização e horário exato de cada marcação registrada." },
-  { title: "Criação de funcionários e convites", desc: "Cadastre colaboradores e envie convite para criação de conta." },
-  { title: "Folha de ponto mensal", desc: "Gere automaticamente a folha individual por funcionário." },
-  { title: "Conformidade CLT", desc: "Processos dentro das exigências legais, sem dor de cabeça." },
+  { title: "Painel em tempo real", desc: "Veja quem bateu ponto, quem faltou, quem está atrasado — tudo atualizado ao vivo." },
+  { title: "Prova de cada ponto", desc: "Foto + GPS + horário. Ninguém contesta um registro desses." },
+  { title: "Convites em segundos", desc: "Cadastra o funcionário, ele recebe o link e cria a conta sozinho." },
+  { title: "Folha pronta", desc: "Fechamento mensal automático por funcionário. Sem planilha, sem erro." },
+  { title: "100% CLT", desc: "Regras de jornada, intervalos e banco de horas configurados. Você não advinha a lei, o sistema aplica." },
 ];
 
 function CheckIcon() {
@@ -136,10 +136,10 @@ export function LandingPage() {
           <div className="mx-auto max-w-7xl px-8">
             <div className="text-center mb-16 reveal">
               <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-ink leading-[1.2]">
-                Feito para você e para sua empresa
+                Dois lados, uma plataforma
               </h2>
               <p className="mt-4 text-lg leading-relaxed text-steel max-w-2xl mx-auto">
-                Tudo que você precisa para registrar, controlar e gerenciar jornadas de trabalho — em um só lugar.
+                Funcionário bate ponto no celular. Empresa acompanha tudo no painel. Simples assim.
               </p>
             </div>
 
@@ -157,7 +157,7 @@ export function LandingPage() {
                   Para você
                 </span>
                 <h3 className="mt-4 text-xl font-semibold text-ink leading-[1.3]">
-                  Seu ponto com segurança e praticidade
+                  Ponto direto do celular
                 </h3>
                 <ul className="mt-6 space-y-4 reveal-stagger">
                   {USER_FEATURES.map((feature, i) => (
@@ -179,11 +179,11 @@ export function LandingPage() {
           <div className="mx-auto max-w-7xl px-8">
             <div className="mt-24 flex flex-col-reverse lg:flex-row items-center gap-12 lg:gap-16">
               <div className="w-full lg:w-3/5 reveal-left">
-                <span className="inline-block rounded-full bg-primary/5 px-3 py-1 text-sm font-medium text-slate">
+                <span className="inline-block rounded-full bg-on-dark/10 px-3 py-1 text-sm font-medium text-on-dark-muted">
                   Para sua empresa
                 </span>
                 <h3 className="mt-4 text-xl font-semibold text-on-dark leading-[1.3]">
-                  Controle total da jornada de trabalho
+                  Gestão de ponto sem dor de cabeça
                 </h3>
                 <ul className="mt-6 space-y-4 reveal-stagger">
                   {COMPANY_FEATURES.map((feature, i) => (
