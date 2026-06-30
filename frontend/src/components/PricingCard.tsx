@@ -41,10 +41,10 @@ export function PricingCard({ plan, onCtaClick }: PricingCardProps) {
   return (
     <div
       className={`
-        relative rounded-lg p-8 bg-slate flex flex-col h-full transition-all duration-300 border-1 hover:scale-101
+        relative rounded-lg p-8 bg-canvas flex flex-col h-full transition-all duration-300 border-1 hover:scale-101
         ${isHighlighted
           ? "border-1 border-brand-green shadow-[0_8px_24px_rgba(0,212,164,0.08)] lg:-mt-8 z-10 hover:border-2"
-          : "border-stone hover:border-muted hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)]"
+          : "border-hairline hover:border-stone hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)]"
         }
       `}
     >
@@ -55,14 +55,14 @@ export function PricingCard({ plan, onCtaClick }: PricingCardProps) {
       )}
 
       <div className="mb-8">
-        <h3 className="text-3xl font-semibold text-on-dark leading-snug">{plan.name}</h3>
+        <h3 className="text-3xl font-semibold text-ink leading-snug">{plan.name}</h3>
         <div className="mt-3 flex items-baseline gap-1">
-          <span className="text-5xl font-semibold text-on-dark leading-[1.1]">
+          <span className="text-5xl font-semibold text-ink leading-[1.1]">
             {formatPrice(plan.price)}
           </span>
-          {plan.period && <span className="text-on-dark-muted">{plan.period}</span>}
+          {plan.period && <span className="text-steel">{plan.period}</span>}
         </div>
-        <p className="mt-2 text-sm text-on-dark-muted">{formatMaxEmployees(plan.maxEmployees)}</p>
+        <p className="mt-2 text-sm text-steel">{formatMaxEmployees(plan.maxEmployees)}</p>
       </div>
 
       <ul className="flex-1 space-y-4 mb-10" role="list">
@@ -72,7 +72,7 @@ export function PricingCard({ plan, onCtaClick }: PricingCardProps) {
               className={`flex-shrink-0 w-5 h-5 mt-0.5 rounded-full ${
                 feature.included
                   ? "bg-brand-green/15 text-brand-green"
-                  : "bg-on-dark/5 text-muted"
+                  : "bg-ink/5 text-muted"
               }`}
               aria-hidden="true"
             >
@@ -80,7 +80,7 @@ export function PricingCard({ plan, onCtaClick }: PricingCardProps) {
             </span>
             <span
               className={`text-sm leading-relaxed ${
-                feature.included ? "text-on-dark" : "text-muted line-through"
+                feature.included ? "text-charcoal" : "text-muted line-through"
               }`}
             >
               {feature.text}
@@ -98,8 +98,8 @@ export function PricingCard({ plan, onCtaClick }: PricingCardProps) {
           ${plan.ctaVariant === "primary"
             ? "bg-primary text-on-primary hover:bg-charcoal focus-visible:outline-primary border border-brand-green"
             : plan.ctaVariant === "secondary"
-            ? "bg-canvas text-primary hover:bg-surface focus-visible:outline-canvas"
-            : "border border-stone bg-primary text-on-primary hover:bg-primary/10 focus-visible:outline-brand-green"
+            ? "bg-canvas text-primary hover:bg-surface focus-visible:outline-canvas border border-hairline"
+            : "border border-hairline bg-canvas text-ink hover:bg-surface focus-visible:outline-primary"
           }`}
       >
         {plan.ctaText}
