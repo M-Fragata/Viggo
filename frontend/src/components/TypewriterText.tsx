@@ -30,15 +30,13 @@ export function TypewriterText({
   });
 
   return (
-    <span className={className} aria-live="polite" aria-atomic="true">
+    <span className={`className`} aria-live="polite" aria-atomic="true">
       {currentText}
       {showCursor && (
         <span
-          className={`inline-block w-px h-6 align-bottom animate-pulse bg-current ${cursorClassName}`}
+          className={`inline-block w-[4px] h-[1em] align-middle mx-2 rounded-full animate-pulse bg-current ${cursorClassName}`}
           aria-hidden="true"
-        >
-          &#8203;
-        </span>
+        />
       )}
     </span>
   );
