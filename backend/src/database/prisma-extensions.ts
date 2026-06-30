@@ -1,23 +1,19 @@
-import { PrismaClient } from '@prisma/client';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { prisma } from './prisma.js';
 
-let currentCompanyId: string | null = null;
-let currentUserId: string | null = null;
-
-export function setCurrentCompanyId(companyId: string | null) {
-  currentCompanyId = companyId;
+interface PrismaContext {
+  companyId: string;
+  userId: string;
 }
 
-export function getCurrentCompanyId(): string | null {
-  return currentCompanyId;
+export const prismaContextStore = new AsyncLocalStorage<PrismaContext>();
+
+export function getCurrentCompanyId(): string | undefined {
+  return prismaContextStore.getStore()?.companyId;
 }
 
-export function setCurrentUserId(userId: string | null) {
-  currentUserId = userId;
-}
-
-export function getCurrentUserId(): string | null {
-  return currentUserId;
+export function getCurrentUserId(): string | undefined {
+  return prismaContextStore.getStore()?.userId;
 }
 
 const operationsWithWhere = ['findUnique', 'findFirst', 'findMany', 'update', 'updateMany', 'delete', 'deleteMany', 'upsert', 'count', 'aggregate', 'groupBy'];
@@ -28,7 +24,8 @@ export const extendedPrisma = prisma.$extends({
   query: {
     $allModels: {
       async $allOperations({ args, query, operation }) {
-        const companyId = currentCompanyId;
+        const store = prismaContextStore.getStore();
+        const companyId = store?.companyId;
 
         if (companyId && operationsWithWhere.includes(operation)) {
           if (args && typeof args === 'object' && 'where' in args) {
@@ -72,12 +69,5 @@ export const extendedPrisma = prisma.$extends({
 });
 
 export function createPrismaContext(companyId: string, userId: string) {
-  setCurrentCompanyId(companyId);
-  setCurrentUserId(userId);
-  return extendedPrisma;
-}
-
-export function clearPrismaContext() {
-  currentCompanyId = null;
-  currentUserId = null;
+  return prismaContextStore.run({ companyId, userId }, () => extendedPrisma);
 }

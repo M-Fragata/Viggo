@@ -20,7 +20,6 @@ async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promis
 
   if (response.status === 401) {
     localStorage.removeItem("@viggo:token");
-    localStorage.removeItem("@viggo:user");
     window.location.href = "/";
     return new Promise<T>(() => { }) as Promise<T>;
   }
@@ -54,6 +53,8 @@ export const api = {
         body: JSON.stringify({ email, password }),
         requiresAuth: false,
       }),
+
+    me: () => fetchApi<{ user: User }>("/auth/me"),
 
     signup: (data: SignupCompanyDto) =>
       fetchApi<SignupCompanyResponse>("/companies/signup", {
@@ -108,6 +109,11 @@ export const api = {
       fetchApi<User>(`/sessions/${userId}`, {
         method: "PUT",
         body: JSON.stringify({ faceDescriptor: descriptor }),
+      }),
+    verifyFace: (descriptor: number[]) =>
+      fetchApi<VerifyFaceResponse>("/employees/face/verify", {
+        method: "POST",
+        body: JSON.stringify({ descriptor }),
       }),
   },
 
@@ -165,6 +171,7 @@ export interface User {
   companyId: string;
   cpf?: string;
   createdAt: string;
+  hasFaceDescriptor?: boolean;
 }
 
 export interface Company {
@@ -368,6 +375,12 @@ export interface MasterMetricsResponse {
 
 export interface FaceDescriptorResponse {
   [key: string]: number;
+}
+
+export interface VerifyFaceResponse {
+  success: boolean;
+  distance: number;
+  message?: string;
 }
 
 export interface CheckinCreateDto {

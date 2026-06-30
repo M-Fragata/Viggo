@@ -102,11 +102,13 @@ export class CompanyController {
         },
       });
 
-      const { password: _, ...userWithoutPassword } = user;
       const token = jwt.sign(
         {
           id: user.id,
           role: user.role,
+          name: user.name,
+          email: user.email,
+          companyName: company.name,
           companyId: company.id,
           planTier: company.plan,
           isMaster: false
@@ -116,7 +118,13 @@ export class CompanyController {
       );
 
       return res.status(201).json({
-        user: userWithoutPassword,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          companyId: user.companyId,
+        },
         company: {
           id: company.id,
           name: company.name,
@@ -578,11 +586,13 @@ export class CompanyController {
 
       const { user, inviteToken: updatedToken } = result;
 
-      const { password: _, ...userWithoutPassword } = user;
       const authToken = jwt.sign(
         {
           id: user.id,
           role: user.role,
+          name: user.name,
+          email: user.email,
+          companyName: inviteToken.company.name,
           companyId: inviteToken.companyId,
           planTier: inviteToken.company.plan,
           isMaster: false,
@@ -592,7 +602,13 @@ export class CompanyController {
       );
 
       return res.json({
-        user: userWithoutPassword,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          companyId: user.companyId,
+        },
         company: {
           id: inviteToken.company.id,
           name: inviteToken.company.name,

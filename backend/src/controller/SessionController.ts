@@ -47,7 +47,13 @@ export class SessionController {
                 }
             })
 
-            return res.status(201).json(user);
+            return res.status(201).json({
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                companyId: user.companyId,
+            });
 
         } catch (error) {
             if (error instanceof z.ZodError) {
@@ -95,11 +101,15 @@ export class SessionController {
                 email: user.email,
                 role: user.role,
                 companyId: user.companyId,
+                hasFaceDescriptor: !!user.faceDescriptor,
             }
 
             const token = jwt.sign({
                 id: user.id,
                 role: user.role,
+                name: user.name,
+                email: user.email,
+                companyName: companyUser.name,
                 companyId: user.companyId,
                 planTier: user.company?.plan || "TIER_I",
                 isMaster: user.role === "MASTER"

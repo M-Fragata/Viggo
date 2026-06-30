@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
-import { useHeadPose, calculateEAR, BLINK_THRESHOLD_FRONT, YAW_THRESHOLD_FRONT, YAW_THRESHOLD_SIDE, FRONT_TIMEOUT_MS } from '../hooks/useHeadPose';
+import { useState, useEffect, useCallback, useRef, useLayoutEffect, useMemo } from 'react';
+import { useHeadPose, calculateEAR, BLINK_THRESHOLD_FRONT, YAW_THRESHOLD_FRONT, YAW_THRESHOLD_SIDE } from '../hooks/useHeadPose';
 import type { HeadPose } from '../hooks/useHeadPose';
 import * as faceapi from 'face-api.js';
 import { motion, useMotionValue, useSpring, useTransform, animate } from 'framer-motion';
+import { api } from '../services/api';
 
-type LivenessStep = 'front' | 'left' | 'right' | 'complete';
+type LivenessStep = 'front' | 'left' | 'right';
 
 interface LivenessChallengeProps {
   videoRef: React.RefObject<HTMLVideoElement | null>;
@@ -13,57 +14,44 @@ interface LivenessChallengeProps {
   faceDescriptor?: Float32Array;
 }
 
-const STEP_CONFIG: Record<Exclude<LivenessStep, 'complete'>, {
+const STEP_CONFIG: Record<LivenessStep, {
   label: string;
   instruction: string;
   icon: string;
-  color: string;
   targetX: number;
   targetY: number;
-  requiresBlink: boolean;
-  fillDuration: number;
-  progressTarget: number;
+  holdDuration: number;
   validationsNeeded: number;
 }> = {
   front: {
     label: 'Olhe para frente',
     instruction: 'Centralize o rosto no círculo',
     icon: '👁️',
-    color: 'emerald',
     targetX: 0,
     targetY: 0,
-    requiresBlink: true,
-    fillDuration: 1000,
-    progressTarget: 50,
-    validationsNeeded: 2,
+    holdDuration: 4000,
+    validationsNeeded: 1,
   },
   left: {
     label: 'Vire para a esquerda',
     instruction: 'Vire o rosto até a bola chegar ao alvo (≈20°)',
     icon: '◀️',
-    color: 'blue',
     targetX: -1,
     targetY: 0,
-    requiresBlink: false,
-    fillDuration: 2000,
-    progressTarget: 100,
+    holdDuration: 2000,
     validationsNeeded: 1,
   },
   right: {
     label: 'Vire para a direita',
     instruction: 'Vire o rosto até a bola chegar ao alvo (≈20°)',
     icon: '▶️',
-    color: 'blue',
     targetX: 1,
     targetY: 0,
-    requiresBlink: false,
-    fillDuration: 2000,
-    progressTarget: 100,
+    holdDuration: 2000,
     validationsNeeded: 1,
   },
 };
 
-const STEPS: Exclude<LivenessStep, 'complete'>[] = ['front', 'left', 'right'];
 
 const RING_RADIUS = 54;
 const RING_STROKE = 6;
@@ -116,6 +104,7 @@ function FeedbackVisual({
   isTransitioning,
   currentStepIndex,
   ringStrokeMode,
+  steps,
 }: {
   ballXPercent: import('framer-motion').MotionValue<string>;
   ringOffset: import('framer-motion').MotionValue<number>;
@@ -126,6 +115,7 @@ function FeedbackVisual({
   isTransitioning: boolean;
   currentStepIndex: number;
   ringStrokeMode: 'progress' | 'spin';
+  steps: LivenessStep[];
 }) {
   const targetXPercent = `${targetX * 80}%`;
   const targetYPercent = `${targetY * 80}%`;
@@ -210,7 +200,7 @@ function FeedbackVisual({
       </motion.div>
 
       <div className="flex items-center gap-2">
-        {STEPS.map((step, idx) => (
+        {steps.map((step, idx) => (
           <motion.div
             key={step}
             className="w-2.5 h-2.5 rounded-full transition-colors"
@@ -237,11 +227,15 @@ export function LivenessChallenge({
   onCancel,
   faceDescriptor
 }: LivenessChallengeProps) {
+  const steps: LivenessStep[] = useMemo(() => faceDescriptor
+    ? ['front', 'left', 'right']
+    : ['front'],
+  [faceDescriptor]);
+
   const animationRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [, setPose] = useState<HeadPose>({ yaw: 0, pitch: 0, roll: 0 });
   const [blinkValidated, setBlinkValidated] = useState(false);
-  const [frontStepStartTime, setFrontStepStartTime] = useState(() => Date.now());
   const [message, setMessage] = useState('');
   const [bestFrameDescriptor, setBestFrameDescriptor] = useState<Float32Array | null>(null);
   const [modelsLoaded, setModelsLoaded] = useState(false);
@@ -249,23 +243,22 @@ export function LivenessChallenge({
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [ringStrokeMode, setRingStrokeMode] = useState<'progress' | 'spin'>('progress');
 
-  const progressRef = useRef(0);
   const currentStepRef = useRef<LivenessStep>('front');
   const currentStepIndexRef = useRef(0);
   const bestFrameDescriptorRef = useRef<Float32Array | null>(null);
   const validationsCountRef = useRef(0);
-  const isFillingRef = useRef(false);
-  const fillAnimationRef = useRef<ReturnType<typeof animate> | null>(null);
-  const ringValueRef = useRef(0);
+  const poseHoldStartRef = useRef(0);
+  const isValidatingRef = useRef(false);
+  const waitingForBlinkRef = useRef(false);
 
   useLayoutEffect(() => {
     bestFrameDescriptorRef.current = bestFrameDescriptor;
   }, [bestFrameDescriptor]);
 
   useLayoutEffect(() => {
-    currentStepRef.current = STEPS[currentStepIndex];
+    currentStepRef.current = steps[currentStepIndex];
     currentStepIndexRef.current = currentStepIndex;
-  }, [currentStepIndex]);
+  }, [currentStepIndex, steps]);
 
   const { getHeadPose, isLookingFront, isLookingLeft, isLookingRight } = useHeadPose();
 
@@ -279,24 +272,8 @@ export function LivenessChallenge({
   const ballXPercent = useTransform(ballXSpring, [-1, 1], ['-80%', '80%']);
   const ringOffset = useTransform(ringSpring, [0, 100], [RING_CIRCUMFERENCE, 0]);
 
-  const currentStep = STEPS[currentStepIndex];
+  const currentStep = steps[currentStepIndex];
   const stepConfig = STEP_CONFIG[currentStep];
-
-  useEffect(() => {
-    const unsubscribe = ringMotionVal.on('change', (v) => {
-      ringValueRef.current = v;
-      progressRef.current = v;
-    });
-    return unsubscribe;
-  }, [ringMotionVal]);
-
-  const cancelFillAnimation = useCallback(() => {
-    if (fillAnimationRef.current) {
-      fillAnimationRef.current.stop();
-      fillAnimationRef.current = null;
-    }
-    isFillingRef.current = false;
-  }, []);
 
   const playTransitionAnimation = useCallback((onCompleteTransition: () => void) => {
     setIsTransitioning(true);
@@ -321,7 +298,7 @@ export function LivenessChallenge({
 
   const advanceToNextStep = useCallback(() => {
     const stepIdx = currentStepIndexRef.current;
-    if (stepIdx < STEPS.length - 1) {
+    if (stepIdx < steps.length - 1) {
       setCurrentStepIndex(stepIdx + 1);
       if ('vibrate' in navigator) {
         navigator.vibrate([30, 50, 30]);
@@ -338,7 +315,7 @@ export function LivenessChallenge({
         }
       }, 500);
     }
-  }, [ringMotionVal, onComplete]);
+  }, [ringMotionVal, onComplete, steps.length]);
 
   useEffect(() => {
     const loadModels = async () => {
@@ -360,48 +337,59 @@ export function LivenessChallenge({
 
   useEffect(() => {
     setBlinkValidated(false);
-    setFrontStepStartTime(Date.now());
     setWasCorrectPose(false);
     setMessage('');
     validationsCountRef.current = 0;
-    cancelFillAnimation();
     ringMotionVal.set(0);
-    progressRef.current = 0;
-    ringValueRef.current = 0;
+    poseHoldStartRef.current = 0;
+    isValidatingRef.current = false;
+    waitingForBlinkRef.current = false;
     if (modelsLoaded && 'vibrate' in navigator) {
       navigator.vibrate(30);
     }
-  }, [currentStepIndex, modelsLoaded, ringMotionVal, cancelFillAnimation]);
+  }, [currentStepIndex, modelsLoaded, ringMotionVal]);
 
-  const startFillAnimation = useCallback((_fromValue: number, toValue: number, durationMs: number) => {
-    cancelFillAnimation();
-    isFillingRef.current = true;
+  const validateDescriptorWithBackend = useCallback(async (descriptor: Float32Array): Promise<{ success: boolean; distance: number }> => {
+    try {
+      const descriptorArray = Array.from(descriptor);
+      const result = await api.employees.verifyFace(descriptorArray);
+      return { success: result.success, distance: result.distance };
+    } catch (err) {
+      console.error('Erro na verificação backend:', err);
+      return { success: false, distance: -1 };
+    }
+  }, []);
 
-    const anim = animate(ringMotionVal, toValue, {
-      duration: durationMs / 1000,
-      ease: 'easeInOut',
-      onUpdate: (latest) => {
-        ringValueRef.current = latest;
-        progressRef.current = latest;
-      },
-      onComplete: () => {
-        isFillingRef.current = false;
-        fillAnimationRef.current = null;
-        if (toValue >= 100) {
-          playTransitionAnimation(advanceToNextStep);
-        }
-      },
-    });
+  const fallbackLocalComparison = useCallback((descriptor: Float32Array): boolean => {
+    if (!faceDescriptor) return false;
+    const distance = faceapi.euclideanDistance(descriptor, faceDescriptor);
+    return distance < 0.5;
+  }, [faceDescriptor]);
 
-    fillAnimationRef.current = anim;
-  }, [ringMotionVal, cancelFillAnimation, playTransitionAnimation, advanceToNextStep]);
+  const handleValidationSuccess = useCallback((descriptor: Float32Array) => {
+    setBestFrameDescriptor(descriptor);
+    poseHoldStartRef.current = 0;
+    validationsCountRef.current += 1;
+    setWasCorrectPose(true);
+
+    const step = currentStepRef.current;
+    const config = STEP_CONFIG[step as keyof typeof STEP_CONFIG];
+    const count = validationsCountRef.current;
+    const needed = config.validationsNeeded;
+
+    if (count >= needed) {
+      playTransitionAnimation(advanceToNextStep);
+    }
+
+    setMessage('');
+  }, [ringMotionVal, playTransitionAnimation, advanceToNextStep]);
 
   const checkPose = useCallback(async () => {
     if (!videoRef.current || !modelsLoaded || videoRef.current.readyState !== 4) {
       return;
     }
 
-    if (isTransitioning || isFillingRef.current) return;
+    if (isTransitioning) return;
 
     try {
       const detectorOptions = new faceapi.TinyFaceDetectorOptions({
@@ -420,20 +408,33 @@ export function LivenessChallenge({
 
         const ear = calculateEAR(detection.landmarks);
 
-        let stepPassed = false;
         const step = currentStepRef.current;
         const config = STEP_CONFIG[step as keyof typeof STEP_CONFIG];
+
+        // Se está aguardando blink após backend success no front
+        if (waitingForBlinkRef.current && step === 'front') {
+          const blinked = ear < BLINK_THRESHOLD_FRONT;
+          if (blinked) {
+            setBlinkValidated(true);
+            waitingForBlinkRef.current = false;
+            handleValidationSuccess(detection.descriptor);
+          }
+          return;
+        }
+
+        let stepPassed = false;
 
         if (step === 'front') {
           const poseOk = isLookingFront(headPose, YAW_THRESHOLD_FRONT);
           const blinked = ear < BLINK_THRESHOLD_FRONT;
-          const timeInFront = Date.now() - frontStepStartTime;
 
           if (blinked) {
             setBlinkValidated(true);
           }
 
-          stepPassed = poseOk && (blinkValidated || timeInFront > FRONT_TIMEOUT_MS);
+          // Para front: stepPassed depende APENAS da pose (não do blink)
+          // O blink será validado após o backend retornar sucesso
+          stepPassed = poseOk;
         } else {
           stepPassed = step === 'left'
             ? isLookingLeft(headPose, YAW_THRESHOLD_SIDE)
@@ -449,31 +450,75 @@ export function LivenessChallenge({
         });
 
         if (stepPassed) {
-          validationsCountRef.current += 1;
+          if (poseHoldStartRef.current === 0) {
+            poseHoldStartRef.current = Date.now();
+          }
+
+          const heldTime = Date.now() - poseHoldStartRef.current;
+          const holdProgress = Math.min(100, (heldTime / config.holdDuration) * 100);
+
+          ringMotionVal.set(holdProgress);
           setWasCorrectPose(true);
-
-          if (faceDescriptor) {
-            const distance = faceapi.euclideanDistance(detection.descriptor, faceDescriptor);
-            if (distance < 0.5) {
-              setBestFrameDescriptor(detection.descriptor);
-            }
-          } else {
-            setBestFrameDescriptor(detection.descriptor);
-          }
-
-          const count = validationsCountRef.current;
-          const needed = config.validationsNeeded;
-
-          if (count >= needed) {
-            const currentRingValue = ringValueRef.current;
-            startFillAnimation(currentRingValue, 100, config.fillDuration * ((100 - currentRingValue) / 100));
-          } else if (count === 1 && needed > 1) {
-            startFillAnimation(0, config.progressTarget, config.fillDuration);
-          }
-
           setMessage('');
+
+          if (heldTime >= config.holdDuration && !isValidatingRef.current) {
+            isValidatingRef.current = true;
+
+            // Registration mode: no saved descriptor to compare against
+            if (!faceDescriptor) {
+              handleValidationSuccess(detection.descriptor);
+              isValidatingRef.current = false;
+            } else {
+              // Check-in mode: validate against backend
+              const backendResult = await validateDescriptorWithBackend(detection.descriptor);
+
+              if (backendResult.success) {
+                if (step === 'front' && !blinkValidated) {
+                  waitingForBlinkRef.current = true;
+                  setMessage('Pisque para confirmar');
+                  isValidatingRef.current = false;
+                  return;
+                }
+                handleValidationSuccess(detection.descriptor);
+              } else if (backendResult.distance >= 0) {
+                if (fallbackLocalComparison(detection.descriptor)) {
+                  if (step === 'front' && !blinkValidated) {
+                    waitingForBlinkRef.current = true;
+                    setMessage('Pisque para confirmar');
+                    isValidatingRef.current = false;
+                    return;
+                  }
+                  handleValidationSuccess(detection.descriptor);
+                } else {
+                  poseHoldStartRef.current = 0;
+                  ringMotionVal.set(0);
+                  setMessage(`Rosto não reconhecido (dist: ${backendResult.distance.toFixed(2)})`);
+                }
+              } else {
+                if (fallbackLocalComparison(detection.descriptor)) {
+                  if (step === 'front' && !blinkValidated) {
+                    waitingForBlinkRef.current = true;
+                    setMessage('Pisque para confirmar');
+                    isValidatingRef.current = false;
+                    return;
+                  }
+                  handleValidationSuccess(detection.descriptor);
+                } else {
+                  poseHoldStartRef.current = 0;
+                  ringMotionVal.set(0);
+                  setMessage('Erro de conexão. Tente novamente.');
+                }
+              }
+
+              isValidatingRef.current = false;
+            }
+          }
         } else {
+          poseHoldStartRef.current = 0;
+          waitingForBlinkRef.current = false;
           setWasCorrectPose(false);
+
+          ringMotionVal.set(0);
 
           const yawDeg = Math.round(-headPose.yaw);
           if (step === 'front') {
@@ -496,14 +541,16 @@ export function LivenessChallenge({
     modelsLoaded,
     isTransitioning,
     blinkValidated,
-    frontStepStartTime,
     faceDescriptor,
     getHeadPose,
     isLookingFront,
     isLookingLeft,
     isLookingRight,
     ballX,
-    startFillAnimation,
+    ringMotionVal,
+    validateDescriptorWithBackend,
+    fallbackLocalComparison,
+    handleValidationSuccess,
   ]);
 
   useEffect(() => {
@@ -562,6 +609,7 @@ export function LivenessChallenge({
             isTransitioning={isTransitioning}
             currentStepIndex={currentStepIndex}
             ringStrokeMode={ringStrokeMode}
+            steps={steps}
           />
 
           <button

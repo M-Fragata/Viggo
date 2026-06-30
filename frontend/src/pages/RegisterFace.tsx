@@ -11,8 +11,10 @@ export function RegisterFace() {
     const [isRegistering, setIsRegistering] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
     const { user, token, refreshUser } = useAuth();
+    const [check, setCheck] = useState<boolean>(false)
 
     useEffect(() => {
+
         const initCamera = async () => {
             setVideoOpen(true);
             try {
@@ -47,7 +49,8 @@ export function RegisterFace() {
                 window.location.href = "/";
             }
         };
-        initCamera();
+
+        if (!check) initCamera();
 
         return () => {
             if (videoRef.current && videoRef.current.srcObject) {
@@ -59,6 +62,14 @@ export function RegisterFace() {
 
     const handleLivenessComplete = async (descriptor: Float32Array) => {
         setShowLiveness(false);
+
+        if (videoRef.current && videoRef.current.srcObject) {
+            const stream = videoRef.current.srcObject as MediaStream;
+            stream.getTracks().forEach(track => track.stop());
+            videoRef.current.srcObject = null;
+        }
+        setVideoOpen(false);
+        setCheck(true)
         setIsRegistering(true);
         setMessage("Salvando cadastro facial...");
 
@@ -69,17 +80,12 @@ export function RegisterFace() {
 
         try {
             await api.employees.updateFaceDescriptor(user.id, Array.from(descriptor));
-
-            const updatedUser = { ...user, faceDescriptor: JSON.stringify(Array.from(descriptor)) };
-            localStorage.setItem("@viggo:user", JSON.stringify(updatedUser));
-            refreshUser();
+            await refreshUser();
 
             setIsSuccess(true);
             setMessage("Cadastro facial concluído!");
 
-            setTimeout(() => {
-                window.location.href = "/";
-            }, 2000);
+            window.location.href = "/";
 
         } catch (error) {
             console.error("Erro ao salvar cadastro:", error);
@@ -94,7 +100,7 @@ export function RegisterFace() {
         window.location.href = "/";
     };
 
-    if (!videoOpen) {
+    if (!videoOpen && !check) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center p-4">
                 <div className="animate-spin rounded-full h-12 w-12 border-4 border-emerald-500 border-t-transparent" />

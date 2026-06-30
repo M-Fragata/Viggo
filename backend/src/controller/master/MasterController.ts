@@ -208,12 +208,14 @@ export class MasterController {
         {
           id: masterUserId,
           role: 'ENTERPRISE_ADMIN',
+          name: targetUser.name,
+          email: targetUser.email,
+          companyName: company.name,
           companyId: company.id,
           planTier: company.plan,
           isMaster: false,
           isImpersonated: true,
           impersonatedBy: masterUserId,
-          impersonatedCompanyName: company.name,
         },
         Env.JWT_SECRET!,
         { expiresIn: '1h' }

@@ -9,5 +9,6 @@ const employeesController = new EmployeesController();
 
 employeesRoutes.get("/", authMiddleware, employeesController.getEmployees);
 employeesRoutes.get("/face", authMiddleware, faceValidationLimiter, employeesController.index)
+employeesRoutes.post("/face/verify", authMiddleware, faceValidationLimiter, employeesController.verifyFace)
 
 export { employeesRoutes }

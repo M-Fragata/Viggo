@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useCompany, usePlanLimits } from "../hooks/useCompany";
 import { useAuth, useCompanyStatus } from "../hooks/useAuth";
+import { useCheckins } from "../hooks/useCheckins";
 import { PlanBadge, PlanComparisonModal, UsageProgressBar, TrialCountdown } from "../components/plan";
 import { InvitesTab } from "../components/company";
+import { CheckinTable } from "../components/checkin/CheckinTable";
 import { Users, CheckCircle, LayoutList, CreditCard, Mail, ArrowUpRight, Building2, ChevronDown, ChevronUp } from "lucide-react";
 import type { CompanyResponse, UsageResponse, User } from "../services/api";
 
@@ -84,14 +86,12 @@ export function DashboardPage() {
       {activeTab === "Plano" && (
         <PlanTab
           company={company}
-          usage={usage}
           planLimit={planLimit}
           planColor={planColor}
           getPlanLabel={getPlanLabel}
-          showPlanModal={showPlanModal}
-          setShowPlanModal={setShowPlanModal}
-          isTrialExpired={isTrialExpired}
+          isTrialExpired={isTrialExpired(company?.planExpiresAt ?? null, company?.status!)}
           getTrialDaysRemaining={getTrialDaysRemaining}
+          setShowPlanModal={setShowPlanModal}
         />
       )}
 
@@ -104,7 +104,19 @@ export function DashboardPage() {
   );
 }
 
-function EmployeeTab({ company, usage, planLimit }: { company: CompanyResponse | null; usage: UsageResponse | null; planLimit: any }) {
+function EmployeeTab({ company, usage, planLimit }: {
+  company: CompanyResponse | null;
+  usage: UsageResponse | null;
+  planLimit: {
+    maxEmployees: number | null;
+    price: number | null;
+    api: {
+      general: number;
+      checkin: number;
+      faceValidation: number;
+    };
+  } | null
+}) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   return (
@@ -199,10 +211,26 @@ function EmployeeTab({ company, usage, planLimit }: { company: CompanyResponse |
 }
 
 function PresentesTab() {
+  const [selectedDate, setSelectedDate] = useState<string>(() => {
+    const today = new Date();
+    return today.toISOString().split("T")[0];
+  });
+
+  const { checkins, isLoading } = useCheckins(selectedDate);
+
   return (
-    <div className="bg-white border border-slate-200 rounded-3xl shadow-sm p-6">
-      <h2 className="text-lg font-bold text-slate-800 mb-4">Presentes Hoje</h2>
-      <p className="text-slate-500 text-center py-12">Funcionalidade de check-in do dia - integrar com API de check-ins</p>
+    <div className="bg-white border border-slate-200 rounded-3xl shadow-sm p-6 space-y-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h2 className="text-lg font-bold text-slate-800">Presentes -         
+          <input
+          type="date"
+          value={selectedDate}
+          onChange={(e) => setSelectedDate(e.target.value)}
+          className="px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+        /></h2>
+
+      </div>
+      <CheckinTable data={checkins} isLoading={isLoading} />
     </div>
   );
 }
@@ -224,7 +252,23 @@ function PlanTab({
   isTrialExpired,
   getTrialDaysRemaining,
   setShowPlanModal,
-}: any) {
+}: {
+  company: CompanyResponse | null;
+  planLimit: {
+    maxEmployees: number | null;
+    price: number | null;
+    api: {
+      general: number;
+      checkin: number;
+      faceValidation: number;
+    };
+  } | null;
+  planColor: string;
+  getPlanLabel: (plan: import("../services/api").PlanTier) => string;
+  isTrialExpired: boolean;
+  getTrialDaysRemaining: (planExpiresAt: string | null) => number;
+  setShowPlanModal: (show: boolean) => void;
+}) {
   const daysRemaining = company?.planExpiresAt ? getTrialDaysRemaining(company.planExpiresAt) : 0;
 
   return (
@@ -233,9 +277,9 @@ function PlanTab({
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div>
             <h2 className="text-lg font-bold text-slate-800">Plano Atual</h2>
-            <p className="text-slate-500 text-sm">{getPlanLabel(company?.plan)} - R$ {planLimit?.price?.toFixed(2)}/mês</p>
+            <p className="text-slate-500 text-sm">{getPlanLabel(company?.plan!)} - R$ {planLimit?.price?.toFixed(2)}/mês</p>
           </div>
-          <PlanBadge plan={company?.plan} size="lg" />
+          <PlanBadge plan={company?.plan!} size="lg" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">

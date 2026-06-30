@@ -53,6 +53,12 @@ export function PontoViewPage() {
         })
     }
 
+    function escapeHtml(str: string): string {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
     const horasTrabalhadas = useMemo(() => {
         if (checkins.length < 2) return "0:00h"
 
@@ -82,9 +88,9 @@ export function PontoViewPage() {
 
         const tableRows = pontos.map(ponto => `
             <tr>
-                <td>${formatTime(ponto.createdAt)}</td>
-                <td>${formatType(ponto.type)}</td>
-                <td style="font-size: 10px;">${ponto.latitude.toFixed(4)}, ${ponto.longitude.toFixed(4)}</td>
+                <td>${escapeHtml(formatTime(ponto.createdAt))}</td>
+                <td>${escapeHtml(formatType(ponto.type))}</td>
+                <td style="font-size: 10px;">${escapeHtml(ponto.latitude.toFixed(4))}, ${escapeHtml(ponto.longitude.toFixed(4))}</td>
             </tr>
         `).join("")
 
@@ -125,11 +131,11 @@ export function PontoViewPage() {
                 
                 <div class="info-section">
                     <div>
-                        <p><b>Colaborador:</b> ${nome}</p>
-                        <p><b>Data:</b> ${dataRelatorio}</p>
+                        <p><b>Colaborador:</b> ${escapeHtml(nome)}</p>
+                        <p><b>Data:</b> ${escapeHtml(dataRelatorio)}</p>
                     </div>
                     <div style="text-align: right">
-                        <p><b>Empresa:</b> ${company}</p>
+                        <p><b>Empresa:</b> ${escapeHtml(company ?? "")}</p>
                     </div>
                 </div>
 
@@ -148,7 +154,7 @@ export function PontoViewPage() {
 
                 <div class="summary">
                     <span>Total de Horas Calculadas:</span>
-                    <b>${horasTrabalhadas}</b>
+                    <b>${escapeHtml(horasTrabalhadas)}</b>
                 </div>
 
                 <div class="footer">
