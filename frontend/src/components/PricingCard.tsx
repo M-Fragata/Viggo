@@ -5,101 +5,82 @@ interface PricingCardProps {
   onCtaClick?: () => void;
 }
 
+function CheckIcon() {
+  return (
+    <svg
+      className="w-4 h-4 mx-auto my-auto"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      strokeWidth="3"
+      aria-hidden="true"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+    </svg>
+  );
+}
+
+function CrossIcon() {
+  return (
+    <svg
+      className="w-4 h-4 mx-auto my-auto"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      strokeWidth="3"
+      aria-hidden="true"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  );
+}
+
 export function PricingCard({ plan, onCtaClick }: PricingCardProps) {
   const isHighlighted = plan.highlighted;
 
-  const cardBase = `
-    relative rounded-2xl p-8 transition-all duration-300
-    bg-white border shadow-xl
-    flex flex-col h-full
-    hover:scale-x-101 hover:scale-y-101
-    transition-transform duration-300
-  `;
-
-  const highlightedStyles = `
-    border-emerald-400 ring-emerald-100 
-    scale-[1.02] z-10
-    lg:-mt-8
-    hover:scale-x-103 hover:scale-y-103
-  `;
-
-  const normalStyles = `
-    border-slate-200 hover:border-slate-300 hover:shadow-lg
-  `;
-
-  const badgeStyles = `
-    absolute -top-3 left-1/2 -translate-x-1/2
-    px-3 py-1 rounded-full text-xs font-bold
-    bg-emerald-500 text-white shadow-lg
-  `;
-
-  const ctaVariants: Record<string, string> = {
-    primary: "bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-200",
-    secondary: "bg-slate-900 hover:bg-slate-800 text-white",
-    outline: "border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-500",
-  };
-
   return (
-    <div className={`${cardBase} ${isHighlighted ? highlightedStyles : normalStyles}`}>
+    <div
+      className={`
+        relative rounded-lg p-8 bg-[#3a3a3c] flex flex-col h-full transition-all duration-300 border-1 hover:scale-101
+        ${isHighlighted
+          ? "border-1 border-[#00d4a4] shadow-[0_8px_24px_rgba(0,212,164,0.08)] lg:-mt-8 z-10 hover:border-2"
+          : "border-[#888888] hover:border-[#d4d4d4] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)]"
+        }
+      `}
+    >
       {isHighlighted && (
-        <span className={badgeStyles}>Mais popular</span>
+        <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-bold bg-[#00d4a4] text-[#0a0a0a] shadow-[0_4px_12px_rgba(0,212,164,0.2)]">
+          Mais popular
+        </span>
       )}
 
-      <div className="mb-6">
-        <h3 className="text-xl font-bold text-slate-900">{plan.name}</h3>
-        <div className="mt-2 flex items-baseline gap-1">
-          <span className="text-4xl font-bold text-slate-900">
+      <div className="mb-8">
+        <h3 className="text-3xl font-semibold text-[#f7f7f7] leading-snug">{plan.name}</h3>
+        <div className="mt-3 flex items-baseline gap-1">
+          <span className="text-5xl font-semibold text-[#f7f7f7] leading-[1.1]">
             {formatPrice(plan.price)}
           </span>
-          {plan.period && <span className="text-slate-500">{plan.period}</span>}
+          {plan.period && <span className="text-[#5a5a5c]">{plan.period}</span>}
         </div>
-        <p className="mt-1 text-sm text-slate-500">{formatMaxEmployees(plan.maxEmployees)}</p>
+        <p className="mt-2 text-sm text-[#5a5a5c]">{formatMaxEmployees(plan.maxEmployees)}</p>
       </div>
 
-      <ul className="flex-1 space-y-3 mb-8" role="list">
+      <ul className="flex-1 space-y-4 mb-10" role="list">
         {plan.features.map((feature: PlanFeature, index: number) => (
           <li key={index} className="flex items-start gap-3">
             <span
-              className={`flex-shrink-0 w-5 h-5 mt-0.5 rounded ${
+              className={`flex-shrink-0 w-5 h-5 mt-0.5 rounded-full ${
                 feature.included
-                  ? "bg-emerald-100 text-emerald-600"
-                  : "bg-slate-100 text-slate-400"
+                  ? "bg-[#00d4a4]/15 text-[#00d4a4]"
+                  : "bg-[#0a0a0a]/5 text-[#a8a8aa]"
               }`}
               aria-hidden="true"
             >
-              {feature.included ? (
-                <svg
-                  className="w-4 h-4 mx-auto my-auto"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={3}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              ) : (
-                <svg
-                  className="w-4 h-4 mx-auto my-auto"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={3}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              )}
+              {feature.included ? <CheckIcon /> : <CrossIcon />}
             </span>
             <span
-              className={`text-sm ${
-                feature.included ? "text-slate-700" : "text-slate-400 line-through"
+              className={`text-sm leading-relaxed ${
+                feature.included ? "text-[#1c1c1e]" : "text-[#a8a8aa] line-through"
               }`}
             >
               {feature.text}
@@ -111,15 +92,15 @@ export function PricingCard({ plan, onCtaClick }: PricingCardProps) {
       <button
         type="button"
         onClick={onCtaClick ?? (() => {})}
-        className={` cursor-pointer
-          w-full rounded-xl px-6 py-3.5 text-base font-semibold
+        className={`cursor-pointer w-full rounded-full px-6 py-3.5 text-sm font-medium
           transition-all duration-200 active:scale-[0.98]
           focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
-          ${ctaVariants[plan.ctaVariant]}
-          ${plan.ctaVariant === "primary" ? "focus-visible:outline-emerald-600" : ""}
-          ${plan.ctaVariant === "secondary" ? "focus-visible:outline-slate-900" : ""}
-          ${plan.ctaVariant === "outline" ? "focus-visible:outline-emerald-600" : ""}
-        `}
+          ${plan.ctaVariant === "primary"
+            ? "bg-[#0a0a0a] text-white hover:bg-[#1c1c1e] focus-visible:outline-[#0a0a0a] border border-[#00d4a4]"
+            : plan.ctaVariant === "secondary"
+            ? "bg-white text-[#0a0a0a] hover:bg-[#f7f7f7] focus-visible:outline-white"
+            : "border border-[#888888] bg-[#0a0a0a] text-[#fff] hover:bg-[#0a0a0a]/10 focus-visible:outline-[#00d4a4]"
+          }`}
       >
         {plan.ctaText}
       </button>
