@@ -107,6 +107,9 @@ export class CompanyController {
         {
           id: user.id,
           role: user.role,
+          name: user.name,
+          email: user.email,
+          companyName: company.name,
           companyId: company.id,
           planTier: company.plan,
           isMaster: false
@@ -583,6 +586,9 @@ export class CompanyController {
         {
           id: user.id,
           role: user.role,
+          name: user.name,
+          email: user.email,
+          companyName: inviteToken.company.name,
           companyId: inviteToken.companyId,
           planTier: inviteToken.company.plan,
           isMaster: false,

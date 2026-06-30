@@ -101,6 +101,9 @@ export class SessionController {
             const token = jwt.sign({
                 id: user.id,
                 role: user.role,
+                name: user.name,
+                email: user.email,
+                companyName: companyUser.name,
                 companyId: user.companyId,
                 planTier: user.company?.plan || "TIER_I",
                 isMaster: user.role === "MASTER"

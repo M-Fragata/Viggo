@@ -9,76 +9,69 @@
 
 ## 1. RESUMO EXECUTIVO
 
-| ID | Vulnerabilidade | Severidade | Prioridade | Arquivo |
+| ID | Vulnerabilidade | Severidade | Prioridade | Status |
 |:---|:---|:---|:---|:---|
-| SEC-01 | Token JWT sobrescrito com nome da empresa | Crítica | Imediata | `frontend/src/contexts/AuthContext.tsx:120` |
-| SEC-02 | Rotas de criação e atualização de usuário sem autenticação | Crítica | Imediata | `backend/src/routes/sessionRoutes.ts:8,10` |
-| SEC-03 | Multi-tenancy com variável global (race condition) | Crítica | Imediata | `backend/src/database/prisma-extensions.ts:4-8` | ✅ CORRIGIDO |
-| SEC-04 | Employees sem filtro por empresa (vazamento de dados) | Crítica | Imediata | `backend/src/controller/EmployeesController.ts:21` | ✅ CORRIGIDO |
-| SEC-05 | Checkins de todas as empresas expostos | Crítica | Imediata | `backend/src/controller/EmployeesController.ts:22-29` | ✅ CORRIGIDO |
-| SEC-06 | `extendedPrisma` não utilizado nos controllers | Crítica | Imediata | `backend/src/controller/*.ts` | ✅ CORRIGIDO |
-| SEC-07 | XSS via template literals na janela de impressão | Crítica | Imediata | `frontend/src/pages/pontoViewPage.tsx:83-167` |
-| SEC-08 | Credenciais PostgreSQL hardcoded no Docker | Crítica | Imediata | `backend/docker-compose.yml:7-8` |
-| SEC-09 | Credenciais Grafana hardcoded no Docker | Crítica | Imediata | `backend/docker-compose.yml:33-34` |
-| SEC-10 | Grafana com porta exposta + admin/admin | Crítica | Imediata | `backend/docker-compose.yml:30-31` |
-| SEC-11 | Exposição de erro completo ao client | Alta | Alta | `backend/src/server.ts:6-13` | ✅ CORRIGIDO |
-| SEC-12 | Detalhes de erro JWT expostos ao client | Alta | Alta | `backend/src/middleware/AuthMiddleware.ts:50-55` | ✅ CORRIGIDO |
-| SEC-13 | JWT sem algorithm pinning | Alta | Alta | `backend/src/middleware/AuthMiddleware.ts:27` | ✅ CORRIGIDO |
-| SEC-14 | Face descriptor retornado ao client (dados biométricos) | Alta | Alta | `backend/src/controller/EmployeesController.ts:68` |
-| SEC-15 | Face descriptor retornado no checkin | Alta | Alta | `backend/src/controller/CheckinController.ts:55-58` |
-| SEC-16 | Código de empresa hardcoded ("1") | Alta | Alta | `backend/src/controller/SessionController.ts:33-34` |
-| SEC-17 | Tokens JWT armazenados em localStorage | Alta | Alta | `frontend/src/contexts/AuthContext.tsx:106-108` |
-| SEC-18 | JSON.parse sem try-catch no localStorage | Alta | Alta | `frontend/src/contexts/AuthContext.tsx:161` |
-| SEC-19 | Verificação de rotas apenas no cliente | Alta | Alta | `frontend/src/routes/index.tsx:17` |
-| SEC-20 | Token JWT exposto em React Context global | Alta | Alta | `frontend/src/contexts/AuthContext.tsx:179` |
-| SEC-21 | Impersonation com restauração de token pelo cliente | Alta | Alta | `frontend/src/contexts/AuthContext.tsx:140-167` |
-| SEC-22 | Testes e lint ignorados com `\|\| true` no CI/CD | Alta | Alta | `.github/workflows/ci-cd.yml:43,46` |
-| SEC-23 | Ausência de SAST/dependency scanning no CI/CD | Alta | Alta | `.github/workflows/ci-cd.yml` |
-| SEC-24 | PostgreSQL com porta exposta externamente | Alta | Alta | `backend/docker-compose.yml:4-5` |
-| SEC-25 | Prometheus com porta exposta sem autenticação | Alta | Alta | `backend/docker-compose.yml:15-16` |
-| SEC-26 | `--web.enable-lifecycle` no Prometheus | Alta | Alta | `backend/docker-compose.yml:25` |
-| SEC-27 | Containers rodando como root | Alta | Alta | `backend/docker-compose.yml` (todos) |
-| SEC-28 | node-exporter com acesso a `/proc`, `/sys`, `/` | Alta | Alta | `backend/docker-compose.yml:48-50` |
-| SEC-29 | cadvisor com acesso ao Docker e filesystem | Alta | Alta | `backend/docker-compose.yml:62-68` |
-| SEC-30 | Prometheus sem autenticação HTTP | Alta | Alta | `backend/prometheus.yml` |
-| SEC-31 | Ausência de security headers (helmet) | Média | Média | `backend/src/app.ts` |
-| SEC-32 | Ausência de proteção CSRF | Média | Média | `backend/src/app.ts` |
-| SEC-33 | CORS sem credentials e sem maxAge | Média | Média | `backend/src/app.ts:14-18` |
-| SEC-34 | Rate limiter ausente na criação de conta | Média | Média | `backend/src/routes/sessionRoutes.ts:8` |
-| SEC-35 | Logging excessivo de dados sensíveis | Média | Média | `backend/src/middleware/LoggingMiddleware.ts:36-44` |
-| SEC-36 | Senha com mínimo de 6 caracteres | Média | Média | `backend/src/controller/SessionController.ts:17` |
-| SEC-37 | Entropia fraca no JWT_SECRET (.env-example) | Média | Média | `backend/.env-example` |
-| SEC-38 | Endpoint `/metrics` sem autenticação | Média | Média | `backend/src/app.ts:30` |
-| SEC-39 | Race condition na validação de convite | Média | Média | `backend/src/controller/company/CompanyController.ts:531-576` |
-| SEC-40 | Senha removida via destructuring mas objeto original em memória | Média | Média | `backend/src/controller/EmployeesController.ts:39` |
-| SEC-41 | `as any` no CheckinQuery suprime erros de tipo | Média | Média | `backend/src/controller/EmployeesController.ts:28` |
-| SEC-42 | Plan middleware depende de `req.planInfo` sem injeção prévia | Média | Média | `backend/src/middleware/PlanMiddleware.ts:49` |
-| SEC-43 | Audit middleware silencia falhas | Média | Média | `backend/src/middleware/AuditMiddleware.ts:41-43` |
-| SEC-44 | Fetch de URL da API com fallback para localhost | Média | Média | `frontend/src/pages/CustomPlanPage.tsx:74` |
-| SEC-45 | Variável VITE exposta no build | Média | Média | `frontend/.env` |
-| SEC-46 | Modelos de ML faciais servidos estaticamente | Média | Média | `frontend/src/components/FaceAuth.tsx:23` |
-| SEC-47 | Race condition na validação facial | Média | Média | `frontend/src/components/LivenessChallenge.tsx:464-513` |
-| SEC-48 | CSRF ausente no frontend | Média | Média | `frontend/src/services/api.ts` |
-| SEC-49 | Força bruta sem proteção no login | Média | Média | `frontend/src/pages/loginPage.tsx:23-46` |
-| SEC-50 | CPF enviado em texto plano | Média | Média | `frontend/src/services/api.ts:58-63` |
-| SEC-51 | Face descriptor enviado sem criptografia | Média | Média | `frontend/src/services/api.ts:107-116` |
-| SEC-52 | Ausência de CSP no index.html | Média | Média | `frontend/index.html` |
-| SEC-53 | Deploy via SSH sem verificação de integridade | Média | Média | `.github/workflows/ci-cd.yml:171-182` |
-| SEC-54 | YAML malformado (deploy job duplicado) | Média | Média | `.github/workflows/ci-cd.yml:171-172` |
-| SEC-55 | Tags `latest` em imagens Docker | Média | Média | `backend/docker-compose.yml` |
-| SEC-56 | Containers sem `read_only: true` | Média | Média | `backend/docker-compose.yml` |
-| SEC-57 | Containers sem `security_opt` ou `cap_drop` | Média | Média | `backend/docker-compose.yml` |
-| SEC-58 | Datasource Grafana→Prometheus sem autenticação | Média | Média | `backend/grafana/provisioning/datasources/prometheus.yml:7` |
-| SEC-59 | User role exposta no retorno de erro | Baixa | Baixa | `backend/src/middleware/RoleGuard.ts:13-17` |
-| SEC-60 | Health check expõe mensagens de erro | Baixa | Baixa | `backend/src/middleware/HealthCheckMiddleware.ts:40-41` |
-| SEC-61 | Ausência de `permissions` no workflow CI/CD | Média | Média | `.github/workflows/ci-cd.yml` |
-| SEC-62 | Ausência de `timeout-minutes` nos jobs | Baixa | Baixa | `.github/workflows/ci-cd.yml` |
-| SEC-63 | Containers sem healthchecks | Baixa | Baixa | `backend/docker-compose.yml` |
-| SEC-64 | `external_labels` hardcoded no Prometheus | Baixa | Baixa | `backend/prometheus.yml:4-6` |
-| SEC-65 | Preços hardcoded no shared/plans.ts | Baixa | Baixa | `shared/plans.ts` |
-| SEC-66 | Redirecionamento baseado em resposta 403 | Baixa | Baixa | `frontend/src/services/api.ts:28-34` |
-| SEC-67 | Token de convite na URL (leak via Referer) | Baixa | Baixa | `frontend/src/routes/AuthRoutes.tsx:18` |
-| SEC-68 | Coordenadas em href sem validação | Baixa | Baixa | `frontend/src/pages/pontoViewPage.tsx:227` |
+| SEC-01 | Token JWT sobrescrito com nome da empresa | Crítica | Imediata | |
+| SEC-02 | Rotas de criação e atualização de usuário sem autenticação | Crítica | Imediata | |
+| SEC-07 | XSS via template literals na janela de impressão | Crítica | Imediata | |
+| SEC-08 | Credenciais PostgreSQL hardcoded no Docker | Crítica | Imediata | |
+| SEC-09 | Credenciais Grafana hardcoded no Docker | Crítica | Imediata | |
+| SEC-10 | Grafana com porta exposta + admin/admin | Crítica | Imediata | |
+| SEC-14 | Face descriptor retornado ao client (dados biométricos) | Alta | Alta | ⚠️ DECISÃO |
+| SEC-15 | Face descriptor retornado no checkin | Alta | Alta | ⚠️ DECISÃO |
+| SEC-16 | Código de empresa hardcoded ("1") | Alta | Alta | |
+| SEC-17 | Tokens JWT armazenados em localStorage | Alta | Alta | |
+| SEC-18 | JSON.parse sem try-catch no localStorage | Alta | Alta | |
+| SEC-19 | Verificação de rotas apenas no cliente | Alta | Alta | ✅ |
+| SEC-20 | Token JWT exposto em React Context global | Alta | Alta | |
+| SEC-21 | Impersonation com restauração de token pelo cliente | Alta | Alta | |
+| SEC-22 | Testes e lint ignorados com `\|\| true` no CI/CD | Alta | Alta | |
+| SEC-23 | Ausência de SAST/dependency scanning no CI/CD | Alta | Alta | |
+| SEC-24 | PostgreSQL com porta exposta externamente | Alta | Alta | |
+| SEC-25 | Prometheus com porta exposta sem autenticação | Alta | Alta | |
+| SEC-26 | `--web.enable-lifecycle` no Prometheus | Alta | Alta | |
+| SEC-27 | Containers rodando como root | Alta | Alta | |
+| SEC-28 | node-exporter com acesso a `/proc`, `/sys`, `/` | Alta | Alta | |
+| SEC-29 | cadvisor com acesso ao Docker e filesystem | Alta | Alta | |
+| SEC-30 | Prometheus sem autenticação HTTP | Alta | Alta | |
+| SEC-31 | Ausência de security headers (helmet) | Média | Média | |
+| SEC-32 | Ausência de proteção CSRF | Média | Média | |
+| SEC-33 | CORS sem credentials e sem maxAge | Média | Média | |
+| SEC-34 | Rate limiter ausente na criação de conta | Média | Média | |
+| SEC-35 | Logging excessivo de dados sensíveis | Média | Média | |
+| SEC-36 | Senha com mínimo de 6 caracteres | Média | Média | |
+| SEC-37 | Entropia fraca no JWT_SECRET (.env-example) | Média | Média | |
+| SEC-38 | Endpoint `/metrics` sem autenticação | Média | Média | |
+| SEC-39 | Race condition na validação de convite | Média | Média | |
+| SEC-40 | Senha removida via destructuring mas objeto original em memória | Média | Média | |
+| SEC-41 | `as any` no CheckinQuery suprime erros de tipo | Média | Média | |
+| SEC-42 | Plan middleware depende de `req.planInfo` sem injeção prévia | Média | Média | |
+| SEC-43 | Audit middleware silencia falhas | Média | Média | |
+| SEC-44 | Fetch de URL da API com fallback para localhost | Média | Média | |
+| SEC-45 | Variável VITE exposta no build | Média | Média | |
+| SEC-46 | Modelos de ML faciais servidos estaticamente | Média | Média | |
+| SEC-47 | Race condition na validação facial | Média | Média | |
+| SEC-48 | CSRF ausente no frontend | Média | Média | |
+| SEC-49 | Força bruta sem proteção no login | Média | Média | |
+| SEC-50 | CPF enviado em texto plano | Média | Média | |
+| SEC-51 | Face descriptor enviado sem criptografia | Média | Média | |
+| SEC-52 | Ausência de CSP no index.html | Média | Média | |
+| SEC-53 | Deploy via SSH sem verificação de integridade | Média | Média | |
+| SEC-54 | YAML malformado (deploy job duplicado) | Média | Média | |
+| SEC-55 | Tags `latest` em imagens Docker | Média | Média | |
+| SEC-56 | Containers sem `read_only: true` | Média | Média | |
+| SEC-57 | Containers sem `security_opt` ou `cap_drop` | Média | Média | |
+| SEC-58 | Datasource Grafana→Prometheus sem autenticação | Média | Média | |
+| SEC-59 | User role exposta no retorno de erro | Baixa | Baixa | |
+| SEC-60 | Health check expõe mensagens de erro | Baixa | Baixa | |
+| SEC-61 | Ausência de `permissions` no workflow CI/CD | Média | Média | |
+| SEC-62 | Ausência de `timeout-minutes` nos jobs | Baixa | Baixa | |
+| SEC-63 | Containers sem healthchecks | Baixa | Baixa | |
+| SEC-64 | `external_labels` hardcoded no Prometheus | Baixa | Baixa | |
+| SEC-65 | Preços hardcoded no shared/plans.ts | Baixa | Baixa | |
+| SEC-66 | Redirecionamento baseado em resposta 403 | Baixa | Baixa | |
+| SEC-67 | Token de convite na URL (leak via Referer) | Baixa | Baixa | |
+| SEC-68 | Coordenadas em href sem validação | Baixa | Baixa | |
 
 ---
 
@@ -139,109 +132,7 @@ sessionRoutes.put("/:userId", authMiddleware, sessionController.update);
 
 ---
 
-### SEC-03 — Multi-tenancy com Variável Global (Race Condition) - Check
-
-> **Severidade:** Crítica | **Prioridade:** Imediata
-
-- **O Problema:** Variáveis globais `currentCompanyId` e `currentUserId` são compartilhadas entre requests. Em cenários de concorrência, um request pode ler o `companyId` de outro request, causando vazamento de dados entre empresas.
-- **A Mudança Necessária:** Usar `AsyncLocalStorage` do Node.js para isolar contexto por request.
-
-**Código Vulnerável:**
-```typescript
-// backend/src/database/prisma-extensions.ts:4-8
-let currentCompanyId: string | null = null;
-let currentUserId: string | null = null;
-```
-
-**Código Corrigido:**
-```typescript
-import { AsyncLocalStorage } from 'node:async_hooks';
-const store = new AsyncLocalStorage<{ companyId: string; userId: string }>();
-```
-
-**CWE:** CWE-362 (Race Condition)
-
-> ✅ **CORRIGIDO EM 30/06/2026** — Variáveis globais substituídas por `AsyncLocalStorage`. Arquivos alterados: `prisma-extensions.ts`, `AuthMiddleware.ts`. Build compilado com sucesso.
-
-### SEC-04 — Employees sem Filtro por Empresa - Check
-
-> **Severidade:** Crítica | **Prioridade:** Imediata
-
-- **O Problema:** A query `prisma.user.findMany()` não tem filtro por `companyId` — retorna **TODOS os usuários de TODAS as empresas**. O multi-tenancy não funciona porque os controllers importam `prisma` direto, não `extendedPrisma`.
-- **A Mudança Necessária:** Filtrar explicitamente por `companyId` ou usar `extendedPrisma`.
-
-**Código Vulnerável:**
-```typescript
-// backend/src/controller/EmployeesController.ts:21
-const employees = await prisma.user.findMany()  // SEM FILTRO!
-```
-
-**Código Corrigido:**
-```typescript
-const employees = await prisma.user.findMany({
-  where: { companyId: req.user.companyId }
-});
-```
-
-**CWE:** CWE-862 (Missing Authorization) / CWE-200
-
-> ✅ **CORRIGIDO EM 30/06/2026** — `EmployeesController` migrado de `prisma` para `extendedPrisma`. Queries agora passam pelo interceptor de multi-tenancy que injeta `companyId` automaticamente. Adicionado `select` explícito para nunca buscar senha. Build compilado com sucesso.
-
-### SEC-05 — Checkins de Todas as Empresas Expostos  - Check
-
-> **Severidade:** Crítica | **Prioridade:** Imediata
-
-- **O Problema:** A query de checkins usa `as any` para suprimir erro do TypeScript e **não filtra por `companyId`** — retorna checkins de todas as empresas.
-- **A Mudança Necessária:** Adicionar filtro `companyId` na query.
-
-**Código Vulnerável:**
-```typescript
-// backend/src/controller/EmployeesController.ts:22-29
-const checkins = await prisma.checkIn.findMany({
-  where: {
-    createdAt: { gte: startOfDay(parsedDate), lte: endOfDay(parsedDate) }
-  } as any
-})
-```
-
-**Código Corrigido:**
-```typescript
-const checkins = await prisma.checkIn.findMany({
-  where: {
-    companyId: req.user.companyId,
-    createdAt: { gte: startOfDay(parsedDate), lte: endOfDay(parsedDate) }
-  }
-});
-```
-
-**CWE:** CWE-862
-
-> ✅ **CORRIGIDO EM 30/06/2026** — `EmployeesController` migrado de `prisma` para `extendedPrisma`. A query de checkins agora passa pelo interceptor de multi-tenancy. Removido `as any` que suprimia erros de tipo. Build compilado com sucesso.
-
----
-
-### SEC-06 — `extendedPrisma` Não Utilizado nos Controllers
-
-> **Severidade:** Crítica | **Prioridade:** Imediata
-
-- **O Problema:** Todos os controllers importam `prisma` direto, não `extendedPrisma`. O middleware de multi-tenancy por `companyId` **não está funcionando** — os dados não são isolados por empresa.
-- **A Mudança Necessária:** Usar `extendedPrisma` em todos os controllers OU adicionar filtros manuais.
-
-**Código Vulnerável:**
-```typescript
-// backend/src/controller/EmployeesController.ts:3
-import { prisma } from "../database/prisma.js";  // prisma DIRETO
-
-// backend/src/controller/CheckinController.ts:3
-import { prisma } from "../database/prisma.js";
-
-// backend/src/middleware/AuditMiddleware.ts:2
-import { prisma } from "../database/prisma.js";
-```
-
-**CWE:** CWE-862
-
-> ✅ **CORRIGIDO EM 30/06/2026** — `EmployeesController`, `CheckinController` e `AuditMiddleware` migrados para `extendedPrisma`. Todos os controllers e middlewares que acessam o banco agora passam pelo interceptor de multi-tenancy. Build compilado com sucesso.
+### SEC-07 — XSS via Template Literals na Janela de Impressão
 
 > **Severidade:** Crítica | **Prioridade:** Imediata
 
@@ -344,101 +235,31 @@ ports:
 
 ---
 
-### SEC-11 — Exposição de Erro Completo ao Client
-
-> **Severidade:** Alta | **Prioridade:** Alta
-
-- **O Problema:** O middleware global de erros retorna `err.message` ao client, expondo stack traces e detalhes internos.
-- **A Mudança Necessária:** Em produção, retornar mensagem genérica.
-
-**Código Vulnerável:**
-```typescript
-// backend/src/server.ts:6-13
-app.use((err: any, req: any, res: any, next: any) => {
-  console.error("=== ERRO NO SERVIDOR ===");
-  console.error(err);
-  res.status(500).json({
-    message: "Erro interno capturado no middleware global",
-    error: err.message   // ← expõe erro interno
-  });
-});
-```
-
-**Código Corrigido:**
-```typescript
-res.status(500).json({ message: "Erro interno do servidor" });
-```
-
-**CWE:** CWE-209
-
-> ✅ **CORRIGIDO EM 30/06/2026** — `err.message` removido do response. Agora retorna apenas mensagem genérica. Log interno mantido para debug. Build compilado com sucesso.
-
----
-
-### SEC-12 — Detalhes de Erro JWT Expostos ao Client
-
-> **Severidade:** Alta | **Prioridade:** Alta
-
-- **O Problema:** Detalhes do erro JWT (ex: "jwt expired", "jwt malformed") são retornados ao client, permitindo enumeração de tokens.
-- **A Mudança Necessária:** Retornar mensagem genérica.
-
-**Código Vulnerável:**
-```typescript
-// backend/src/middleware/AuthMiddleware.ts:50-55
-} catch (error: any) {
-    return res.status(401).json({
-        message: "Token inválido",
-        details: error.message   // ← expõe detalhes JWT
-    });
-}
-```
-
-**Código Corrigido:**
-```typescript
-return res.status(401).json({ message: "Token inválido" });
-```
-
-**CWE:** CWE-209
-
-> ✅ **CORRIGIDO EM 30/06/2026** — `details: error.message` removido do catch do AuthMiddleware. Agora retorna apenas "Token inválido" sem detalhes. Build compilado com sucesso.
-
----
-
-### SEC-13 — JWT sem Algorithm Pinning
-
-> **Severidade:** Alta | **Prioridade:** Alta
-
-- **O Problema:** `jwt.verify` sem a opção `algorithms` permite que um atacante force o algoritmo `none` ou `RS256` com chave pública para bypass.
-- **A Mudança Necessária:** Especificar `algorithms: ['HS256']`.
-
-**Código Vulnerável:**
-```typescript
-// backend/src/middleware/AuthMiddleware.ts:27
-const decoded = jwt.verify(token, Env.JWT_SECRET!) as JWTPayload;
-```
-
-**Código Corrigido:**
-```typescript
-const decoded = jwt.verify(token, Env.JWT_SECRET!, { algorithms: ['HS256'] }) as JWTPayload;
-```
-
-**CWE:** CWE-327
-
-> ✅ **CORRIGIDO EM 30/06/2026** — Adicionado `{ algorithms: ['HS256'] }` ao `jwt.verify`. Previne bypass via algoritmo `none` ou `RS256`. Build compilado com sucesso.
-
----
-
 ### SEC-14 — Face Descriptor Retornado ao Client (Dados Biométricos)
 
-> **Severidade:** Alta | **Prioridade:** Alta
+> **Severidade:** Alta | **Prioridade:** Alta | **Status:** ⚠️ DECISÃO PENDENTE
 
-- **O Problema:** O `faceDescriptor` (vetor biométrico de 128 floats) é retornado ao client. Dados biométricos são irrevogáveis — se vazados, não podem ser "redefinidos" como uma senha.
-- **A Mudança Necessária:** Nunca retornar `faceDescriptor` ao client.
+- **O Problema:** O `faceDescriptor` (vetor biométrico de 128 floats) é retornado ao client via `GET /employees/face`. Dados biométricos são irrevogáveis — se vazados, não podem ser "redefinidos" como uma senha.
+- **Análise:** O descriptor é usado no frontend como **fallback de comparação local** no `LivenessChallenge.tsx:363-367`. Quando o backend falha, o frontend compara o rosto capturado com o descriptor salvo localmente.
+- **Decisão:** Confiar 100% no backend para validação facial. Remover fallback local.
+- **A Mudança Necessária:**
+  1. Criar nova rota `GET /employees/face/token` — retorna token de uso único (UUID) com TTL de 30 segundos
+  2. Backend armazena `{ token → descriptor }` em Map em memória
+  3. Frontend busca token em vez de descriptor
+  4. `POST /employees/face/verify` recebe token + descriptor capturado
+  5. Backend busca descriptor pelo token, compara e descarta após uso
+  6. Remover `fallbackLocalComparison()` do `LivenessChallenge.tsx`
+  7. Remover `GET /employees/face` (retorna descriptor bruto)
 
-**Código Vulnerável:**
-```typescript
-// backend/src/controller/EmployeesController.ts:68
-return res.status(200).json(user.faceDescriptor)
+**Fluxo Atual (vulnerável):**
+```
+Frontend → GET /employees/face → recebe 128 floats → usa como fallback
+```
+
+**Fluxo Proposto (seguro):**
+```
+Frontend → GET /employees/face/token → recebe token UUID
+Frontend → POST /employees/face/verify { token, descriptor } → backend busca pelo token, compara, descarta
 ```
 
 **CWE:** CWE-200
@@ -447,18 +268,24 @@ return res.status(200).json(user.faceDescriptor)
 
 ### SEC-15 — Face Descriptor Retornado no Checkin
 
-> **Severidade:** Alta | **Prioridade:** Alta
+> **Severidade:** Alta | **Prioridade:** Alta | **Status:** ⚠️ DECISÃO PENDENTE
 
-- **O Problema:** O checkin retorna `faceDescriptor` do usuário no response, expondo dados biométricos.
-- **A Mudança Necessária:** Remover `faceDescriptor` da resposta.
+- **O Problema:** O response de `POST /checkins` retorna `{ checkin, faceDescriptor }`, expondo dados biométricos.
+- **Análise:** O frontend **ignora** o campo `faceDescriptor` na resposta do checkin. Não é usado em lugar nenhum.
+- **Decisão:** Remover `faceDescriptor` do response. Não há necessidade.
 
 **Código Vulnerável:**
 ```typescript
 // backend/src/controller/CheckinController.ts:55-58
 const data = {
     checkin: { checkin },
-    faceDescriptor: user.faceDescriptor   // ← dados biométricos expostos
+    faceDescriptor: user.faceDescriptor   // ← dados biométricos expostos (NÃO USADO)
 }
+```
+
+**Código Corrigido:**
+```typescript
+return res.status(201).json({ checkin });
 ```
 
 **CWE:** CWE-200
@@ -533,23 +360,10 @@ try {
 
 ### SEC-19 — Verificação de Rotas Apenas no Cliente
 
-> **Severidade:** Alta | **Prioridade:** Alta
+> **Severidade:** Alta | **Prioridade:** Alta | ✅ **CORRIGIDO EM 30/06/2026**
 
 - **O Problema:** O `role` do usuário é lido de `localStorage`, manipulável pelo cliente. Um atacante pode forçar `role: "MASTER"` e acessar rotas de administração na UI.
-- **A Mudança Necessária:** Verificar token JWT decodificado e nunca confiar apenas no objeto `user` do localStorage.
-
-**Código Vulnerável:**
-```typescript
-// frontend/src/routes/index.tsx:17
-function Route() {
-    switch (user?.role) {  // ← user vem do localStorage, manipulável
-      case "EMPLOYEE": return <UserRoutes />;
-      case "ENTERPRISE_ADMIN": return <AdminRoutes />;
-      case "MASTER": return <MasterRoutes />;
-      default: return <AuthRoutes />;
-    }
-}
-```
+- **Correção Aplicada:** Removido `@viggo:user` e `@viggo:company` do `localStorage`. `user` agora é derivado do decode do JWT assinado pelo backend (`utils/jwt.ts`). Adicionados `name`, `email`, `companyName` ao payload do JWT (4 locais: SessionController, CompanyController signup, CompanyController invite, MasterController impersonation). Criado endpoint `GET /auth/me` para buscar `hasFaceDescriptor` atualizado. `AuthContext.tsx` completamente refatorado para confiar apenas no JWT.
 
 **CWE:** CWE-862 / CWE-602
 
@@ -691,7 +505,7 @@ ports:
 
 > **Severidade:** Alta | **Prioridade:** Alta
 
-- **O Problema:** Todos os containers executam como root (sem `user:` definido), maximizando impacto de uma逃逃escape.
+- **O Problema:** Todos os containers executam como root (sem `user:` definido), maximizando impacto de uma escape.
 - **A Mudança Necessária:** Adicionar `user: "1000:1000"` e `cap_drop: [ALL]`.
 
 **CWE:** CWE-250
@@ -1423,32 +1237,131 @@ if (isNaN(lat) || isNaN(lng)) return null;
 
 ---
 
-## 3. ESTATÍSTICAS
-
-| Severidade | Quantidade | Percentual | Corrigidos |
-|:---|:---|:---|:---|
-| **Crítica** | 10 | 14.7% | 4 ✅ |
-| **Alta** | 20 | 29.4% | 3 ✅ |
-| **Média** | 28 | 41.2% | 0 |
-| **Baixa** | 10 | 14.7% | 0 |
-| **Total** | **68** | 100% | **7** |
+## 3. CORRIGIDOS ✅
 
 ---
 
-## 4. PRIORIDADE DE CORREÇÃO
+### SEC-03 — Multi-tenancy com Variável Global (Race Condition)
+
+> **Severidade:** Crítica | **Prioridade:** Imediata | ✅ **CORRIGIDO EM 30/06/2026**
+
+- **O Problema:** Variáveis globais `currentCompanyId` e `currentUserId` eram compartilhadas entre requests, causando race condition.
+- **Correção Aplicada:** Substituídas por `AsyncLocalStorage`. Arquivos alterados: `prisma-extensions.ts`, `AuthMiddleware.ts`.
+
+**Código Corrigido:**
+```typescript
+// backend/src/database/prisma-extensions.ts
+import { AsyncLocalStorage } from 'node:async_hooks';
+export const prismaContextStore = new AsyncLocalStorage<PrismaContext>();
+```
+
+**CWE:** CWE-362
+
+---
+
+### SEC-04 — Employees sem Filtro por Empresa
+
+> **Severidade:** Crítica | **Prioridade:** Imediata | ✅ **CORRIGIDO EM 30/06/2026**
+
+- **O Problema:** `prisma.user.findMany()` sem filtro por `companyId` retornava TODOS os usuários de TODAS as empresas.
+- **Correção Aplicada:** `EmployeesController` migrado de `prisma` para `extendedPrisma`. Adicionado `select` explícito para nunca buscar senha.
+
+**CWE:** CWE-862 / CWE-200
+
+---
+
+### SEC-05 — Checkins de Todas as Empresas Expostos
+
+> **Severidade:** Crítica | **Prioridade:** Imediata | ✅ **CORRIGIDO EM 30/06/2026**
+
+- **O Problema:** Query de checkins usava `as any` e não filtrava por `companyId`.
+- **Correção Aplicada:** Migrado para `extendedPrisma` com filtro automático por `companyId`. Removido `as any`.
+
+**CWE:** CWE-862
+
+---
+
+### SEC-06 — `extendedPrisma` Não Utilizado nos Controllers
+
+> **Severidade:** Crítica | **Prioridade:** Imediata | ✅ **CORRIGIDO EM 30/06/2026**
+
+- **O Problema:** `CheckinController` e `AuditMiddleware` importavam `prisma` direto.
+- **Correção Aplicada:** Migrados para `extendedPrisma`. Todos os controllers/middlewares agora passam pelo interceptor de multi-tenancy.
+
+**CWE:** CWE-862
+
+---
+
+### SEC-11 — Exposição de Erro Completo ao Client
+
+> **Severidade:** Alta | **Prioridade:** Alta | ✅ **CORRIGIDO EM 30/06/2026**
+
+- **O Problema:** Middleware global de erros retornava `err.message` ao client.
+- **Correção Aplicada:** Removido `error: err.message` do response. Retorna apenas mensagem genérica.
+
+**CWE:** CWE-209
+
+---
+
+### SEC-12 — Detalhes de Erro JWT Expostos ao Client
+
+> **Severidade:** Alta | **Prioridade:** Alta | ✅ **CORRIGIDO EM 30/06/2026**
+
+- **O Problema:** Detalhes do erro JWT ("jwt expired", "jwt malformed") retornados ao client.
+- **Correção Aplicada:** Removido `details: error.message` do catch do AuthMiddleware.
+
+**CWE:** CWE-209
+
+---
+
+### SEC-13 — JWT sem Algorithm Pinning
+
+> **Severidade:** Alta | **Prioridade:** Alta | ✅ **CORRIGIDO EM 30/06/2026**
+
+- **O Problema:** `jwt.verify` sem `algorithms` permitia bypass via algoritmo `none` ou `RS256`.
+- **Correção Aplicada:** Adicionado `{ algorithms: ['HS256'] }` ao `jwt.verify`.
+
+**CWE:** CWE-327
+
+---
+
+### SEC-19 — Verificação de Rotas Apenas no Cliente
+
+> **Severidade:** Alta | **Prioridade:** Alta | ✅ **CORRIGIDO EM 30/06/2026**
+
+- **O Problema:** `user.role` lido de `localStorage`, manipulável pelo cliente. Atacante poderia forçar `role: "MASTER"` e ver UI admin.
+- **Correção Aplicada:** `@viggo:user` e `@viggo:company` removidos do `localStorage`. User derivado do JWT assinado (`decodeJWT`). Payload do JWT expandido com `name`, `email`, `companyName` em todos os 4 locais de assinatura. Endpoint `GET /auth/me` criado para `hasFaceDescriptor`. `AuthContext.tsx` refatorado.
+
+**CWE:** CWE-862 / CWE-602
+
+---
+
+## 4. ESTATÍSTICAS
+
+| Severidade | Total | Pendentes | Corrigidos |
+|:---|:---|:---|:---|
+| **Crítica** | 10 | 6 | 4 ✅ |
+| **Alta** | 20 | 16 | 4 ✅ |
+| **Média** | 28 | 28 | 0 |
+| **Baixa** | 10 | 10 | 0 |
+| **Total** | **68** | **60** | **8** |
+
+---
+
+## 5. PRIORIDADE DE CORREÇÃO
 
 ### Imediata (Próximas 24-48h)
-1. ~~**SEC-01** — Bug token sobrescrito (aplicação não funciona)~~
-2. ~~**SEC-02 + SEC-06** — Rotas sem auth + prisma direto (account takeover)~~
-3. ~~**SEC-03 + SEC-04 + SEC-05** — Multi-tenancy quebrado (vazamento de dados)~~ ✅ CORRIGIDO
+1. ~~**SEC-01** — Bug token sobrescrito~~
+2. ~~**SEC-02 + SEC-06** — Rotas sem auth + prisma direto~~
+3. ~~**SEC-03 + SEC-04 + SEC-05** — Multi-tenancy quebrado~~ ✅ CORRIGIDO
 4. **SEC-07** — XSS na janela de impressão
 5. **SEC-08 + SEC-09 + SEC-10** — Credenciais hardcoded no Docker
 
 ### Alta (Próxima semana)
 6. ~~**SEC-11 + SEC-12** — Exposição de erros~~ ✅ CORRIGIDO
 7. ~~**SEC-13** — JWT sem algorithm pinning~~ ✅ CORRIGIDO
-8. **SEC-14 + SEC-15** — Dados biométricos expostos
-9. **SEC-17 + SEC-18 + SEC-19 + SEC-20 + SEC-21** — Problemas de autenticação no frontend
+8. **SEC-14 + SEC-15** — Dados biométricos expostos (decisão: confiar no backend)
+9. ~~**SEC-17 + SEC-18 + SEC-19 + SEC-20 + SEC-21** — Problemas de autenticação no frontend~~ (SEC-19 ✅ CORRIGIDO)
 10. **SEC-22 + SEC-23** — CI/CD sem scanners
 
 ### Média (Próximo sprint)
@@ -1460,7 +1373,7 @@ if (isNaN(lat) || isNaN(lng)) return null;
 
 ---
 
-## 5. CWEs MAIS FREQUENTES
+## 6. CWEs MAIS FREQUENTES
 
 | CWE | Ocorrências | Descrição |
 |:---|:---|:---|

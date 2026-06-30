@@ -7,6 +7,9 @@ import { Env } from "../utils/environment.js"
 interface JWTPayload {
     id: string;
     role: string;
+    name?: string;
+    email?: string;
+    companyName?: string;
     companyId: string;
     planTier?: string;
     isMaster?: boolean;

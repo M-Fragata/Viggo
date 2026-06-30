@@ -80,10 +80,7 @@ export function RegisterFace() {
 
         try {
             await api.employees.updateFaceDescriptor(user.id, Array.from(descriptor));
-
-            const updatedUser = { ...user, faceDescriptor: JSON.stringify(Array.from(descriptor)), hasFaceDescriptor: true };
-            localStorage.setItem("@viggo:user", JSON.stringify(updatedUser));
-            refreshUser();
+            await refreshUser();
 
             setIsSuccess(true);
             setMessage("Cadastro facial concluído!");
