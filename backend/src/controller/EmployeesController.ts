@@ -109,7 +109,7 @@ export class EmployeesController {
                 return res.json({ success: true, distance })
             }
 
-            return res.status(401).json({
+            return res.status(200).json({
                 success: false,
                 distance,
                 message: "Rosto não reconhecido"
