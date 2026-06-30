@@ -483,37 +483,15 @@ export function LivenessChallenge({
           if (heldTime >= config.holdDuration && !isValidatingRef.current) {
             isValidatingRef.current = true;
 
-            const backendResult = await validateDescriptorWithBackend(detection.descriptor);
-
-            if (backendResult.success) {
-              // Após backend success no front: verificar blink
-              if (step === 'front' && !blinkValidated) {
-                // Case 1: Backend OK mas blink ainda não validado
-                // Aguarda o blink no próximo ciclo
-                waitingForBlinkRef.current = true;
-                // NÃO reseta poseHoldStartRef - mantém a pose
-                setMessage('Pisque para confirmar');
-                isValidatingRef.current = false;
-                return;
-              }
-              // Case 2: Blink já validado OU não é step front
+            // Registration mode: no saved descriptor to compare against
+            if (!faceDescriptor) {
               handleValidationSuccess(detection.descriptor);
-            } else if (backendResult.distance >= 0) {
-              if (fallbackLocalComparison(detection.descriptor)) {
-                if (step === 'front' && !blinkValidated) {
-                  waitingForBlinkRef.current = true;
-                  setMessage('Pisque para confirmar');
-                  isValidatingRef.current = false;
-                  return;
-                }
-                handleValidationSuccess(detection.descriptor);
-              } else {
-                poseHoldStartRef.current = 0;
-                ringMotionVal.set(0);
-                setMessage(`Rosto não reconhecido (dist: ${backendResult.distance.toFixed(2)})`);
-              }
+              isValidatingRef.current = false;
             } else {
-              if (fallbackLocalComparison(detection.descriptor)) {
+              // Check-in mode: validate against backend
+              const backendResult = await validateDescriptorWithBackend(detection.descriptor);
+
+              if (backendResult.success) {
                 if (step === 'front' && !blinkValidated) {
                   waitingForBlinkRef.current = true;
                   setMessage('Pisque para confirmar');
@@ -521,14 +499,38 @@ export function LivenessChallenge({
                   return;
                 }
                 handleValidationSuccess(detection.descriptor);
+              } else if (backendResult.distance >= 0) {
+                if (fallbackLocalComparison(detection.descriptor)) {
+                  if (step === 'front' && !blinkValidated) {
+                    waitingForBlinkRef.current = true;
+                    setMessage('Pisque para confirmar');
+                    isValidatingRef.current = false;
+                    return;
+                  }
+                  handleValidationSuccess(detection.descriptor);
+                } else {
+                  poseHoldStartRef.current = 0;
+                  ringMotionVal.set(0);
+                  setMessage(`Rosto não reconhecido (dist: ${backendResult.distance.toFixed(2)})`);
+                }
               } else {
-                poseHoldStartRef.current = 0;
-                ringMotionVal.set(0);
-                setMessage('Erro de conexão. Tente novamente.');
+                if (fallbackLocalComparison(detection.descriptor)) {
+                  if (step === 'front' && !blinkValidated) {
+                    waitingForBlinkRef.current = true;
+                    setMessage('Pisque para confirmar');
+                    isValidatingRef.current = false;
+                    return;
+                  }
+                  handleValidationSuccess(detection.descriptor);
+                } else {
+                  poseHoldStartRef.current = 0;
+                  ringMotionVal.set(0);
+                  setMessage('Erro de conexão. Tente novamente.');
+                }
               }
-            }
 
-            isValidatingRef.current = false;
+              isValidatingRef.current = false;
+            }
           }
         } else {
           poseHoldStartRef.current = 0;
