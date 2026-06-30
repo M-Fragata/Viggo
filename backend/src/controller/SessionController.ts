@@ -47,7 +47,13 @@ export class SessionController {
                 }
             })
 
-            return res.status(201).json(user);
+            return res.status(201).json({
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                companyId: user.companyId,
+            });
 
         } catch (error) {
             if (error instanceof z.ZodError) {

@@ -21,7 +21,7 @@
 | SEC-15 | Face descriptor retornado no checkin | Alta | Alta | ⚠️ DECISÃO |
 | SEC-16 | Código de empresa hardcoded ("1") | Alta | Alta | |
 | SEC-17 | Tokens JWT armazenados em localStorage | Alta | Alta | |
-| SEC-18 | JSON.parse sem try-catch no localStorage | Alta | Alta | |
+| SEC-18 | JSON.parse sem try-catch no localStorage | Alta | Alta | ✅ |
 | SEC-19 | Verificação de rotas apenas no cliente | Alta | Alta | ✅ |
 | SEC-20 | Token JWT exposto em React Context global | Alta | Alta | |
 | SEC-21 | Impersonation com restauração de token pelo cliente | Alta | Alta | |
@@ -43,8 +43,8 @@
 | SEC-37 | Entropia fraca no JWT_SECRET (.env-example) | Média | Média | |
 | SEC-38 | Endpoint `/metrics` sem autenticação | Média | Média | |
 | SEC-39 | Race condition na validação de convite | Média | Média | |
-| SEC-40 | Senha removida via destructuring mas objeto original em memória | Média | Média | |
-| SEC-41 | `as any` no CheckinQuery suprime erros de tipo | Média | Média | |
+| SEC-40 | Senha removida via destructuring mas objeto original em memória | Média | Média | ✅ |
+| SEC-41 | `as any` no CheckinQuery suprime erros de tipo | Média | Média | ✅ |
 | SEC-42 | Plan middleware depende de `req.planInfo` sem injeção prévia | Média | Média | |
 | SEC-43 | Audit middleware silencia falhas | Média | Média | |
 | SEC-44 | Fetch de URL da API com fallback para localhost | Média | Média | |
@@ -1336,15 +1336,85 @@ export const prismaContextStore = new AsyncLocalStorage<PrismaContext>();
 
 ---
 
+### SEC-18 — JSON.parse sem Try-Catch no localStorage
+
+> **Severidade:** Alta | **Prioridade:** Alta | ✅ **CORRIGIDO EM 30/06/2026**
+
+- **O Problema:** `JSON.parse(masterUser)` sem proteção `try/catch`. Se o conteúdo for corrompido ou manipulado (XSS), a aplicação crasha.
+- **Correção Aplicada:** Resolvido pelo refactoring do SEC-19. `@viggo:masterUser` removido do `localStorage`. Toda decodificação de token agora usa `decodeJWT()` (`utils/jwt.ts`) que envolve `JSON.parse` em try/catch com retorno `null` em caso de falha.
+
+**Código Corrigido:**
+```typescript
+// frontend/src/utils/jwt.ts
+export function decodeJWT(token: string): JWTPayload | null {
+  try {
+    const payload = token.split('.')[1];
+    return JSON.parse(atob(payload)) as JWTPayload;
+  } catch {
+    return null;
+  }
+}
+```
+
+**CWE:** CWE-20
+
+---
+
+### SEC-40 — Senha Removida via Destructuring mas Objeto Original em Memória
+
+> **Severidade:** Média | **Prioridade:** Média | ✅ **CORRIGIDO EM 30/06/2026**
+
+- **O Problema:** `const { password, ...userWithoutPassword } = employee` remove a senha do objeto destruturado, mas o objeto original `employee` com a senha ainda existe em memória. Além disso, `SessionController.create` retornava o objeto `user` completo (incluindo hash da senha) ao client.
+- **Correção Aplicada:** Removido destructuring em `CompanyController.signup` e `CompanyController.acceptInvite`. Objetos de resposta agora são construídos diretamente com campos explícitos. `SessionController.create` agora retorna objeto explícito sem password.
+
+**Código Corrigido:**
+```typescript
+// SessionController.create — antes retornava user completo com password
+return res.status(201).json({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    companyId: user.companyId,
+});
+
+// CompanyController.signup/acceptInvite — antes usava destructuring
+return res.status(201).json({
+    user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        companyId: user.companyId,
+    },
+    // ...
+});
+```
+
+**CWE:** CWE-200
+
+---
+
+### SEC-41 — `as any` no CheckinQuery Suprime Erros de Tipo
+
+> **Severidade:** Média | **Prioridade:** Média | ✅ **CORRIGIDO EM 30/06/2026**
+
+- **O Problema:** `as any` no `EmployeesController` suprimia erros de tipo do Prisma, possivelmente escondendo queries incorretas.
+- **Correção Aplicada:** `as any` removido no commit anterior (multi-tenancy). `EmployeesController` agora usa `extendedPrisma` com `select` explícito, eliminando a necessidade de casting.
+
+**CWE:** CWE-704
+
+---
+
 ## 4. ESTATÍSTICAS
 
 | Severidade | Total | Pendentes | Corrigidos |
 |:---|:---|:---|:---|
 | **Crítica** | 10 | 6 | 4 ✅ |
-| **Alta** | 20 | 16 | 4 ✅ |
-| **Média** | 28 | 28 | 0 |
+| **Alta** | 20 | 15 | 5 ✅ |
+| **Média** | 28 | 25 | 3 ✅ |
 | **Baixa** | 10 | 10 | 0 |
-| **Total** | **68** | **60** | **8** |
+| **Total** | **68** | **56** | **12** |
 
 ---
 
@@ -1361,12 +1431,12 @@ export const prismaContextStore = new AsyncLocalStorage<PrismaContext>();
 6. ~~**SEC-11 + SEC-12** — Exposição de erros~~ ✅ CORRIGIDO
 7. ~~**SEC-13** — JWT sem algorithm pinning~~ ✅ CORRIGIDO
 8. **SEC-14 + SEC-15** — Dados biométricos expostos (decisão: confiar no backend)
-9. ~~**SEC-17 + SEC-18 + SEC-19 + SEC-20 + SEC-21** — Problemas de autenticação no frontend~~ (SEC-19 ✅ CORRIGIDO)
+9. ~~**SEC-17 + SEC-18 + SEC-19 + SEC-20 + SEC-21** — Problemas de autenticação no frontend~~ (SEC-18 ✅ SEC-19 ✅)
 10. **SEC-22 + SEC-23** — CI/CD sem scanners
 
 ### Média (Próximo sprint)
 11. **SEC-24 a SEC-30** — Infraestrutura Docker/Prometheus
-12. **SEC-31 a SEC-58** — Vulnerabilidades de média severidade
+12. **SEC-31 a SEC-58** — Vulnerabilidades de média severidade (SEC-40 ✅ SEC-41 ✅)
 
 ### Baixa (Backlog)
 13. **SEC-59 a SEC-68** — Melhorias de configuração e boas práticas

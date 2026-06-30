@@ -102,7 +102,6 @@ export class CompanyController {
         },
       });
 
-      const { password: _, ...userWithoutPassword } = user;
       const token = jwt.sign(
         {
           id: user.id,
@@ -119,7 +118,13 @@ export class CompanyController {
       );
 
       return res.status(201).json({
-        user: userWithoutPassword,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          companyId: user.companyId,
+        },
         company: {
           id: company.id,
           name: company.name,
@@ -581,7 +586,6 @@ export class CompanyController {
 
       const { user, inviteToken: updatedToken } = result;
 
-      const { password: _, ...userWithoutPassword } = user;
       const authToken = jwt.sign(
         {
           id: user.id,
@@ -598,7 +602,13 @@ export class CompanyController {
       );
 
       return res.json({
-        user: userWithoutPassword,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          companyId: user.companyId,
+        },
         company: {
           id: inviteToken.company.id,
           name: inviteToken.company.name,
