@@ -11,8 +11,10 @@ export function RegisterFace() {
     const [isRegistering, setIsRegistering] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
     const { user, token, refreshUser } = useAuth();
+    const [check, setCheck] = useState<boolean>(false)
 
     useEffect(() => {
+
         const initCamera = async () => {
             setVideoOpen(true);
             try {
@@ -48,7 +50,7 @@ export function RegisterFace() {
             }
         };
         
-        initCamera();
+        if(!check) initCamera();
 
         return () => {
             if (videoRef.current && videoRef.current.srcObject) {
@@ -67,7 +69,7 @@ export function RegisterFace() {
             videoRef.current.srcObject = null;
         }
         setVideoOpen(false);
-
+        setCheck(true)
         setIsRegistering(true);
         setMessage("Salvando cadastro facial...");
 
@@ -103,7 +105,7 @@ export function RegisterFace() {
         window.location.href = "/";
     };
 
-    if (!videoOpen) {
+    if (!videoOpen && !check) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center p-4">
                 <div className="animate-spin rounded-full h-12 w-12 border-4 border-emerald-500 border-t-transparent" />
