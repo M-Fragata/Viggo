@@ -3,6 +3,7 @@ import { useHeadPose, calculateEAR, BLINK_THRESHOLD_FRONT, YAW_THRESHOLD_FRONT, 
 import type { HeadPose } from '../hooks/useHeadPose';
 import * as faceapi from 'face-api.js';
 import { motion, useMotionValue, useSpring, useTransform, animate } from 'framer-motion';
+import { api } from '../services/api';
 
 type LivenessStep = 'front' | 'left' | 'right' | 'complete';
 
@@ -69,6 +70,7 @@ const RING_RADIUS = 54;
 const RING_STROKE = 6;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 const SPIN_SEGMENT = RING_CIRCUMFERENCE * 0.25;
+const POSE_HOLD_DURATION_MS = 2000;
 
 /*
 function DevOverlay({
@@ -254,9 +256,9 @@ export function LivenessChallenge({
   const currentStepIndexRef = useRef(0);
   const bestFrameDescriptorRef = useRef<Float32Array | null>(null);
   const validationsCountRef = useRef(0);
-  const isFillingRef = useRef(false);
-  const fillAnimationRef = useRef<ReturnType<typeof animate> | null>(null);
   const ringValueRef = useRef(0);
+  const poseHoldStartRef = useRef(0);
+  const isValidatingRef = useRef(false);
 
   useLayoutEffect(() => {
     bestFrameDescriptorRef.current = bestFrameDescriptor;
@@ -291,11 +293,7 @@ export function LivenessChallenge({
   }, [ringMotionVal]);
 
   const cancelFillAnimation = useCallback(() => {
-    if (fillAnimationRef.current) {
-      fillAnimationRef.current.stop();
-      fillAnimationRef.current = null;
-    }
-    isFillingRef.current = false;
+    // No longer used - kept for compatibility with existing references
   }, []);
 
   const playTransitionAnimation = useCallback((onCompleteTransition: () => void) => {
@@ -368,40 +366,56 @@ export function LivenessChallenge({
     ringMotionVal.set(0);
     progressRef.current = 0;
     ringValueRef.current = 0;
+    poseHoldStartRef.current = 0;
+    isValidatingRef.current = false;
     if (modelsLoaded && 'vibrate' in navigator) {
       navigator.vibrate(30);
     }
   }, [currentStepIndex, modelsLoaded, ringMotionVal, cancelFillAnimation]);
 
-  const startFillAnimation = useCallback((_fromValue: number, toValue: number, durationMs: number) => {
-    cancelFillAnimation();
-    isFillingRef.current = true;
+  const validateDescriptorWithBackend = useCallback(async (descriptor: Float32Array): Promise<{ success: boolean; distance: number }> => {
+    try {
+      const descriptorArray = Array.from(descriptor);
+      const result = await api.employees.verifyFace(descriptorArray);
+      return { success: result.success, distance: result.distance };
+    } catch (err) {
+      console.error('Erro na verificação backend:', err);
+      return { success: false, distance: -1 };
+    }
+  }, []);
 
-    const anim = animate(ringMotionVal, toValue, {
-      duration: durationMs / 1000,
-      ease: 'easeInOut',
-      onUpdate: (latest) => {
-        ringValueRef.current = latest;
-        progressRef.current = latest;
-      },
-      onComplete: () => {
-        isFillingRef.current = false;
-        fillAnimationRef.current = null;
-        if (toValue >= 100) {
-          playTransitionAnimation(advanceToNextStep);
-        }
-      },
-    });
+  const fallbackLocalComparison = useCallback((descriptor: Float32Array): boolean => {
+    if (!faceDescriptor) return false;
+    const distance = faceapi.euclideanDistance(descriptor, faceDescriptor);
+    return distance < 0.5;
+  }, [faceDescriptor]);
 
-    fillAnimationRef.current = anim;
-  }, [ringMotionVal, cancelFillAnimation, playTransitionAnimation, advanceToNextStep]);
+  const handleValidationSuccess = useCallback((descriptor: Float32Array) => {
+    setBestFrameDescriptor(descriptor);
+    poseHoldStartRef.current = 0;
+    validationsCountRef.current += 1;
+    setWasCorrectPose(true);
+
+    const step = currentStepRef.current;
+    const config = STEP_CONFIG[step as keyof typeof STEP_CONFIG];
+    const count = validationsCountRef.current;
+    const needed = config.validationsNeeded;
+
+    if (count >= needed) {
+      playTransitionAnimation(advanceToNextStep);
+    } else if (count === 1 && needed > 1) {
+      ringMotionVal.set(config.progressTarget);
+    }
+
+    setMessage('');
+  }, [ringMotionVal, playTransitionAnimation, advanceToNextStep]);
 
   const checkPose = useCallback(async () => {
     if (!videoRef.current || !modelsLoaded || videoRef.current.readyState !== 4) {
       return;
     }
 
-    if (isTransitioning || isFillingRef.current) return;
+    if (isTransitioning) return;
 
     try {
       const detectorOptions = new faceapi.TinyFaceDetectorOptions({
@@ -422,7 +436,6 @@ export function LivenessChallenge({
 
         let stepPassed = false;
         const step = currentStepRef.current;
-        const config = STEP_CONFIG[step as keyof typeof STEP_CONFIG];
 
         if (step === 'front') {
           const poseOk = isLookingFront(headPose, YAW_THRESHOLD_FRONT);
@@ -449,31 +462,49 @@ export function LivenessChallenge({
         });
 
         if (stepPassed) {
-          validationsCountRef.current += 1;
+          if (poseHoldStartRef.current === 0) {
+            poseHoldStartRef.current = Date.now();
+          }
+
+          const heldTime = Date.now() - poseHoldStartRef.current;
+          const holdProgress = Math.min(100, (heldTime / POSE_HOLD_DURATION_MS) * 100);
+
+          ringMotionVal.set(holdProgress);
           setWasCorrectPose(true);
-
-          if (faceDescriptor) {
-            const distance = faceapi.euclideanDistance(detection.descriptor, faceDescriptor);
-            if (distance < 0.5) {
-              setBestFrameDescriptor(detection.descriptor);
-            }
-          } else {
-            setBestFrameDescriptor(detection.descriptor);
-          }
-
-          const count = validationsCountRef.current;
-          const needed = config.validationsNeeded;
-
-          if (count >= needed) {
-            const currentRingValue = ringValueRef.current;
-            startFillAnimation(currentRingValue, 100, config.fillDuration * ((100 - currentRingValue) / 100));
-          } else if (count === 1 && needed > 1) {
-            startFillAnimation(0, config.progressTarget, config.fillDuration);
-          }
-
           setMessage('');
+
+          if (heldTime >= POSE_HOLD_DURATION_MS && !isValidatingRef.current) {
+            isValidatingRef.current = true;
+
+            const backendResult = await validateDescriptorWithBackend(detection.descriptor);
+
+            if (backendResult.success) {
+              handleValidationSuccess(detection.descriptor);
+            } else if (backendResult.distance >= 0) {
+              if (fallbackLocalComparison(detection.descriptor)) {
+                handleValidationSuccess(detection.descriptor);
+              } else {
+                poseHoldStartRef.current = 0;
+                ringMotionVal.set(0);
+                setMessage(`Rosto não reconhecido (dist: ${backendResult.distance.toFixed(2)})`);
+              }
+            } else {
+              if (fallbackLocalComparison(detection.descriptor)) {
+                handleValidationSuccess(detection.descriptor);
+              } else {
+                poseHoldStartRef.current = 0;
+                ringMotionVal.set(0);
+                setMessage('Erro de conexão. Tente novamente.');
+              }
+            }
+
+            isValidatingRef.current = false;
+          }
         } else {
+          poseHoldStartRef.current = 0;
           setWasCorrectPose(false);
+
+          ringMotionVal.set(0);
 
           const yawDeg = Math.round(-headPose.yaw);
           if (step === 'front') {
@@ -503,7 +534,10 @@ export function LivenessChallenge({
     isLookingLeft,
     isLookingRight,
     ballX,
-    startFillAnimation,
+    ringMotionVal,
+    validateDescriptorWithBackend,
+    fallbackLocalComparison,
+    handleValidationSuccess,
   ]);
 
   useEffect(() => {
