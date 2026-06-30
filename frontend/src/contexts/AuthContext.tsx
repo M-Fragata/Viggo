@@ -9,7 +9,7 @@ interface AuthContextType {
   company: string | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<User>;
-  setSession: (user: User, token: string, company: string) => void;
+  setSession: (user: User, token: string, company?: string) => void;
   logout: () => void;
   refreshUser: () => void;
   isMaster: boolean;
@@ -54,7 +54,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const clearSession = useCallback(() => {
     localStorage.removeItem("@viggo:token");
     localStorage.removeItem("@viggo:masterToken");
-    localStorage.removeItem("@viggo:company");
     setUser(null);
     setName(null);
     setToken(null);
@@ -65,10 +64,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loadSession = useCallback(() => {
     const storedToken = localStorage.getItem("@viggo:token");
-    const storedCompany = localStorage.getItem("@viggo:company");
     const storedMasterToken = localStorage.getItem("@viggo:masterToken");
 
-    if (storedToken && storedCompany) {
+    if (storedToken) {
       const decoded = decodeJWT(storedToken);
       if (!decoded) {
         clearSession();
@@ -87,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const jwtUser = userFromJWT(decoded);
         setUser(jwtUser);
         setToken(storedToken);
-        setCompany(storedCompany);
+        setCompany(decoded.companyName || null);
         setName(formatName(decoded.name));
 
         if (storedMasterToken) {
@@ -104,8 +102,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch {
         clearSession();
       }
-    } else if (storedToken) {
-      clearSession();
     }
     setIsLoading(false);
   }, [clearSession]);
@@ -116,36 +112,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (email: string, password: string) => {
-      const { user: apiUser, token: newToken, company: companyName } = await api.auth.login(email, password);
+      const { user: apiUser, token: newToken } = await api.auth.login(email, password);
       localStorage.setItem("@viggo:token", newToken);
-      localStorage.setItem("@viggo:company", companyName);
 
       const decoded = decodeJWT(newToken);
       const jwtUser = decoded ? userFromJWT(decoded) : apiUser;
       setUser({ ...jwtUser, hasFaceDescriptor: apiUser.hasFaceDescriptor });
       setToken(newToken);
-      setCompany(companyName);
+      setCompany(decoded?.companyName || null);
       setName(formatName(jwtUser.name));
       return { ...jwtUser, hasFaceDescriptor: apiUser.hasFaceDescriptor };
     },
     []
   );
 
-  const setSession = useCallback((newUser: User, newToken: string, newCompany: string) => {
+  const setSession = useCallback((newUser: User, newToken: string, _newCompany?: string) => {
     localStorage.setItem("@viggo:token", newToken);
-    localStorage.setItem("@viggo:company", newCompany);
 
     const decoded = decodeJWT(newToken);
     const jwtUser = decoded ? userFromJWT(decoded) : newUser;
     setUser({ ...jwtUser, hasFaceDescriptor: newUser.hasFaceDescriptor });
     setToken(newToken);
-    setCompany(newCompany);
+    setCompany(decoded?.companyName || null);
     setName(formatName(jwtUser.name));
   }, []);
 
   const logout = useCallback(() => {
     localStorage.removeItem("@viggo:token");
-    localStorage.removeItem("@viggo:company");
     setUser(null);
     setToken(null);
     setCompany(null);
@@ -172,13 +165,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     localStorage.setItem("@viggo:token", newToken);
-    localStorage.setItem("@viggo:company", companyName);
 
     const decoded = decodeJWT(newToken);
     const jwtUser = decoded ? userFromJWT(decoded) : _newUser;
     setUser(jwtUser);
     setToken(newToken);
-    setCompany(companyName);
+    setCompany(decoded?.companyName || companyName);
     setName(formatName(jwtUser.name));
     setIsImpersonated(true);
     setImpersonatedCompanyName(companyName);
