@@ -170,6 +170,7 @@ export interface User {
   companyId: string;
   cpf?: string;
   createdAt: string;
+  hasFaceDescriptor?: boolean;
 }
 
 export interface Company {

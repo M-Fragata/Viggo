@@ -95,6 +95,7 @@ export class SessionController {
                 email: user.email,
                 role: user.role,
                 companyId: user.companyId,
+                hasFaceDescriptor: !!user.faceDescriptor,
             }
 
             const token = jwt.sign({

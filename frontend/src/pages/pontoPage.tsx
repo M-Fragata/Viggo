@@ -4,7 +4,7 @@ import { api } from "../services/api"
 import { LivenessChallenge } from "../components/LivenessChallenge"
 import { useAuth } from "../hooks/useAuth"
 
-import { LogIn, Utensils, Coffee, LogOut } from "lucide-react"
+import { LogIn, Utensils, Coffee, LogOut, ScanFace } from "lucide-react"
 import { PontoPageSkeleton } from "../components/PontoPageSkeleton"
 import { z } from "zod"
 import { Button } from "../components/Button"
@@ -19,13 +19,14 @@ type ChekinProps = {
 }
 
 export function PontoPage() {
-    const { token } = useAuth();
+    const { token, user } = useAuth();
 
     const [videoOpen, setVideoOpen] = useState<boolean>(false)
     const [message, setMessage] = useState<string>("Iniciando validação...")
 
     const [checkins, setCheckins] = useState<ChekinProps[]>([])
     const [isLoadingCheckins, setIsLoadingCheckins] = useState(true)
+    const [hasFaceRegistered, setHasFaceRegistered] = useState(true)
 
     const videoRef = useRef<HTMLVideoElement>(null)
 
@@ -210,6 +211,7 @@ export function PontoPage() {
     }
 
     useEffect(() => {
+        setHasFaceRegistered(user?.hasFaceDescriptor !== false);
         handleGetCheckin()
     }, [])
 
@@ -330,7 +332,7 @@ export function PontoPage() {
 
                 {isLoadingCheckins ? (
                     <PontoPageSkeleton />
-                ) : (
+                ) : hasFaceRegistered ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 md:gap-6">
                         {[
                             { label: "Entrada", type: "ENTRY", icon: <LogIn className="text-emerald-500" size={32} /> },
@@ -369,6 +371,24 @@ export function PontoPage() {
                                 </section>
                             );
                         })}
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 md:gap-6">
+                        <section className="group relative bg-white border border-slate-200 rounded-3xl p-6 md:p-8 flex flex-col items-center gap-6 transition-all hover:shadow-xl hover:shadow-emerald-900/5 shadow-sm hover:border-amber-400">
+                            <ScanFace className="text-amber-500" size={48} />
+                            <div className="text-center">
+                                <h3 className="text-xl font-bold text-slate-800">Registro Facial Pendente</h3>
+                                <p className="text-amber-500 text-xs mt-1">
+                                    Cadastre sua facial para registrar pontos
+                                </p>
+                            </div>
+
+                            <Button
+                                title="Cadastrar Facial"
+                                onClick={() => window.location.href = "/register"}
+                                className="w-full bg-amber-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-amber-100 transition-all active:scale-95 cursor-pointer hover:bg-amber-600"
+                            />
+                        </section>
                     </div>
                 )}
             </main>
