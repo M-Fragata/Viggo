@@ -47,6 +47,7 @@ export function RegisterFace() {
                 window.location.href = "/";
             }
         };
+        
         initCamera();
 
         return () => {
@@ -59,6 +60,14 @@ export function RegisterFace() {
 
     const handleLivenessComplete = async (descriptor: Float32Array) => {
         setShowLiveness(false);
+
+        if (videoRef.current && videoRef.current.srcObject) {
+            const stream = videoRef.current.srcObject as MediaStream;
+            stream.getTracks().forEach(track => track.stop());
+            videoRef.current.srcObject = null;
+        }
+        setVideoOpen(false);
+
         setIsRegistering(true);
         setMessage("Salvando cadastro facial...");
 
