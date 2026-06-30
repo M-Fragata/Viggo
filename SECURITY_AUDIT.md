@@ -13,7 +13,7 @@
 |:---|:---|:---|:---|:---|
 | SEC-01 | Token JWT sobrescrito com nome da empresa | Crítica | Imediata | |
 | SEC-02 | Rotas de criação e atualização de usuário sem autenticação | Crítica | Imediata | |
-| SEC-07 | XSS via template literals na janela de impressão | Crítica | Imediata | |
+| SEC-07 | XSS via template literals na janela de impressão | Crítica | Imediata | ✅ |
 | SEC-08 | Credenciais PostgreSQL hardcoded no Docker | Crítica | Imediata | |
 | SEC-09 | Credenciais Grafana hardcoded no Docker | Crítica | Imediata | |
 | SEC-10 | Grafana com porta exposta + admin/admin | Crítica | Imediata | |
@@ -1325,6 +1325,29 @@ export const prismaContextStore = new AsyncLocalStorage<PrismaContext>();
 
 ---
 
+### SEC-07 — XSS via Template Literals na Janela de Impressão
+
+> **Severidade:** Crítica | **Prioridade:** Imediata | ✅ **CORRIGIDO EM 30/06/2026**
+
+- **O Problema:** Dados do usuário (`user.name`, `company`) e dados de check-in eram injetados diretamente em HTML via template literals sem sanitização na janela de impressão (`document.write`). Um stored XSS no backend se propagaria aqui.
+- **Correção Aplicada:** Adicionada função `escapeHtml()` que usa `textContent` para sanitizar strings. Aplicada em todas as variáveis interpoladas: `nome`, `company`, `dataRelatorio`, `horasTrabalhadas`, e valores de tabela (`formatTime`, `formatType`, coordenadas).
+
+**Código Corrigido:**
+```typescript
+// frontend/src/pages/pontoViewPage.tsx
+function escapeHtml(str: string): string {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+// Uso: ${escapeHtml(nome)}, ${escapeHtml(company ?? "")}, etc.
+```
+
+**CWE:** CWE-79
+
+---
+
 ### SEC-19 — Verificação de Rotas Apenas no Cliente
 
 > **Severidade:** Alta | **Prioridade:** Alta | ✅ **CORRIGIDO EM 30/06/2026**
@@ -1410,11 +1433,11 @@ return res.status(201).json({
 
 | Severidade | Total | Pendentes | Corrigidos |
 |:---|:---|:---|:---|
-| **Crítica** | 10 | 6 | 4 ✅ |
+| **Crítica** | 10 | 5 | 5 ✅ |
 | **Alta** | 20 | 15 | 5 ✅ |
 | **Média** | 28 | 25 | 3 ✅ |
 | **Baixa** | 10 | 10 | 0 |
-| **Total** | **68** | **56** | **12** |
+| **Total** | **68** | **55** | **13** |
 
 ---
 
@@ -1424,7 +1447,7 @@ return res.status(201).json({
 1. ~~**SEC-01** — Bug token sobrescrito~~
 2. ~~**SEC-02 + SEC-06** — Rotas sem auth + prisma direto~~
 3. ~~**SEC-03 + SEC-04 + SEC-05** — Multi-tenancy quebrado~~ ✅ CORRIGIDO
-4. **SEC-07** — XSS na janela de impressão
+4. ~~**SEC-07** — XSS na janela de impressão~~ ✅ CORRIGIDO
 5. **SEC-08 + SEC-09 + SEC-10** — Credenciais hardcoded no Docker
 
 ### Alta (Próxima semana)
