@@ -10,5 +10,6 @@ const checkinController = new CheckinController();
 
 checkinRoutes.post("/", authMiddleware, checkinLimiter, auditMiddleware, checkinController.createCheckin);
 checkinRoutes.get("/", authMiddleware, checkinController.index);
+checkinRoutes.get("/month", authMiddleware, checkinController.listMonthly);
 
 export { checkinRoutes }

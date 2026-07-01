@@ -125,6 +125,8 @@ export const api = {
       }),
     list: (date?: string) =>
       fetchApi<CheckinResponse[]>(`/checkins${date ? `?date=${date}` : ""}`),
+    listMonthly: (year: number, month: number) =>
+      fetchApi<MonthlyCheckinEmployee[]>(`/checkins/month?year=${year}&month=${month}`),
   },
 
   master: {
@@ -397,6 +399,16 @@ export interface CheckinResponse {
   longitude: number;
   userId: string;
   companyId: string;
+}
+
+export interface MonthlyCheckinEmployee {
+  employeeId: string;
+  employeeName: string;
+  checkins: {
+    id: string;
+    createdAt: string;
+    type: "ENTRY" | "LUNCH_START" | "LUNCH_END" | "EXIT";
+  }[];
 }
 
 export type UserRole = "MASTER" | "ENTERPRISE_ADMIN" | "EMPLOYEE";

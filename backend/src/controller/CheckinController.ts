@@ -2,7 +2,7 @@ import { type Request, type Response } from "express";
 import { z } from "zod"
 import { extendedPrisma } from "../database/prisma-extensions.js";
 
-import { parseISO, startOfDay, endOfDay } from "date-fns"
+import { parseISO, startOfDay, endOfDay, startOfMonth, endOfMonth } from "date-fns"
 
 
 export class CheckinController {
@@ -113,6 +113,65 @@ export class CheckinController {
                 return res.status(400).json({ message: "Invalid request body", errors: error.issues })
             }
             return res.status(500).json({ message: "Erro interno ao buscar os pontos. Tente novamente." })
+        }
+
+    }
+
+    async listMonthly(req: Request, res: Response) {
+
+        const paramsSchema = z.object({
+            year: z.coerce.number().min(2020).max(2100),
+            month: z.coerce.number().min(1).max(12),
+        })
+
+        try {
+            const { year, month } = paramsSchema.parse(req.query);
+
+            const companyId = req.user.companyId;
+            if (!companyId) {
+                return res.status(403).json({ message: "Acesso negado" });
+            }
+
+            const monthStart = startOfMonth(new Date(year, month - 1));
+            const monthEnd = endOfMonth(new Date(year, month - 1));
+
+            const employees = await extendedPrisma.user.findMany({
+                where: { companyId },
+                select: { id: true, name: true },
+            });
+
+            const checkins = await extendedPrisma.checkIn.findMany({
+                where: {
+                    companyId,
+                    createdAt: {
+                        gte: monthStart,
+                        lte: monthEnd,
+                    },
+                },
+                orderBy: { createdAt: "asc" },
+            });
+
+            const result = employees.map((emp) => ({
+                employeeId: emp.id,
+                employeeName: emp.name,
+                checkins: checkins
+                    .filter((c) => c.userId === emp.id)
+                    .map((c) => ({
+                        id: c.id,
+                        createdAt: c.createdAt.toISOString(),
+                        type: c.type,
+                    })),
+            }));
+
+            return res.status(200).json(result);
+
+        } catch (error) {
+            console.error("Erro ao buscar folha mensal:", error);
+
+            if (error instanceof z.ZodError) {
+                return res.status(400).json({ message: "Parâmetros inválidos", errors: error.issues });
+            }
+            return res.status(500).json({ message: "Erro interno ao buscar folha mensal. Tente novamente." });
         }
 
     }
