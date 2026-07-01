@@ -56,7 +56,7 @@ export function LoginPage() {
         </section>
 
         <main className="flex-1 flex flex-col items-center justify-center p-8 md:p-16 border-emerald-400 border-2 md:rounded-r-2xl md:rounded-b-none rounded-b-2xl">
-          <div className="w-full max-w-md space-y-8 animate-in fade-in slide-in-from-right duration-700">
+          <div className="w-full space-y-8 animate-in fade-in slide-in-from-right duration-700">
             <header className="text-center md:text-left">
               <h1 className="text-3xl font-black text-slate-800 tracking-tight">
                 Bem-vindo ao <span className="text-emerald-500">Viggo</span>
