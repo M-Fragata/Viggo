@@ -254,7 +254,7 @@ function FolhaMensalTab({ company }: { company: CompanyResponse | null }) {
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const years = Array.from({ length: 7 }, (_, i) => now.getFullYear() - 3 + i);
+  const years: string[] = ["2026"]
 
   function escapeHtml(str: string): string {
     const div = document.createElement("div");
@@ -309,12 +309,12 @@ function FolhaMensalTab({ company }: { company: CompanyResponse | null }) {
 
           return `
             <tr>
-              <td style="padding:4px 5px;border:1px solid #ddd;text-align:center;font-size:9px;">${dayNum} | ${dayName}</td>
-              <td style="padding:4px 5px;border:1px solid #ddd;text-align:center;font-size:9px;">${data?.entry ?? ""}</td>
-              <td style="padding:4px 5px;border:1px solid #ddd;text-align:center;font-size:9px;">${data?.lunchStart ?? ""}</td>
-              <td style="padding:4px 5px;border:1px solid #ddd;text-align:center;font-size:9px;">${data?.lunchEnd ?? ""}</td>
-              <td style="padding:4px 5px;border:1px solid #ddd;text-align:center;font-size:9px;">${data?.exit ?? ""}</td>
-              <td style="padding:4px 5px;border:1px solid #ddd;text-align:center;font-size:9px;width:70px;"></td>
+              <td style="padding:7px 5px;border:1px solid #ddd;text-align:center;font-size:9px;">${dayNum} | ${dayName}</td>
+              <td style="padding:7px 5px;border:1px solid #ddd;text-align:center;font-size:9px;">${data?.entry ?? ""}</td>
+              <td style="padding:7px 5px;border:1px solid #ddd;text-align:center;font-size:9px;">${data?.lunchStart ?? ""}</td>
+              <td style="padding:7px 5px;border:1px solid #ddd;text-align:center;font-size:9px;">${data?.lunchEnd ?? ""}</td>
+              <td style="padding:7px 5px;border:1px solid #ddd;text-align:center;font-size:9px;">${data?.exit ?? ""}</td>
+              <td style="padding:7px 5px;border:1px solid #ddd;text-align:center;font-size:9px;"></td>
             </tr>`;
         }).join("");
 
@@ -327,6 +327,14 @@ function FolhaMensalTab({ company }: { company: CompanyResponse | null }) {
             </div>
             <div class="employee-name">Colaborador: ${escapeHtml(emp.employeeName)}</div>
             <table>
+              <colgroup>
+                <col style="width:55px;">
+                <col>
+                <col>
+                <col>
+                <col>
+                <col>
+              </colgroup>
               <thead>
                 <tr>
                   <th style="padding:5px;border:1px solid #ddd;background:#f0f0f0;font-size:9px;">Dia</th>
@@ -407,7 +415,7 @@ function FolhaMensalTab({ company }: { company: CompanyResponse | null }) {
     .signatures {
       display: flex;
       justify-content: space-between;
-      margin-top: 20px;
+      margin-top: 30px;
       padding: 0 20px;
     }
     .signature-block {
