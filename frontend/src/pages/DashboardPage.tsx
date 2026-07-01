@@ -309,7 +309,7 @@ function FolhaMensalTab({ company }: { company: CompanyResponse | null }) {
 
           return `
             <tr>
-              <td style="padding:7px 5px;border:1px solid #ddd;font-size:9px;white-space:nowrap;"><span style="display:inline-block;width:20px;text-align:right;">${dayNum}</span><span style="display:inline-block;width:24px;text-align:left;"> | ${dayName}</span></td>
+              <td style="padding:7px 5px;border:1px solid #ddd;font-size:9px;white-space:nowrap;"><span style="display:inline-block;width:20px;text-align:right;">${dayNum}</span><span style="display:inline-block;width:24px;text-align:left;padding-left:2px;">| ${dayName}</span></td>
               <td style="padding:7px 5px;border:1px solid #ddd;text-align:center;font-size:9px;">${data?.entry ?? ""}</td>
               <td style="padding:7px 5px;border:1px solid #ddd;text-align:center;font-size:9px;">${data?.lunchStart ?? ""}</td>
               <td style="padding:7px 5px;border:1px solid #ddd;text-align:center;font-size:9px;">${data?.lunchEnd ?? ""}</td>
