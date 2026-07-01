@@ -6,7 +6,7 @@ import { PlanBadge, PlanComparisonModal, UsageProgressBar, TrialCountdown } from
 import { InvitesTab } from "../components/company";
 import { CheckinTable } from "../components/checkin/CheckinTable";
 import { EmployeeTabSkeleton } from "../components/EmployeeTabSkeleton";
-import { Users, CheckCircle, LayoutList, CreditCard, Mail, ArrowUpRight, Building2, ChevronDown, ChevronUp, FileText, Loader2 } from "lucide-react";
+import { Users, CheckCircle, CreditCard, Mail, ArrowUpRight, Building2, ChevronDown, ChevronUp, FileText, Loader2 } from "lucide-react";
 import type { CompanyResponse, UsageResponse, User } from "../services/api";
 import { api } from "../services/api";
 
@@ -65,7 +65,7 @@ export function DashboardPage() {
           >
             {tab === "Funcionários" && <Users size={18} className="shrink-0" />}
             {tab === "Presentes" && <CheckCircle size={18} className="shrink-0" />}
-            {tab === "Folha Mensal" && <LayoutList size={18} className="shrink-0" />}
+            {tab === "Folha Mensal" && <FileText size={18} className="shrink-0" />}
             {tab === "Plano" && <CreditCard size={18} className="shrink-0" />}
             {tab === "Convites" && <Mail size={18} className="shrink-0" />}
             <span className="truncate">{tab}</span>
@@ -329,10 +329,10 @@ function FolhaMensalTab({ company }: { company: CompanyResponse | null }) {
             <table>
               <colgroup>
                 <col style="width:55px;">
-                <col>
-                <col>
-                <col>
-                <col>
+                <col style="width:28mm;">
+                <col style="width:28mm;">
+                <col style="width:28mm;">
+                <col style="width:28mm;">
                 <col>
               </colgroup>
               <thead>
