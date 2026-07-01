@@ -13,7 +13,6 @@ interface TypewriterTextProps {
 
 export function TypewriterText({
   words,
-  className = "",
   typeSpeed,
   deleteSpeed,
   pauseDuration,
