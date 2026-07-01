@@ -12,6 +12,7 @@ interface LivenessChallengeProps {
   onComplete: (bestFrameDescriptor: Float32Array) => void;
   onCancel: () => void;
   faceDescriptor?: Float32Array;
+  onModelsLoaded?: () => void;
 }
 
 const STEP_CONFIG: Record<LivenessStep, {
@@ -225,7 +226,8 @@ export function LivenessChallenge({
   videoRef,
   onComplete,
   onCancel,
-  faceDescriptor
+  faceDescriptor,
+  onModelsLoaded
 }: LivenessChallengeProps) {
   const steps: LivenessStep[] = useMemo(() => faceDescriptor
     ? ['front', 'left', 'right']
@@ -236,7 +238,6 @@ export function LivenessChallenge({
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [, setPose] = useState<HeadPose>({ yaw: 0, pitch: 0, roll: 0 });
   const [blinkValidated, setBlinkValidated] = useState(false);
-  const [message, setMessage] = useState('');
   const [bestFrameDescriptor, setBestFrameDescriptor] = useState<Float32Array | null>(null);
   const [modelsLoaded, setModelsLoaded] = useState(false);
   const [wasCorrectPose, setWasCorrectPose] = useState(false);
@@ -261,6 +262,11 @@ export function LivenessChallenge({
   }, [currentStepIndex, steps]);
 
   const { getHeadPose, isLookingFront, isLookingLeft, isLookingRight } = useHeadPose();
+
+  const onModelsLoadedRef = useRef(onModelsLoaded);
+  useEffect(() => {
+    onModelsLoadedRef.current = onModelsLoaded;
+  });
 
   const ballX = useMotionValue(0);
   const ringMotionVal = useMotionValue(0);
@@ -327,9 +333,9 @@ export function LivenessChallenge({
           faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
         ]);
         setModelsLoaded(true);
+        onModelsLoadedRef.current?.();
       } catch (err) {
         console.error('Erro ao carregar modelos:', err);
-        setMessage('Erro ao carregar modelos. Atualize a página.');
       }
     };
     loadModels();
@@ -338,7 +344,6 @@ export function LivenessChallenge({
   useEffect(() => {
     setBlinkValidated(false);
     setWasCorrectPose(false);
-    setMessage('');
     validationsCountRef.current = 0;
     ringMotionVal.set(0);
     poseHoldStartRef.current = 0;
@@ -380,8 +385,6 @@ export function LivenessChallenge({
     if (count >= needed) {
       playTransitionAnimation(advanceToNextStep);
     }
-
-    setMessage('');
   }, [ringMotionVal, playTransitionAnimation, advanceToNextStep]);
 
   const checkPose = useCallback(async () => {
@@ -459,7 +462,6 @@ export function LivenessChallenge({
 
           ringMotionVal.set(holdProgress);
           setWasCorrectPose(true);
-          setMessage('');
 
           if (heldTime >= config.holdDuration && !isValidatingRef.current) {
             isValidatingRef.current = true;
@@ -475,7 +477,6 @@ export function LivenessChallenge({
               if (backendResult.success) {
                 if (step === 'front' && !blinkValidated) {
                   waitingForBlinkRef.current = true;
-                  setMessage('Pisque para confirmar');
                   isValidatingRef.current = false;
                   return;
                 }
@@ -484,7 +485,6 @@ export function LivenessChallenge({
                 if (fallbackLocalComparison(detection.descriptor)) {
                   if (step === 'front' && !blinkValidated) {
                     waitingForBlinkRef.current = true;
-                    setMessage('Pisque para confirmar');
                     isValidatingRef.current = false;
                     return;
                   }
@@ -492,13 +492,11 @@ export function LivenessChallenge({
                 } else {
                   poseHoldStartRef.current = 0;
                   ringMotionVal.set(0);
-                  setMessage(`Rosto não reconhecido (dist: ${backendResult.distance.toFixed(2)})`);
                 }
               } else {
                 if (fallbackLocalComparison(detection.descriptor)) {
                   if (step === 'front' && !blinkValidated) {
                     waitingForBlinkRef.current = true;
-                    setMessage('Pisque para confirmar');
                     isValidatingRef.current = false;
                     return;
                   }
@@ -506,7 +504,6 @@ export function LivenessChallenge({
                 } else {
                   poseHoldStartRef.current = 0;
                   ringMotionVal.set(0);
-                  setMessage('Erro de conexão. Tente novamente.');
                 }
               }
 
@@ -519,18 +516,8 @@ export function LivenessChallenge({
           setWasCorrectPose(false);
 
           ringMotionVal.set(0);
-
-          const yawDeg = Math.round(-headPose.yaw);
-          if (step === 'front') {
-            setMessage(`Centralize o rosto (Yaw: ${yawDeg}°)`);
-          } else if (step === 'left') {
-            setMessage(`Vire mais para a esquerda (Yaw: ${yawDeg}°)`);
-          } else if (step === 'right') {
-            setMessage(`Vire mais para a direita (Yaw: ${yawDeg}°)`);
-          }
         }
       } else {
-        setMessage('Rosto não detectado. Posicione-se frente à câmera.');
         setWasCorrectPose(false);
       }
     } catch (err) {
@@ -570,35 +557,11 @@ export function LivenessChallenge({
   return (
     <div className="absolute inset-0 z-20 pointer-events-none flex flex-col items-center justify-between p-4">
       {!modelsLoaded ? (
-        <div className="flex items-center justify-center bg-black/80 text-white w-full">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-emerald-500 border-t-transparent mx-auto mb-4" />
-            <p>Carregando modelos de validação...</p>
-          </div>
+        <div className="absolute inset-0 z-30 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-emerald-500 border-t-transparent" />
         </div>
       ) : (
         <>
-          <div className="w-full max-w-md text-center">
-            <div className="flex items-center justify-center gap-3 mb-2">
-              <span className="text-2xl">{stepConfig.icon}</span>
-              <div>
-                <p className="text-white font-bold text-lg">{stepConfig.label}</p>
-                <p className="text-emerald-300 text-sm">{stepConfig.instruction}</p>
-              </div>
-            </div>
-
-            {message && (
-              <motion.p
-                className="text-white/90 text-sm"
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                key={message}
-              >
-                {message}
-              </motion.p>
-            )}
-          </div>
-
           <FeedbackVisual
             ballXPercent={ballXPercent}
             ringOffset={ringOffset}

@@ -42,7 +42,7 @@ export function RegisterFace() {
                 }
 
                 setShowLiveness(true);
-                setMessage("Posicione seu rosto no oval");
+                setMessage("Carregando validação...");
             } catch (err) {
                 console.error("Erro ao acessar a câmera:", err);
                 alert("Câmera não encontrada ou permissão negada. Permita câmera e atualize.");
@@ -140,6 +140,9 @@ export function RegisterFace() {
                         videoRef={videoRef}
                         onComplete={handleLivenessComplete}
                         onCancel={handleLivenessCancel}
+                        onModelsLoaded={() => {
+                            setMessage("Centralize seu rosto");
+                        }}
                     />
                 )}
 
