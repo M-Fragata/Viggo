@@ -475,7 +475,7 @@ function FolhaMensalTab({ company }: { company: CompanyResponse | null }) {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4 mb-6">
+      <div className="flex flex-row flex-wrap items-end gap-4 mb-6">
         <div className="flex flex-col gap-1">
           <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Mês</label>
           <select
