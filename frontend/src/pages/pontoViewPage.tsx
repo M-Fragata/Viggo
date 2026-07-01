@@ -5,6 +5,7 @@ import { api } from "../services/api"
 
 import { Input } from "../components/Input"
 import { Button } from "../components/Button"
+import { PontoViewPageSkeleton } from "../components/PontoViewPageSkeleton"
 import { Clock, MapPin, Calendar } from "lucide-react"
 
 type Checkin = {
@@ -19,8 +20,10 @@ export function PontoViewPage() {
     const { token, company, user } = useAuth();
     const [date, setDate] = useState(new Date().toISOString().split("T")[0])
     const [checkins, setCheckins] = useState<Checkin[]>([])
+    const [isLoadingCheckins, setIsLoadingCheckins] = useState(true)
 
     const handleGetPontos = useCallback(async () => {
+        setIsLoadingCheckins(true)
 
         try {
 
@@ -32,6 +35,8 @@ export function PontoViewPage() {
         } catch (error) {
             console.error("Erro ao buscar os pontos:", error);
             alert("Erro ao buscar os pontos. Tente novamente.");
+        } finally {
+            setIsLoadingCheckins(false)
         }
 
     }, [date])
@@ -181,93 +186,99 @@ export function PontoViewPage() {
 
     return (
         <div className="max-w-4xl mx-auto flex flex-col gap-6 md:my-0 my-4">
-            {/* Seção de Filtro */}
-            <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-800 text-center md:text-left">Meu Histórico</h1>
-                    <p className="text-gray-500">Visualize seus registros diários</p>
-                </div>
-                <div className="flex items-center gap-3 bg-gray-50 p-2 rounded-lg border w-full md:w-auto">
-                    <Calendar className="text-emerald-600 " size={20} />
-                    <Input
-                        type="date"
-                        value={date}
-                        onChange={(e) => setDate(e.target.value)}
-                        className="bg-transparent border-none focus:ring-0 text-gray-700 font-medium w-full"
-                    />
-                </div>
-            </section>
-
-            {/* Conteúdo Principal */}
-            <main className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-                {/* Coluna da Esquerda: Timeline de Pontos */}
-                <div className="md:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                        <Clock size={18} className="text-emerald-600" />
-                        Linha do tempo
-                    </h2>
-
-                    {checkins.length === 0 ? (
-                        <div className="py-12 text-center text-gray-400">
-                            Nenhum ponto registrado nesta data.
+            {isLoadingCheckins ? (
+                <PontoViewPageSkeleton />
+            ) : (
+                <>
+                    {/* Seção de Filtro */}
+                    <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div>
+                            <h1 className="text-2xl font-bold text-gray-800 text-center md:text-left">Meu Histórico</h1>
+                            <p className="text-gray-500">Visualize seus registros diários</p>
                         </div>
-                    ) : (
-                        <div className="relative border-l-2 border-blue-100 ml-4 pl-8 space-y-8">
-                            {checkins.map((ponto) => (
-                                <div key={ponto.id} className="relative">
-                                    {/* Bolinha da Timeline */}
-                                    <div className="absolute -left-[41px] top-1 w-4 h-4 rounded-full border-2 border-emerald-600 bg-white" />
+                        <div className="flex items-center gap-3 bg-gray-50 p-2 rounded-lg border w-full md:w-auto">
+                            <Calendar className="text-emerald-600 " size={20} />
+                            <Input
+                                type="date"
+                                value={date}
+                                onChange={(e) => setDate(e.target.value)}
+                                className="bg-transparent border-none focus:ring-0 text-gray-700 font-medium w-full"
+                            />
+                        </div>
+                    </section>
 
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <p className="font-bold text-gray-800 text-lg">
-                                                {formatTime(ponto.createdAt)}
-                                            </p>
-                                            <p className="text-sm text-emerald-600  font-medium uppercase tracking-wider">
-                                                {formatType(ponto.type)}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <a className="flex items-center gap-1 text-gray-400 text-xs"
-                                                href={`https://www.google.com/maps/search/?api=1&query=${ponto.latitude},${ponto.longitude}`} target="_blank" rel="noopener noreferrer">
-                                                <MapPin size={12} />
-                                                <Button
-                                                    title="Ver no mapa"
-                                                    className="hover:text-emerald-600 cursor-pointer"
-                                                />
-                                            </a>
-                                        </div>
-                                    </div>
+                    {/* Conteúdo Principal */}
+                    <main className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                        {/* Coluna da Esquerda: Timeline de Pontos */}
+                        <div className="md:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                                <Clock size={18} className="text-emerald-600" />
+                                Linha do tempo
+                            </h2>
+
+                            {checkins.length === 0 ? (
+                                <div className="py-12 text-center text-gray-400">
+                                    Nenhum ponto registrado nesta data.
                                 </div>
-                            ))}
-                        </div>
-                    )}
-                    <Button
-                        onClick={() => { handleGetComprovantes(checkins) }}
-                        title="Gerar Comprovante"
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white mt-10 w-full cursor-pointer py-2 px-4 rounded-lg transition-colors m-auto"
-                    />
-                </div>
+                            ) : (
+                                <div className="relative border-l-2 border-blue-100 ml-4 pl-8 space-y-8">
+                                    {checkins.map((ponto) => (
+                                        <div key={ponto.id} className="relative">
+                                            {/* Bolinha da Timeline */}
+                                            <div className="absolute -left-[41px] top-1 w-4 h-4 rounded-full border-2 border-emerald-600 bg-white" />
 
-                {/* Coluna da Direita: Resumo/Cards Extras */}
-                <div className="flex flex-col gap-6">
-                    <div className="bg-emerald-600 p-6 rounded-xl text-white shadow-md shadow-emerald-100">
-                        <h3 className="text-emerald-100 text-sm font-medium mb-1">Total de Horas</h3>
-                        <p className="text-3xl font-bold">{horasTrabalhadas}</p>
-                        <div className="mt-4 pt-4 border-t border-emerald-500 text-xs text-emerald-100">
-                            Cálculo baseado no primeiro e último registro.
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <p className="font-bold text-gray-800 text-lg">
+                                                        {formatTime(ponto.createdAt)}
+                                                    </p>
+                                                    <p className="text-sm text-emerald-600  font-medium uppercase tracking-wider">
+                                                        {formatType(ponto.type)}
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <a className="flex items-center gap-1 text-gray-400 text-xs"
+                                                        href={`https://www.google.com/maps/search/?api=1&query=${ponto.latitude},${ponto.longitude}`} target="_blank" rel="noopener noreferrer">
+                                                        <MapPin size={12} />
+                                                        <Button
+                                                            title="Ver no mapa"
+                                                            className="hover:text-emerald-600 cursor-pointer"
+                                                        />
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            <Button
+                                onClick={() => { handleGetComprovantes(checkins) }}
+                                title="Gerar Comprovante"
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white mt-10 w-full cursor-pointer py-2 px-4 rounded-lg transition-colors m-auto"
+                            />
                         </div>
-                    </div>
 
-                    <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
-                        <h3 className="text-gray-800 font-semibold mb-3 text-sm">Status do Dia</h3>
-                        <span className={`px-3 py-1  rounded-full text-xs font-bold uppercase ${checkins.length === 4 ? "text-green-700 bg-green-100" : "text-red-700 bg-red-100"}`}>
-                            {checkins && checkins.length === 4 ? "Completo" : "Incompleto"}
-                        </span>
-                    </div>
-                </div>
-            </main>
+                        {/* Coluna da Direita: Resumo/Cards Extras */}
+                        <div className="flex flex-col gap-6">
+                            <div className="bg-emerald-600 p-6 rounded-xl text-white shadow-md shadow-emerald-100">
+                                <h3 className="text-emerald-100 text-sm font-medium mb-1">Total de Horas</h3>
+                                <p className="text-3xl font-bold">{horasTrabalhadas}</p>
+                                <div className="mt-4 pt-4 border-t border-emerald-500 text-xs text-emerald-100">
+                                    Cálculo baseado no primeiro e último registro.
+                                </div>
+                            </div>
+
+                            <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+                                <h3 className="text-gray-800 font-semibold mb-3 text-sm">Status do Dia</h3>
+                                <span className={`px-3 py-1  rounded-full text-xs font-bold uppercase ${checkins.length === 4 ? "text-green-700 bg-green-100" : "text-red-700 bg-red-100"}`}>
+                                    {checkins && checkins.length === 4 ? "Completo" : "Incompleto"}
+                                </span>
+                            </div>
+                        </div>
+                    </main>
+                </>
+            )}
         </div>
     )
 }

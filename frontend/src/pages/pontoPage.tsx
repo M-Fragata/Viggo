@@ -34,6 +34,7 @@ export function PontoPage() {
     const [isRegistering, setIsRegistering] = useState(false);
     const [livenessDescriptor, setLivenessDescriptor] = useState<Float32Array | null>(null);
     const [showLiveness, setShowLiveness] = useState(false);
+    const [isPreparingCheckin, setIsPreparingCheckin] = useState(false);
     const [pendingCheckin, setPendingCheckin] = useState<{
         type: string;
         latitude: number;
@@ -41,6 +42,7 @@ export function PontoPage() {
     } | null>(null);
 
     async function handlePostCheckin(type: string) {
+        setIsPreparingCheckin(true);
         navigator.geolocation.getCurrentPosition(async (position) => {
             const { latitude, longitude } = position.coords;
 
@@ -58,8 +60,10 @@ export function PontoPage() {
                 const verifyFacial = await handleGetEmployee()
                 if (verifyFacial?.success !== true) {
                     setPendingCheckin(null);
+                    setIsPreparingCheckin(false);
                     return
                 }
+                setIsPreparingCheckin(false);
             } catch (error) {
                 if (error instanceof z.ZodError) {
                     console.error("Erro de validação:", error.issues);
@@ -68,10 +72,12 @@ export function PontoPage() {
                     alert("Erro ao preparar check-in. Tente novamente.");
                 }
                 setPendingCheckin(null);
+                setIsPreparingCheckin(false);
             }
         }, (error) => {
             console.error("Erro ao obter localização:", error);
             alert("Erro ao obter localização. Permita o acesso à localização e tente novamente.");
+            setIsPreparingCheckin(false);
         }, {
             enableHighAccuracy: true,
             timeout: 10000,
@@ -362,10 +368,10 @@ export function PontoPage() {
                                     </div>
 
                                     <Button
-                                        title={hasRegistered ? "Ponto Registrado" : "Registrar Ponto"}
-                                        disabled={hasRegistered}
+                                        title={hasRegistered ? "Ponto Registrado" : isPreparingCheckin ? "Preparando..." : "Registrar Ponto"}
+                                        disabled={hasRegistered || isPreparingCheckin}
                                         onClick={() => handlePostCheckin(item.type)}
-                                        className={`w-full bg-emerald-600  text-white font-bold py-4 rounded-2xl shadow-lg shadow-emerald-100 transition-all active:scale-95 disabled:grayscale  ${hasRegistered ? "opacity-70 cursor-not-allowed " : "cursor-pointer hover:bg-emerald-700"}`}
+                                        className={`w-full bg-emerald-600  text-white font-bold py-4 rounded-2xl shadow-lg shadow-emerald-100 transition-all active:scale-95 disabled:grayscale  ${hasRegistered ? "opacity-70 cursor-not-allowed " : isPreparingCheckin ? "opacity-70 cursor-wait" : "cursor-pointer hover:bg-emerald-700"}`}
                                     />
 
                                 </section>

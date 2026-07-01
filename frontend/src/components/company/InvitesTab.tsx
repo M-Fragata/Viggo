@@ -4,12 +4,13 @@ import { useInviteTokens } from "../../hooks/useInviteTokens";
 import { useCompany, usePlanLimits } from "../../hooks/useCompany";
 import { useToast } from "../../hooks/useToast";
 import { InviteTokenTable } from "./InviteTokenTable";
+import { InviteTokenTableSkeleton } from "../InviteTokenTableSkeleton";
 
 export function InvitesTab() {
   const { company, isLoading: companyLoading } = useCompany();
   const { getPlanLimit } = usePlanLimits();
   const { toast } = useToast();
-  const { tokens, fetchTokens, createToken, revokeToken } = useInviteTokens();
+  const { tokens, isLoading: tokensLoading, fetchTokens, createToken, revokeToken } = useInviteTokens();
 
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -79,11 +80,15 @@ export function InvitesTab() {
         </div>
       )}
 
-      <InviteTokenTable
-        tokens={tokens}
-        onRevoke={handleRevoke}
-        onCopy={handleCopy}
-      />
+      {tokensLoading ? (
+        <InviteTokenTableSkeleton />
+      ) : (
+        <InviteTokenTable
+          tokens={tokens}
+          onRevoke={handleRevoke}
+          onCopy={handleCopy}
+        />
+      )}
     </div>
   );
 }

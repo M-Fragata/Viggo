@@ -5,6 +5,7 @@ import { useCheckins } from "../hooks/useCheckins";
 import { PlanBadge, PlanComparisonModal, UsageProgressBar, TrialCountdown } from "../components/plan";
 import { InvitesTab } from "../components/company";
 import { CheckinTable } from "../components/checkin/CheckinTable";
+import { EmployeeTabSkeleton } from "../components/EmployeeTabSkeleton";
 import { Users, CheckCircle, LayoutList, CreditCard, Mail, ArrowUpRight, Building2, ChevronDown, ChevronUp } from "lucide-react";
 import type { CompanyResponse, UsageResponse, User } from "../services/api";
 
@@ -118,6 +119,10 @@ function EmployeeTab({ company, usage, planLimit }: {
   } | null
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  if (!usage) {
+    return <EmployeeTabSkeleton />;
+  }
 
   return (
     <div className="space-y-6">

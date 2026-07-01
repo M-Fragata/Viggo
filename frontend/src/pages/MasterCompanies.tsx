@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, MoreVertical, Building2, CheckCircle, Clock, XCircle, UserCheck } from "lucide-react";
+import { Search, MoreVertical, Building2, CheckCircle, Clock, XCircle, UserCheck, Loader2 } from "lucide-react";
 import { useMasterCompanies, useMasterActions } from "../hooks/useMaster";
 import { PlanBadge, TrialCountdown } from "../components/plan";
 import { useToast } from "../hooks/useToast";
@@ -109,7 +109,10 @@ export function MasterCompanies() {
           <h1 className="text-2xl font-bold text-slate-800">Empresas</h1>
           <p className="text-slate-500 text-sm">Gerencie todas as empresas da plataforma</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          {isLoading && companies.length > 0 && (
+            <Loader2 className="w-4 h-4 text-emerald-500 animate-spin" />
+          )}
           <span className="text-sm text-slate-500">{pagination?.total ?? 0} empresas</span>
         </div>
       </header>
