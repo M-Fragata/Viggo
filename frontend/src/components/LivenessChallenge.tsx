@@ -122,7 +122,7 @@ function FeedbackVisual({
   const targetYPercent = `${targetY * 80}%`;
 
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col items-center gap-4 flex-1 justify-end pb-8">
       <motion.div className="relative w-28 h-28 flex items-center justify-center">
         <motion.svg
           width="120"
@@ -555,7 +555,7 @@ export function LivenessChallenge({
   }, [modelsLoaded, checkPose, ballX, ringMotionVal]);
 
   return (
-    <div className="absolute inset-0 z-20 pointer-events-none flex flex-col items-center justify-between p-4">
+    <div className="absolute inset-0 z-20 pointer-events-none flex flex-col items-center p-4">
       {!modelsLoaded ? (
         <div className="absolute inset-0 z-30 flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-emerald-500 border-t-transparent" />
@@ -577,7 +577,7 @@ export function LivenessChallenge({
 
           <button
             onClick={onCancel}
-            className="w-full max-w-[200px] py-3 bg-white/10 hover:bg-white/20 text-white rounded-full font-bold transition-all active:scale-95 pointer-events-auto"
+            className="w-full max-w-[200px] py-3 bg-white/10 hover:bg-white/20 text-white rounded-full font-bold transition-all active:scale-95 pointer-events-auto mt-auto"
           >
             Cancelar
           </button>
