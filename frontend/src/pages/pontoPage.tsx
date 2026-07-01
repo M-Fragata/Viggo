@@ -98,6 +98,7 @@ export function PontoPage() {
             setLivenessDescriptor(savedDescriptor);
             setVideoOpen(true)
             setShowLiveness(true)
+            setMessage("Iniciando validação...")
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: {
@@ -268,6 +269,7 @@ export function PontoPage() {
                                 faceDescriptor={livenessDescriptor}
                                 onComplete={handleLivenessComplete}
                                 onCancel={handleLivenessCancel}
+                                onModelsLoaded={() => setMessage("Centralize seu rosto")}
                             />
                         )}
 
