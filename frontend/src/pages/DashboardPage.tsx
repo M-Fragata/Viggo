@@ -309,12 +309,12 @@ function FolhaMensalTab({ company }: { company: CompanyResponse | null }) {
 
           return `
             <tr>
-              <td style="padding:6px 8px;border:1px solid #ddd;text-align:center;font-size:11px;">${dayNum} | ${dayName}</td>
-              <td style="padding:6px 8px;border:1px solid #ddd;text-align:center;font-size:11px;">${data?.entry ?? ""}</td>
-              <td style="padding:6px 8px;border:1px solid #ddd;text-align:center;font-size:11px;">${data?.lunchStart ?? ""}</td>
-              <td style="padding:6px 8px;border:1px solid #ddd;text-align:center;font-size:11px;">${data?.lunchEnd ?? ""}</td>
-              <td style="padding:6px 8px;border:1px solid #ddd;text-align:center;font-size:11px;">${data?.exit ?? ""}</td>
-              <td style="padding:6px 8px;border:1px solid #ddd;text-align:center;font-size:11px;width:100px;"></td>
+              <td style="padding:4px 5px;border:1px solid #ddd;text-align:center;font-size:9px;">${dayNum} | ${dayName}</td>
+              <td style="padding:4px 5px;border:1px solid #ddd;text-align:center;font-size:9px;">${data?.entry ?? ""}</td>
+              <td style="padding:4px 5px;border:1px solid #ddd;text-align:center;font-size:9px;">${data?.lunchStart ?? ""}</td>
+              <td style="padding:4px 5px;border:1px solid #ddd;text-align:center;font-size:9px;">${data?.lunchEnd ?? ""}</td>
+              <td style="padding:4px 5px;border:1px solid #ddd;text-align:center;font-size:9px;">${data?.exit ?? ""}</td>
+              <td style="padding:4px 5px;border:1px solid #ddd;text-align:center;font-size:9px;width:70px;"></td>
             </tr>`;
         }).join("");
 
@@ -329,12 +329,12 @@ function FolhaMensalTab({ company }: { company: CompanyResponse | null }) {
             <table>
               <thead>
                 <tr>
-                  <th style="padding:8px;border:1px solid #ddd;background:#f0f0f0;font-size:11px;">Dia</th>
-                  <th style="padding:8px;border:1px solid #ddd;background:#f0f0f0;font-size:11px;">Entrada</th>
-                  <th style="padding:8px;border:1px solid #ddd;background:#f0f0f0;font-size:11px;">Intervalo Saída</th>
-                  <th style="padding:8px;border:1px solid #ddd;background:#f0f0f0;font-size:11px;">Intervalo Volta</th>
-                  <th style="padding:8px;border:1px solid #ddd;background:#f0f0f0;font-size:11px;">Saída</th>
-                  <th style="padding:8px;border:1px solid #ddd;background:#f0f0f0;font-size:11px;">Assinatura</th>
+                  <th style="padding:5px;border:1px solid #ddd;background:#f0f0f0;font-size:9px;">Dia</th>
+                  <th style="padding:5px;border:1px solid #ddd;background:#f0f0f0;font-size:9px;">Entrada</th>
+                  <th style="padding:5px;border:1px solid #ddd;background:#f0f0f0;font-size:9px;">Intervalo Saída</th>
+                  <th style="padding:5px;border:1px solid #ddd;background:#f0f0f0;font-size:9px;">Intervalo Volta</th>
+                  <th style="padding:5px;border:1px solid #ddd;background:#f0f0f0;font-size:9px;">Saída</th>
+                  <th style="padding:5px;border:1px solid #ddd;background:#f0f0f0;font-size:9px;">Assinatura</th>
                 </tr>
               </thead>
               <tbody>
@@ -361,39 +361,39 @@ function FolhaMensalTab({ company }: { company: CompanyResponse | null }) {
   <meta charset="UTF-8">
   <title>Folha Mensal - ${escapeHtml(companyName)}</title>
   <style>
-    @page { size: A4 landscape; margin: 10mm; }
+    @page { size: A4 portrait; margin: 8mm; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Segoe UI', Arial, sans-serif; color: #333; }
     .page {
       width: 100%;
-      padding: 15px 20px;
+      padding: 10px 12px;
       page-break-after: always;
     }
     .page:last-child { page-break-after: auto; }
     .header {
       border-bottom: 2px solid #10b981;
-      padding-bottom: 8px;
-      margin-bottom: 10px;
+      padding-bottom: 6px;
+      margin-bottom: 8px;
     }
     .company-name {
-      font-size: 18px;
+      font-size: 14px;
       font-weight: bold;
       color: #10b981;
     }
     .cnpj {
-      font-size: 12px;
+      font-size: 10px;
       color: #666;
-      margin-top: 2px;
+      margin-top: 1px;
     }
     .period {
-      font-size: 12px;
+      font-size: 10px;
       color: #666;
-      margin-top: 2px;
+      margin-top: 1px;
     }
     .employee-name {
-      font-size: 13px;
+      font-size: 11px;
       font-weight: bold;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       color: #444;
     }
     table {
@@ -407,8 +407,8 @@ function FolhaMensalTab({ company }: { company: CompanyResponse | null }) {
     .signatures {
       display: flex;
       justify-content: space-between;
-      margin-top: 30px;
-      padding: 0 40px;
+      margin-top: 20px;
+      padding: 0 20px;
     }
     .signature-block {
       text-align: center;
@@ -416,15 +416,15 @@ function FolhaMensalTab({ company }: { company: CompanyResponse | null }) {
     }
     .signature-line {
       border-bottom: 1px solid #333;
-      margin-bottom: 5px;
-      height: 40px;
+      margin-bottom: 4px;
+      height: 30px;
     }
     .signature-label {
-      font-size: 11px;
+      font-size: 9px;
       color: #666;
     }
     .signature-name {
-      font-size: 11px;
+      font-size: 9px;
       color: #333;
       font-weight: bold;
       margin-top: 2px;
