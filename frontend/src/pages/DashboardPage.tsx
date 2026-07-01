@@ -309,7 +309,7 @@ function FolhaMensalTab({ company }: { company: CompanyResponse | null }) {
 
           return `
             <tr>
-              <td style="padding:7px 5px;border:1px solid #ddd;text-align:center;font-size:9px;">${dayNum} | ${dayName}</td>
+              <td style="padding:7px 5px;border:1px solid #ddd;font-size:9px;"><span style="display:inline-block;width:18px;text-align:right;">${dayNum}</span><span style="display:inline-block;width:28px;text-align:left;"> | ${dayName}</span></td>
               <td style="padding:7px 5px;border:1px solid #ddd;text-align:center;font-size:9px;">${data?.entry ?? ""}</td>
               <td style="padding:7px 5px;border:1px solid #ddd;text-align:center;font-size:9px;">${data?.lunchStart ?? ""}</td>
               <td style="padding:7px 5px;border:1px solid #ddd;text-align:center;font-size:9px;">${data?.lunchEnd ?? ""}</td>
@@ -352,8 +352,8 @@ function FolhaMensalTab({ company }: { company: CompanyResponse | null }) {
             <div class="signatures">
               <div class="signature-block">
                 <div class="signature-line"></div>
-                <div class="signature-label">Assinatura do Funcionário</div>
-                <div class="signature-name">${escapeHtml(emp.employeeName)}</div>
+                <div class="signature-label"></div>
+                <div class="signature-name">${escapeHtml(emp.employeeName? emp.employeeName : "Assinatura do Funcionário")}</div>
               </div>
               <div class="signature-block">
                 <div class="signature-line"></div>
@@ -401,7 +401,7 @@ function FolhaMensalTab({ company }: { company: CompanyResponse | null }) {
     .employee-name {
       font-size: 11px;
       font-weight: bold;
-      margin-bottom: 6px;
+      margin-bottom: 10px;
       color: #444;
     }
     table {
