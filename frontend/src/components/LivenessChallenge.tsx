@@ -122,7 +122,7 @@ function FeedbackVisual({
   const targetYPercent = `${targetY * 80}%`;
 
   return (
-    <div className="flex flex-col items-center gap-4 flex-1 justify-end pb-8">
+    <div className="flex flex-col items-center gap-4 flex-1 justify-center">
       <motion.div className="relative w-28 h-28 flex items-center justify-center">
         <motion.svg
           width="120"
