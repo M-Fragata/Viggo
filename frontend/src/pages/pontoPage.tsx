@@ -382,11 +382,11 @@ export function PontoPage() {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 md:gap-6">
-                        <section className="group relative bg-white border border-slate-200 rounded-3xl p-6 md:p-8 flex flex-col items-center gap-6 transition-all hover:shadow-xl hover:shadow-emerald-900/5 shadow-sm hover:border-amber-400">
-                            <ScanFace className="text-amber-500" size={48} />
+                        <section className="group relative bg-white border border-slate-200 rounded-3xl p-6 md:p-8 flex flex-col items-center gap-6 transition-all hover:shadow-xl hover:shadow-emerald-900/5 shadow-sm hover:border-emerald-400">
+                            <ScanFace className="text-emerald-600" size={48} />
                             <div className="text-center">
                                 <h3 className="text-xl font-bold text-slate-800">Registro Facial Pendente</h3>
-                                <p className="text-amber-500 text-xs mt-1">
+                                <p className="text-emerald-600 text-xs mt-1">
                                     Cadastre sua facial para registrar pontos
                                 </p>
                             </div>
@@ -394,7 +394,7 @@ export function PontoPage() {
                             <Button
                                 title="Cadastrar Facial"
                                 onClick={() => window.location.href = "/register"}
-                                className="w-full bg-amber-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-amber-100 transition-all active:scale-95 cursor-pointer hover:bg-amber-600"
+                                className="w-full bg-emerald-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-amber-100 transition-all active:scale-95 cursor-pointer hover:bg-emerald-600"
                             />
                         </section>
                     </div>
