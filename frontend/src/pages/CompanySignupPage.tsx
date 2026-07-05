@@ -101,24 +101,24 @@ export function CompanySignupPage() {
   };
 
   return (
-    <div className="flex items-center justify-center w-dvw h-dvh px-2 py-2">
-      <div className="flex flex-col md:flex-row w-full max-w-5xl rounded-l-2xl shadow-2xl min-h-[500px] md:h-[700px]">
+    <div className="flex items-center justify-center w-dvw h-dvh px-2 py-2 my-67 md:my-0">
+      <div className="flex flex-col md:flex-row w-full max-w-5xl rounded-l-2xl shadow-2xl min-h-[500px] md:h-[700px] ">
         <section className="flex flex-col items-center justify-center bg-emerald-400 w-full md:w-1/2 h-1/3 md:h-full p-8 transition-all duration-500 md:rounded-l-2xl md:rounded-t-none rounded-t-2xl">
           <div className="flex flex-col items-center gap-4 animate-in fade-in slide-in-from-left duration-700 rounded-2xl">
             <span className="text-4xl font-bold text-white">Viggo</span>
-            <p className="text-white/90 text-center max-w-xs">
+            <p className="text-white/90 text-center">
               Crie sua empresa e comece a controlar ponto com reconhecimento facial em minutos.
             </p>
           </div>
         </section>
 
         <main className="flex-1 flex flex-col items-center justify-center p-8 md:p-16 border-emerald-400 border-2 md:rounded-r-2xl md:rounded-b-none rounded-b-2xl overflow-y-auto">
-          <div className="w-full max-w-md space-y-8 animate-in fade-in slide-in-from-right duration-700">
+          <div className="w-full space-y-8 animate-in fade-in slide-in-from-right duration-700">
             <header className="text-center md:text-left">
               <h1 className="text-3xl font-black text-slate-800 tracking-tight">
                 Criar conta da <span className="text-emerald-500">empresa</span>
               </h1>
-              <p className="mt-2 text-slate-600">Preencha os dados para iniciar seu trial de 14 dias</p>
+              <p className="mt-2 text-slate-600">Preencha os dados para iniciar seu trial de 30 dias</p>
             </header>
 
             <form action={formAction} className="space-y-5">
