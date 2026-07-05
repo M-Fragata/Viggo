@@ -6,7 +6,7 @@ const environmentSchema = z.object({
     DATABASE_URL: z.string(),
     JWT_SECRET: z.string(),
     FRONTEND_URL: z.string(),
-    NODE_ENV: z.enum(["DEV", "PROD", "TEST"]).default("DEV")
+    NODE_ENV: z.enum(["DEV", "PROD", "TEST"])
 })
 
 const EnvRaw = environmentSchema.safeParse(process.env)
