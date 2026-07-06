@@ -13,6 +13,7 @@ interface LivenessChallengeProps {
   onCancel: () => void;
   faceDescriptor?: Float32Array;
   onModelsLoaded?: () => void;
+  onStepChange?: (message: string) => void;
 }
 
 const STEP_CONFIG: Record<LivenessStep, {
@@ -227,7 +228,8 @@ export function LivenessChallenge({
   onComplete,
   onCancel,
   faceDescriptor,
-  onModelsLoaded
+  onModelsLoaded,
+  onStepChange
 }: LivenessChallengeProps) {
   const steps: LivenessStep[] = useMemo(() => faceDescriptor
     ? ['front', 'left', 'right']
@@ -266,6 +268,11 @@ export function LivenessChallenge({
   const onModelsLoadedRef = useRef(onModelsLoaded);
   useEffect(() => {
     onModelsLoadedRef.current = onModelsLoaded;
+  });
+
+  const onStepChangeRef = useRef(onStepChange);
+  useEffect(() => {
+    onStepChangeRef.current = onStepChange;
   });
 
   const ballX = useMotionValue(0);
@@ -342,6 +349,13 @@ export function LivenessChallenge({
   }, []);
 
   useEffect(() => {
+    const stepMessages: Record<LivenessStep, string> = {
+      front: 'Centralize seu rosto',
+      left: 'Vire o rosto para a esquerda',
+      right: 'Vire o rosto para a direita',
+    };
+    onStepChangeRef.current?.(stepMessages[steps[currentStepIndex]]);
+
     setBlinkValidated(false);
     setWasCorrectPose(false);
     validationsCountRef.current = 0;
@@ -352,7 +366,7 @@ export function LivenessChallenge({
     if (modelsLoaded && 'vibrate' in navigator) {
       navigator.vibrate(30);
     }
-  }, [currentStepIndex, modelsLoaded, ringMotionVal]);
+  }, [currentStepIndex, modelsLoaded, ringMotionVal, steps]);
 
   const validateDescriptorWithBackend = useCallback(async (descriptor: Float32Array): Promise<{ success: boolean; distance: number }> => {
     try {

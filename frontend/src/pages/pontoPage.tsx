@@ -120,7 +120,6 @@ export function PontoPage() {
                         }
                     });
 
-                    await new Promise(resolve => setTimeout(resolve, 500));
                 }
             } catch (err) {
                 console.error("Erro ao acessar a webcam:", err);
@@ -270,6 +269,7 @@ export function PontoPage() {
                                 onComplete={handleLivenessComplete}
                                 onCancel={handleLivenessCancel}
                                 onModelsLoaded={() => setMessage("Centralize seu rosto")}
+                                onStepChange={(msg) => setMessage(msg)}
                             />
                         )}
 
