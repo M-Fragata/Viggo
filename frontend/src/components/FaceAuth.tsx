@@ -46,8 +46,8 @@ export function FaceAuth({ onAuthenticate }: { onAuthenticate: (descriptor: Floa
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: {
-                        width: { ideal: 320 },
-                        height: { ideal: 240 },
+                        width: { ideal: 640 },
+                        height: { ideal: 480 },
                         facingMode: 'user'
                     }
                 });
