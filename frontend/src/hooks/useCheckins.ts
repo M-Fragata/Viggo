@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { api } from "../services/api";
-import type { CheckinResponse, User } from "../services/api";
+import type { CompanyCheckinEmployee } from "../services/api";
 
 export type FormattedCheckin = {
   employeeId: string;
@@ -39,11 +39,8 @@ export function useCheckins(date: string) {
       setIsLoading(true);
       setError(null);
       try {
-        const [checkinsData, usageData] = await Promise.all([
-          api.checkins.list(date),
-          api.company.getUsage(),
-        ]);
-        const formatted = formatCheckins(checkinsData, usageData.employees.users);
+        const data = await api.checkins.listByCompany(date);
+        const formatted = formatCheckins(data);
         setCheckins(formatted);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Erro ao buscar check-ins");
@@ -59,41 +56,31 @@ export function useCheckins(date: string) {
   return { checkins, isLoading, error };
 }
 
-export function formatCheckins(data: CheckinResponse[], users: User[]): FormattedCheckin[] {
-  const userMap: Record<string, string> = {};
-  users.forEach((user) => {
-    userMap[user.id] = user.name;
-  });
+export function formatCheckins(data: CompanyCheckinEmployee[]): FormattedCheckin[] {
+  const typeMap: Record<string, keyof Omit<FormattedCheckin, "employeeId" | "employeeName">> = {
+    ENTRY: "entrada",
+    LUNCH_START: "almoco",
+    LUNCH_END: "retorno",
+    EXIT: "saida",
+  };
 
-  const employeeMap: Record<string, FormattedCheckin> = {};
-
-  data.forEach((checkin) => {
-    if (!employeeMap[checkin.userId]) {
-      employeeMap[checkin.userId] = {
-        employeeId: checkin.userId,
-        employeeName: userMap[checkin.userId] || checkin.userId,
-      };
-    }
-
-    const typeMap: Record<string, keyof Omit<FormattedCheckin, "employeeId" | "employeeName">> = {
-      ENTRY: "entrada",
-      LUNCH_START: "almoco",
-      LUNCH_END: "retorno",
-      EXIT: "saida",
+  return data.map((emp) => {
+    const formatted: FormattedCheckin = {
+      employeeId: emp.employeeId,
+      employeeName: emp.employeeName,
     };
 
-    const key = typeMap[checkin.type];
-    if (key) {
-      employeeMap[checkin.userId] = {
-        ...employeeMap[checkin.userId],
-        [key]: {
+    emp.checkins.forEach((checkin) => {
+      const key = typeMap[checkin.type];
+      if (key) {
+        formatted[key] = {
           timestamp: checkin.createdAt,
           lat: checkin.latitude,
           lng: checkin.longitude,
-        },
-      };
-    }
-  });
+        };
+      }
+    });
 
-  return Object.values(employeeMap);
+    return formatted;
+  });
 }

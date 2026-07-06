@@ -117,6 +117,66 @@ export class CheckinController {
 
     }
 
+    async listByCompany(req: Request, res: Response) {
+
+        const paramsSchema = z.object({
+            date: z.string().optional()
+        })
+
+        try {
+            const { date } = paramsSchema.parse(req.query);
+
+            const companyId = req.user.companyId;
+            if (!companyId) {
+                return res.status(403).json({ message: "Acesso negado" });
+            }
+
+            const hoje = date || new Date().toISOString()
+            const parsedDate = parseISO(hoje)
+
+            const employees = await extendedPrisma.user.findMany({
+                where: { companyId },
+                select: { id: true, name: true },
+            });
+
+            const checkins = await extendedPrisma.checkIn.findMany({
+                where: {
+                    companyId,
+                    createdAt: {
+                        gte: startOfDay(parsedDate),
+                        lte: endOfDay(parsedDate),
+                    },
+                },
+                orderBy: { createdAt: "asc" },
+            });
+
+            const result = employees.map((emp) => ({
+                employeeId: emp.id,
+                employeeName: emp.name,
+                checkins: checkins
+                    .filter((c) => c.userId === emp.id)
+                    .map((c) => ({
+                        id: c.id,
+                        createdAt: c.createdAt.toISOString(),
+                        type: c.type,
+                        latitude: c.latitude,
+                        longitude: c.longitude,
+                    })),
+            }));
+
+            return res.status(200).json(result);
+
+        } catch (error) {
+            console.error("Erro ao buscar pontos da empresa:", error);
+
+            if (error instanceof z.ZodError) {
+                return res.status(400).json({ message: "Parâmetros inválidos", errors: error.issues });
+            }
+            return res.status(500).json({ message: "Erro interno ao buscar os pontos. Tente novamente." });
+        }
+
+    }
+
     async listMonthly(req: Request, res: Response) {
 
         const paramsSchema = z.object({

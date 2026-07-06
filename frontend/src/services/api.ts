@@ -125,6 +125,8 @@ export const api = {
       }),
     list: (date?: string) =>
       fetchApi<CheckinResponse[]>(`/checkins${date ? `?date=${date}` : ""}`),
+    listByCompany: (date?: string) =>
+      fetchApi<CompanyCheckinEmployee[]>(`/checkins/company${date ? `?date=${date}` : ""}`),
     listMonthly: (year: number, month: number) =>
       fetchApi<MonthlyCheckinEmployee[]>(`/checkins/month?year=${year}&month=${month}`),
   },
@@ -408,6 +410,18 @@ export interface MonthlyCheckinEmployee {
     id: string;
     createdAt: string;
     type: "ENTRY" | "LUNCH_START" | "LUNCH_END" | "EXIT";
+  }[];
+}
+
+export interface CompanyCheckinEmployee {
+  employeeId: string;
+  employeeName: string;
+  checkins: {
+    id: string;
+    createdAt: string;
+    type: "ENTRY" | "LUNCH_START" | "LUNCH_END" | "EXIT";
+    latitude: number;
+    longitude: number;
   }[];
 }
 
