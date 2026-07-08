@@ -150,19 +150,21 @@ export class CheckinController {
                 orderBy: { createdAt: "asc" },
             });
 
-            const result = employees.map((emp) => ({
-                employeeId: emp.id,
-                employeeName: emp.name,
-                checkins: checkins
-                    .filter((c) => c.userId === emp.id)
-                    .map((c) => ({
-                        id: c.id,
-                        createdAt: c.createdAt.toISOString(),
-                        type: c.type,
-                        latitude: c.latitude,
-                        longitude: c.longitude,
-                    })),
-            }));
+            const result = employees
+                .map((emp) => ({
+                    employeeId: emp.id,
+                    employeeName: emp.name,
+                    checkins: checkins
+                        .filter((c) => c.userId === emp.id)
+                        .map((c) => ({
+                            id: c.id,
+                            createdAt: c.createdAt.toISOString(),
+                            type: c.type,
+                            latitude: c.latitude,
+                            longitude: c.longitude,
+                        })),
+                }))
+                .filter((emp) => emp.checkins.length > 0);
 
             return res.status(200).json(result);
 
