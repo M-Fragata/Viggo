@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { api, type MasterListParams, type MasterCompaniesResponse, type MasterMetricsResponse, type PlanTier, type CompanyStatus } from "../services/api";
+import { api, type MasterListParams, type MasterCompaniesResponse, type MasterCompanyDetail, type MasterMetricsResponse, type PlanTier, type CompanyStatus } from "../services/api";
 import { useToast } from "./useToast";
 
 export function useMasterCompanies() {
@@ -30,6 +30,27 @@ export function useMasterCompanies() {
     error,
     fetchCompanies,
   };
+}
+
+export function useMasterCompany(id: string) {
+  const [company, setCompany] = useState<MasterCompanyDetail | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchCompany = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const result = await api.master.getCompany(id);
+      setCompany(result);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao carregar empresa");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id]);
+
+  return { company, isLoading, error, fetchCompany };
 }
 
 export function useMasterMetrics() {

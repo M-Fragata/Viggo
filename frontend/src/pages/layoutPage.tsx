@@ -4,15 +4,17 @@ import { LogOut, Menu, X } from "lucide-react";
 
 import logo from "../assets/logo.png"
 import { useAuth } from "../hooks/useAuth";
+import { ImpersonationBanner } from "../components/master/ImpersonationBanner";
 
 export function LayoutPage() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const { name, logout } = useAuth();
+    const { name, logout, isImpersonated } = useAuth();
 
     const closeMenu = () => setIsMenuOpen(false);
 
     return (
         <div className="min-h-screen flex flex-col overflow-hidden bg-gray-50 relative">
+            <ImpersonationBanner />
 
             {/* OVERLAY: Aparece apenas quando o menu está aberto */}
             {isMenuOpen && (
@@ -23,7 +25,7 @@ export function LayoutPage() {
             )}
 
             {/* HEADER */}
-            <header className="bg-white border-b border-gray-200 py-2 px-6 shadow-sm sticky top-0 z-32">
+            <header className={`bg-white border-b border-gray-200 py-2 px-6 shadow-sm sticky z-32 ${isImpersonated ? "top-16" : "top-0"}`}>
                 <div className="max-w-7xl mx-auto flex justify-between items-center">
                     {/* LOGO */}
                     <div>

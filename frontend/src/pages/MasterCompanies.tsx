@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
-import { Search, MoreVertical, Building2, CheckCircle, Clock, XCircle, UserCheck, Loader2 } from "lucide-react";
-import { useMasterCompanies, useMasterActions } from "../hooks/useMaster";
+import { Search, Building2, ChevronDown, ChevronUp, Settings } from "lucide-react";
+import { useMasterCompanies } from "../hooks/useMaster";
 import { PlanBadge, TrialCountdown } from "../components/plan";
-import { useToast } from "../hooks/useToast";
-import { useAuth } from "../hooks/useAuth";
 import type { CompanyStatus, PlanTier } from "../services/api";
+import { useNavigate } from "react-router";
 
 const STATUS_LABELS: Record<CompanyStatus, string> = {
   TRIAL: "Trial",
@@ -22,73 +21,18 @@ const STATUS_COLORS: Record<CompanyStatus, string> = {
 
 export function MasterCompanies() {
   const { companies, pagination, isLoading, error, fetchCompanies } = useMasterCompanies();
-  const { updatePlan, updateStatus, extendTrial, impersonate } = useMasterActions();
-  const { toast } = useToast();
-  const { isMaster } = useAuth();
+  const navigate = useNavigate();
 
   const [page, setPage] = useState(1);
   const [limit] = useState(20);
   const [statusFilter, setStatusFilter] = useState<CompanyStatus | "">("");
   const [planFilter, setPlanFilter] = useState<PlanTier | "">("");
   const [search, setSearch] = useState("");
-  const [showActions, setShowActions] = useState<string | null>(null);
-  const [actionCompany, setActionCompany] = useState<{ id: string; name: string } | null>(null);
-  const [extendDays, setExtendDays] = useState(7);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCompanies({ page, limit, status: statusFilter || undefined, plan: planFilter || undefined, search: search || undefined });
   }, [page, statusFilter, planFilter, search, fetchCompanies]);
-
-  const handleStatusChange = async (newStatus: CompanyStatus) => {
-    if (!actionCompany) return;
-    try {
-      await updateStatus(actionCompany.id, newStatus);
-      toast.success("Status alterado", { description: `${actionCompany.name} agora está ${STATUS_LABELS[newStatus].toLowerCase()}` });
-      setShowActions(null);
-      setActionCompany(null);
-      fetchCompanies({ page, limit, status: statusFilter || undefined, plan: planFilter || undefined, search: search || undefined });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao alterar status");
-    }
-  };
-
-  const handlePlanChange = async (newPlan: PlanTier) => {
-    if (!actionCompany) return;
-    try {
-      await updatePlan(actionCompany.id, newPlan);
-      toast.success("Plano alterado", { description: `${actionCompany.name} agora no ${newPlan}` });
-      setShowActions(null);
-      setActionCompany(null);
-      fetchCompanies({ page, limit, status: statusFilter || undefined, plan: planFilter || undefined, search: search || undefined });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao alterar plano");
-    }
-  };
-
-  const handleExtendTrial = async () => {
-    if (!actionCompany) return;
-    try {
-      await extendTrial(actionCompany.id, extendDays);
-      toast.success("Trial estendido", { description: `${extendDays} dias adicionados para ${actionCompany.name}` });
-      setShowActions(null);
-      setActionCompany(null);
-      fetchCompanies({ page, limit, status: statusFilter || undefined, plan: planFilter || undefined, search: search || undefined });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao estender trial");
-    }
-  };
-
-  const handleImpersonate = async () => {
-    if (!actionCompany) return;
-    try {
-      const result = await impersonate(actionCompany.id, actionCompany.name);
-      const { startImpersonation } = await import("../hooks/useAuth").then(m => m.useAuth());
-      startImpersonation(result.token, result.user, result.companyName);
-      window.location.href = "/";
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao iniciar impersonação");
-    }
-  };
 
   if (isLoading) {
     return (
@@ -110,9 +54,6 @@ export function MasterCompanies() {
           <p className="text-slate-500 text-sm">Gerencie todas as empresas da plataforma</p>
         </div>
         <div className="flex gap-2 items-center">
-          {isLoading && companies.length > 0 && (
-            <Loader2 className="w-4 h-4 text-emerald-500 animate-spin" />
-          )}
           <span className="text-sm text-slate-500">{pagination?.total ?? 0} empresas</span>
         </div>
       </header>
@@ -156,19 +97,93 @@ export function MasterCompanies() {
         </div>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
+      {/* Mobile View */}
+      <div className="sm:hidden space-y-3">
+        {companies.length === 0 ? (
+          <div className="bg-white border border-slate-200 rounded-3xl shadow-sm p-8 text-center text-slate-400">
+            Nenhuma empresa encontrada
+          </div>
+        ) : (
+          companies.map((company) => {
+            const isExpanded = expandedId === company.id;
+            return (
+              <div key={company.id} className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+                <div
+                  onClick={() => setExpandedId(isExpanded ? null : company.id)}
+                  className="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
+                      <Building2 className="w-5 h-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <span className="font-semibold text-slate-800 block">{company.name}</span>
+                      <span className="text-xs text-slate-400">{company.cnpj ?? "Sem CNPJ"}</span>
+                    </div>
+                  </div>
+                  {isExpanded ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
+                </div>
+                {isExpanded && (
+                  <div className="px-4 pb-4 border-t border-slate-100 pt-3 space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Plano</span>
+                        <PlanBadge plan={company.plan} size="sm" />
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Status</span>
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-medium bg-${STATUS_COLORS[company.status]}-50 text-${STATUS_COLORS[company.status]}-700`}>
+                          {STATUS_LABELS[company.status]}
+                        </span>
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Funcionários</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-xl text-xs">
+                          {company.employeesCount}/{company.maxEmployees === null ? "∞" : company.maxEmployees}
+                        </span>
+                        <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${company.employeeUsagePercent}%` }} />
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Validade</span>
+                      <TrialCountdown planExpiresAt={company.planExpiresAt} status={company.status} size="sm" />
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/master/companies/${company.id}`);
+                      }}
+                      className="w-full mt-2 px-4 py-2.5 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors font-bold flex items-center justify-center gap-2"
+                    >
+                      <Settings size={16} />
+                      Gerenciar
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Desktop View */}
+      <div className="hidden sm:block bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100 text-slate-400 text-xs font-bold uppercase tracking-wider">
                 <th className="p-4 w-12"></th>
-                <th className="p-4 w-[30%] min-w-[200px]">Empresa</th>
-                <th className="p-4 w-[15%] min-w-[140px]">CNPJ</th>
-                <th className="p-4 w-[12%] min-w-[100px]">Plano</th>
+                <th className="p-4 w-[25%] min-w-[180px]">Empresa</th>
+                <th className="p-4 w-[15%] min-w-[130px]">CNPJ</th>
+                <th className="p-4 w-[10%] min-w-[90px]">Plano</th>
                 <th className="p-4 w-[12%] min-w-[100px]">Status</th>
                 <th className="p-4 w-[15%] min-w-[120px]">Funcionários</th>
-                <th className="p-4 w-[12%] min-w-[100px]">Trial/Validade</th>
-                <th className="p-4 w-16 text-right">Ações</th>
+                <th className="p-4 w-[15%] min-w-[120px]">Validade</th>
+                <th className="p-4 w-[10%] min-w-[100px] text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-sm text-slate-600">
@@ -199,7 +214,7 @@ export function MasterCompanies() {
                         <span className="font-mono font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-xl text-xs">
                           {company.employeesCount}/{company.maxEmployees === null ? "∞" : company.maxEmployees}
                         </span>
-                        <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden max-w-[100px]">
+                        <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden max-w-[80px]">
                           <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${company.employeeUsagePercent}%` }} />
                         </div>
                       </div>
@@ -208,91 +223,13 @@ export function MasterCompanies() {
                       <TrialCountdown planExpiresAt={company.planExpiresAt} status={company.status} size="sm" />
                     </td>
                     <td className="p-4 text-right">
-                      <div className="relative">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setShowActions(showActions === company.id ? null : company.id);
-                            setActionCompany({ id: company.id, name: company.name });
-                          }}
-                          className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
-                        >
-                          <MoreVertical size={20} />
-                        </button>
-                        {showActions === company.id && (
-                          <>
-                            <div className="fixed inset-0 z-40" onClick={() => setShowActions(null)} />
-                            <div className="absolute right-0 top-full mt-1 z-50 w-56 bg-white border border-slate-200 rounded-xl shadow-lg py-1 animate-in zoom-in-95">
-                              <button
-                                onClick={() => handleStatusChange("ACTIVE")}
-                                className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 hover:bg-slate-50 ${company.status === "ACTIVE" ? "text-slate-400" : "text-emerald-600"}`}
-                              >
-                                <CheckCircle size={16} /> Ativar
-                              </button>
-                              <button
-                                onClick={() => handleStatusChange("SUSPENDED")}
-                                className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 hover:bg-slate-50 ${company.status === "SUSPENDED" ? "text-slate-400" : "text-amber-600"}`}
-                              >
-                                <Clock size={16} /> Suspender
-                              </button>
-                              <button
-                                onClick={() => handleStatusChange("CANCELLED")}
-                                className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 hover:bg-slate-50 ${company.status === "CANCELLED" ? "text-slate-400" : "text-red-600"}`}
-                              >
-                                <XCircle size={16} /> Cancelar
-                              </button>
-                              <hr className="my-1 border-slate-100" />
-                              <div className="px-3 py-2 space-y-2">
-                                <p className="text-xs font-medium text-slate-500">Alterar Plano</p>
-                                {["TIER_I", "TIER_II", "TIER_III", "ENTERPRISE_CUSTOM"].map((p) => (
-                                  <button
-                                    key={p}
-                                    onClick={() => handlePlanChange(p as PlanTier)}
-                                    className={`w-full px-3 py-1.5 text-left text-xs rounded-lg hover:bg-slate-50 ${company.plan === p ? "bg-emerald-50 text-emerald-600" : "text-slate-600"}`}
-                                  >
-                                    {p.replace("TIER_", "Tier ").replace("ENTERPRISE_CUSTOM", "Enterprise")}
-                                  </button>
-                                ))}
-                              </div>
-                              {isMaster && (
-                                <>
-                                  <hr className="my-1 border-slate-100" />
-                                  <button
-                                    onClick={handleImpersonate}
-                                    className="w-full px-4 py-2 text-left text-sm flex items-center gap-2 hover:bg-slate-50 text-emerald-600"
-                                  >
-                                    <UserCheck size={16} /> Impersonar
-                                  </button>
-                                </>
-                              )}
-                              {company.status === "TRIAL" && (
-                                <>
-                                  <hr className="my-1 border-slate-100" />
-                                  <div className="px-3 py-2 space-y-2">
-                                    <p className="text-xs font-medium text-slate-500">Estender Trial</p>
-                                    <div className="flex gap-2">
-                                      <input
-                                        type="number"
-                                        min="1"
-                                        max="90"
-                                        value={extendDays}
-                                        onChange={(e) => setExtendDays(parseInt(e.target.value) || 7)}
-                                        className="flex-1 px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:border-emerald-400 outline-none"
-                                      />
-                                      <button
-                                        onClick={handleExtendTrial}
-                                        className="px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-xs hover:bg-emerald-600"
-                                      >
-                                        Aplicar
-                                      </button>
-                                    </div>
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                          </>
-                        )}
-                      </div>
+                      <button
+                        onClick={() => navigate(`/master/companies/${company.id}`)}
+                        className="px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors font-medium text-xs flex items-center gap-1.5 ml-auto"
+                      >
+                        <Settings size={14} />
+                        Gerenciar
+                      </button>
                     </td>
                   </tr>
                 ))

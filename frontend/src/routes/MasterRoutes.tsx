@@ -3,6 +3,7 @@ import { lazy } from "react";
 import { MasterLayout } from "../components/master/MasterLayout";
 import { MasterDashboard } from "../pages/MasterDashboard";
 import { MasterCompanies } from "../pages/MasterCompanies";
+import { CompanyManagePage } from "../pages/CompanyManagePage";
 import { useAuth } from "../hooks/useAuth";
 
 const LandingPage = lazy(() => import("../pages/LandingPage").then((m) => ({ default: m.LandingPage })));
@@ -18,6 +19,7 @@ export function MasterRoutes() {
       <Route path="/master" element={<MasterLayout />}>
         <Route index element={<MasterDashboard />} />
         <Route path="companies" element={<MasterCompanies />} />
+        <Route path="companies/:id" element={<CompanyManagePage />} />
       </Route>
     </Routes>
   );
