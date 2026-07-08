@@ -460,7 +460,7 @@ function FolhaMensalTab({ company }: { company: CompanyResponse | null }) {
       }
     } catch (error) {
       console.error("Erro ao gerar folha mensal:", error);
-      alert("Erro ao gerar folha mensal. Tente novamente.");
+      alert(error instanceof Error ? error.message : "Erro ao gerar folha mensal. Tente novamente.");
     } finally {
       setIsGenerating(false);
     }

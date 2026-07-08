@@ -34,7 +34,7 @@ export function PontoViewPage() {
 
         } catch (error) {
             console.error("Erro ao buscar os pontos:", error);
-            alert("Erro ao buscar os pontos. Tente novamente.");
+            alert(error instanceof Error ? error.message : "Erro ao buscar os pontos. Tente novamente.");
         } finally {
             setIsLoadingCheckins(false)
         }

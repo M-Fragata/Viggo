@@ -47,8 +47,8 @@ export function MasterCompanies() {
       setShowActions(null);
       setActionCompany(null);
       fetchCompanies({ page, limit, status: statusFilter || undefined, plan: planFilter || undefined, search: search || undefined });
-    } catch {
-      toast.error("Erro ao alterar status");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao alterar status");
     }
   };
 
@@ -60,8 +60,8 @@ export function MasterCompanies() {
       setShowActions(null);
       setActionCompany(null);
       fetchCompanies({ page, limit, status: statusFilter || undefined, plan: planFilter || undefined, search: search || undefined });
-    } catch {
-      toast.error("Erro ao alterar plano");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao alterar plano");
     }
   };
 
@@ -73,8 +73,8 @@ export function MasterCompanies() {
       setShowActions(null);
       setActionCompany(null);
       fetchCompanies({ page, limit, status: statusFilter || undefined, plan: planFilter || undefined, search: search || undefined });
-    } catch {
-      toast.error("Erro ao estender trial");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao estender trial");
     }
   };
 
@@ -85,8 +85,8 @@ export function MasterCompanies() {
       const { startImpersonation } = await import("../hooks/useAuth").then(m => m.useAuth());
       startImpersonation(result.token, result.user, result.companyName);
       window.location.href = "/";
-    } catch {
-      toast.error("Erro ao iniciar impersonação");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao iniciar impersonação");
     }
   };
 

@@ -145,10 +145,10 @@ export const api = {
     },
     getCompany: (id: string) => fetchApi<MasterCompanyDetail>(`/master/companies/${id}`),
     getMetrics: () => fetchApi<MasterMetricsResponse>("/master/metrics"),
-    updatePlan: (id: string, planTier: PlanTier) =>
+    updatePlan: (id: string, plan: PlanTier) =>
       fetchApi<{ company: Company }>(`/master/companies/${id}/plan`, {
         method: "PUT",
-        body: JSON.stringify({ planTier }),
+        body: JSON.stringify({ plan }),
       }),
     updateStatus: (id: string, status: CompanyStatus) =>
       fetchApi<{ company: Company }>(`/master/companies/${id}/status`, {

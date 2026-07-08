@@ -29,8 +29,8 @@ export function InvitesTab() {
     try {
       await createToken({ expiresInDays: 7, maxUses: null });
       toast.success("Link de convite gerado com sucesso!");
-    } catch {
-      toast.error("Erro ao gerar link de convite");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao gerar link de convite");
     } finally {
       setIsGenerating(false);
     }

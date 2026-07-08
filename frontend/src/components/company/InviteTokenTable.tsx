@@ -40,8 +40,8 @@ export function InviteTokenTable({ tokens, onRevoke, onCopy }: InviteTokenTableP
     try {
       onRevoke(id);
       toast.success("Token revogado");
-    } catch {
-      toast.error("Erro ao revogar token");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao revogar token");
     } finally {
       setRevokingId(null);
     }

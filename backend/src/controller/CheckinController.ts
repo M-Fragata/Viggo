@@ -23,7 +23,7 @@ export class CheckinController {
                 }
             })
 
-            if (!user) return res.status(404).json({ message: "User not found" })
+            if (!user) return res.status(404).json({ message: "Usuário não encontrado" })
 
             const { type, latitude, longitude } = bodySchema.parse(req.body);
 
@@ -64,7 +64,7 @@ export class CheckinController {
             console.error("Erro ao registrar ponto:", error);
 
             if (error instanceof z.ZodError) {
-                return res.status(400).json({ message: "Invalid request body", errors: error.issues })
+                return res.status(400).json({ message: "Dados inválidos", errors: error.issues })
             }
             return res.status(500).json({ message: "Erro interno ao registrar o ponto. Tente novamente." })
         }
@@ -88,7 +88,7 @@ export class CheckinController {
                 }
             })
 
-            if (!user) return res.status(404).json({ message: "User not found" })
+            if (!user) return res.status(404).json({ message: "Usuário não encontrado" })
 
             const hoje = date || new Date().toISOString()
 
@@ -110,7 +110,7 @@ export class CheckinController {
             console.error("Erro ao buscar pontos:", error);
 
             if (error instanceof z.ZodError) {
-                return res.status(400).json({ message: "Invalid request body", errors: error.issues })
+                return res.status(400).json({ message: "Parâmetros inválidos", errors: error.issues })
             }
             return res.status(500).json({ message: "Erro interno ao buscar os pontos. Tente novamente." })
         }

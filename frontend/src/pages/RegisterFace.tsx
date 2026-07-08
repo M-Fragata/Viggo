@@ -89,7 +89,7 @@ export function RegisterFace() {
 
         } catch (error) {
             console.error("Erro ao salvar cadastro:", error);
-            setMessage("Erro ao salvar. Tente novamente.");
+            setMessage(error instanceof Error ? error.message : "Erro ao salvar. Tente novamente.");
             setIsRegistering(false);
         }
     };

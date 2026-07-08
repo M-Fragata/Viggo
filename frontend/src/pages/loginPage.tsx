@@ -41,8 +41,9 @@ export function LoginPage() {
       } else {
         navigate("/");
       }
-    } catch {
-      return { message: "Erro ao fazer login, tente novamente em alguns segundos!", payload };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erro ao fazer login, tente novamente";
+      return { message, payload };
     }
   }
 

@@ -83,11 +83,11 @@ export class SessionController {
                 }
             })
 
-            if (!user) return res.status(400).json({ message: "Email e/ou senha incorretos" });
+            if (!user) return res.status(400).json({ message: "Email e/ou senha incorreto(s), tente novamente" });
 
             const verifyPassword = await bcrypt.compare(password, user.password);
 
-            if (!verifyPassword) return res.status(400).json({ message: "Email e/ou senha incorretos" });
+            if (!verifyPassword) return res.status(400).json({ message: "Email e/ou senha incorreto(s), tente novamente" });
 
             const companyUser = await prisma.company.findUnique({
                 where: { id: user.companyId }
@@ -125,7 +125,7 @@ export class SessionController {
             if (error instanceof z.ZodError) {
                 return res.status(400).json({ message: "Dados inválidos", errors: error.issues });
             }
-            return res.status(500).json({ message: "Erro ao fazer login no BACKEND, tente novamente em alguns segundos!" });
+            return res.status(500).json({ message: "Erro interno no servidor, tente novamente mais tarde" });
         }
 
 
@@ -151,9 +151,7 @@ export class SessionController {
                 where: { id: userId }
             })
 
-            if (!user) return res.status(404).json({ error: "User not found" })
-
-            if (!faceDescriptor) return res.status(404).json({ error: "faceDescriptor not found" })
+            if (!user) return res.status(404).json({ message: "Usuário não encontrado" })
 
             await prisma.user.update({
                 where: {
@@ -169,10 +167,10 @@ export class SessionController {
         } catch (error) {
 
             if (error instanceof z.ZodError) {
-                return res.status(400).json({ error: "Dados inválidos." })
+                return res.status(400).json({ message: "Dados inválidos" })
             }
 
-            return res.status(500).json({ error: "Erro ao salvar face." });
+            return res.status(500).json({ message: "Erro ao salvar face" });
 
         }
 

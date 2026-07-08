@@ -69,7 +69,7 @@ export function PontoPage() {
                     console.error("Erro de validação:", error.issues);
                 } else {
                     console.error("Erro ao preparar check-in:", error);
-                    alert("Erro ao preparar check-in. Tente novamente.");
+                    alert(error instanceof Error ? error.message : "Erro ao preparar check-in. Tente novamente.");
                 }
                 setPendingCheckin(null);
                 setIsPreparingCheckin(false);
@@ -185,7 +185,7 @@ export function PontoPage() {
             setVideoOpen(false);
             setPendingCheckin(null);
             setLivenessDescriptor(null);
-            setMessage("Erro ao registrar o ponto. Tente novamente.");
+            setMessage(error instanceof Error ? error.message : "Erro ao registrar o ponto. Tente novamente.");
         }
     }
 
@@ -209,7 +209,7 @@ export function PontoPage() {
 
         } catch (error) {
             console.error("Erro ao buscar os pontos:", error);
-            alert("Erro ao buscar os pontos. Tente novamente.");
+            alert(error instanceof Error ? error.message : "Erro ao buscar os pontos. Tente novamente.");
         } finally {
             setIsLoadingCheckins(false)
         }
