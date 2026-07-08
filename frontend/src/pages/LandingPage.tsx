@@ -109,7 +109,7 @@ export function LandingPage() {
                     Começar trial de {TRIAL_DAYS} dias
                   </Link>
                   <Link
-                    to="/login"
+                    to="/"
                     className="rounded-full border border-slate bg-white/10 px-8 py-3.5 text-sm font-medium text-on-dark hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-dark transition-colors"
                   >
                     Já tenho conta

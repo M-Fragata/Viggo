@@ -69,7 +69,7 @@ export function CompanySignupPage() {
       });
 
       setSession(response.user, response.token, response.company.name);
-      navigate("/admin");
+      navigate("/");
     } catch (error) {
       const err = error as Error;
       if (err.message.includes("Dados inválidos")) {
@@ -266,7 +266,7 @@ export function CompanySignupPage() {
                   className="w-full bg-emerald-400 hover:bg-emerald-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-emerald-200 transition-all active:scale-[0.98] disabled:bg-slate-200 disabled:shadow-none uppercase tracking-widest text-xs cursor-pointer"
                 />
                 <Link
-                  to="/login"
+                  to="/"
                   className="text-center text-slate-600 hover:text-emerald-500 text-sm transition-colors"
                 >
                   Já tem conta? Fazer login

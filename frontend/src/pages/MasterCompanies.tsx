@@ -84,7 +84,7 @@ export function MasterCompanies() {
       const result = await impersonate(actionCompany.id, actionCompany.name);
       const { startImpersonation } = await import("../hooks/useAuth").then(m => m.useAuth());
       startImpersonation(result.token, result.user, result.companyName);
-      window.location.href = "/admin";
+      window.location.href = "/";
     } catch {
       toast.error("Erro ao iniciar impersonação");
     }

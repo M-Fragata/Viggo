@@ -37,7 +37,7 @@ export function LoginPage() {
       if (user.role === "MASTER") {
         navigate("/master");
       } else if (user.role === "ENTERPRISE_ADMIN") {
-        navigate("/admin");
+        navigate("/");
       } else {
         navigate("/");
       }

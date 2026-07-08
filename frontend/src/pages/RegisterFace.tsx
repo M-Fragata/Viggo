@@ -85,7 +85,7 @@ export function RegisterFace() {
             setIsSuccess(true);
             setMessage("Cadastro facial concluído!");
 
-            window.location.href = "/";
+            window.location.href = "/ponto";
 
         } catch (error) {
             console.error("Erro ao salvar cadastro:", error);
@@ -97,7 +97,7 @@ export function RegisterFace() {
     const handleLivenessCancel = () => {
         setShowLiveness(false);
         setVideoOpen(false);
-        window.location.href = "/";
+        window.location.href = "/ponto";
     };
 
     if (!videoOpen && !check) {

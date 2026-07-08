@@ -12,8 +12,8 @@ export function AuthRoutes() {
   return (
     <Suspense fallback={<Loading />}>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage />} />
+        <Route path="/" element={<LoginPage />} />
+        <Route path="/page" element={<LandingPage />} />
         <Route path="/company/signup" element={<CompanySignupPage />} />
         <Route path="/accept-invite/:token" element={<AcceptInvitePage />} />
         <Route path="/planos/custom" element={<CustomPlanPage />} />
