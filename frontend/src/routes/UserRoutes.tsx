@@ -5,6 +5,7 @@ import { PontoPage } from "../pages/pontoPage";
 import { PontoViewPage } from "../pages/pontoViewPage";
 import { RegisterFace } from "../pages/RegisterFace";
 import { useAuth } from "../hooks/useAuth";
+import { NotFoundPage } from "../pages/NotFoundPage";
 
 const LandingPage = lazy(() => import("../pages/LandingPage").then((m) => ({ default: m.LandingPage })));
 
@@ -22,6 +23,7 @@ export function UserRoutes() {
         <Route path="pontos" element={<PontoViewPage />} />
         <Route path="register" element={<RegisterFace />} />
       </Route>
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }

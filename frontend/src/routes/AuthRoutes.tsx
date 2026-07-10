@@ -1,6 +1,7 @@
 import { Routes, Route } from "react-router";
 import { lazy, Suspense } from "react";
 import { Loading } from "../components/Loading";
+import { NotFoundPage } from "../pages/NotFoundPage";
 
 const LandingPage = lazy(() => import("../pages/LandingPage").then((m) => ({ default: m.LandingPage })));
 const LoginPage = lazy(() => import("../pages/loginPage").then((m) => ({ default: m.LoginPage })));
@@ -17,6 +18,7 @@ export function AuthRoutes() {
         <Route path="/company/signup" element={<CompanySignupPage />} />
         <Route path="/accept-invite/:token" element={<AcceptInvitePage />} />
         <Route path="/planos/custom" element={<CustomPlanPage />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>
   );
