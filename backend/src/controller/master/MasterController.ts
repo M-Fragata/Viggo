@@ -236,6 +236,9 @@ export class MasterController {
         },
         ip: req.ip ?? null,
         userAgent: req.get('user-agent') ?? null,
+        legalBasis: 'Art. 7º, IX — Legítimo interesse',
+        purpose: 'Acesso administrativo para suporte e manutenção',
+        personalDataCategories: ['IDENTIFICACAO'],
       });
 
       return res.json({

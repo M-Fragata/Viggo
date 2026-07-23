@@ -170,6 +170,9 @@ export class PrivacyController {
           entityId: true,
           createdAt: true,
           ip: true,
+          legalBasis: true,
+          purpose: true,
+          personalDataCategories: true,
         },
       });
 
