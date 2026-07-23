@@ -78,6 +78,7 @@ Foram implementados 5 findings (Sprint 1, parcial):
 | **F6** | Comprovante imediato (Anexo III) — `comprovanteGenerator.ts` com SHA-256, exibido no frontend | ✅ Implementado |
 | **F9** | Termos de Uso + Política de Privacidade — páginas, checkbox cadastro, `Consentimento` model + `ConsentController` | ✅ Implementado |
 | **F10** | Consentimento biométrico (Art. 11 LGPD) — checkbox específico + `Consentimento` model, salvo no signup | ✅ Implementado |
+| **F19** | Política de retenção/deleção — `UserStatus`, `deactivatedAt`, `POLITICA_RETENCAO.md`, `retentionCleanup.ts` (cron 02:00) | ✅ Implementado |
 
 Migrations aplicadas: `f4_cnpj_obrigatorio`, `f3f17_nsr_anual`, `f18_employer_cnpj_snapshot`.
 Backend build: ✅ passando. Frontend build: ✅ passando.
@@ -1531,113 +1532,27 @@ snapshot imutável no `CheckIn.employerCnpj`.
 > **Art. 16, LGPD:** "Os dados devem ser eliminados após o término do
 > tratamento, ressalvadas as hipóteses de manutenção previstas em lei."
 
-**Status:** NÃO IMPLEMENTADO
+**Status:** ✅ IMPLEMENTADO (23/07/2026)
 
-**Impacto:** Não existe política de retenção/deleção para:
-- `User.faceDescriptor` após término do vínculo empregatício
-- `CheckIn` após o prazo legal (CLT Art. 74: 5 anos)
-- `AuditLog` (garantia de segurança)
-- Tokens de convite expirados
-- `Subscription` cancelada
-
-**Solução proposta:**
-
-1. **Criar `docs/POLITICA_RETENCAO.md`** com prazos definidos:
-
-| Tipo de dado | Prazo de retenção | Base legal |
-|---|---|---|
-| `User.faceDescriptor` | Enquanto vínculo ativo + 30 dias após desligamento | Art. 15 LGPD + minimização |
-| `CheckIn` | 5 anos a partir do encerramento do exercício | CLT Art. 74 §4º |
-| `AuditLog` | 5 anos | LGPD Art. 16 + segurança |
-| `InviteToken` revogado | 90 dias após revogação | Minimização |
-| `Subscription` | 5 anos após cancelamento | Obrigação fiscal |
-| Logs de sistema | 180 dias | Operação |
-
-2. **Implementar job de limpeza (cron/agenda):**
-
-```typescript
-// backend/src/scripts/retentionCleanup.ts
-import { prisma } from "../database/prisma.js";
-
-/**
- * Executa a política de retenção e eliminação.
- * Deve rodar diariamente (cron 02:00).
- */
-export async function runRetentionCleanup() {
-  const now = new Date();
-
-  // 1. Remover descriptors de usuários desligados há mais de 30 dias
-  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-  const usersToClean = await prisma.user.findMany({
-    where: {
-      status: "INACTIVE",
-      deactivatedAt: { lt: thirtyDaysAgo },
-      faceDescriptor: { not: null },
-    },
-    select: { id: true },
-  });
-
-  if (usersToClean.length > 0) {
-    await prisma.user.updateMany({
-      where: { id: { in: usersToClean.map(u => u.id) } },
-      data: { faceDescriptor: null },
-    });
-    console.log(`[Retention] Limpei descriptors de ${usersToClean.length} usuários`);
-  }
-
-  // 2. Remover checkins com mais de 5 anos
-  const fiveYearsAgo = new Date(now);
-  fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5);
-  const deletedCheckins = await prisma.checkIn.deleteMany({
-    where: { createdAt: { lt: fiveYearsAgo } },
-  });
-  console.log(`[Retention] Removi ${deletedCheckins.count} checkins antigos`);
-
-  // 3. Remover tokens de convite revogados há mais de 90 dias
-  const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-  const deletedTokens = await prisma.inviteToken.deleteMany({
-    where: {
-      revokedAt: { lt: ninetyDaysAgo },
-    },
-  });
-  console.log(`[Retention] Removi ${deletedTokens.count} tokens revogados`);
-}
-```
-
-3. **Adicionar campo `status` e `deactivatedAt` ao `User`:**
-
-```prisma
-model User {
-  // ...
-  status         UserStatus  @default(ACTIVE)   // ACTIVE | INACTIVE
-  deactivatedAt  DateTime?
-  // ...
-}
-
-enum UserStatus {
-  ACTIVE
-  INACTIVE
-}
-```
-
-4. **Configurar cron no `server.ts`:**
-
-```typescript
-import cron from "node-cron";
-import { runRetentionCleanup } from "./scripts/retentionCleanup.js";
-
-// Diariamente às 02:00
-cron.schedule("0 2 * * *", async () => {
-  await runRetentionCleanup();
-});
-```
+**Implementação:**
+- `backend/prisma/schema.prisma` — `enum UserStatus { ACTIVE; INACTIVE }` + campos `status` e `deactivatedAt` no `User`
+- `backend/docs/POLITICA_RETENCAO.md` — documento formal com tabela de prazos, regras de eliminação, base legal
+- `backend/src/scripts/retentionCleanup.ts` — job que:
+  - Remove `faceDescriptor` de usuários INACTIVE há >30 dias
+  - Deleta `CheckIn` com >5 anos (CLT Art. 74 §4º)
+  - Deleta `InviteToken` revogados há >90 dias
+  - Gera log estruturado JSON com métricas
+- `backend/src/server.ts` — cron schedule `0 2 * * *` via `node-cron`
+- `backend/package.json` — `node-cron` + `@types/node-cron`
+- Migration: `20260723160000_f19_user_status`
 
 **Arquivos afetados:**
-- Novo: `docs/POLITICA_RETENCAO.md`
+- Alterado: `backend/prisma/schema.prisma`
+- Alterado: `backend/src/server.ts`
+- Alterado: `backend/package.json`
+- Novo: `backend/docs/POLITICA_RETENCAO.md`
 - Novo: `backend/src/scripts/retentionCleanup.ts`
-- Alterado: `backend/prisma/schema.prisma` — `UserStatus` + `deactivatedAt`
-- Alterado: `backend/src/server.ts` — Configurar cron
-- Alterado: `backend/package.json` — `npm install node-cron`
+- Novo: `backend/prisma/migrations/20260723160000_f19_user_status/`
 
 ---
 
@@ -1941,7 +1856,7 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 | F10 | Consentimento biométrico | Art. 11 | ✅ | 🔴 Bloqueante | `ConsentController.ts` |
 | F11 | Portal do titular (DSAR) | Art. 18 | ❌ | 🔴 Bloqueante | Nenhum |
 | F11.b | Descriptor exposto (SEC-14/15) | Art. 18 + 46 | ⚠️ | 🟠 Alto | `EmployeesController.ts:68` |
-| F19 | Política retenção/deleção | Art. 15, 16 | ❌ | 🔴 Bloqueante | Nenhum |
+| F19 | Política retenção/deleção | Art. 15, 16 | ✅ | 🔴 Bloqueante | `POLITICA_RETENCAO.md`, `retentionCleanup.ts` |
 | F12 | Criptografia descriptor trânsito | Art. 46 | ⚠️ | 🟠 Alto | `app.ts` (sem helmet) |
 | F13 | Contrato ctrl×operador | Art. 39 III | ❌ | 🟠 Alto | Nenhum |
 | F24 | Registro operações tratamento | Art. 37 | ⚠️ | 🟡 Médio | `AuditMiddleware.ts` |
@@ -1997,8 +1912,8 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 | T10 | **F19** | `POLITICA_RETENCAO.md` + `retentionCleanup.ts` (cron diário 02:00) | Médio | T09 |
 | T11 | **F20** | `relatorioMensalService.ts` — relatório folha mensal layout oficial MTE | Médio | T04 |
 
-> **Progresso Sprint 1:** T01 ✅ T02 ✅ T03 ✅ T04 ✅ T05 ✅ T06 ✅ T07 ✅ T08 ✅ (8/11 — 73%)
-> F4, F3/F17, F18, F2, F6, F9 e F10 implementados e funcionais.
+> **Progresso Sprint 1:** T01 ✅ T02 ✅ T03 ✅ T04 ✅ T05 ✅ T06 ✅ T07 ✅ T08 ✅ T09 ✅ T10 ✅ (10/11 — 91%)
+> F4, F3/F17, F18, F2, F6, F9, F10 e F19 implementados e funcionais.
 
 **Entregáveis Sprint 1:**
 - Schema Prisma atualizado (NSR, ano, employerCnpj) ✅
@@ -2009,7 +1924,7 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 - Relatório mensal MTE (`GET /checkins/export/relatorio-mensal`) (pendente T11)
 - Termos de Uso + Política de Privacidade (páginas + rotas) ✅
 - Consentimento biométrico (tela + backend + persistência) ✅
-- Política de retenção documentada + job de limpeza automática (pendente T09-T10)
+- Política de retenção documentada + job de limpeza automática ✅
 
 ---
 
