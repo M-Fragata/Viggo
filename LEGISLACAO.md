@@ -500,9 +500,9 @@ const checkin = await extendedPrisma.checkIn.create({
 
 > **Art. 78, §5º, VIII:** "Justificativa para marcação de ponto, quando aplicável."
 
-**Status:** NÃO IMPLEMENTADO
+**Status:** ✅ IMPLEMENTADO (23/07/2026)
 
-**Impacto:** Sem funcionalidade de justificativa, o sistema não permite ao empregado
+**Impacto:** ~~Sem funcionalidade de justificativa, o sistema não permite ao empregado
 explicar ausências ou omissões, o que é obrigatório para o regime de "ponto por
 exceção" (Art. 74, §2º da CLT) e para situações extraordinárias.
 
@@ -1411,7 +1411,7 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 | F2 | Geração AFD | Art. 78 §5º | ✅ | 🔴 Bloqueante | `AfdController.ts` |
 | F3 | NSR sequencial | Art. 78 §5º III | ✅ | 🔴 Bloqueante | `nsrGenerator.ts` |
 | F4 | CNPJ obrigatório | Art. 78 §5º II | ✅ | 🔴 Bloqueante | `schema.prisma:12` |
-| F5 | Justificativa | Art. 78 §1º | ❌ | 🔴 Bloqueante | Nenhum |
+| F5 | Justificativa | Art. 78 §1º | ✅ | 🔴 Bloqueante | `JustificativaController.ts` |
 | F6 | Comprovante imediato | Art. 78 §2º | ✅ | 🔴 Bloqueante | `comprovanteGenerator.ts` |
 | F17 | NSR reinicia anualmente | Art. 78 §5º-C | ✅ | 🔴 Bloqueante | `nsrGenerator.ts` |
 | F18 | Identif. empregador no registro | Art. 78 §5º-A II | ✅ | 🟠 Alto | `CheckIn.employerCnpj` |
@@ -1516,8 +1516,8 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 | T19 | **F13** | Adicionar aceite do DPA no fluxo de cadastro da empresa (`CompanySignupPage.tsx`) | Médio | T18 |
 | T20 | **F24** | Colunas `legalBasis`, `purpose`, `personalDataCategories` no `AuditLog` + mapeamento no `AuditMiddleware` | Médio | Nenhuma |
 
-> **Progresso Sprint 2:** T16 ✅ T12 ✅ T13 ✅ T14 ✅ T15 ✅ (5/9 — 56%)
-> T16 (Helmet + HSTS), T12 (Portal do Titular DSAR), T13+T14+T15 (Token facial) implementados.
+> **Progresso Sprint 2:** T16 ✅ T12 ✅ T13 ✅ T14 ✅ T15 ✅ T17 ✅ (6/9 — 67%)
+> T16 (Helmet + HSTS), T12 (Portal do Titular DSAR), T13+T14+T15 (Token facial), T17 (Justificativa) implementados.
 
 **Entregáveis Sprint 2:**
 - Portal do titular (DSAR) completo no backend

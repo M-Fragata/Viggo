@@ -23,6 +23,7 @@ model Company {
   users           User[]
   subscriptions   Subscription[]
   invites         InviteToken[]
+  justificativas  Justificativa[]
 }
 
 model User {
@@ -43,6 +44,7 @@ model User {
   company           Company            @relation(fields: [companyId], references: [id])
   inviteTokenUsages InviteTokenUsage[]
   consentimentos    Consentimento[]
+  justificativas    Justificativa[]
 }
 
 model CheckIn {
@@ -173,4 +175,24 @@ model Consentimento {
 
   @@unique([userId, tipo, versao])
   @@index([userId])
+}
+
+model Justificativa {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  companyId   String
+  company     Company   @relation(fields: [companyId], references: [id])
+  tipo        String
+  descricao   String
+  dataInicio  DateTime
+  dataFim     DateTime?
+  comprovante String?
+  aprovado    Boolean?
+  aprovadoPor String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId, dataInicio])
+  @@index([companyId, dataInicio])
 }
