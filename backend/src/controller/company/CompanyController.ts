@@ -18,7 +18,7 @@ export class CompanyController {
       name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
       email: z.email('Email inválido'),
       cpf: z.string().min(11, 'CPF inválido'),
-      cnpj: z.string().optional(),
+      cnpj: z.string().min(14, 'CNPJ é obrigatório para registro como REP-P'),
       companyName: z.string().min(2, 'Nome da empresa inválido'),
       password: z.string().min(8, 'Senha deve ter no mínimo 8 caracteres'),
       confirmPassword: z.string(),
@@ -36,11 +36,9 @@ export class CompanyController {
         return res.status(400).json({ message: 'CPF inválido' });
       }
 
-      if (cnpj) {
-        const cnpjValidation = validateDocument(cnpj);
-        if (!cnpjValidation.valid) {
-          return res.status(400).json({ message: 'CNPJ inválido' });
-        }
+      const cnpjValidation = validateDocument(cnpj);
+      if (!cnpjValidation.valid) {
+        return res.status(400).json({ message: 'CNPJ inválido' });
       }
 
       const existingUser = await prisma.user.findUnique({ where: { email } });
@@ -53,8 +51,7 @@ export class CompanyController {
         return res.status(400).json({ message: 'CPF já cadastrado' });
       }
 
-      if (cnpj) {
-        const cnpjValidation = validateDocument(cnpj);
+      {
         const existingCnpj = await prisma.company.findUnique({ where: { cnpj: cnpjValidation.formatted } });
         if (existingCnpj) {
           return res.status(400).json({ message: 'CNPJ já cadastrado' });
@@ -68,7 +65,7 @@ export class CompanyController {
       const company = await prisma.company.create({
         data: {
           name: companyName,
-          cnpj: cnpj ? validateDocument(cnpj).formatted : null,
+          cnpj: validateDocument(cnpj).formatted,
           plan: PlanTier.TIER_I,
           status: CompanyStatus.TRIAL,
           maxEmployees: 10,

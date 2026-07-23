@@ -55,6 +55,8 @@ export function CompanySignupPage() {
       if (!validateCnpj(cnpjDigits)) {
         return { message: "", fieldErrors: { cnpj: "CNPJ inválido" }, payload: rawData };
       }
+    } else {
+      return { message: "", fieldErrors: { cnpj: "CNPJ é obrigatório" }, payload: rawData };
     }
 
     try {
@@ -62,7 +64,7 @@ export function CompanySignupPage() {
         name: rawData.name,
         email: rawData.email,
         cpf: cpfDigits,
-        cnpj: rawData.cnpj ? rawData.cnpj.replace(/\D/g, "") : undefined,
+        cnpj: rawData.cnpj.replace(/\D/g, ""),
         companyName: rawData.companyName,
         password: rawData.password,
         confirmPassword: rawData.confirmPassword,
@@ -181,7 +183,7 @@ export function CompanySignupPage() {
 
                 <div>
                   <label htmlFor="cnpj" className="block text-sm font-medium text-slate-700 mb-1">
-                    CNPJ (opcional)
+                    CNPJ
                   </label>
                   <Input
                     id="cnpj"

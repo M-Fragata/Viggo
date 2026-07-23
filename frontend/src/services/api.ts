@@ -129,6 +129,10 @@ export const api = {
       fetchApi<CompanyCheckinEmployee[]>(`/checkins/company${date ? `?date=${date}` : ""}`),
     listMonthly: (year: number, month: number) =>
       fetchApi<MonthlyCheckinEmployee[]>(`/checkins/month?year=${year}&month=${month}`),
+    exportAfd: (startDate: string, endDate: string) =>
+      fetchApi<Blob>(`/checkins/export/afd?startDate=${startDate}&endDate=${endDate}`, {
+        method: "GET",
+      }),
   },
 
   master: {
@@ -181,7 +185,7 @@ export interface User {
 export interface Company {
   id: string;
   name: string;
-  cnpj: string | null;
+  cnpj: string;
   plan: PlanTier;
   status: CompanyStatus;
   planExpiresAt: string | null;
@@ -205,7 +209,7 @@ export interface SignupCompanyDto {
   name: string;
   email: string;
   cpf: string;
-  cnpj?: string;
+  cnpj: string;
   companyName: string;
   password: string;
   confirmPassword: string;
@@ -220,7 +224,7 @@ export interface SignupCompanyResponse {
 export interface CompanyResponse {
   id: string;
   name: string;
-  cnpj: string | null;
+  cnpj: string;
   plan: PlanTier;
   status: CompanyStatus;
   planExpiresAt: string | null;
@@ -322,7 +326,7 @@ export interface MasterCompaniesResponse {
 export interface MasterCompanyListItem {
   id: string;
   name: string;
-  cnpj: string | null;
+  cnpj: string;
   plan: PlanTier;
   status: CompanyStatus;
   planExpiresAt: string | null;

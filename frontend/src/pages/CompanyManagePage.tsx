@@ -145,7 +145,7 @@ export function CompanyManagePage() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-slate-800">{company.name}</h1>
-              <p className="text-slate-500 text-sm">{company.cnpj ?? "CNPJ não informado"}</p>
+              <p className="text-slate-500 text-sm">{company.cnpj}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">

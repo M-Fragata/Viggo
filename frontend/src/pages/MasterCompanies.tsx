@@ -118,7 +118,7 @@ export function MasterCompanies() {
                     </div>
                     <div>
                       <span className="font-semibold text-slate-800 block">{company.name}</span>
-                      <span className="text-xs text-slate-400">{company.cnpj ?? "Sem CNPJ"}</span>
+                      <span className="text-xs text-slate-400">{company.cnpj}</span>
                     </div>
                   </div>
                   {isExpanded ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
@@ -200,7 +200,7 @@ export function MasterCompanies() {
                       </div>
                     </td>
                     <td className="p-4 font-semibold text-slate-800">{company.name}</td>
-                    <td className="p-4 text-slate-500 font-mono text-xs">{company.cnpj ?? "Não informado"}</td>
+                    <td className="p-4 text-slate-500 font-mono text-xs">{company.cnpj}</td>
                     <td className="p-4">
                       <PlanBadge plan={company.plan} size="sm" />
                     </td>

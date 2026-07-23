@@ -4,7 +4,7 @@ export const companySignupSchema = z.object({
   name: z.string().min(3, "Nome deve ter no mínimo 3 caracteres"),
   email: z.email("Email inválido"),
   cpf: z.string().min(11, "CPF inválido"),
-  cnpj: z.string().optional(),
+  cnpj: z.string().min(14, "CNPJ é obrigatório"),
   companyName: z.string().min(2, "Nome da empresa inválido"),
   password: z.string().min(8, "Senha deve ter no mínimo 8 caracteres"),
   confirmPassword: z.string(),

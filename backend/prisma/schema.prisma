@@ -9,7 +9,7 @@ datasource db {
 model Company {
   id              String         @id @default(uuid())
   name            String
-  cnpj            String?        @unique
+  cnpj            String         @unique
   plan            PlanTier       @default(TIER_I)
   status          CompanyStatus  @default(TRIAL)
   planExpiresAt   DateTime?
@@ -43,19 +43,24 @@ model User {
 }
 
 model CheckIn {
-  id        String      @id @default(uuid())
-  createdAt DateTime    @default(now())
-  type      CheckInType
-  latitude  Float
-  longitude Float
-  address   String?
-  userId    String
-  companyId String
-  company   Company     @relation(fields: [companyId], references: [id])
-  user      User        @relation(fields: [userId], references: [id])
+  id            String      @id @default(uuid())
+  nsr           Int
+  ano           Int
+  createdAt     DateTime    @default(now())
+  type          CheckInType
+  latitude      Float
+  longitude     Float
+  address       String?
+  employerCnpj  String
+  userId        String
+  companyId     String
+  company       Company     @relation(fields: [companyId], references: [id])
+  user          User        @relation(fields: [userId], references: [id])
 
+  @@unique([companyId, nsr, ano])
   @@index([userId, createdAt])
   @@index([companyId, createdAt])
+  @@index([companyId, nsr, ano])
 }
 
 model Subscription {

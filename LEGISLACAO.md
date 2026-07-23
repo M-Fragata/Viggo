@@ -1,6 +1,6 @@
 # Análise de Conformidade Legal — Projeto Viggo
 
-**Data:** 17 de Julho de 2026
+**Data:** 17–23 de Julho de 2026
 **Escopo:** Backend (Express + Prisma + PostgreSQL), Frontend (React + Vite)
 **Legislação aplicável:** Portaria MTE nº 671/2021, LGPD (Lei nº 13.709/2018), CLT Art. 74
 **Classificação do Viggo:** REP-P (Registrador Eletrônico de Ponto por Programa)
@@ -35,9 +35,10 @@ momento da marcação de ponto. O sistema é classificado como **REP-P** pela Po
   `navigator.geolocation.getCurrentPosition()` no momento exato da batida de ponto
   (`pontoPage.tsx:46`). Não há `watchPosition`, rastreamento em background ou fora do
   horário de trabalho.
-- **Proibição de edição/exclusão de batidas:** O controller `CheckinController.ts` possui
-  apenas o método `createCheckin`. Não existem endpoints `PUT` ou `DELETE` para registros
-  de ponto, garantindo a integridade dos dados originais conforme Art. 78 da Portaria 671.
+- **Proibição de edição/exclusão de batidas:** O `CheckinController.ts` expõe métodos
+  de leitura (`index`, `listByCompany`, `listMonthly`) e criação (`createCheckin`), mas
+  **não existem endpoints `PUT` ou `DELETE`** para registros de ponto, garantindo a
+  integridade dos dados originais conforme Art. 78 da Portaria 671.
 - **Proteção contra ponto britânico:** A batida de ponto depende de trigger explícito do
   usuário + validação facial ativa + liveness challenge, impedindo marcação automática.
 - **Bloqueio de batida duplicada:** `CheckinController.ts:31-43` verifica se já existe
@@ -63,6 +64,20 @@ A análise identificou **26 lacunas legais** distribuídas entre as três normas
 | **Total** | **11** | **8** | **7** |
 
 **Total: 26 findings — 11 bloqueantes, 8 alto, 7 médio**
+
+### Atualizações — 23/07/2026
+
+Foram implementados 4 findings (Sprint 1, parcial):
+
+| Finding | Descrição | Status |
+|---------|-----------|--------|
+| **F4** | CNPJ obrigatório no schema + validação no cadastro | ✅ Implementado |
+| **F3/F17** | NSR sequencial com reinício anual + constraint `@@unique([companyId, nsr, ano])` + `NsrLimitExceededError` | ✅ Implementado |
+| **F18** | Snapshot `employerCnpj` no `CheckIn` (desnormalizado) | ✅ Implementado |
+| **F2** | Exportação AFD (Anexo II) — `GET /checkins/export/afd` com Header Tipo 1, Detalhes Tipo 2, Trailer Tipo 9 | ✅ Implementado |
+
+Migrations aplicadas: `f4_cnpj_obrigatorio`, `f3f17_nsr_anual`, `f18_employer_cnpj_snapshot`.
+Backend build: ✅ passando. Frontend build: ✅ passando.
 
 > \* F22 (RIP) aplicável à Portaria por exigir registro de conformidade REP-P.
 > † F22 (RIP) também aplicável à LGPD Art. 50 (Relatório de Impacto à Proteção de Dados).
@@ -148,22 +163,25 @@ equipamento não homologado.
 >
 > II — os dados do AFD deverão ser exportados no leiaute definido no Anexo II.
 
-**Status:** NÃO IMPLEMENTADO
+**Status:** ✅ IMPLEMENTADO (23/07/2026)
 
-**Impacto:** Sem geração de AFD, o Viggo não fornece o arquivo obrigatório para
-auditorias do MTE e para o eSocial (S-1200). As empresas clientes ficam impossibilitadas
-de comprovar regularidade do controle de ponto.
+**Impacto:** ~~Sem geração de AFD, o Viggo não fornece o arquivo obrigatório para
+auditorias do MTE e para o eSocial (S-1200).~~ AFD agora é gerado via
+`GET /checkins/export/afd` com leiaute Anexo II (pipe-separated).
 
-**Análise técnica atual:**
-- `CheckinController.ts` tem apenas operações CRUD — não há geração de arquivo
-- `DashboardPage.tsx` gera uma tabela HTML para impressão, mas **não segue o leiaute
-  do Anexo II** da Portaria 671
-- Não há campo `NSR` (Número Sequencial de Registro) no schema Prisma
-- Não há rota de exportação (`GET /checkins/export/afd` ou similar)
-- Busca por `AFD`, `NSR`, `exportar.*csv` no código retorna apenas menções
-  de marketing em `shared/plans.ts`
+**Implementação:**
+- `backend/src/controller/AfdController.ts` — Novo controller com `exportAfd`
+  - Header Tipo 1: CNPJ, IE, Razão Social, DataIni, DataFim
+  - Detalhe Tipo 2: CNPJ, CPF, NSR, DataHora, Código (1-4)
+  - Trailer Tipo 9: CNPJ, Total de registros
+  - Usa `employerCnpj` snapshot do `CheckIn` (F18)
+- `backend/src/routes/checkinRoutes.ts` — Rota `GET /export/afd` com `authMiddleware`
+- `frontend/src/services/api.ts` — `checkins.exportAfd(startDate, endDate)` retorna `Blob`
 
-**Solução proposta:**
+**Arquivos afetados:**
+- Novo: `backend/src/controller/AfdController.ts`
+- Alterado: `backend/src/routes/checkinRoutes.ts`
+- Alterado: `frontend/src/services/api.ts`
 
 1. **Schema Prisma** — Adicionar campo `nsr` e `mr` (Motivo de Rejeição) ao modelo `CheckIn`:
 
@@ -397,17 +415,22 @@ checkinRoutes.get(
 > **Art. 78, §5º, III:** "Cada registro deverá possuir um número sequencial (NSR),
 > por estabelecimento, que deverá ser ininterrupto."
 
-**Status:** NÃO IMPLEMENTADO
+**Status:** ✅ IMPLEMENTADO (23/07/2026) — ver também F17 (reinício anual).
 
-**Impacto:** Sem NSR, o AFD é inválido. O NSR é obrigatório e deve ser sequencial
-por empresa, sem saltos. É o identificador único de cada marcação dentro do período.
+**Impacto:** ~~Sem NSR, o AFD é inválido.~~ NSR agora é gerado transacionalmente
+por `getNextNSR(companyId, ano)` com `@@unique([companyId, nsr, ano])`.
 
-**Análise técnica atual:**
-- Schema `CheckIn` (`schema.prisma:45-59`) usa apenas `id UUID` como chave primária
-- Não existe campo `nsr` no modelo
-- Não existe constraint `@@unique([companyId, nsr])`
+**Implementação:**
+- `schema.prisma:CheckIn` — campos `nsr Int` + `ano Int`, constraint `@@unique([companyId, nsr, ano])`
+- `backend/src/utils/nsrGenerator.ts` — `getNextNSR(companyId, ano)` com limite 999.999/ano
+- `CheckinController.createCheckin` — usa `extendedPrisma.$transaction` para NSR atômico + create
+- `NsrLimitExceededError` customizado em `backend/src/utils/errors/`
+- Migration: `20260723130000_f3f17_nsr_anual`
 
-**Solução proposta:** Implementada no item F2 acima (campo `nsr` no schema + `nsrGenerator.ts`).
+**Arquivos afetados:**
+- Alterado: `backend/prisma/schema.prisma`
+- Novo: `backend/src/utils/nsrGenerator.ts`
+- Alterado: `backend/src/controller/CheckinController.ts`
 
 **Integração no `CheckinController.createCheckin`:**
 
@@ -442,31 +465,26 @@ const checkin = await extendedPrisma.checkIn.create({
 > **Art. 78, §5º, II:** "Identificação do empregador (razão social, CNPJ e, quando
 > houver, inscrição Estadual)."
 
-**Status:** PARCIALMENTE IMPLEMENTADO
+**Status:** ✅ IMPLEMENTADO (23/07/2026)
 
-**Impacto:** O campo `Company.cnpj` no schema (`schema.prisma:12`) é `String?`
-(opcional). Uma empresa sem CNPJ geraria um AFD inválido, pois o CNPJ é campo
-obrigatório no registro.
+**Impacto:** ~~O campo `Company.cnpj` no schema (`schema.prisma:12`) é `String?`
+(opcional).~~ CNPJ agora é `String @unique` obrigatório, validado no cadastro.
 
-**Solução proposta:**
-
-1. Tornar `cnpj` obrigatório no schema (migrar para `String` com `@unique`)
-2. Adicionar validação no cadastro (`CompanyController.signup`)
-3. Validar na exportação do AFD (já implementado no F2 — retorna erro 400 se ausente)
-
-```prisma
-// backend/prisma/schema.prisma — alteração
-model Company {
-  // ... (campos existentes)
-  cnpj  String  @unique   // Obrigatório para REP-P (antes: String?)
-  // ...
-}
-```
+**Implementação:**
+- `schema.prisma:12` — `cnpj String @unique` (era `String?`)
+- `CompanyController.ts` — Zod `.string().min(14, "CNPJ é obrigatório")`, formatado com `formatCnpjToNumeric`, sempre salva
+- Frontend: `companySignup.ts` `.min(14)`, `CompanySignupPage.tsx` label sem "(opcional)"
+- `api.ts` — tipos `cnpj: string` (era `string | null`)
+- Migration: `20260723120000_f4_cnpj_obrigatorio`
 
 **Arquivos afetados:**
 - Alterado: `backend/prisma/schema.prisma:12`
-- Alterado: `backend/src/controller/company/CompanyController.ts:21` — `cnpj` obrigatório
-- Novo: Migration Prisma
+- Alterado: `backend/src/controller/company/CompanyController.ts`
+- Alterado: `frontend/src/schemas/companySignup.ts`
+- Alterado: `frontend/src/pages/CompanySignupPage.tsx`
+- Alterado: `frontend/src/services/api.ts`
+- Alterado: `frontend/src/pages/CompanyManagePage.tsx`
+- Alterado: `frontend/src/pages/MasterCompanies.tsx`
 
 ---
 
@@ -1641,74 +1659,21 @@ validação do backend.
 > (NSR) deverá reiniciar a cada primeiro de janeiro, respeitado o limite
 > máximo de 999.999."
 
-**Status:** NÃO IMPLEMENTADO (atualmente o NSR proposto no F3 é incremental
-sem reinício anual)
+**Status:** ✅ IMPLEMENTADO (23/07/2026) — implementado junto com F3.
 
-**Impacto:** Se o NSR não reiniciar em 1º de janeiro, ao longo do ano uma
+**Impacto:** ~~Se o NSR não reiniciar em 1º de janeiro, ao longo do ano uma
 empresa grande pode ultrapassar o limite de 999.999 registros, gerando AFD
-inválido. Além disso, o reinício anual é exigência normativa explícita.
+inválido.~~ NSR agora filtra por `ano` corrente e reinicia automaticamente.
 
-**Solução proposta:**
-
-Atualizar o `nsrGenerator.ts` para filtrar pelo ano corrente:
-
-```typescript
-// backend/src/utils/nsrGenerator.ts — atualização
-import { PrismaClient } from "@prisma/client";
-
-/**
- * Gera o próximo NSR para a empresa de forma transacional.
- * O NSR é sequencial e ininterrupto dentro de cada empresa,
- * REINICIANDO A CADA 1º DE JANEIRO.
- * Limite máximo: 999.999 por ano.
- */
-export async function getNextNSR(
-  prisma: PrismaClient,
-  companyId: string
-): Promise<number> {
-  const currentYear = new Date().getFullYear();
-  const yearStart = new Date(currentYear, 0, 1);
-  const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59);
-
-  const lastCheckin = await prisma.checkIn.findFirst({
-    where: {
-      companyId,
-      createdAt: { gte: yearStart, lte: yearEnd },
-    },
-    orderBy: { nsr: "desc" },
-    select: { nsr: true },
-  });
-
-  const nextNSR = (lastCheckin?.nsr ?? 0) + 1;
-
-  if (nextNSR > 999_999) {
-    throw new Error(
-      "Limite de 999.999 NSR atingido no ano corrente. Contate o suporte."
-    );
-  }
-
-  return nextNSR;
-}
-```
-
-**Consideração adicional:** A constraint `@@unique([companyId, nsr])`
-proposta no F3 deve ser trocada por `@@unique([companyId, nsr, year])`
-ou `@@unique([companyId, nsr, EXTRACT(YEAR FROM createdAt)])` para permitir
-reuso do NSR entre anos distintos. Em Prisma, o equivalente é:
-
-```prisma
-model CheckIn {
-  // ...
-  nsr     Int
-  ano     Int      @default(year())   // ou preenchido no create
-  // ...
-  @@unique([companyId, nsr, ano])
-}
-```
+**Implementação:**
+- `nsrGenerator.ts` — filtra checkins por `ano` corrente, limite 999.999
+- `NsrLimitExceededError` — erro específico quando limite é atingido
+- `schema.prisma` — `ano Int` em `CheckIn` + `@@unique([companyId, nsr, ano])`
+- Migration: `20260723130000_f3f17_nsr_anual`
 
 **Arquivos afetados:**
 - Alterado: `backend/src/utils/nsrGenerator.ts`
-- Alterado: `backend/prisma/schema.prisma` — Adicionar `ano` e ajustar unique
+- Alterado: `backend/prisma/schema.prisma`
 
 ---
 
@@ -1717,32 +1682,24 @@ model CheckIn {
 > **Art. 78, §5º-A, II, da Portaria 671/2021:** Cada registro no AFD deve
 > conter a "identificação do empregador (CNPJ ou CPF)".
 
-**Status:** PARCIALMENTE IMPLEMENTADO (vinculado ao F4)
+**Status:** ✅ IMPLEMENTADO (23/07/2026)
 
-**Impacto:** No schema atual, a identificação do empregador está apenas na
+**Impacto:** ~~No schema atual, a identificação do empregador está apenas na
 tabela `Company` via `companyId` (relacionamento). Se uma empresa alterar
 CNPJ (incorporação, cisão, mudança de razão social) os registros antigos
-do `CheckIn` ficam com referência histórica inválida.
+do `CheckIn` ficam com referência histórica inválida.~~ CNPJ agora é
+snapshot imutável no `CheckIn.employerCnpj`.
 
-**Solução proposta:**
-
-Desnormalizar o CNPJ no registro de `CheckIn`:
-
-```prisma
-model CheckIn {
-  // ...
-  companyId        String
-  employerCnpj     String     // Snapshot do CNPJ no momento da batida
-  // ...
-}
-```
-
-> Alternativa (aceitável em SaaS): implementar view de leitura que faz
-> JOIN com `Company` via `companyId` e nunca excluir empresas (soft-delete).
+**Implementação:**
+- `schema.prisma:CheckIn` — campo `employerCnpj String` NOT NULL
+- `CheckinController.createCheckin` — busca `company.cnpj` antes do create, salva como snapshot imutável
+- AFD usa `checkin.employerCnpj` em vez de buscar `Company.cnpj` em runtime
+- Migration: `20260723140000_f18_employer_cnpj_snapshot`
 
 **Arquivos afetados:**
 - Alterado: `backend/prisma/schema.prisma`
-- Alterado: `backend/src/controller/CheckinController.ts` — Snapshot do CNPJ no create
+- Alterado: `backend/src/controller/CheckinController.ts`
+- Alterado: `backend/src/controller/AfdController.ts` (usa `checkin.employerCnpj`)
 
 ---
 
@@ -2075,6 +2032,12 @@ ação deve ser legível como "finalidade"). O campo `action` tem valores
 como `CHECKIN`, `FACE_VALIDATION` — não há documentação que diga
 qual **base legal** está associada a cada um.
 
+> **Nota adicional:** Campos `oldData` e `newData` do schema existem
+> mas são sempre gravados como `null` pelo middleware (`AuditMiddleware.ts:71-72`),
+> ou seja, a trilha de auditoria registra **apenas a ocorrência** da ação,
+> sem capturar payload anterior/novo — limitando severamente a utilidade
+> forense do `AuditLog`.
+
 **Solução proposta:**
 
 1. **Adicionar colunas no `AuditLog`:**
@@ -2139,13 +2102,13 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 | # | Requisito | Artigo | Status | Severidade | Arquivo Atual |
 |---|-----------|--------|--------|------------|---------------|
 | F1 | Assinatura ICP-Brasil | Art. 79 §2º | ❌ | 🔴 Bloqueante | Nenhum |
-| F2 | Geração AFD | Art. 78 §5º | ❌ | 🔴 Bloqueante | Nenhum |
-| F3 | NSR sequencial | Art. 78 §5º III | ❌ | 🔴 Bloqueante | Nenhum |
-| F4 | CNPJ obrigatório | Art. 78 §5º II | ⚠️ | 🔴 Bloqueante | `schema.prisma:12` |
+| F2 | Geração AFD | Art. 78 §5º | ✅ | 🔴 Bloqueante | `AfdController.ts` |
+| F3 | NSR sequencial | Art. 78 §5º III | ✅ | 🔴 Bloqueante | `nsrGenerator.ts` |
+| F4 | CNPJ obrigatório | Art. 78 §5º II | ✅ | 🔴 Bloqueante | `schema.prisma:12` |
 | F5 | Justificativa | Art. 78 §1º | ❌ | 🔴 Bloqueante | Nenhum |
 | F6 | Comprovante imediato | Art. 78 §2º | ⚠️ | 🔴 Bloqueante | `pontoPage.tsx:300` |
-| F17 | NSR reinicia anualmente | Art. 78 §5º-C | ❌ | 🔴 Bloqueante | `nsrGenerator.ts` (proposto) |
-| F18 | Identif. empregador no registro | Art. 78 §5º-A II | ⚠️ | 🟠 Alto | `CheckIn` (via companyId) |
+| F17 | NSR reinicia anualmente | Art. 78 §5º-C | ✅ | 🔴 Bloqueante | `nsrGenerator.ts` |
+| F18 | Identif. empregador no registro | Art. 78 §5º-A II | ✅ | 🟠 Alto | `CheckIn.employerCnpj` |
 | F20 | Relatório mensal layout MTE | Art. 78 §5º-A V | ⚠️ | 🟠 Alto | `DashboardPage.tsx:320` |
 | F21 | Backup criptografado AFD | Art. 81 | ❌ | 🟠 Alto | Nenhum |
 | F7 | Ponto por exceção | Art. 78 §1º | ❌ | 🟠 Alto | Nenhum |
@@ -2215,16 +2178,19 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 | T10 | **F19** | `POLITICA_RETENCAO.md` + `retentionCleanup.ts` (cron diário 02:00) | Médio | T09 |
 | T11 | **F20** | `relatorioMensalService.ts` — relatório folha mensal layout oficial MTE | Médio | T04 |
 
+> **Progresso Sprint 1:** T01 ✅ T02 ✅ T03 ✅ T04 ✅ (4/11 — 36%)
+> F4, F3/F17, F18 e F2 implementados e funcionais.
+
 **Entregáveis Sprint 1:**
-- Schema Prisma atualizado (NSR, ano, employerCnpj, UserStatus, Consentimento, Justificativa)
-- 3 migrations (schema + dados existentes)
-- NSR com reinício anual + generator transacional
-- Rota AFD (`GET /checkins/export/afd`) com leiaute Anexo II
-- Comprovante retornado em `POST /checkins` com hash SHA-256
-- Relatório mensal MTE (`GET /checkins/export/relatorio-mensal`)
-- Termos de Uso + Política de Privacidade (páginas + rotas)
-- Consentimento biométrico (tela + backend + persistência)
-- Política de retenção documentada + job de limpeza automática
+- Schema Prisma atualizado (NSR, ano, employerCnpj) ✅
+- 3 migrations (f4_cnpj_obrigatorio, f3f17_nsr_anual, f18_employer_cnpj_snapshot) ✅
+- NSR com reinício anual + generator transacional ✅
+- Rota AFD (`GET /checkins/export/afd`) com leiaute Anexo II ✅
+- Comprovante retornado em `POST /checkins` com hash SHA-256 (pendente T05)
+- Relatório mensal MTE (`GET /checkins/export/relatorio-mensal`) (pendente T11)
+- Termos de Uso + Política de Privacidade (pendente T06)
+- Consentimento biométrico (pendente T07-T08)
+- Política de retenção documentada + job de limpeza automática (pendente T09-T10)
 
 ---
 
@@ -2382,4 +2348,5 @@ identificadas). As principais intersecções são:
 ---
 
 *Documento gerado em 17/07/2026 como parte da análise de conformidade do projeto Viggo.*
+*Atualizado em 23/07/2026 — F2, F3/F17, F4 e F18 implementados.*
 *Este documento deve ser revisado por assessor jurídico especializado em LGPD e legislação trabalhista antes da comercialização do produto.*

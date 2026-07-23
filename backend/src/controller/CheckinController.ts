@@ -1,6 +1,7 @@
 import { type Request, type Response } from "express";
 import { z } from "zod"
 import { extendedPrisma } from "../database/prisma-extensions.js";
+import { getNextNSR, currentYear, NsrLimitExceededError } from "../utils/nsrGenerator.js";
 
 import { parseISO, startOfDay, endOfDay, startOfMonth, endOfMonth } from "date-fns"
 
@@ -42,15 +43,42 @@ export class CheckinController {
                 return res.status(400).json({ message: `Ponto de ${type} já registrado hoje.` })
             }
 
-            const checkin = await extendedPrisma.checkIn.create({
-                data: {
-                    type,
-                    latitude,
-                    longitude,
-                    userId,
-                    companyId: user.companyId,
-                }
-            })
+            const companyId = user.companyId;
+            const ano = currentYear();
+
+            // F18: Snapshot do CNPJ do empregador no momento da batida.
+            // Garante identificacao historica correta em caso de troca de CNPJ
+            // (incorporacao/cisao) - Portaria 671 Art. 78 §5o-A II.
+            const company = await extendedPrisma.company.findUnique({
+                where: { id: companyId },
+                select: { cnpj: true },
+            });
+
+            if (!company) {
+                return res.status(404).json({ message: "Empresa não encontrada" });
+            }
+
+            // Gerar NSR e criar CheckIn em transacao para garantir atomicidade.
+            // Usamos extendedPrisma.$transaction para que o `tx` herde a extensao
+            // multi-tenant (injecao automatica de companyId via AsyncLocalStorage).
+            // Em race condition rara, a constraint unique [companyId, nsr, ano]
+            // falha e o erro e lancado para retratativa pelo chamador.
+            const checkin = await extendedPrisma.$transaction(async (tx) => {
+                const nsr = await getNextNSR(companyId, ano);
+
+                return tx.checkIn.create({
+                    data: {
+                        type,
+                        latitude,
+                        longitude,
+                        nsr,
+                        ano,
+                        userId,
+                        companyId,
+                        employerCnpj: company.cnpj,
+                    }
+                });
+            });
 
             const data = {
                 checkin: { checkin },
@@ -60,6 +88,14 @@ export class CheckinController {
             return res.status(201).json(data)
 
         } catch (error) {
+
+            if (error instanceof NsrLimitExceededError) {
+                return res.status(503).json({
+                    message:
+                        "Limite de 999.999 registros de ponto no ano corrente atingido. " +
+                        "Contate o suporte."
+                });
+            }
 
             console.error("Erro ao registrar ponto:", error);
 
