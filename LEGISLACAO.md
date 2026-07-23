@@ -1271,97 +1271,23 @@ employeesRoutes.post("/face/verify", authMiddleware, faceValidationLimiter, empl
 > não autorizados e de situações acidentais ou ilícitas de destruição, perda,
 > alteração, comunicação ou qualquer forma de tratamento inadequado ou ilícito."
 
-**Status:** PARCIALMENTE IMPLEMENTADO
+**Status:** IMPLEMENTADO ✅ (Helmet + HSTS)
 
-**Impacto:** O `faceDescriptor` (128 floats) é enviado em texto plano via
-HTTPS. O `SEC-31` do Security Audit confirma ausência de `helmet` (security
-headers). Sem HTTPS forçado + HSTS, o descriptor pode ser interceptado e
-usado para reconstrução facial (spoofing).
+**Impacto:** ~~O `faceDescriptor` (128 floats) é enviado em texto plano via
+HTTPS. Sem HTTPS forçado + HSTS, o descriptor pode ser interceptado.~~
+Helmet + HSTS agora protegem todas as respostas HTTP com headers de
+segurança (HSTS 1 ano, CSP, X-Frame-Options, etc).
 
-**Solução proposta:**
-
-1. **Helmet + HSTS** no Express:
-
-```typescript
-// backend/src/app.ts — alteração
-import helmet from "helmet";
-
-app.use(helmet({
-  hsts: {
-    maxAge: 31536000, // 1 ano
-    includeSubDomains: true,
-    preload: true,
-  },
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:"],
-    },
-  },
-}));
-```
-
-2. ** Criptografia do descriptor no client antes do envio** (opção avançada):
-
-```typescript
-// frontend/src/utils/biometricEncryption.ts
-
-const ALGORITHM = "AES-GCM";
-const IV_LENGTH = 12;
-
-/**
- * Criptografa o descriptor facial antes do envio.
- * A chave é derivada do JWT do usuário + salt fixo do servidor.
- */
-export async function encryptDescriptor(
-  descriptor: Float32Array,
-  jwtToken: string
-): Promise<{ encrypted: string; iv: string }> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(JSON.stringify(Array.from(descriptor)));
-
-  // Derivar chave do token + salt
-  const keyMaterial = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(jwtToken.slice(0, 32)),
-    { name: "PBKDF2" },
-    false,
-    ["deriveKey"]
-  );
-
-  const key = await crypto.subtle.deriveKey(
-    {
-      name: "PBKDF2",
-      salt: encoder.encode("viggo-biometric-salt"),
-      iterations: 100000,
-      hash: "SHA-256",
-    },
-    keyMaterial,
-    { name: ALGORITHM, length: 256 },
-    false,
-    ["encrypt"]
-  );
-
-  const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
-  const encrypted = await crypto.subtle.encrypt(
-    { name: ALGORITHM, iv },
-    key,
-    data
-  );
-
-  return {
-    encrypted: btoa(String.fromCharCode(...new Uint8Array(encrypted))),
-    iv: btoa(String.fromCharCode(...iv)),
-  };
-}
-```
+**Implementação:**
+- `backend/src/app.ts` — `helmet()` com HSTS (1 ano, includeSubDomains, preload) + CSP (defaultSrc self, scriptSrc self, styleSrc self+unsafe-inline, imgSrc self+data)
+- `backend/package.json` — `helmet` + `@types/helmet`
 
 **Arquivos afetados:**
-- Alterado: `backend/src/app.ts` — Adicionar `helmet`
-- Alterado: `backend/package.json` — `npm install helmet @types/helmet`
-- Novo: `frontend/src/utils/biometricEncryption.ts` (opcional)
+- Alterado: `backend/package.json`
+- Alterado: `backend/src/app.ts`
+- Alterado: `backend/src/routes/checkinRoutes.ts`
+- Alterado: `frontend/src/services/api.ts` — `checkins.exportRelatorioMensal()`
+- Alterado: `frontend/src/pages/DashboardPage.tsx` — Botão download (substitui geração client-side)
 
 ---
 
@@ -1792,7 +1718,7 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 | F11 | Portal do titular (DSAR) | Art. 18 | ❌ | 🔴 Bloqueante | Nenhum |
 | F11.b | Descriptor exposto (SEC-14/15) | Art. 18 + 46 | ⚠️ | 🟠 Alto | `EmployeesController.ts:68` |
 | F19 | Política retenção/deleção | Art. 15, 16 | ✅ | 🔴 Bloqueante | `POLITICA_RETENCAO.md`, `retentionCleanup.ts` |
-| F12 | Criptografia descriptor trânsito | Art. 46 | ⚠️ | 🟠 Alto | `app.ts` (sem helmet) |
+| F12 | Criptografia descriptor trânsito | Art. 46 | ✅ | 🟠 Alto | `app.ts` (helmet + HSTS) |
 | F13 | Contrato ctrl×operador | Art. 39 III | ❌ | 🟠 Alto | Nenhum |
 | F24 | Registro operações tratamento | Art. 37 | ⚠️ | 🟡 Médio | `AuditMiddleware.ts` |
 | F22 | Relatório conformidade (RIP) | Art. 50 | ❌ | 🟡 Médio | Nenhum |
@@ -1878,6 +1804,9 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 | T18 | **F13** | Template `docs/DPA.md` (Contrato de Tratamento de Dados) | Jurídico | Nenhuma |
 | T19 | **F13** | Adicionar aceite do DPA no fluxo de cadastro da empresa (`CompanySignupPage.tsx`) | Médio | T18 |
 | T20 | **F24** | Colunas `legalBasis`, `purpose`, `personalDataCategories` no `AuditLog` + mapeamento no `AuditMiddleware` | Médio | Nenhuma |
+
+> **Progresso Sprint 2:** T16 ✅ (1/9 — 11%)
+> T16 (Helmet + HSTS) implementado.
 
 **Entregáveis Sprint 2:**
 - Portal do titular (DSAR) completo no backend
