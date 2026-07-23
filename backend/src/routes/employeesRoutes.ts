@@ -8,7 +8,7 @@ const employeesRoutes = Router();
 const employeesController = new EmployeesController();
 
 employeesRoutes.get("/", authMiddleware, employeesController.getEmployees);
-employeesRoutes.get("/face", authMiddleware, faceValidationLimiter, employeesController.index)
+employeesRoutes.get("/face/token", authMiddleware, faceValidationLimiter, employeesController.issueFaceToken);
 employeesRoutes.post("/face/verify", authMiddleware, faceValidationLimiter, employeesController.verifyFace)
 
 export { employeesRoutes }

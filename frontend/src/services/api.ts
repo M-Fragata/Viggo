@@ -104,16 +104,16 @@ export const api = {
   },
 
   employees: {
-    getFaceDescriptor: () => fetchApi<FaceDescriptorResponse>("/employees/face"),
+    issueFaceToken: () => fetchApi<FaceTokenResponse>("/employees/face/token"),
     updateFaceDescriptor: (userId: string, descriptor: number[]) =>
       fetchApi<User>(`/sessions/${userId}`, {
         method: "PUT",
         body: JSON.stringify({ faceDescriptor: descriptor }),
       }),
-    verifyFace: (descriptor: number[]) =>
+    verifyFaceWithToken: (token: string, descriptor: number[]) =>
       fetchApi<VerifyFaceResponse>("/employees/face/verify", {
         method: "POST",
-        body: JSON.stringify({ descriptor }),
+        body: JSON.stringify({ token, descriptor }),
       }),
   },
 
@@ -387,6 +387,11 @@ export interface MasterMetricsResponse {
 
 export interface FaceDescriptorResponse {
   [key: string]: number;
+}
+
+export interface FaceTokenResponse {
+  token: string;
+  expiresIn: number;
 }
 
 export interface VerifyFaceResponse {

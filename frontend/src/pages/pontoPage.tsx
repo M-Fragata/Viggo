@@ -8,7 +8,7 @@ import { LogIn, Utensils, Coffee, LogOut, ScanFace } from "lucide-react"
 import { PontoPageSkeleton } from "../components/PontoPageSkeleton"
 import { z } from "zod"
 import { Button } from "../components/Button"
-import type { FaceDescriptorResponse, CheckinCreateDto } from "../services/api"
+import type { CheckinCreateDto } from "../services/api"
 
 type ChekinProps = {
     id: string,
@@ -32,7 +32,7 @@ export function PontoPage() {
 
     const [isSuccess, setIsSuccess] = useState(false);
     const [isRegistering, setIsRegistering] = useState(false);
-    const [livenessDescriptor, setLivenessDescriptor] = useState<Float32Array | null>(null);
+    const [faceToken, setFaceToken] = useState<string | null>(null);
     const [showLiveness, setShowLiveness] = useState(false);
     const [isPreparingCheckin, setIsPreparingCheckin] = useState(false);
     const [comprovanteText, setComprovanteText] = useState<string | null>(null);
@@ -93,10 +93,8 @@ export function PontoPage() {
                 return { success: false }
             }
 
-            const data = await api.employees.getFaceDescriptor()
-            const savedDescriptor = new Float32Array(Object.values(data as FaceDescriptorResponse)) as Float32Array;
-
-            setLivenessDescriptor(savedDescriptor);
+            const data = await api.employees.issueFaceToken()
+            setFaceToken(data.token);
             setVideoOpen(true)
             setShowLiveness(true)
             setMessage("Iniciando validação...")
@@ -172,7 +170,7 @@ export function PontoPage() {
             setIsSuccess(true);
             setMessage("Ponto registrado com sucesso!");
             setPendingCheckin(null);
-            setLivenessDescriptor(null);
+            setFaceToken(null);
 
             await handleGetCheckin();
 
@@ -186,7 +184,7 @@ export function PontoPage() {
             setIsRegistering(false);
             setVideoOpen(false);
             setPendingCheckin(null);
-            setLivenessDescriptor(null);
+            setFaceToken(null);
             setComprovanteText(null);
             setMessage(error instanceof Error ? error.message : "Erro ao registrar o ponto. Tente novamente.");
         }
@@ -197,7 +195,7 @@ export function PontoPage() {
         setShowLiveness(false);
         setVideoOpen(false);
         setPendingCheckin(null);
-        setLivenessDescriptor(null);
+        setFaceToken(null);
         setMessage("Validação cancelada");
     };
 
@@ -265,10 +263,10 @@ export function PontoPage() {
                             />
                         </div>
 
-                        {showLiveness && livenessDescriptor && (
+                        {showLiveness && faceToken && (
                             <LivenessChallenge
                                 videoRef={videoRef}
-                                faceDescriptor={livenessDescriptor}
+                                faceToken={faceToken}
                                 onComplete={handleLivenessComplete}
                                 onCancel={handleLivenessCancel}
                                 onModelsLoaded={() => setMessage("Centralize seu rosto")}

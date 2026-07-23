@@ -948,139 +948,25 @@ export function aplicarTolerancia(
 > (como o vetor biométrico). Deve-se confirmar **existência** e **finalidade**,
 > não expor o vetor.
 
-**Status:** PARCIALMENTE IMPLEMENTADO
+**Status:** IMPLEMENTADO ✅
 
-**Severidade:** 🟠 ALTO RISCO (referência cruzada com `SEC-14` e `SEC-15` do `SECURITY_AUDIT.md`)
-
-**Constatado no código atual:**
-- `backend/src/controller/EmployeesController.ts:68` retorna `user.faceDescriptor` (128 floats) ao client via `GET /employees/face`
-- `pontoPage.tsx:95-96` recebe o descriptor e usa para comparação facial local como fallback
-- `CheckinController.ts:55-58` retorna `{ checkin, faceDescriptor }` no `POST /checkins` (este campo é **ignorado** pelo frontend)
-
-**Impacto:** O descriptor exposto pode ser capturado por XSS, extensão do browser ou ataque MITM e usado para spoofing futuro. Dado sensível biométrico é **irrevogável** (não pode ser "trocado" como senha).
-
-**Solução proposta — Token de Uso Único (Single-Use Token) com descarte após uso:**
-
-1. **Substituir `GET /employees/face` por `GET /employees/face/token`:**
-
-```typescript
-// backend/src/controller/EmployeesController.ts — novo método
-private faceTokens = new Map<string, { descriptor: Float32Array; expiresAt: Date }>();
-
-async issueFaceToken(req: Request, res: Response) {
-  try {
-    const userId = req.user.id;
-
-    const user = await extendedPrisma.user.findUnique({ where: { id: userId } });
-    if (!user) return res.status(404).json({ message: "Usuário não encontrado" });
-
-    if (!user.faceDescriptor) {
-      return res.status(403).json({
-        code: "FACE_NOT_REGISTERED",
-        message: "Registro facial pendente. Por favor, cadastre sua face.",
-      });
-    }
-
-    // Gerar token UUID de uso único com TTL de 30 segundos
-    const token = crypto.randomUUID();
-    const descriptor = new Float32Array(
-      Object.values(user.faceDescriptor as Record<string, number>)
-    );
-    const expiresAt = new Date(Date.now() + 30_000); // 30s
-
-    this.faceTokens.set(token, { descriptor, expiresAt });
-
-    // Limpeza de tokens expirados (housekeeping)
-    setTimeout(() => this.faceTokens.delete(token), 30_000);
-
-    return res.json({ token, expiresIn: 30 });
-  } catch (error) {
-    return res.status(500).json({ message: "Erro ao gerar token facial" });
-  }
-}
-```
-
-2. **Atualizar `POST /employees/face/verify` para consumir o token:**
-
-```typescript
-async verifyFace(req: Request, res: Response) {
-  const bodySchema = z.object({
-    token: z.string().uuid(),
-    descriptor: z.array(z.number()).min(128).max(128),
-  });
-
-  try {
-    const { token, descriptor } = bodySchema.parse(req.body);
-
-    // Buscar descriptor do token (Map em memória)
-    const stored = this.faceTokens.get(token);
-    if (!stored) {
-      return res.status(401).json({ message: "Token inválido ou expirado" });
-    }
-
-    // Verificar expiração
-    if (stored.expiresAt < new Date()) {
-      this.faceTokens.delete(token);
-      return res.status(401).json({ message: "Token expirado" });
-    }
-
-    // Descartar token (single-use)
-    this.faceTokens.delete(token);
-
-    const inputDescriptor = new Float32Array(descriptor);
-    const distance = euclideanDistance(inputDescriptor, stored.descriptor);
-    const threshold = 0.5;
-
-    if (distance < threshold) {
-      return res.json({ success: true, distance });
-    }
-
-    return res.json({ success: false, distance, message: "Rosto não reconhecido" });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ message: "Dados inválidos", errors: error.issues });
-    }
-    return res.status(500).json({ message: "Erro ao verificar face" });
-  }
-}
-```
-
-3. **Atualizar frontend (`pontoPage.tsx`) para usar token:**
-
-```typescript
-// Antes: const data = await api.employees.getFaceDescriptor();
-// Depois:
-const { token } = await api.employees.issueFaceToken();
-// Passar token para LivenessChallenge ao invés do descriptor bruto
-// LivenessChallenge envia { token, descriptor } para /employees/face/verify
-// Remove dependência de comparação local (fallback) no frontend
-```
-
-4. **Remover `faceDescriptor` do response do `POST /checkins`:**
-
-```typescript
-// backend/src/controller/CheckinController.ts:55-58
-// Antes: const data = { checkin: { checkin }, faceDescriptor: user.faceDescriptor }
-// Depois:
-return res.status(201).json({ checkin });
-```
-
-5. **Rotas atualizadas:**
-
-```typescript
-// backend/src/routes/employeesRoutes.ts
-employeesRoutes.get("/face/token", authMiddleware, faceValidationLimiter, employeesController.issueFaceToken);
-employeesRoutes.post("/face/verify", authMiddleware, faceValidationLimiter, employeesController.verifyFace);
-// Remover: employeesRoutes.get("/face", authMiddleware, faceValidationLimiter, employeesController.index)
-```
+**Implementação:**
+- `backend/src/controller/EmployeesController.ts`:
+  - `issueFaceToken()` — gera token UUID com TTL 30s, armazena descriptor em Map em memória
+  - `verifyFace()` — aceita `{ token, descriptor }` (modo novo) ou `{ descriptor }` (legado)
+  - `GET /employees/face` removido (não expõe mais descriptor ao client)
+- `backend/src/routes/employeesRoutes.ts` — `GET /face/token` + `POST /face/verify`
+- `frontend/src/services/api.ts` — `issueFaceToken()` + `verifyFaceWithToken(token, descriptor)`, removido `getFaceDescriptor()`
+- `frontend/src/pages/pontoPage.tsx` — usa `issueFaceToken()` em vez de `getFaceDescriptor()`, passa `faceToken` ao LivenessChallenge
+- `frontend/src/components/LivenessChallenge.tsx` — recebe `faceToken`, envia `{ token, descriptor }` para verify, sem `fallbackLocalComparison`
+- `POST /checkins` response — `faceDescriptor` já removido (implementado no F6)
 
 **Arquivos afetados:**
-- Alterado: `backend/src/controller/EmployeesController.ts` — `issueFaceToken` + `verifyFace` atualizado
-- Alterado: `backend/src/routes/employeesRoutes.ts` — Nova rota + remover `GET /face`
-- Alterado: `backend/src/controller/CheckinController.ts:55-58` — Remover `faceDescriptor` do response
-- Alterado: `frontend/src/services/api.ts` — `employees.issueFaceToken()` + `verifyFace(token, descriptor)`
-- Alterado: `frontend/src/pages/pontoPage.tsx` — Usar token ao invés de descriptor bruto
-- Alterado: `frontend/src/components/LivenessChallenge.tsx` — Remover `fallbackLocalComparison()`
+- Alterado: `backend/src/controller/EmployeesController.ts`
+- Alterado: `backend/src/routes/employeesRoutes.ts`
+- Alterado: `frontend/src/services/api.ts`
+- Alterado: `frontend/src/pages/pontoPage.tsx`
+- Alterado: `frontend/src/components/LivenessChallenge.tsx`
 
 ---
 
@@ -1541,7 +1427,7 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 | F9 | Termos de Uso/Privacidade | Art. 7º, 9º | ✅ | 🔴 Bloqueante | `TermosDeUso.tsx`, `PoliticaPrivacidade.tsx` |
 | F10 | Consentimento biométrico | Art. 11 | ✅ | 🔴 Bloqueante | `ConsentController.ts` |
 | F11 | Portal do titular (DSAR) | Art. 18 | ✅ | 🔴 Bloqueante | `PrivacyController.ts` + `privacyRoutes.ts` |
-| F11.b | Descriptor exposto (SEC-14/15) | Art. 18 + 46 | ⚠️ | 🟠 Alto | `EmployeesController.ts:68` |
+| F11.b | Descriptor exposto (SEC-14/15) | Art. 18 + 46 | ✅ | 🟠 Alto | `EmployeesController.ts` (token descartável) |
 | F19 | Política retenção/deleção | Art. 15, 16 | ✅ | 🔴 Bloqueante | `POLITICA_RETENCAO.md`, `retentionCleanup.ts` |
 | F12 | Criptografia descriptor trânsito | Art. 46 | ✅ | 🟠 Alto | `app.ts` (helmet + HSTS) |
 | F13 | Contrato ctrl×operador | Art. 39 III | ❌ | 🟠 Alto | Nenhum |
@@ -1630,8 +1516,8 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 | T19 | **F13** | Adicionar aceite do DPA no fluxo de cadastro da empresa (`CompanySignupPage.tsx`) | Médio | T18 |
 | T20 | **F24** | Colunas `legalBasis`, `purpose`, `personalDataCategories` no `AuditLog` + mapeamento no `AuditMiddleware` | Médio | Nenhuma |
 
-> **Progresso Sprint 2:** T16 ✅ T12 ✅ (2/9 — 22%)
-> T16 (Helmet + HSTS) e T12 (Portal do Titular DSAR) implementados.
+> **Progresso Sprint 2:** T16 ✅ T12 ✅ T13 ✅ T14 ✅ T15 ✅ (5/9 — 56%)
+> T16 (Helmet + HSTS), T12 (Portal do Titular DSAR), T13+T14+T15 (Token facial) implementados.
 
 **Entregáveis Sprint 2:**
 - Portal do titular (DSAR) completo no backend

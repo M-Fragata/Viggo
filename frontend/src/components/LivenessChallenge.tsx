@@ -11,7 +11,7 @@ interface LivenessChallengeProps {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   onComplete: (bestFrameDescriptor: Float32Array) => void;
   onCancel: () => void;
-  faceDescriptor?: Float32Array;
+  faceToken?: string;
   onModelsLoaded?: () => void;
   onStepChange?: (message: string) => void;
 }
@@ -227,14 +227,14 @@ export function LivenessChallenge({
   videoRef,
   onComplete,
   onCancel,
-  faceDescriptor,
+  faceToken,
   onModelsLoaded,
   onStepChange
 }: LivenessChallengeProps) {
-  const steps: LivenessStep[] = useMemo(() => faceDescriptor
+  const steps: LivenessStep[] = useMemo(() => faceToken
     ? ['front', 'left', 'right']
     : ['front'],
-  [faceDescriptor]);
+  [faceToken]);
 
   const animationRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -370,20 +370,17 @@ export function LivenessChallenge({
 
   const validateDescriptorWithBackend = useCallback(async (descriptor: Float32Array): Promise<{ success: boolean; distance: number }> => {
     try {
+      if (!faceToken) {
+        return { success: true, distance: 0 };
+      }
       const descriptorArray = Array.from(descriptor);
-      const result = await api.employees.verifyFace(descriptorArray);
+      const result = await api.employees.verifyFaceWithToken(faceToken, descriptorArray);
       return { success: result.success, distance: result.distance };
     } catch (err) {
       console.error('Erro na verificação backend:', err);
       return { success: false, distance: -1 };
     }
-  }, []);
-
-  const fallbackLocalComparison = useCallback((descriptor: Float32Array): boolean => {
-    if (!faceDescriptor) return false;
-    const distance = faceapi.euclideanDistance(descriptor, faceDescriptor);
-    return distance < 0.5;
-  }, [faceDescriptor]);
+  }, [faceToken]);
 
   const handleValidationSuccess = useCallback((descriptor: Float32Array) => {
     setBestFrameDescriptor(descriptor);
@@ -480,49 +477,22 @@ export function LivenessChallenge({
           if (heldTime >= config.holdDuration && !isValidatingRef.current) {
             isValidatingRef.current = true;
 
-            // Registration mode: no saved descriptor to compare against
-            if (!faceDescriptor) {
-              handleValidationSuccess(detection.descriptor);
-              isValidatingRef.current = false;
-            } else {
-              // Check-in mode: validate against backend
-              const backendResult = await validateDescriptorWithBackend(detection.descriptor);
+            // Validate against backend using token
+            const backendResult = await validateDescriptorWithBackend(detection.descriptor);
 
-              if (backendResult.success) {
-                if (step === 'front' && !blinkValidated) {
-                  waitingForBlinkRef.current = true;
-                  isValidatingRef.current = false;
-                  return;
-                }
-                handleValidationSuccess(detection.descriptor);
-              } else if (backendResult.distance >= 0) {
-                if (fallbackLocalComparison(detection.descriptor)) {
-                  if (step === 'front' && !blinkValidated) {
-                    waitingForBlinkRef.current = true;
-                    isValidatingRef.current = false;
-                    return;
-                  }
-                  handleValidationSuccess(detection.descriptor);
-                } else {
-                  poseHoldStartRef.current = 0;
-                  ringMotionVal.set(0);
-                }
-              } else {
-                if (fallbackLocalComparison(detection.descriptor)) {
-                  if (step === 'front' && !blinkValidated) {
-                    waitingForBlinkRef.current = true;
-                    isValidatingRef.current = false;
-                    return;
-                  }
-                  handleValidationSuccess(detection.descriptor);
-                } else {
-                  poseHoldStartRef.current = 0;
-                  ringMotionVal.set(0);
-                }
+            if (backendResult.success) {
+              if (step === 'front' && !blinkValidated) {
+                waitingForBlinkRef.current = true;
+                isValidatingRef.current = false;
+                return;
               }
-
-              isValidatingRef.current = false;
+              handleValidationSuccess(detection.descriptor);
+            } else {
+              poseHoldStartRef.current = 0;
+              ringMotionVal.set(0);
             }
+
+            isValidatingRef.current = false;
           }
         } else {
           poseHoldStartRef.current = 0;
@@ -542,7 +512,6 @@ export function LivenessChallenge({
     modelsLoaded,
     isTransitioning,
     blinkValidated,
-    faceDescriptor,
     getHeadPose,
     isLookingFront,
     isLookingLeft,
@@ -550,7 +519,6 @@ export function LivenessChallenge({
     ballX,
     ringMotionVal,
     validateDescriptorWithBackend,
-    fallbackLocalComparison,
     handleValidationSuccess,
   ]);
 
