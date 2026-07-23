@@ -1539,9 +1539,49 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 
 ---
 
-### Sprint 3 — FUNCIONALIDADES COMPLEMENTARES (2-3 semanas)
+### 6.1. Gaps Frontend — Endpoints Backend sem Integração
 
-> **Foco:** Ponto por exceção, tolerância, criptografia CPF, incidentes.
+> **Análise:** Após conclusão da Sprint 2, foi identificado que vários endpoints
+> novos no backend **não possuem telas no frontend**. O backend está à frente do
+> frontend em módulos recentes (Justificativa, Privacy/DSAR, Consent, AFD).
+
+#### Tabelas de Gaps Frontend
+
+| Módulo | Endpoint | API Method | Frontend Page | Status |
+|--------|----------|-----------|---------------|--------|
+| **Justificativa** | `POST /justificativas` | ❌ Não existe | ❌ Nenhum | 🔴 Sem frontend |
+| **Justificativa** | `GET /justificativas` | ❌ Não existe | ❌ Nenhum | 🔴 Sem frontend |
+| **Justificativa** | `PUT /justificativas/:id/aprovar` | ❌ Não existe | ❌ Nenhum | 🔴 Sem frontend |
+| **Privacy/DSAR** | `GET /privacy/my-data` | ❌ Não existe | ❌ Nenhum | 🔴 Sem frontend |
+| **Privacy/DSAR** | `DELETE /privacy/my-face` | ❌ Não existe | ❌ Nenhum | 🔴 Sem frontend |
+| **Privacy/DSAR** | `GET /privacy/my-logs` | ❌ Não existe | ❌ Nenhum | 🔴 Sem frontend |
+| **Consent** | `POST /consentimentos` | ❌ Não existe | ❌ Nenhum | 🔴 Sem frontend |
+| **Consent** | `GET /consentimentos` | ❌ Não existe | ❌ Nenhum | 🔴 Sem frontend |
+| **AFD Export** | `GET /checkins/export/afd` | ✅ `exportAfd()` | ⚠️ API existe, sem botão | 🟡 Parcial |
+| **Funcionários** | `GET /employees` | ❌ Não existe | ❌ Nenhum | 🔴 Sem frontend |
+
+#### Telas Necessárias (Priorização Recomendada)
+
+| # | Tela | Endpoints Consumidos | Prioridade | Sugestão de Sprint |
+|---|------|---------------------|------------|-------------------|
+| 1 | **Portal LGPD do Funcionário** — "Meus Dados" com dados pessoais, biometria, checkins, consentimentos + botão "Excluir minha face" + "Meus logs de acesso" | `GET /privacy/my-data`, `DELETE /privacy/my-face`, `GET /privacy/my-logs` | 🔴 Alta | Sprint 3 |
+| 2 | **Tela de Justificativas** — Funcionário cria justificativa (ABONO, FALTA, ATESTADO, GERAL) + Admin vê lista e aprova/rejeita | `POST /justificativas`, `GET /justificativas`, `PUT /justificativas/:id/aprovar` | 🔴 Alta | Sprint 3 |
+| 3 | **Exportar AFD no Dashboard** — Botão "Exportar AFD" (Anexo II Portaria 671) com seletor de período | `GET /checkins/export/afd` | 🟡 Média | Sprint 3 |
+| 4 | **Dashboard de Consentimentos** — Funcionário vê histórico de consentimentos aceitos (Termos, Política, Biometria, DPA) | `GET /consentimentos` | 🟡 Média | Sprint 4 |
+| 5 | **Lista de Funcionários** — Admin vê e gerencia funcionários da empresa | `GET /employees` | 🟡 Média | Sprint 3 |
+
+#### Notas Técnicas
+
+- `PoliticaPrivacidade.tsx` é apenas texto estático legal — **não consome** os endpoints `/privacy/*`
+- `exportAfd()` já existe em `api.ts` mas **nenhum componente** o chama
+- `GET /employees` não tem API method nem consumer no frontend
+- `GET /checkins/month` (listMonthly) não é chamado por nenhuma tela (foi removido do frontend no F20)
+
+---
+
+### Sprint 3 — FUNCIONALIDADES COMPLEMENTARES + FRONTEND (3-4 semanas)
+
+> **Foco:** Telas frontend faltantes, ponto por exceção, tolerância, criptografia CPF, incidentes.
 
 | Tarefa | Finding | Item | Esforço | Dependências |
 |--------|---------|------|---------|--------------|
@@ -1551,6 +1591,11 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 | T24 | **F14** | `docs/PLANO_RESPOSTA_INCIDENTES.md` (template ANPD 72h) | Baixo | Nenhuma |
 | T25 | **F22** | `docs/RELATORIO_IMPACTO_PRIVACIDADE.md` (RIP) | Baixo | Nenhuma |
 | T26 | **F23** | Nomear DPO + incluir contato no rodapé da Política de Privacidade | Baixo | T06 |
+| T27 | **Gap FE** | Portal LGPD do Funcionário (`/meus-dados`) — dados pessoais, excluir face, logs | Médio | Nenhuma |
+| T28 | **Gap FE** | Tela de Justificativas — criar (funcionário) + listar/aprovar (admin) | Alto | T17 |
+| T29 | **Gap FE** | Botão "Exportar AFD" no Dashboard admin | Baixo | Nenhuma |
+| T30 | **Gap FE** | Dashboard de Consentimentos — visualizar consentimentos aceitos | Baixo | Nenhuma |
+| T31 | **Gap FE** | Lista de Funcionários — `GET /employees` + tela admin | Médio | Nenhuma |
 
 **Entregáveis Sprint 3:**
 - Suporte a ponto por exceção (settings + lógica)
@@ -1559,6 +1604,11 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 - Documento de resposta a incidentes (ANPD 72h)
 - Relatório de impacto à privacidade (RIP)
 - DPO nomeado + contato exposto
+- **Portal LGPD do Funcionário** (dados pessoais + exclusão face + logs)
+- **Tela de Justificativas** (criação + aprovação)
+- **Exportar AFD** no dashboard
+- **Dashboard de Consentimentos**
+- **Lista de Funcionários**
 
 ---
 
