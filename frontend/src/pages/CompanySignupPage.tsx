@@ -23,6 +23,7 @@ export function CompanySignupPage() {
       confirmPassword: "",
       aceiteTermos: false,
       aceiteBiometria: false,
+      aceiteDpa: false,
     },
   });
 
@@ -37,6 +38,7 @@ export function CompanySignupPage() {
       confirmPassword: formData.get("confirmPassword") as string,
       aceiteTermos: formData.get("aceiteTermos") === "on",
       aceiteBiometria: formData.get("aceiteBiometria") === "on",
+      aceiteDpa: formData.get("aceiteDpa") === "on",
     };
 
     const parsed = companySignupSchema.safeParse(rawData);
@@ -74,6 +76,7 @@ export function CompanySignupPage() {
         confirmPassword: rawData.confirmPassword,
         aceiteTermos: rawData.aceiteTermos,
         aceiteBiometria: rawData.aceiteBiometria,
+        aceiteDpa: rawData.aceiteDpa,
       });
 
       setSession(response.user, response.token, response.company.name);
@@ -309,6 +312,27 @@ export function CompanySignupPage() {
                 </div>
                 {state.fieldErrors.aceiteBiometria && (
                   <p className="text-sm text-red-500 ml-7">{state.fieldErrors.aceiteBiometria}</p>
+                )}
+
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    id="aceiteDpa"
+                    name="aceiteDpa"
+                    required
+                    className="mt-1 h-4 w-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500"
+                  />
+                  <label htmlFor="aceiteDpa" className="text-sm text-slate-600 leading-relaxed">
+                    Li e aceito o{" "}
+                    <a href="/docs/contrato-tratamento-dados.md" target="_blank" rel="noopener noreferrer" className="text-emerald-600 underline hover:text-emerald-700">
+                      Contrato de Tratamento de Dados Pessoais (DPA)
+                    </a>
+                    , autorizando o Viggo a tratar os dados dos meus funcionários exclusivamente
+                    para fins de registro de ponto eletrônico, conforme Art. 39 da LGPD.
+                  </label>
+                </div>
+                {state.fieldErrors.aceiteDpa && (
+                  <p className="text-sm text-red-500 ml-7">{state.fieldErrors.aceiteDpa}</p>
                 )}
               </div>
 

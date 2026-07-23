@@ -217,6 +217,7 @@ export interface SignupCompanyDto {
   confirmPassword: string;
   aceiteTermos: boolean;
   aceiteBiometria: boolean;
+  aceiteDpa: boolean;
 }
 
 export interface SignupCompanyResponse {

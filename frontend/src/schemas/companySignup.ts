@@ -14,6 +14,9 @@ export const companySignupSchema = z.object({
   aceiteBiometria: z.boolean().refine((v) => v === true, {
     message: "Você precisa autorizar o uso da biometria facial",
   }),
+  aceiteDpa: z.boolean().refine((v) => v === true, {
+    message: "Você precisa aceitar o Contrato de Tratamento de Dados",
+  }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Senhas não conferem",
   path: ["confirmPassword"],

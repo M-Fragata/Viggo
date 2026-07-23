@@ -28,10 +28,13 @@ export class CompanyController {
       aceiteBiometria: z.boolean().refine((v) => v === true, {
         message: 'Você precisa autorizar o uso da biometria facial',
       }),
+      aceiteDpa: z.boolean().refine((v) => v === true, {
+        message: 'Você precisa aceitar o Contrato de Tratamento de Dados',
+      }),
     });
 
     try {
-      const { name, email, cpf, cnpj, companyName, password, confirmPassword, aceiteTermos, aceiteBiometria } = bodySchema.parse(req.body);
+      const { name, email, cpf, cnpj, companyName, password, confirmPassword, aceiteTermos, aceiteBiometria, aceiteDpa } = bodySchema.parse(req.body);
 
       if (password !== confirmPassword) {
         return res.status(400).json({ message: 'Senhas não conferem' });
@@ -111,6 +114,7 @@ export class CompanyController {
         { userId: user.id, tipo: "TERMOS_DE_USO", versao: "1.0", aceite: aceiteTermos, ip },
         { userId: user.id, tipo: "POLITICA_PRIVACIDADE", versao: "1.0", aceite: aceiteTermos, ip },
         { userId: user.id, tipo: "BIOMETRIA", versao: "1.0", aceite: aceiteBiometria, ip },
+        { userId: user.id, tipo: "DPA", versao: "1.0", aceite: aceiteDpa, ip },
       ];
 
       await prisma.consentimento.createMany({ data: consentimentos });

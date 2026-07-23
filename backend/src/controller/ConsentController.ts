@@ -9,7 +9,7 @@ export class ConsentController {
    */
   async create(req: Request, res: Response) {
     const bodySchema = z.object({
-      tipo: z.enum(["TERMOS_DE_USO", "POLITICA_PRIVACIDADE", "BIOMETRIA"]),
+      tipo: z.enum(["TERMOS_DE_USO", "POLITICA_PRIVACIDADE", "BIOMETRIA", "DPA"]),
       versao: z.string().min(1),
       aceite: z.boolean(),
     });

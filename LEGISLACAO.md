@@ -1008,11 +1008,15 @@ segurança (HSTS 1 ano, CSP, X-Frame-Options, etc).
 > [...] deverão ser determinadas por meio de contrato [...] entre o
 > controlador e o operador."
 
-**Status:** NÃO IMPLEMENTADO
+**Status:** ✅ IMPLEMENTADO (23/07/2026)
 
-**Impacto:** O Viggo opera como **operador** de dados (processa dados em
+**Constatado:** ~~O Viggo opera como **operador** de dados (processa dados em
 nome das empresas clientes, que são controladoras). Sem contrato de
-tratamento entre Viggo e cada empresa, viola Art. 39 da LGPD.
+tratamento entre Viggo e cada empresa, viola Art. 39 da LGPD.~~
+
+**Implementado:** Template de DPA criado em `docs/contrato-tratamento-dados.md`.
+Checkbox de aceite adicionado ao fluxo de cadastro da empresa.
+Consentimento do tipo `DPA` salvo no banco junto aos demais consentimentos.
 
 **Solução proposta:**
 
@@ -1435,7 +1439,7 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 | F11.b | Descriptor exposto (SEC-14/15) | Art. 18 + 46 | ✅ | 🟠 Alto | `EmployeesController.ts` (token descartável) |
 | F19 | Política retenção/deleção | Art. 15, 16 | ✅ | 🔴 Bloqueante | `POLITICA_RETENCAO.md`, `retentionCleanup.ts` |
 | F12 | Criptografia descriptor trânsito | Art. 46 | ✅ | 🟠 Alto | `app.ts` (helmet + HSTS) |
-| F13 | Contrato ctrl×operador | Art. 39 III | ❌ | 🟠 Alto | Nenhum |
+| F13 | Contrato ctrl×operador | Art. 39 III | ✅ | 🟠 Alto | `docs/contrato-tratamento-dados.md` + `CompanySignupPage.tsx` |
 | F24 | Registro operações tratamento | Art. 37 | ✅ | 🟡 Médio | `AuditMiddleware.ts` + schema `AuditLog` |
 | F22 | Relatório conformidade (RIP) | Art. 50 | ❌ | 🟡 Médio | Nenhum |
 | F23 | DPO/Encarregado nomeado | Art. 41 | ❌ | 🟡 Médio | Nenhum |
@@ -1521,8 +1525,8 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 | T19 | **F13** | Adicionar aceite do DPA no fluxo de cadastro da empresa (`CompanySignupPage.tsx`) | Médio | T18 |
 | T20 | **F24** | Colunas `legalBasis`, `purpose`, `personalDataCategories` no `AuditLog` + mapeamento no `AuditMiddleware` | Médio | Nenhuma |
 
-> **Progresso Sprint 2:** T16 ✅ T12 ✅ T13 ✅ T14 ✅ T15 ✅ T17 ✅ T20 ✅ (7/9 — 78%)
-> T16 (Helmet + HSTS), T12 (Portal do Titular DSAR), T13+T14+T15 (Token facial), T17 (Justificativa), T20 (AuditLog LGPD) implementados.
+> **Progresso Sprint 2:** T16 ✅ T12 ✅ T13 ✅ T14 ✅ T15 ✅ T17 ✅ T20 ✅ T18 ✅ T19 ✅ (9/9 — 100%)
+> T16 (Helmet + HSTS), T12 (Portal do Titular DSAR), T13+T14+T15 (Token facial), T17 (Justificativa), T20 (AuditLog LGPD), T18+T19 (DPA) implementados.
 
 **Entregáveis Sprint 2:**
 - Portal do titular (DSAR) completo no backend
