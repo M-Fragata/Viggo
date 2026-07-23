@@ -2,6 +2,7 @@ import { type Request, type Response } from "express";
 import { z } from "zod"
 import { extendedPrisma } from "../database/prisma-extensions.js";
 import { getNextNSR, currentYear, NsrLimitExceededError } from "../utils/nsrGenerator.js";
+import { gerarComprovante } from "../utils/comprovanteGenerator.js";
 
 import { parseISO, startOfDay, endOfDay, startOfMonth, endOfMonth } from "date-fns"
 
@@ -51,7 +52,7 @@ export class CheckinController {
             // (incorporacao/cisao) - Portaria 671 Art. 78 §5o-A II.
             const company = await extendedPrisma.company.findUnique({
                 where: { id: companyId },
-                select: { cnpj: true },
+                select: { cnpj: true, name: true },
             });
 
             if (!company) {
@@ -80,12 +81,23 @@ export class CheckinController {
                 });
             });
 
-            const data = {
-                checkin: { checkin },
-                faceDescriptor: user.faceDescriptor
-            }
+            const comprovante = gerarComprovante({
+                nsr: checkin.nsr,
+                companyName: company.name,
+                companyCnpj: company.cnpj,
+                employeeName: user.name,
+                employeeCpf: user.cpf ?? "",
+                checkinType: type,
+                checkinDate: checkin.createdAt,
+                latitude,
+                longitude,
+            });
 
-            return res.status(201).json(data)
+            return res.status(201).json({
+                checkin: { checkin },
+                comprovante: comprovante.texto,
+                hashVerificacao: comprovante.hashVerificacao,
+            })
 
         } catch (error) {
 

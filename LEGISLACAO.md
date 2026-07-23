@@ -67,7 +67,7 @@ A análise identificou **26 lacunas legais** distribuídas entre as três normas
 
 ### Atualizações — 23/07/2026
 
-Foram implementados 4 findings (Sprint 1, parcial):
+Foram implementados 5 findings (Sprint 1, parcial):
 
 | Finding | Descrição | Status |
 |---------|-----------|--------|
@@ -75,6 +75,7 @@ Foram implementados 4 findings (Sprint 1, parcial):
 | **F3/F17** | NSR sequencial com reinício anual + constraint `@@unique([companyId, nsr, ano])` + `NsrLimitExceededError` | ✅ Implementado |
 | **F18** | Snapshot `employerCnpj` no `CheckIn` (desnormalizado) | ✅ Implementado |
 | **F2** | Exportação AFD (Anexo II) — `GET /checkins/export/afd` com Header Tipo 1, Detalhes Tipo 2, Trailer Tipo 9 | ✅ Implementado |
+| **F6** | Comprovante imediato (Anexo III) — `comprovanteGenerator.ts` com SHA-256, exibido no frontend | ✅ Implementado |
 
 Migrations aplicadas: `f4_cnpj_obrigatorio`, `f3f17_nsr_anual`, `f18_employer_cnpj_snapshot`.
 Backend build: ✅ passando. Frontend build: ✅ passando.
@@ -728,126 +729,26 @@ export { justificativaRoutes };
 >
 > **Anexo III** define o leiaute mínimo do comprovante.
 
-**Status:** PARCIALMENTE IMPLEMENTADO
+**Status:** ✅ IMPLEMENTADO (23/07/2026)
 
-**Impacto:** A tela `pontoPage.tsx:300-313` mostra "Ponto Concluído!" com a hora atual,
-mas **não gera comprovante formal** que contenha todos os campos obrigatórios (NSR,
-identificação do empregador, tipo, data/hora, hash de integridade).
+**Impacto:** ~~A tela `pontoPage.tsx:300-313` mostra "Ponto Concluído!" com a hora atual,
+mas não gera comprovante formal.~~ Comprovante agora é gerado com hash SHA-256 e
+exibido ao funcionário imediatamente após cada marcação.
 
-**Solução proposta:**
-
-Gerar comprovante digital imediato ao funcionário após cada marcação:
-
-```typescript
-// backend/src/utils/comprovanteGenerator.ts
-import crypto from "crypto";
-import { createHash } from "node:crypto";
-
-interface ComprovanteData {
-  nsr: number;
-  companyName: string;
-  companyCnpj: string;
-  employeeName: string;
-  employeeCpf: string;
-  checkinType: string;
-  checkinDate: Date;
-  latitude: number;
-  longitude: number;
-}
-
-/**
- * Gera o conteúdo do comprovante no formato Anexo III.
- * Inclui hash SHA-256 para verificação de integridade.
- */
-export function gerarComprovante(data: ComprovanteData): {
-  texto: string;
-  hashVerificacao: string;
-} {
-  const tipoMap: Record<string, string> = {
-    ENTRY: "Entrada",
-    LUNCH_START: "Saída Intervalo",
-    LUNCH_END: "Retorno Intervalo",
-    EXIT: "Saída",
-  };
-
-  const dd = String(data.checkinDate.getDate()).padStart(2, "0");
-  const mm = String(data.checkinDate.getMonth() + 1).padStart(2, "0");
-  const yyyy = data.checkinDate.getFullYear();
-  const hh = String(data.checkinDate.getHours()).padStart(2, "0");
-  const mi = String(data.checkinDate.getMinutes()).padStart(2, "0");
-  const ss = String(data.checkinDate.getSeconds()).padStart(2, "0");
-
-  const texto = [
-    "=== COMPROVANTE DE REGISTRO DE PONTO ===",
-    "",
-    `Empregador: ${data.companyName}`,
-    `CNPJ: ${data.companyCnpj}`,
-    `Empregado: ${data.employeeName}`,
-    `CPF: ${data.employeeCpf}`,
-    "",
-    `Data: ${dd}/${mm}/${yyyy}`,
-    `Hora: ${hh}:${mi}:${ss}`,
-    `Tipo: ${tipoMap[data.checkinType] ?? data.checkinType}`,
-    `NSR: ${String(data.nsr).padStart(6, "0")}`,
-    "",
-    `Latitude: ${data.latitude.toFixed(6)}`,
-    `Longitude: ${data.longitude.toFixed(6)}`,
-    "",
-  ].join("\n");
-
-  // Hash SHA-256 para verificação de integridade
-  const hashVerificacao = createHash("sha256")
-    .update(texto)
-    .digest("hex");
-
-  const textoComHash = texto + `Hash: ${hashVerificacao}`;
-
-  return { texto: textoComHash, hashVerificacao };
-}
-```
-
-**Integração no `CheckinController.createCheckin`** — Retornar comprovante no response:
-
-```typescript
-// Dentro do createCheckin, após criar o checkin:
-import { gerarComprovante } from "../utils/comprovanteGenerator.js";
-
-const comprovante = gerarComprovante({
-  nsr,
-  companyName: user.company?.name ?? "",
-  companyCnpj: user.company?.cnpj ?? "",
-  employeeName: user.name,
-  employeeCpf: user.cpf ?? "",
-  checkinType: type,
-  checkinDate: checkin.createdAt,
-  latitude,
-  longitude,
-});
-
-return res.status(201).json({
-  checkin: { checkin },
-  comprovante: comprovante.texto,
-  hashVerificacao: comprovante.hashVerificacao,
-});
-```
-
-**Frontend** — Exibir comprovante ao invés de apenas "Ponto Concluído!":
-
-```typescript
-// frontend/src/pages/pontoPage.tsx — alteração no handleLivenessComplete
-// Após api.checkins.create(pendingCheckin):
-const response = await api.checkins.create(pendingCheckin as CheckinCreateDto);
-
-// Mostrar comprovante ao invés de mensagem genérica
-setComprovanteText(response.comprovante);
-setIsSuccess(true);
-```
+**Implementação:**
+- `backend/src/utils/comprovanteGenerator.ts` — gera comprovante texto (Anexo III)
+  com campos: Empregador, CNPJ, Empregado, CPF, Data, Hora, Tipo, NSR, Localização
+  + hash SHA-256 para verificação de integridade
+- `CheckinController.createCheckin` — busca `company.name`, gera comprovante,
+  retorna `{ checkin, comprovante, hashVerificacao }` (removeu `faceDescriptor`)
+- `pontoPage.tsx` — exibe comprovante em `<pre>` dentro do overlay de sucesso
+- `api.ts` — novo tipo `CheckinCreateResponse` com `comprovante` e `hashVerificacao`
 
 **Arquivos afetados:**
 - Novo: `backend/src/utils/comprovanteGenerator.ts`
-- Alterado: `backend/src/controller/CheckinController.ts` — Retornar comprovante
-- Alterado: `frontend/src/pages/pontoPage.tsx` — Exibir comprovante
-- Alterado: `frontend/src/services/api.ts` — Tipo de resposta inclui comprovante
+- Alterado: `backend/src/controller/CheckinController.ts` — gera + retorna comprovante
+- Alterado: `frontend/src/pages/pontoPage.tsx` — exibe comprovante no sucesso
+- Alterado: `frontend/src/services/api.ts` — tipo `CheckinCreateResponse`
 
 ---
 
@@ -2106,7 +2007,7 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 | F3 | NSR sequencial | Art. 78 §5º III | ✅ | 🔴 Bloqueante | `nsrGenerator.ts` |
 | F4 | CNPJ obrigatório | Art. 78 §5º II | ✅ | 🔴 Bloqueante | `schema.prisma:12` |
 | F5 | Justificativa | Art. 78 §1º | ❌ | 🔴 Bloqueante | Nenhum |
-| F6 | Comprovante imediato | Art. 78 §2º | ⚠️ | 🔴 Bloqueante | `pontoPage.tsx:300` |
+| F6 | Comprovante imediato | Art. 78 §2º | ✅ | 🔴 Bloqueante | `comprovanteGenerator.ts` |
 | F17 | NSR reinicia anualmente | Art. 78 §5º-C | ✅ | 🔴 Bloqueante | `nsrGenerator.ts` |
 | F18 | Identif. empregador no registro | Art. 78 §5º-A II | ✅ | 🟠 Alto | `CheckIn.employerCnpj` |
 | F20 | Relatório mensal layout MTE | Art. 78 §5º-A V | ⚠️ | 🟠 Alto | `DashboardPage.tsx:320` |
@@ -2178,15 +2079,15 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 | T10 | **F19** | `POLITICA_RETENCAO.md` + `retentionCleanup.ts` (cron diário 02:00) | Médio | T09 |
 | T11 | **F20** | `relatorioMensalService.ts` — relatório folha mensal layout oficial MTE | Médio | T04 |
 
-> **Progresso Sprint 1:** T01 ✅ T02 ✅ T03 ✅ T04 ✅ (4/11 — 36%)
-> F4, F3/F17, F18 e F2 implementados e funcionais.
+> **Progresso Sprint 1:** T01 ✅ T02 ✅ T03 ✅ T04 ✅ T05 ✅ (5/11 — 45%)
+> F4, F3/F17, F18, F2 e F6 implementados e funcionais.
 
 **Entregáveis Sprint 1:**
 - Schema Prisma atualizado (NSR, ano, employerCnpj) ✅
 - 3 migrations (f4_cnpj_obrigatorio, f3f17_nsr_anual, f18_employer_cnpj_snapshot) ✅
 - NSR com reinício anual + generator transacional ✅
 - Rota AFD (`GET /checkins/export/afd`) com leiaute Anexo II ✅
-- Comprovante retornado em `POST /checkins` com hash SHA-256 (pendente T05)
+- Comprovante retornado em `POST /checkins` com hash SHA-256 ✅
 - Relatório mensal MTE (`GET /checkins/export/relatorio-mensal`) (pendente T11)
 - Termos de Uso + Política de Privacidade (pendente T06)
 - Consentimento biométrico (pendente T07-T08)

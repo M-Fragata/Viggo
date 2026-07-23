@@ -119,7 +119,7 @@ export const api = {
 
   checkins: {
     create: (data: CheckinCreateDto) =>
-      fetchApi<CheckinResponse>("/checkins", {
+      fetchApi<CheckinCreateResponse>("/checkins", {
         method: "POST",
         body: JSON.stringify(data),
       }),
@@ -405,6 +405,14 @@ export interface CheckinResponse {
   longitude: number;
   userId: string;
   companyId: string;
+}
+
+export interface CheckinCreateResponse {
+  checkin: {
+    checkin: CheckinResponse;
+  };
+  comprovante: string;
+  hashVerificacao: string;
 }
 
 export interface MonthlyCheckinEmployee {

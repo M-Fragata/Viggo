@@ -35,6 +35,7 @@ export function PontoPage() {
     const [livenessDescriptor, setLivenessDescriptor] = useState<Float32Array | null>(null);
     const [showLiveness, setShowLiveness] = useState(false);
     const [isPreparingCheckin, setIsPreparingCheckin] = useState(false);
+    const [comprovanteText, setComprovanteText] = useState<string | null>(null);
     const [pendingCheckin, setPendingCheckin] = useState<{
         type: string;
         latitude: number;
@@ -165,8 +166,9 @@ export function PontoPage() {
                 return;
             }
 
-            await api.checkins.create(pendingCheckin as CheckinCreateDto);
+            const response = await api.checkins.create(pendingCheckin as CheckinCreateDto);
 
+            setComprovanteText(response.comprovante);
             setIsSuccess(true);
             setMessage("Ponto registrado com sucesso!");
             setPendingCheckin(null);
@@ -185,6 +187,7 @@ export function PontoPage() {
             setVideoOpen(false);
             setPendingCheckin(null);
             setLivenessDescriptor(null);
+            setComprovanteText(null);
             setMessage(error instanceof Error ? error.message : "Erro ao registrar o ponto. Tente novamente.");
         }
     }
@@ -297,18 +300,23 @@ export function PontoPage() {
                         )}
 
                         {isSuccess && (
-                            <div className="absolute inset-0 z-[110] bg-emerald-500 flex flex-col items-center justify-center animate-in zoom-in duration-300">
-                                <div className="bg-white rounded-full p-4 mb-4 shadow-xl">
-                                    <span className="text-5xl">✅</span>
+                            <div className="absolute inset-0 z-[110] bg-emerald-500 flex flex-col items-center justify-center animate-in zoom-in duration-300 p-6">
+                                <div className="bg-white rounded-2xl p-5 mb-4 shadow-xl max-w-sm w-full">
+                                    <div className="flex items-center justify-center gap-2 mb-3">
+                                        <span className="text-3xl">✅</span>
+                                        <h2 className="text-emerald-700 text-lg font-bold">Ponto Registrado!</h2>
+                                    </div>
+                                    {comprovanteText && (
+                                        <pre className="text-[10px] sm:text-xs text-slate-700 bg-slate-50 rounded-lg p-3 whitespace-pre-wrap font-mono leading-relaxed border border-slate-200 max-h-[280px] overflow-y-auto">
+                                            {comprovanteText}
+                                        </pre>
+                                    )}
                                 </div>
-                                <h2 className="text-white text-2xl font-bold">Ponto Concluído!</h2>
-                                <p className="text-emerald-200 mt-2">{new Date().toLocaleTimeString()}</p>
-
                                 <button
-                                    onClick={() => { setVideoOpen(false); setIsSuccess(false); }}
-                                    className="mt-8 bg-white/20 hover:bg-white/30 p-2 rounded-full text-white transition-all"
+                                    onClick={() => { setVideoOpen(false); setIsSuccess(false); setComprovanteText(null); }}
+                                    className="mt-4 bg-white/20 hover:bg-white/30 p-2 rounded-full text-white transition-all"
                                 >
-                                    <span className="text-sm px-4">FECHAR (X)</span>
+                                    <span className="text-sm px-4">FECHAR</span>
                                 </button>
                             </div>
                         )}
