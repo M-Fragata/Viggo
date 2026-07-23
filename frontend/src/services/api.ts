@@ -127,8 +127,6 @@ export const api = {
       fetchApi<CheckinResponse[]>(`/checkins${date ? `?date=${date}` : ""}`),
     listByCompany: (date?: string) =>
       fetchApi<CompanyCheckinEmployee[]>(`/checkins/company${date ? `?date=${date}` : ""}`),
-    listMonthly: (year: number, month: number) =>
-      fetchApi<MonthlyCheckinEmployee[]>(`/checkins/month?year=${year}&month=${month}`),
     exportAfd: (startDate: string, endDate: string) =>
       fetchApi<Blob>(`/checkins/export/afd?startDate=${startDate}&endDate=${endDate}`, {
         method: "GET",
@@ -419,16 +417,6 @@ export interface CheckinCreateResponse {
   };
   comprovante: string;
   hashVerificacao: string;
-}
-
-export interface MonthlyCheckinEmployee {
-  employeeId: string;
-  employeeName: string;
-  checkins: {
-    id: string;
-    createdAt: string;
-    type: "ENTRY" | "LUNCH_START" | "LUNCH_END" | "EXIT";
-  }[];
 }
 
 export interface CompanyCheckinEmployee {
