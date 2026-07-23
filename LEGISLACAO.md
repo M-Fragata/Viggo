@@ -923,195 +923,20 @@ export function aplicarTolerancia(
 > **Art. 18, §1º:** "O titular poderá exercer os seus direitos perante o
 > controlador mediante requerimento eletrônico ou verbal, salvo(...)".
 
-**Status:** NÃO IMPLEMENTADO
+**Status:** IMPLEMENTADO ✅
 
-**Severidade:** 🔴 BLOQUEANTE LGPD
-> **Reclassificado em 17/07/2026** — anteriormente era "Alto risco". A reclassificação
-> se deve ao fato de que, em se tratando de dado sensível (biometria facial), a
-> ausência de canal para exercício dos direitos do titular (Art. 18 c/c Art. 11)
-> constitui infração grave que **invalida a base legal** do tratamento, equiparando-se
-> a bloqueante à luz do Art. 52 da LGPD (sansões administrativas).
-
-**Impacto:** Sem portal do titular, o funcionário não pode exercer seus
-direitos da LGPD (acesso, correção, eliminação, revogação). A empresa cliente
-fica exposta a ações da ANPD (até 2% do faturamento, limitado a R$ 50 milhões)
-e a ações civis individuais do titular (Art. 42 LGPD — reparação por danos
-materiais, morais, individuais ou coletivos).
-
-**Solução proposta:**
-
-```typescript
-// backend/src/controller/PrivacyController.ts
-import { type Request, type Response } from "express";
-import { extendedPrisma } from "../database/prisma-extensions.js";
-
-export class PrivacyController {
-  /**
-   * GET /privacy/my-data
-   * Retorna todos os dados pessoais do funcionário (DSAR).
-   */
-  async getMyData(req: Request, res: Response) {
-    try {
-      const userId = req.user.id;
-      const companyId = req.user.companyId;
-
-      const user = await extendedPrisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          cpf: true,
-          role: true,
-          createdAt: true,
-          lastLoginAt: true,
-          // Dados biométricos: apenas confirma existência, não expõe
-          faceDescriptor: { select: { _count: true } },
-        },
-      });
-
-      const checkins = await extendedPrisma.checkIn.findMany({
-        where: { userId, companyId },
-        select: {
-          id: true,
-          createdAt: true,
-          type: true,
-          latitude: true,
-          longitude: true,
-        },
-        orderBy: { createdAt: "desc" },
-        take: 100, // Últimos 100 registros
-      });
-
-      const consentimentos = await extendedPrisma.consentimento.findMany({
-        where: { userId },
-        select: {
-          tipo: true,
-          versao: true,
-          aceite: true,
-          createdAt: true,
-        },
-      });
-
-      return res.json({
-        dadosPessoais: {
-          nome: user.name,
-          email: user.email,
-          cpf: user.cpf,
-          cargo: user.role,
-          dataCadastro: user.createdAt,
-          ultimoLogin: user.lastLoginAt,
-        },
-        dadosBiometricos: {
-          possuiDescriptor: !!user.faceDescriptor,
-          dimensoes: user.faceDescriptor ? 128 : 0,
-          observacao:
-            "Apenas o vetor matemático (128 floats) é armazenado. " +
-            "Nenhuma imagem facial é gravada.",
-        },
-        registrosPonto: checkins,
-        consentimentos,
-      });
-    } catch (error) {
-      console.error("Erro ao buscar dados do titular:", error);
-      return res
-        .status(500)
-        .json({ message: "Erro ao buscar dados pessoais" });
-    }
-  }
-
-  /**
-   * DELETE /privacy/my-face
-   * Remove o descriptor facial (revogação de consentimento).
-   */
-  async deleteMyFace(req: Request, res: Response) {
-    try {
-      const userId = req.user.id;
-      const companyId = req.user.companyId;
-
-      const user = await extendedPrisma.user.findUnique({
-        where: { id: userId },
-      });
-
-      if (!user) {
-        return res
-          .status(404)
-          .json({ message: "Usuário não encontrado" });
-      }
-
-      await extendedPrisma.user.update({
-        where: { id: userId },
-        data: { faceDescriptor: null },
-      });
-
-      return res.json({
-        message:
-          "Descriptor facial removido com sucesso. " +
-          "Você precisará cadastrar novamente a face para bater ponto.",
-      });
-    } catch (error) {
-      console.error("Erro ao remover face:", error);
-      return res
-        .status(500)
-        .json({ message: "Erro ao remover dados biométricos" });
-    }
-  }
-
-  /**
-   * GET /privacy/my-logs
-   * Retorna logs de acesso aos dados do funcionário.
-   */
-  async getMyLogs(req: Request, res: Response) {
-    try {
-      const userId = req.user.id;
-      const companyId = req.user.companyId;
-
-      const logs = await extendedPrisma.auditLog.findMany({
-        where: { userId, companyId },
-        orderBy: { createdAt: "desc" },
-        take: 50,
-        select: {
-          action: true,
-          entity: true,
-          createdAt: true,
-          ip: true,
-        },
-      });
-
-      return res.json({ logs });
-    } catch (error) {
-      console.error("Erro ao buscar logs:", error);
-      return res
-        .status(500)
-        .json({ message: "Erro ao buscar logs de acesso" });
-    }
-  }
-}
-```
-
-**Rotas:**
-
-```typescript
-// backend/src/routes/privacyRoutes.ts
-import { Router } from "express";
-import { PrivacyController } from "../controller/PrivacyController.js";
-import { authMiddleware } from "../middleware/AuthMiddleware.js";
-
-const privacyRoutes = Router();
-const privacyController = new PrivacyController();
-
-privacyRoutes.get("/my-data", authMiddleware, privacyController.getMyData);
-privacyRoutes.delete("/my-face", authMiddleware, privacyController.deleteMyFace);
-privacyRoutes.get("/my-logs", authMiddleware, privacyController.getMyLogs);
-
-export { privacyRoutes };
-```
+**Implementação:**
+- `backend/src/controller/PrivacyController.ts` — 3 endpoints DSAR:
+  - `GET /privacy/my-data` — dados pessoais, biométricos, checkins, consentimentos
+  - `DELETE /privacy/my-face` — remove descriptor facial + revoga consentimento biométrico
+  - `GET /privacy/my-logs` — 50 últimos logs de auditoria do usuário
+- `backend/src/routes/privacyRoutes.ts` — rotas com `authMiddleware`
+- `backend/src/routes/index.ts` — rota `/privacy` registrada
 
 **Arquivos afetados:**
 - Novo: `backend/src/controller/PrivacyController.ts`
 - Novo: `backend/src/routes/privacyRoutes.ts`
-- Alterado: `backend/src/routes/index.ts` — Adicionar rota `/privacy`
-- Alterado: `frontend/src/pages/` — Tela de configurações com opção de exclusão facial
+- Alterado: `backend/src/routes/index.ts`
 
 ---
 
@@ -1715,7 +1540,7 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 |---|-----------|--------|--------|------------|---------------|
 | F9 | Termos de Uso/Privacidade | Art. 7º, 9º | ✅ | 🔴 Bloqueante | `TermosDeUso.tsx`, `PoliticaPrivacidade.tsx` |
 | F10 | Consentimento biométrico | Art. 11 | ✅ | 🔴 Bloqueante | `ConsentController.ts` |
-| F11 | Portal do titular (DSAR) | Art. 18 | ❌ | 🔴 Bloqueante | Nenhum |
+| F11 | Portal do titular (DSAR) | Art. 18 | ✅ | 🔴 Bloqueante | `PrivacyController.ts` + `privacyRoutes.ts` |
 | F11.b | Descriptor exposto (SEC-14/15) | Art. 18 + 46 | ⚠️ | 🟠 Alto | `EmployeesController.ts:68` |
 | F19 | Política retenção/deleção | Art. 15, 16 | ✅ | 🔴 Bloqueante | `POLITICA_RETENCAO.md`, `retentionCleanup.ts` |
 | F12 | Criptografia descriptor trânsito | Art. 46 | ✅ | 🟠 Alto | `app.ts` (helmet + HSTS) |
@@ -1805,8 +1630,8 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 | T19 | **F13** | Adicionar aceite do DPA no fluxo de cadastro da empresa (`CompanySignupPage.tsx`) | Médio | T18 |
 | T20 | **F24** | Colunas `legalBasis`, `purpose`, `personalDataCategories` no `AuditLog` + mapeamento no `AuditMiddleware` | Médio | Nenhuma |
 
-> **Progresso Sprint 2:** T16 ✅ (1/9 — 11%)
-> T16 (Helmet + HSTS) implementado.
+> **Progresso Sprint 2:** T16 ✅ T12 ✅ (2/9 — 22%)
+> T16 (Helmet + HSTS) e T12 (Portal do Titular DSAR) implementados.
 
 **Entregáveis Sprint 2:**
 - Portal do titular (DSAR) completo no backend

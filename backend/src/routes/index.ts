@@ -7,6 +7,7 @@ import { companyRoutes } from "./companyRoutes.js";
 import { masterRoutes } from "./masterRoutes.js";
 import { authRoutes } from "./authRoutes.js";
 import { consentRoutes } from "./consentRoutes.js";
+import { privacyRoutes } from "./privacyRoutes.js";
 
 const routes = Router();
 
@@ -17,5 +18,6 @@ routes.use("/employees", employeesRoutes);
 routes.use("/companies", companyRoutes);
 routes.use("/master", masterRoutes);
 routes.use("/consentimentos", consentRoutes);
+routes.use("/privacy", privacyRoutes);
 
 export { routes }
