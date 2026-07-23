@@ -67,8 +67,9 @@ A análise identificou **26 lacunas legais** distribuídas entre as três normas
 
 ### Atualizações — 23/07/2026
 
-Foram implementados 5 findings (Sprint 1, parcial):
+Foram implementados 8 findings (Sprint 1) + 9 tarefas (Sprint 2) + 4 gaps frontend (Sprint 3):
 
+#### Sprint 1 — Fundação Legal (Backend) — 11/11 ✅
 | Finding | Descrição | Status |
 |---------|-----------|--------|
 | **F4** | CNPJ obrigatório no schema + validação no cadastro | ✅ Implementado |
@@ -79,8 +80,28 @@ Foram implementados 5 findings (Sprint 1, parcial):
 | **F9** | Termos de Uso + Política de Privacidade — páginas, checkbox cadastro, `Consentimento` model + `ConsentController` | ✅ Implementado |
 | **F10** | Consentimento biométrico (Art. 11 LGPD) — checkbox específico + `Consentimento` model, salvo no signup | ✅ Implementado |
 | **F19** | Política de retenção/deleção — `UserStatus`, `deactivatedAt`, `POLITICA_RETENCAO.md`, `retentionCleanup.ts` (cron 02:00) | ✅ Implementado |
+| **F20** | Relatório mensal layout MTE — `relatorioMensalService.ts` + `GET /checkins/export/relatorio-mensal` com SHA-256 | ✅ Implementado |
 
-Migrations aplicadas: `f4_cnpj_obrigatorio`, `f3f17_nsr_anual`, `f18_employer_cnpj_snapshot`.
+#### Sprint 2 — Proteção LGPD + Segurança (Backend) — 9/9 ✅
+| Finding | Descrição | Status |
+|---------|-----------|--------|
+| **F11** | Portal do Titular DSAR — `PrivacyController` + rotas (`GET /privacy/my-data`, `DELETE /privacy/my-face`, `GET /privacy/my-logs`) | ✅ Implementado |
+| **F11.b** | Token descartável para descriptor facial — `GET /employees/face/token` + `verifyFace` com token | ✅ Implementado |
+| **F12** | Helmet + HSTS no Express | ✅ Implementado |
+| **F5** | Modelo `Justificativa` + `JustificativaController` + rotas (create, list, approve) | ✅ Implementado |
+| **F13** | Template DPA (`docs/contrato-tratamento-dados.md`) + aceite no cadastro empresa | ✅ Implementado |
+| **F24** | `AuditLog` enriquecido — colunas `legalBasis`, `purpose`, `personalDataCategories` + mapeamento automático no `AuditMiddleware` | ✅ Implementado |
+
+#### Sprint 3 — Gaps Frontend — 4/6 ✅
+| Tarefa | Descrição | Status |
+|--------|-----------|--------|
+| **T27** | Portal LGPD do Funcionário (`/meus-dados`) — `MeusDadosPage.tsx` consumindo `/privacy/*` + `/consentimentos` | ✅ Implementado |
+| **T28** | Tela de Justificativas — `JustificativasPage.tsx` adaptativa employee/admin (criar + listar/aprovar) | ✅ Implementado |
+| **T29** | Botão "Exportar AFD" no Dashboard admin — `DashboardPage.tsx` | ✅ Implementado |
+| **T30** | Dashboard de Consentimentos — integrado na seção "Consentimentos" do Portal LGPD (T27) | ⚠️ Parcial |
+| **T31** | Lista de Funcionários — `GET /employees` + tela admin | ❌ Pendente |
+
+Migrations aplicadas: `f4_cnpj_obrigatorio`, `f3f17_nsr_anual`, `f18_employer_cnpj_snapshot`, `f9f10_consentimento`, `f19_user_status`.
 Backend build: ✅ passando. Frontend build: ✅ passando.
 
 > \* F22 (RIP) aplicável à Portaria por exigir registro de conformidade REP-P.

@@ -189,6 +189,23 @@ export const api = {
     list: () =>
       fetchApi<ConsentimentoResponse[]>("/consentimentos"),
   },
+
+  justificativa: {
+    create: (body: JustificativaCreateBody) =>
+      fetchApi<JustificativaResponse>("/justificativas", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+
+    list: () =>
+      fetchApi<(JustificativaResponse & { user?: { id: string; name: string; email: string } })[]>("/justificativas"),
+
+    approve: (id: string, aprovado: boolean) =>
+      fetchApi<JustificativaResponse>(`/justificativas/${id}/aprovar`, {
+        method: "PUT",
+        body: JSON.stringify({ aprovado }),
+      }),
+  },
 };
 
 export interface User {
@@ -502,4 +519,28 @@ export interface AuditLogEntry {
   legalBasis: string | null;
   purpose: string | null;
   personalDataCategories: string[] | null;
+}
+
+export type JustificativaTipo = "ABONO" | "FALTA" | "ATESTADO" | "JUSTIFICATIVA_GERAL";
+
+export interface JustificativaCreateBody {
+  tipo: JustificativaTipo;
+  descricao: string;
+  dataInicio: string;
+  dataFim?: string;
+}
+
+export interface JustificativaResponse {
+  id: string;
+  userId: string;
+  companyId: string;
+  tipo: JustificativaTipo;
+  descricao: string;
+  dataInicio: string;
+  dataFim: string | null;
+  comprovante: string | null;
+  aprovado: boolean | null;
+  aprovadoPor: string | null;
+  createdAt: string;
+  updatedAt: string;
 }

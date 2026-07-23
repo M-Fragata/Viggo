@@ -5,6 +5,7 @@ import { DashboardPage } from "../pages/DashboardPage";
 import { PontoPage } from "../pages/pontoPage";
 import { PontoViewPage } from "../pages/pontoViewPage";
 import { RegisterFace } from "../pages/RegisterFace";
+import { JustificativasPage } from "../pages/JustificativasPage";
 import { useAuth } from "../hooks/useAuth";
 import { NotFoundPage } from "../pages/NotFoundPage";
 
@@ -24,6 +25,7 @@ export function AdminRoutes() {
         <Route path="ponto" element={<PontoPage />} />
         <Route path="pontos" element={<PontoViewPage />} />
         <Route path="register" element={<RegisterFace />} />
+        <Route path="justificativas" element={<JustificativasPage />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
