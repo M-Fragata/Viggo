@@ -8,6 +8,8 @@ const LoginPage = lazy(() => import("../pages/loginPage").then((m) => ({ default
 const CompanySignupPage = lazy(() => import("../pages/CompanySignupPage").then((m) => ({ default: m.CompanySignupPage })));
 const AcceptInvitePage = lazy(() => import("../components/company/AcceptInvitePage").then((m) => ({ default: m.AcceptInvitePage })));
 const CustomPlanPage = lazy(() => import("../pages/CustomPlanPage").then((m) => ({ default: m.CustomPlanPage })));
+const TermosDeUso = lazy(() => import("../pages/TermosDeUso").then((m) => ({ default: m.TermosDeUso })));
+const PoliticaPrivacidade = lazy(() => import("../pages/PoliticaPrivacidade").then((m) => ({ default: m.PoliticaPrivacidade })));
 
 export function AuthRoutes() {
   return (
@@ -18,6 +20,8 @@ export function AuthRoutes() {
         <Route path="/company/signup" element={<CompanySignupPage />} />
         <Route path="/accept-invite/:token" element={<AcceptInvitePage />} />
         <Route path="/planos/custom" element={<CustomPlanPage />} />
+        <Route path="/termos-de-uso" element={<TermosDeUso />} />
+        <Route path="/politica-privacidade" element={<PoliticaPrivacidade />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>

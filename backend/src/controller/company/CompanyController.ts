@@ -22,10 +22,16 @@ export class CompanyController {
       companyName: z.string().min(2, 'Nome da empresa inválido'),
       password: z.string().min(8, 'Senha deve ter no mínimo 8 caracteres'),
       confirmPassword: z.string(),
+      aceiteTermos: z.boolean().refine((v) => v === true, {
+        message: 'Você precisa aceitar os Termos de Uso',
+      }),
+      aceiteBiometria: z.boolean().refine((v) => v === true, {
+        message: 'Você precisa autorizar o uso da biometria facial',
+      }),
     });
 
     try {
-      const { name, email, cpf, cnpj, companyName, password, confirmPassword } = bodySchema.parse(req.body);
+      const { name, email, cpf, cnpj, companyName, password, confirmPassword, aceiteTermos, aceiteBiometria } = bodySchema.parse(req.body);
 
       if (password !== confirmPassword) {
         return res.status(400).json({ message: 'Senhas não conferem' });
@@ -98,6 +104,16 @@ export class CompanyController {
           expiresAt: trialExpiresAt,
         },
       });
+
+      // F9/F10: Registrar consentimentos (Termos de Uso, Política de Privacidade, Biometria)
+      const ip = req.ip ?? req.socket.remoteAddress ?? null;
+      const consentimentos = [
+        { userId: user.id, tipo: "TERMOS_DE_USO", versao: "1.0", aceite: aceiteTermos, ip },
+        { userId: user.id, tipo: "POLITICA_PRIVACIDADE", versao: "1.0", aceite: aceiteTermos, ip },
+        { userId: user.id, tipo: "BIOMETRIA", versao: "1.0", aceite: aceiteBiometria, ip },
+      ];
+
+      await prisma.consentimento.createMany({ data: consentimentos });
 
       const token = jwt.sign(
         {

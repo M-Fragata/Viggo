@@ -21,6 +21,8 @@ export function CompanySignupPage() {
       companyName: "",
       password: "",
       confirmPassword: "",
+      aceiteTermos: false,
+      aceiteBiometria: false,
     },
   });
 
@@ -33,6 +35,8 @@ export function CompanySignupPage() {
       companyName: formData.get("companyName") as string,
       password: formData.get("password") as string,
       confirmPassword: formData.get("confirmPassword") as string,
+      aceiteTermos: formData.get("aceiteTermos") === "on",
+      aceiteBiometria: formData.get("aceiteBiometria") === "on",
     };
 
     const parsed = companySignupSchema.safeParse(rawData);
@@ -68,6 +72,8 @@ export function CompanySignupPage() {
         companyName: rawData.companyName,
         password: rawData.password,
         confirmPassword: rawData.confirmPassword,
+        aceiteTermos: rawData.aceiteTermos,
+        aceiteBiometria: rawData.aceiteBiometria,
       });
 
       setSession(response.user, response.token, response.company.name);
@@ -259,6 +265,52 @@ export function CompanySignupPage() {
               {state.message && (
                 <p className="text-red-500 text-sm text-center p-2 bg-red-50 rounded-lg">{state.message}</p>
               )}
+
+              <div className="space-y-3 pt-2">
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    id="aceiteTermos"
+                    name="aceiteTermos"
+                    required
+                    className="mt-1 h-4 w-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500"
+                  />
+                  <label htmlFor="aceiteTermos" className="text-sm text-slate-600 leading-relaxed">
+                    Li e aceito os{" "}
+                    <a href="/termos-de-uso" target="_blank" rel="noopener noreferrer" className="text-emerald-600 underline hover:text-emerald-700">
+                      Termos de Uso
+                    </a>{" "}
+                    e a{" "}
+                    <a href="/politica-privacidade" target="_blank" rel="noopener noreferrer" className="text-emerald-600 underline hover:text-emerald-700">
+                      Política de Privacidade
+                    </a>
+                    , autorizando o tratamento dos meus dados pessoais para fins de
+                    controle de ponto eletrônico.
+                  </label>
+                </div>
+                {state.fieldErrors.aceiteTermos && (
+                  <p className="text-sm text-red-500 ml-7">{state.fieldErrors.aceiteTermos}</p>
+                )}
+
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    id="aceiteBiometria"
+                    name="aceiteBiometria"
+                    required
+                    className="mt-1 h-4 w-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500"
+                  />
+                  <label htmlFor="aceiteBiometria" className="text-sm text-slate-600 leading-relaxed">
+                    Autorizo expressamente o uso da minha <strong>biometria facial</strong> (
+                    vetor matemático de 128 dimensões ) exclusivamente para validação
+                    de identidade no registro de ponto eletrônico, conforme Art. 11
+                    da Lei Geral de Proteção de Dados (Lei nº 13.709/2018).
+                  </label>
+                </div>
+                {state.fieldErrors.aceiteBiometria && (
+                  <p className="text-sm text-red-500 ml-7">{state.fieldErrors.aceiteBiometria}</p>
+                )}
+              </div>
 
               <div className="pt-2 flex flex-col gap-2">
                 <Button

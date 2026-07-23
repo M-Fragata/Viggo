@@ -40,6 +40,7 @@ model User {
   checkIns          CheckIn[]
   company           Company            @relation(fields: [companyId], references: [id])
   inviteTokenUsages InviteTokenUsage[]
+  consentimentos    Consentimento[]
 }
 
 model CheckIn {
@@ -151,4 +152,18 @@ enum CheckInType {
   LUNCH_START
   LUNCH_END
   EXIT
+}
+
+model Consentimento {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  tipo      String   // "TERMOS_DE_USO", "POLITICA_PRIVACIDADE", "BIOMETRIA"
+  versao    String   // Versão do documento aceito (ex: "1.0")
+  aceite    Boolean
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@unique([userId, tipo, versao])
+  @@index([userId])
 }

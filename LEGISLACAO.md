@@ -76,6 +76,8 @@ Foram implementados 5 findings (Sprint 1, parcial):
 | **F18** | Snapshot `employerCnpj` no `CheckIn` (desnormalizado) | ✅ Implementado |
 | **F2** | Exportação AFD (Anexo II) — `GET /checkins/export/afd` com Header Tipo 1, Detalhes Tipo 2, Trailer Tipo 9 | ✅ Implementado |
 | **F6** | Comprovante imediato (Anexo III) — `comprovanteGenerator.ts` com SHA-256, exibido no frontend | ✅ Implementado |
+| **F9** | Termos de Uso + Política de Privacidade — páginas, checkbox cadastro, `Consentimento` model + `ConsentController` | ✅ Implementado |
+| **F10** | Consentimento biométrico (Art. 11 LGPD) — checkbox específico + `Consentimento` model, salvo no signup | ✅ Implementado |
 
 Migrations aplicadas: `f4_cnpj_obrigatorio`, `f3f17_nsr_anual`, `f18_employer_cnpj_snapshot`.
 Backend build: ✅ passando. Frontend build: ✅ passando.
@@ -856,118 +858,33 @@ export function aplicarTolerancia(
 > **Art. 9º:** "O titular dos dados pessoais tem direito ao acesso facilitado
 > às informações sobre o tratamento de seus dados."
 
-**Status:** NÃO IMPLEMENTADO
+**Status:** ✅ IMPLEMENTADO (23/07/2026)
 
-**Impacto:** Grep por `termos`, `privacidade`, `consentimento`, `LGPD`, `policy`,
-`terms` no `frontend/` retorna **vazio absoluto**. Não existe:
-- Tela de aceite de termos no fluxo de cadastro
-- Link para Política de Privacidade
-- Link para Termos de Uso
-- Base legal explícita apresentada ao usuário
-
-**Análise técnica atual:**
-- `CompanySignupPage.tsx` — Apenas formulário de dados, sem checkbox de aceite
-- `loginPage.tsx` — Sem menção a termos
-- `AcceptInvitePage.tsx` — Convite sem referência a termos
-- `RegisterFace.tsx` — Cadastro facial sem consentimento explícito
-
-**Solução proposta:**
-
-1. **Criar páginas estáticas de Termos de Uso e Política de Privacidade:**
-
-```typescript
-// frontend/src/pages/TermosDeUso.tsx
-// frontend/src/pages/PoliticaPrivacidade.tsx
-// Páginas de texto com todo o conteúdo jurídico
-```
-
-2. **Adicionar checkbox de consentimento no cadastro:**
-
-```tsx
-// frontend/src/pages/CompanySignupPage.tsx — alteração
-// Adicionar checkbox obrigatório abaixo da senha:
-
-<div className="flex items-start gap-3">
-  <input
-    type="checkbox"
-    id="aceiteTermos"
-    name="aceiteTermos"
-    required
-    className="mt-1"
-  />
-  <label htmlFor="aceiteTermos" className="text-sm text-slate-600">
-    Li e aceito os{" "}
-    <a href="/termos-de-uso" target="_blank" className="text-emerald-600 underline">
-      Termos de Uso
-    </a>{" "}
-    e a{" "}
-    <a href="/politica-privacidade" target="_blank" className="text-emerald-600 underline">
-      Política de Privacidade
-    </a>
-    , autorizando o tratamento dos meus dados pessoais e biométricos
-    para fins de controle de ponto eletrônico.
-  </label>
-</div>
-
-<div className="flex items-start gap-3">
-  <input
-    type="checkbox"
-    id="aceiteBiometria"
-    name="aceiteBiometria"
-    required
-    className="mt-1"
-  />
-  <label htmlFor="aceiteBiometria" className="text-sm text-slate-600">
-    Autorizo expressamente o uso da minha <strong>biometria facial</strong>
-    ( vetor matemático de 128 dimensões ) exclusivamente para validação
-    de identidade no registro de ponto eletrônico, conforme Art. 11
-    da Lei Geral de Proteção de Dados (Lei nº 13.709/2018).
-  </label>
-</div>
-```
-
-3. **Schema de validação:**
-
-```typescript
-// frontend/src/schemas/companySignup.ts — alteração
-export const signupSchema = z.object({
-  // ...campos existentes...
-  aceiteTermos: z.literal(true, {
-    errorMap: () => ({ message: "Você precisa aceitar os Termos de Uso" }),
-  }),
-  aceiteBiometria: z.literal(true, {
-    errorMap: () => ({
-      message: "Você precisa autorizar o uso da biometria facial",
-    }),
-  }),
-});
-```
-
-4. **Persistir aceite no backend** — Criar modelo de consentimento:
-
-```prisma
-model Consentimento {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  tipo      String   // "TERMOS_DE_USO", "POLITICA_PRIVACIDADE", "BIOMETRIA"
-  versao    String   // Versão do documento aceito (ex: "1.0")
-  aceite    Boolean
-  ip        String?
-  createdAt DateTime @default(now())
-
-  @@unique([userId, tipo, versao])
-  @@index([userId])
-}
-```
+**Implementação:**
+- `frontend/src/pages/TermosDeUso.tsx` — página de texto com 9 seções (objeto, aceitação, serviço, obrigações, propriedade, disponibilidade, responsabilidade, rescisão, foro)
+- `frontend/src/pages/PoliticaPrivacidade.tsx` — página com 12 seções (controlador, dados, finalidade, base legal, compartilhamento, segurança, retenção, direitos titular, biometria, incidentes, DPO, alterações)
+- `frontend/src/routes/AuthRoutes.tsx` — rotas `/termos-de-uso` e `/politica-privacidade`
+- `frontend/src/pages/CompanySignupPage.tsx` — 2 checkboxes obrigatórios com links para as páginas
+- `frontend/src/schemas/companySignup.ts` — `aceiteTermos` e `aceiteBiometria` com `z.boolean().refine()`
+- `backend/prisma/schema.prisma` — modelo `Consentimento` com `@@unique([userId, tipo, versao])`
+- `backend/src/controller/ConsentController.ts` — `create` (upsert) + `list` por usuário
+- `backend/src/routes/consentRoutes.ts` — `POST /consentimentos` + `GET /consentimentos`
+- `backend/src/routes/index.ts` — rota `/consentimentos` registrada
+- `backend/src/controller/company/CompanyController.ts` — salva 3 consentimentos no signup (Termos, Política, Biometria)
+- Migration: `20260723150000_f9f10_consentimento`
 
 **Arquivos afetados:**
 - Novo: `frontend/src/pages/TermosDeUso.tsx`
 - Novo: `frontend/src/pages/PoliticaPrivacidade.tsx`
+- Novo: `backend/src/controller/ConsentController.ts`
+- Novo: `backend/src/routes/consentRoutes.ts`
+- Alterado: `frontend/src/routes/AuthRoutes.tsx`
 - Alterado: `frontend/src/pages/CompanySignupPage.tsx`
 - Alterado: `frontend/src/schemas/companySignup.ts`
-- Alterado: `backend/prisma/schema.prisma` — Modelo `Consentimento`
-- Alterado: `backend/src/controller/company/CompanyController.ts` — Salvar aceite
+- Alterado: `frontend/src/services/api.ts`
+- Alterado: `backend/prisma/schema.prisma`
+- Alterado: `backend/src/controller/company/CompanyController.ts`
+- Alterado: `backend/src/routes/index.ts`
 
 ---
 
@@ -981,14 +898,15 @@ model Consentimento {
 > deverá ser fornecido por escrito ou por outro meio que demonstre a
 > manifestação de vontade do titular."
 
-**Status:** NÃO IMPLEMENTADO
+**Status:** ✅ IMPLEMENTADO (23/07/2026) — implementado junto com F9.
 
-**Impacto:** A biometria facial é classificada como **dado pessoal sensível**
-pela LGPD (Art. 5º, II). Sem consentimento específico e destacado, o
-tratamento é **ILEGAL** e sujeito a multas de até 2% do faturamento.
+**Implementação:**
+- Checkbox separado e destacado no cadastro: "Autorizo expressamente o uso da minha biometria facial"
+- Modelo `Consentimento` com tipo `BIOMETRIA`, versão `1.0`, registro no signup
+- `ConsentController` permite consulta futura dos consentimentos (Art. 18 LGPD)
+- IP do titular registrado para evidência de consentimento
 
-**Solução proposta:** Implementada no item F9 acima (checkbox `aceiteBiometria`
-obrigatório + persistência no banco).
+**Arquivos afetados:** Implementados conjuntamente com F9 (ver acima).
 
 ---
 
@@ -2019,8 +1937,8 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 
 | # | Requisito | Artigo | Status | Severidade | Arquivo Atual |
 |---|-----------|--------|--------|------------|---------------|
-| F9 | Termos de Uso/Privacidade | Art. 7º, 9º | ❌ | 🔴 Bloqueante | Nenhum |
-| F10 | Consentimento biométrico | Art. 11 | ❌ | 🔴 Bloqueante | Nenhum |
+| F9 | Termos de Uso/Privacidade | Art. 7º, 9º | ✅ | 🔴 Bloqueante | `TermosDeUso.tsx`, `PoliticaPrivacidade.tsx` |
+| F10 | Consentimento biométrico | Art. 11 | ✅ | 🔴 Bloqueante | `ConsentController.ts` |
 | F11 | Portal do titular (DSAR) | Art. 18 | ❌ | 🔴 Bloqueante | Nenhum |
 | F11.b | Descriptor exposto (SEC-14/15) | Art. 18 + 46 | ⚠️ | 🟠 Alto | `EmployeesController.ts:68` |
 | F19 | Política retenção/deleção | Art. 15, 16 | ❌ | 🔴 Bloqueante | Nenhum |
@@ -2079,8 +1997,8 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 | T10 | **F19** | `POLITICA_RETENCAO.md` + `retentionCleanup.ts` (cron diário 02:00) | Médio | T09 |
 | T11 | **F20** | `relatorioMensalService.ts` — relatório folha mensal layout oficial MTE | Médio | T04 |
 
-> **Progresso Sprint 1:** T01 ✅ T02 ✅ T03 ✅ T04 ✅ T05 ✅ (5/11 — 45%)
-> F4, F3/F17, F18, F2 e F6 implementados e funcionais.
+> **Progresso Sprint 1:** T01 ✅ T02 ✅ T03 ✅ T04 ✅ T05 ✅ T06 ✅ T07 ✅ T08 ✅ (8/11 — 73%)
+> F4, F3/F17, F18, F2, F6, F9 e F10 implementados e funcionais.
 
 **Entregáveis Sprint 1:**
 - Schema Prisma atualizado (NSR, ano, employerCnpj) ✅
@@ -2089,8 +2007,8 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 - Rota AFD (`GET /checkins/export/afd`) com leiaute Anexo II ✅
 - Comprovante retornado em `POST /checkins` com hash SHA-256 ✅
 - Relatório mensal MTE (`GET /checkins/export/relatorio-mensal`) (pendente T11)
-- Termos de Uso + Política de Privacidade (pendente T06)
-- Consentimento biométrico (pendente T07-T08)
+- Termos de Uso + Política de Privacidade (páginas + rotas) ✅
+- Consentimento biométrico (tela + backend + persistência) ✅
 - Política de retenção documentada + job de limpeza automática (pendente T09-T10)
 
 ---
