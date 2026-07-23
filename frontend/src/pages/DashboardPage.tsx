@@ -6,7 +6,7 @@ import { PlanBadge, PlanComparisonModal, UsageProgressBar, TrialCountdown } from
 import { InvitesTab } from "../components/company";
 import { CheckinTable } from "../components/checkin/CheckinTable";
 import { EmployeeTabSkeleton } from "../components/EmployeeTabSkeleton";
-import { Users, CheckCircle, CreditCard, Mail, ArrowUpRight, Building2, ChevronDown, ChevronUp, FileText, Loader2 } from "lucide-react";
+import { Users, CheckCircle, CreditCard, Mail, ArrowUpRight, Building2, ChevronDown, ChevronUp, FileText, Loader2, Download } from "lucide-react";
 import type { CompanyResponse, UsageResponse, User } from "../services/api";
 import { api } from "../services/api";
 
@@ -82,7 +82,7 @@ export function DashboardPage() {
       )}
 
       {activeTab === "Folha Mensal" && (
-        <FolhaMensalTab company={company} />
+        <FolhaMensalTab />
       )}
 
       {activeTab === "Plano" && (
@@ -246,221 +246,31 @@ const MONTHS = [
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
 ];
 
-const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-
-function FolhaMensalTab({ company }: { company: CompanyResponse | null }) {
+function FolhaMensalTab() {
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const years: string[] = ["2026"]
-
-  function escapeHtml(str: string): string {
-    const div = document.createElement("div");
-    div.textContent = str;
-    return div.innerHTML;
-  }
-
-  function formatTime(isoString: string): string {
-    return new Date(isoString).toLocaleTimeString("pt-BR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  }
+  const years: string[] = ["2026"];
 
   async function handleGenerate() {
     setIsGenerating(true);
     try {
-      const data = await api.checkins.listMonthly(selectedYear, selectedMonth);
-      if (!data || data.length === 0) {
-        alert("Nenhum funcionário encontrado para este período.");
+      const blob = await api.checkins.exportRelatorioMensal(selectedYear, selectedMonth);
+      if (!blob || blob.size === 0) {
+        alert("Nenhum dado encontrado para este período.");
         return;
       }
-
-      const monthStart = new Date(selectedYear, selectedMonth - 1, 1);
-      const monthEnd = new Date(selectedYear, selectedMonth, 0);
-      const daysInMonth = monthEnd.getDate();
-
-      const periodLabel = `${String(monthStart.getDate()).padStart(2, "0")}/${String(monthStart.getMonth() + 1).padStart(2, "0")}/${monthStart.getFullYear()} a ${String(monthEnd.getDate()).padStart(2, "0")}/${String(monthEnd.getMonth() + 1).padStart(2, "0")}/${monthEnd.getFullYear()}`;
-
-      const companyName = company?.name ?? "";
-      const companyCnpj = company?.cnpj ?? "";
-
-      const pages = data.map((emp) => {
-        const checkinsByDay: Record<number, { entry?: string; lunchStart?: string; lunchEnd?: string; exit?: string }> = {};
-
-        for (const c of emp.checkins) {
-          const date = new Date(c.createdAt);
-          const day = date.getDate();
-          if (!checkinsByDay[day]) checkinsByDay[day] = {};
-
-          if (c.type === "ENTRY") checkinsByDay[day].entry = formatTime(c.createdAt);
-          else if (c.type === "LUNCH_START") checkinsByDay[day].lunchStart = formatTime(c.createdAt);
-          else if (c.type === "LUNCH_END") checkinsByDay[day].lunchEnd = formatTime(c.createdAt);
-          else if (c.type === "EXIT") checkinsByDay[day].exit = formatTime(c.createdAt);
-        }
-
-        const rows = Array.from({ length: daysInMonth }, (_, i) => {
-          const dayNum = i + 1;
-          const date = new Date(selectedYear, selectedMonth - 1, dayNum);
-          const dayName = WEEKDAYS[date.getDay()];
-          const data = checkinsByDay[dayNum];
-
-          return `
-            <tr>
-              <td style="padding:7px 5px;border:1px solid #ddd;font-size:9px;white-space:nowrap;"><span style="display:inline-block;width:20px;text-align:right;">${dayNum}</span><span style="display:inline-block;width:24px;text-align:left;padding-left:2px;">| ${dayName}</span></td>
-              <td style="padding:7px 5px;border:1px solid #ddd;text-align:center;font-size:9px;">${data?.entry ?? ""}</td>
-              <td style="padding:7px 5px;border:1px solid #ddd;text-align:center;font-size:9px;">${data?.lunchStart ?? ""}</td>
-              <td style="padding:7px 5px;border:1px solid #ddd;text-align:center;font-size:9px;">${data?.lunchEnd ?? ""}</td>
-              <td style="padding:7px 5px;border:1px solid #ddd;text-align:center;font-size:9px;">${data?.exit ?? ""}</td>
-              <td style="padding:7px 5px;border:1px solid #ddd;text-align:center;font-size:9px;"></td>
-            </tr>`;
-        }).join("");
-
-        return `
-          <div class="page">
-            <div class="header">
-              <div class="company-name">${escapeHtml(companyName)}</div>
-              <div class="cnpj">CNPJ: ${escapeHtml(companyCnpj)}</div>
-              <div class="period">Período: ${escapeHtml(periodLabel)}</div>
-            </div>
-            <div class="employee-name">Colaborador: ${escapeHtml(emp.employeeName)}</div>
-            <table>
-              <colgroup>
-                <col style="width:55px;">
-                <col style="width:28mm;">
-                <col style="width:28mm;">
-                <col style="width:28mm;">
-                <col style="width:28mm;">
-                <col>
-              </colgroup>
-              <thead>
-                <tr>
-                  <th style="padding:5px;border:1px solid #ddd;background:#f0f0f0;font-size:9px;">Dia</th>
-                  <th style="padding:5px;border:1px solid #ddd;background:#f0f0f0;font-size:9px;">Entrada</th>
-                  <th style="padding:5px;border:1px solid #ddd;background:#f0f0f0;font-size:9px;">Intervalo Saída</th>
-                  <th style="padding:5px;border:1px solid #ddd;background:#f0f0f0;font-size:9px;">Intervalo Volta</th>
-                  <th style="padding:5px;border:1px solid #ddd;background:#f0f0f0;font-size:9px;">Saída</th>
-                  <th style="padding:5px;border:1px solid #ddd;background:#f0f0f0;font-size:9px;">Assinatura</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${rows}
-              </tbody>
-            </table>
-            <div class="signatures">
-              <div class="signature-block">
-                <div class="signature-line"></div>
-                <div class="signature-label"></div>
-                <div class="signature-name">${escapeHtml(emp.employeeName? emp.employeeName : "Assinatura do Funcionário")}</div>
-              </div>
-              <div class="signature-block">
-                <div class="signature-line"></div>
-                <div class="signature-label">Assinatura do Responsável</div>
-              </div>
-            </div>
-          </div>`;
-      }).join("");
-
-      const html = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Folha Mensal - ${escapeHtml(companyName)}</title>
-  <style>
-    @page { size: A4 portrait; margin: 8mm; }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; color: #333; }
-    .page {
-      width: 100%;
-      padding: 10px 12px;
-      page-break-after: always;
-    }
-    .page:last-child { page-break-after: auto; }
-    .header {
-      border-bottom: 2px solid #10b981;
-      padding-bottom: 6px;
-      margin-bottom: 8px;
-    }
-    .company-name {
-      font-size: 14px;
-      font-weight: bold;
-      color: #10b981;
-    }
-    .cnpj {
-      font-size: 10px;
-      color: #666;
-      margin-top: 1px;
-    }
-    .period {
-      font-size: 10px;
-      color: #666;
-      margin-top: 1px;
-    }
-    .employee-name {
-      font-size: 11px;
-      font-weight: bold;
-      margin-bottom: 10px;
-      color: #444;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    th {
-      font-weight: bold;
-      text-transform: uppercase;
-    }
-    .signatures {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 30px;
-      padding: 0 20px;
-    }
-    .signature-block {
-      text-align: center;
-      width: 40%;
-    }
-    .signature-line {
-      border-bottom: 1px solid #333;
-      margin-bottom: 4px;
-      height: 30px;
-    }
-    .signature-label {
-      font-size: 9px;
-      color: #666;
-    }
-    .signature-name {
-      font-size: 9px;
-      color: #333;
-      font-weight: bold;
-      margin-top: 2px;
-    }
-    @media print {
-      .page { page-break-after: always; }
-      .page:last-child { page-break-after: auto; }
-    }
-  </style>
-</head>
-<body>
-  ${pages}
-  <script>
-    window.onload = () => {
-      window.print();
-    };
-  </script>
-</body>
-</html>`;
-
-      const printWindow = window.open("", "_blank");
-      if (printWindow) {
-        printWindow.document.write(html);
-        printWindow.document.close();
-      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `RELATORIO_MENSAL_${selectedYear}${String(selectedMonth).padStart(2, "0")}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Erro ao gerar folha mensal:", error);
-      alert(error instanceof Error ? error.message : "Erro ao gerar folha mensal. Tente novamente.");
+      console.error("Erro ao gerar relatório mensal:", error);
+      alert(error instanceof Error ? error.message : "Erro ao gerar relatório mensal. Tente novamente.");
     } finally {
       setIsGenerating(false);
     }
@@ -470,8 +280,8 @@ function FolhaMensalTab({ company }: { company: CompanyResponse | null }) {
     <div className="bg-white border border-slate-200 rounded-3xl shadow-sm p-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
-          <h2 className="text-lg font-bold text-slate-800">Folha Mensal</h2>
-          <p className="text-slate-500 text-sm">Gere a folha de ponto mensal dos funcionários</p>
+          <h2 className="text-lg font-bold text-slate-800">Relatório Mensal de Ponto (Art. 78 §5º-A)</h2>
+          <p className="text-slate-500 text-sm">Exporta o relatório oficial MTE com hash SHA-256 de verificação</p>
         </div>
       </div>
 
@@ -510,16 +320,19 @@ function FolhaMensalTab({ company }: { company: CompanyResponse | null }) {
           {isGenerating ? (
             <Loader2 size={18} className="animate-spin" />
           ) : (
-            <FileText size={18} />
+            <Download size={18} />
           )}
-          {isGenerating ? "Gerando..." : "Gerar Folha Mensal"}
+          {isGenerating ? "Gerando..." : "Exportar Relatório"}
         </button>
       </div>
 
-      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 text-center">
+      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6">
         <FileText className="mx-auto text-slate-300 mb-3" size={40} />
-        <p className="text-slate-500 text-sm">
-          Selecione o mês e ano desejados e clique em <strong>"Gerar Folha Mensal"</strong> para criar o PDF com a folha de ponto de cada funcionário.
+        <p className="text-slate-500 text-sm text-center">
+          Selecione o mês e ano desejados e clique em <strong>"Exportar Relatório"</strong> para baixar o arquivo CSV com o relatório oficial de ponto.
+        </p>
+        <p className="text-slate-400 text-xs text-center mt-2">
+          O arquivo inclui hash SHA-256 no rodapé para verificação de integridade conforme Art. 78 §5º-A da CLT.
         </p>
       </div>
     </div>

@@ -1562,7 +1562,7 @@ snapshot imutável no `CheckIn.employerCnpj`.
 > partir do AFD, relatórios periódicos contendo(...) folha mensal de
 > ponto, conforme modelo aprovado pelo MTE."
 
-**Status:** PARCIALMENTE IMPLEMENTADO
+**Status:** IMPLEMENTADO ✅
 
 **Constatado:** `CheckinController.listMonthly` (`CheckinController.ts:182-239`)
 gera um JSON com agrupamento por employeeId. `DashboardPage.tsx:320-365`
@@ -1570,78 +1570,12 @@ gera tabela HTML para impressão. **Nenhum dos dois segue o modelo oficial
 do MTE** (relatório folha mensal com colunas: dia, Entrada, Saída intervalo,
 Retorno intervalo, Saída, Observação, Assinatura — com hash SHA-256 no rodapé).
 
-**Solução proposta:**
+**Solução implementada:**
 
-```typescript
-// backend/src/services/relatorioMensalService.ts
-import { extendedPrisma } from "../database/prisma-extensions.js";
-import { startOfMonth, endOfMonth, format, eachDayOfInterval, isSameDay } from "date-fns";
-import crypto from "node:crypto";
-
-/**
- * Gera o Relatório Mensal de Ponto no layout aprovado pelo MTE.
- * Cada página = 1 funcionário com 1 linha por dia do mês.
- */
-export async function gerarRelatorioMensal(
-  companyId: string,
-  year: number,
-  month: number
-): Promise<{ csv: string; hash: string }> {
-  const monthStart = startOfMonth(new Date(year, month - 1));
-  const monthEnd = endOfMonth(new Date(year, month - 1));
-  const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
-
-  const company = await extendedPrisma.company.findUnique({
-    where: { id: companyId },
-    select: { cnpj: true, name: true },
-  });
-
-  const employees = await extendedPrisma.user.findMany({
-    where: { companyId },
-    select: { id: true, name: true, cpf: true },
-  });
-
-  const checkins = await extendedPrisma.checkIn.findMany({
-    where: { companyId, createdAt: { gte: monthStart, lte: monthEnd } },
-    orderBy: { createdAt: "asc" },
-  });
-
-  const lines: string[] = [];
-
-  // Cabeçalho por funcionário
-  for (const emp of employees) {
-    lines.push(`FUNCIONARIO: ${emp.name} | CPF: ${emp.cpf}`);
-    lines.push(["Dia", "Entrada", "S.Intervalo", "R.Intervalo", "Saída", "Observação"].join("|"));
-
-    for (const day of days) {
-      const dayCheckins = checkins.filter(
-        c => c.userId === emp.id && isSameDay(c.createdAt, day)
-      );
-
-      const entry = dayCheckins.find(c => c.type === "ENTRY");
-      const lunchStart = dayCheckins.find(c => c.type === "LUNCH_START");
-      const lunchEnd = dayCheckins.find(c => c.type === "LUNCH_END");
-      const exit = dayCheckins.find(c => c.type === "EXIT");
-
-      lines.push([
-        format(day, "dd/MM"),
-        entry ? format(entry.createdAt, "HH:mm") : "--:--",
-        lunchStart ? format(lunchStart.createdAt, "HH:mm") : "--:--",
-        lunchEnd ? format(lunchEnd.createdAt, "HH:mm") : "--:--",
-        exit ? format(exit.createdAt, "HH:mm") : "--:--",
-        "", // Observação
-      ].join("|"));
-    }
-
-    lines.push(`Assinatura: ${emp.name}`);
-    lines.push("");
-  }
-
-  const csv = lines.join("\n");
-  const hash = crypto.createHash("sha256").update(csv).digest("hex");
-  return { csv, hash };
-}
-```
+- `backend/src/services/relatorioMensalService.ts` — gera CSV com layout oficial MTE (Empregador, CNPJ, Período, Funcionário, CPF + colunas Dia|Sem|Entrada|Saída Intervalo|Retorno Intervalo|Saída|Observação + ASSINATURA + HASH SHA-256)
+- `CheckinController.exportRelatorioMensal` — endpoint `GET /checkins/export/relatorio-mensal?year=&month=`
+- `frontend/src/services/api.ts` — `checkins.exportRelatorioMensal()`
+- `frontend/src/pages/DashboardPage.tsx` — botão "Exportar Relatório" no tab Folha Mensal (substitui impressão client-side)
 
 **Rota:** `GET /checkins/export/relatorio-mensal?year=&month=`
 
@@ -1649,7 +1583,8 @@ export async function gerarRelatorioMensal(
 - Novo: `backend/src/services/relatorioMensalService.ts`
 - Alterado: `backend/src/routes/checkinRoutes.ts`
 - Alterado: `backend/src/controller/CheckinController.ts` — Novo endpoint de exportação
-- Alterado: `frontend/src/pages/DashboardPage.tsx` — Usar relatório oficial
+- Alterado: `frontend/src/services/api.ts` — `checkins.exportRelatorioMensal()`
+- Alterado: `frontend/src/pages/DashboardPage.tsx` — Botão download (substitui geração client-side)
 
 ---
 
@@ -1843,7 +1778,7 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 | F6 | Comprovante imediato | Art. 78 §2º | ✅ | 🔴 Bloqueante | `comprovanteGenerator.ts` |
 | F17 | NSR reinicia anualmente | Art. 78 §5º-C | ✅ | 🔴 Bloqueante | `nsrGenerator.ts` |
 | F18 | Identif. empregador no registro | Art. 78 §5º-A II | ✅ | 🟠 Alto | `CheckIn.employerCnpj` |
-| F20 | Relatório mensal layout MTE | Art. 78 §5º-A V | ⚠️ | 🟠 Alto | `DashboardPage.tsx:320` |
+| F20 | Relatório mensal layout MTE | Art. 78 §5º-A V | ✅ | 🟠 Alto | `relatorioMensalService.ts` + `CheckinController.ts` |
 | F21 | Backup criptografado AFD | Art. 81 | ❌ | 🟠 Alto | Nenhum |
 | F7 | Ponto por exceção | Art. 78 §1º | ❌ | 🟠 Alto | Nenhum |
 | F8 | Tolerância de horário | CLT Art. 74 §2º | ⚠️ | 🟡 Médio | `CompanyController.ts:201` |
@@ -1912,8 +1847,8 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 | T10 | **F19** | `POLITICA_RETENCAO.md` + `retentionCleanup.ts` (cron diário 02:00) | Médio | T09 |
 | T11 | **F20** | `relatorioMensalService.ts` — relatório folha mensal layout oficial MTE | Médio | T04 |
 
-> **Progresso Sprint 1:** T01 ✅ T02 ✅ T03 ✅ T04 ✅ T05 ✅ T06 ✅ T07 ✅ T08 ✅ T09 ✅ T10 ✅ (10/11 — 91%)
-> F4, F3/F17, F18, F2, F6, F9, F10 e F19 implementados e funcionais.
+> **Progresso Sprint 1:** T01 ✅ T02 ✅ T03 ✅ T04 ✅ T05 ✅ T06 ✅ T07 ✅ T08 ✅ T09 ✅ T10 ✅ T11 ✅ (11/11 — 100%)
+> F4, F3/F17, F18, F2, F6, F9, F10, F19 e F20 implementados e funcionais.
 
 **Entregáveis Sprint 1:**
 - Schema Prisma atualizado (NSR, ano, employerCnpj) ✅
@@ -1921,7 +1856,7 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 - NSR com reinício anual + generator transacional ✅
 - Rota AFD (`GET /checkins/export/afd`) com leiaute Anexo II ✅
 - Comprovante retornado em `POST /checkins` com hash SHA-256 ✅
-- Relatório mensal MTE (`GET /checkins/export/relatorio-mensal`) (pendente T11)
+- Relatório mensal MTE (`GET /checkins/export/relatorio-mensal`) com hash SHA-256 ✅
 - Termos de Uso + Política de Privacidade (páginas + rotas) ✅
 - Consentimento biométrico (tela + backend + persistência) ✅
 - Política de retenção documentada + job de limpeza automática ✅

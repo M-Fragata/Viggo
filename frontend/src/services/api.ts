@@ -133,6 +133,10 @@ export const api = {
       fetchApi<Blob>(`/checkins/export/afd?startDate=${startDate}&endDate=${endDate}`, {
         method: "GET",
       }),
+    exportRelatorioMensal: (year: number, month: number) =>
+      fetchApi<Blob>(`/checkins/export/relatorio-mensal?year=${year}&month=${month}`, {
+        method: "GET",
+      }),
   },
 
   master: {

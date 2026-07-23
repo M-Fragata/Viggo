@@ -3,6 +3,7 @@ import { z } from "zod"
 import { extendedPrisma } from "../database/prisma-extensions.js";
 import { getNextNSR, currentYear, NsrLimitExceededError } from "../utils/nsrGenerator.js";
 import { gerarComprovante } from "../utils/comprovanteGenerator.js";
+import { gerarRelatorioMensal } from "../services/relatorioMensalService.js";
 
 import { parseISO, startOfDay, endOfDay, startOfMonth, endOfMonth } from "date-fns"
 
@@ -284,5 +285,35 @@ export class CheckinController {
             return res.status(500).json({ message: "Erro interno ao buscar folha mensal. Tente novamente." });
         }
 
+    }
+
+    async exportRelatorioMensal(req: Request, res: Response) {
+        const paramsSchema = z.object({
+            year: z.coerce.number().min(2020).max(2100),
+            month: z.coerce.number().min(1).max(12),
+        });
+
+        try {
+            const { year, month } = paramsSchema.parse(req.query);
+
+            const companyId = req.user.companyId;
+            if (!companyId) {
+                return res.status(403).json({ message: "Acesso negado" });
+            }
+
+            const { csv, hash, filename } = await gerarRelatorioMensal(companyId, year, month);
+
+            res.setHeader("Content-Type", "text/csv; charset=utf-8");
+            res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+            return res.send(csv);
+
+        } catch (error) {
+            console.error("Erro ao gerar relatório mensal:", error);
+
+            if (error instanceof z.ZodError) {
+                return res.status(400).json({ message: "Parâmetros inválidos", errors: error.issues });
+            }
+            return res.status(500).json({ message: "Erro ao gerar relatório mensal" });
+        }
     }
 }
