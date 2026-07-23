@@ -1549,9 +1549,9 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 
 | Módulo | Endpoint | API Method | Frontend Page | Status |
 |--------|----------|-----------|---------------|--------|
-| **Justificativa** | `POST /justificativas` | ❌ Não existe | ❌ Nenhum | 🔴 Sem frontend |
-| **Justificativa** | `GET /justificativas` | ❌ Não existe | ❌ Nenhum | 🔴 Sem frontend |
-| **Justificativa** | `PUT /justificativas/:id/aprovar` | ❌ Não existe | ❌ Nenhum | 🔴 Sem frontend |
+| **Justificativa** | `POST /justificativas` | ✅ `justificativa.create()` | ✅ `JustificativasPage.tsx` | ✅ Implementado (T28) |
+| **Justificativa** | `GET /justificativas` | ✅ `justificativa.list()` | ✅ `JustificativasPage.tsx` | ✅ Implementado (T28) |
+| **Justificativa** | `PUT /justificativas/:id/aprovar` | ✅ `justificativa.approve()` | ✅ `JustificativasPage.tsx` | ✅ Implementado (T28) |
 | **Privacy/DSAR** | `GET /privacy/my-data` | ✅ `privacy.getMyData()` | ✅ `MeusDadosPage.tsx` | ✅ Implementado (T27) |
 | **Privacy/DSAR** | `DELETE /privacy/my-face` | ✅ `privacy.deleteMyFace()` | ✅ `MeusDadosPage.tsx` | ✅ Implementado (T27) |
 | **Privacy/DSAR** | `GET /privacy/my-logs` | ✅ `privacy.getMyLogs()` | ✅ `MeusDadosPage.tsx` | ✅ Implementado (T27) |
@@ -1565,7 +1565,7 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 | # | Tela | Endpoints Consumidos | Prioridade | Status |
 |---|------|---------------------|------------|--------|
 | 1 | **Portal LGPD do Funcionário** — "Meus Dados" com dados pessoais, biometria, checkins, consentimentos + botão "Excluir minha face" + "Meus logs de acesso" | `GET /privacy/my-data`, `DELETE /privacy/my-face`, `GET /privacy/my-logs` | 🔴 Alta | ✅ Implementado (T27) |
-| 2 | **Tela de Justificativas** — Funcionário cria justificativa (ABONO, FALTA, ATESTADO, GERAL) + Admin vê lista e aprova/rejeita | `POST /justificativas`, `GET /justificativas`, `PUT /justificativas/:id/aprovar` | 🔴 Alta | ❌ Sem frontend (T28) |
+| 2 | **Tela de Justificativas** — Funcionário cria justificativa (ABONO, FALTA, ATESTADO, GERAL) + Admin vê lista e aprova/rejeita | `POST /justificativas`, `GET /justificativas`, `PUT /justificativas/:id/aprovar` | 🔴 Alta | ✅ Implementado (T28) |
 | 3 | **Exportar AFD no Dashboard** — Botão "Exportar AFD" (Anexo II Portaria 671) com seletor de período | `GET /checkins/export/afd` | 🟡 Média | ✅ Implementado (T29) |
 | 4 | **Dashboard de Consentimentos** — Funcionário vê histórico de consentimentos aceitos (Termos, Política, Biometria, DPA) | `GET /consentimentos` | 🟡 Média | ✅ Parcial — integrado na seção "Consentimentos" do Portal LGPD (T27) |
 | 5 | **Lista de Funcionários** — Admin vê e gerencia funcionários da empresa | `GET /employees` | 🟡 Média | ❌ Sem frontend (T31) |
@@ -1623,6 +1623,51 @@ consent: {
 
 ---
 
+#### Implementação T28 — Tela de Justificativas (JustificativasPage)
+
+> **Status:** ✅ IMPLEMENTADO (23/07/2026)
+> **Sprint:** Sprint 3 — Tarefa T28 (Gap Frontend)
+
+**Página:** `frontend/src/pages/JustificativasPage.tsx`
+
+Página **adaptativa única** que serve tanto **EMPLOYEE** (criar + listar próprias justificativas) quanto **ENTERPRISE_ADMIN/MASTER** (listar todas da empresa + aprovar/rejeitar):
+
+- **Employee**: Form modal para criar justificativa (tipo, descrição, data início/fim) + lista das suas
+- **Admin**: Tabela com filtros por status (TODOS/PENDENTE/APROVADO/REJEITADO) + botões Aprovar/Rejeitar
+
+**API Methods adicionados em `api.ts`:**
+
+```typescript
+justificativa: {
+  create: (body: JustificativaCreateBody) =>
+    fetchApi<JustificativaResponse>("/justificativas", { method: "POST", body: JSON.stringify(body) }),
+
+  list: () =>
+    fetchApi<(JustificativaResponse & { user?: { id: string; name: string; email: string } })[]>("/justificativas"),
+
+  approve: (id: string, aprovado: boolean) =>
+    fetchApi<JustificativaResponse>(`/justificativas/${id}/aprovar`, { method: "PUT", body: JSON.stringify({ aprovado }) }),
+},
+```
+
+**Tipos novos:** `JustificativaTipo`, `JustificativaCreateBody`, `JustificativaResponse`
+
+**Roteamento:**
+- `UserRoutes.tsx:28` — `<Route path="justificativas" element={<JustificativasPage />} />`
+- `AdminRoutes.tsx:28` — `<Route path="justificativas" element={<JustificativasPage />} />`
+
+**Navegação:**
+- `layoutPage.tsx:84-90` — link "Justificativas" no menu dropdown (visível p/ employee + admin)
+
+**Arquivos afetados:**
+- Novo: `frontend/src/pages/JustificativasPage.tsx`
+- Alterado: `frontend/src/services/api.ts` — `justificativa.*` + novos tipos
+- Alterado: `frontend/src/routes/UserRoutes.tsx` — rota `/justificativas`
+- Alterado: `frontend/src/routes/AdminRoutes.tsx` — rota `/justificativas`
+- Alterado: `frontend/src/pages/layoutPage.tsx` — link no menu
+
+---
+
 ### Sprint 3 — FUNCIONALIDADES COMPLEMENTARES + FRONTEND (3-4 semanas)
 
 > **Foco:** Telas frontend faltantes, ponto por exceção, tolerância, criptografia CPF, incidentes.
@@ -1641,8 +1686,8 @@ consent: {
 | T30 | **Gap FE** | Dashboard de Consentimentos — visualizar consentimentos aceitos | Baixo | Nenhuma |
 | T31 | **Gap FE** | Lista de Funcionários — `GET /employees` + tela admin | Médio | Nenhuma |
 
-> **Progresso Sprint 3:** T21 ❌ T22 ❌ T23 ❌ T24 ❌ T25 ❌ T26 ❌ T27 ✅ T28 ❌ T29 ✅ T30 ⚠️ T31 ❌
-> T27 (Portal LGPD — `MeusDadosPage.tsx` consumindo `/privacy/*` + `/consentimentos`) e T29 (botão "Exportar AFD" no Dashboard) implementados.
+> **Progresso Sprint 3:** T21 ❌ T22 ❌ T23 ❌ T24 ❌ T25 ❌ T26 ❌ T27 ✅ T28 ✅ T29 ✅ T30 ⚠️ T31 ❌
+> T27 (Portal LGPD — `MeusDadosPage.tsx` consumindo `/privacy/*` + `/consentimentos`), T28 (Tela de Justificativas — `JustificativasPage.tsx` adaptativa employee/admin) e T29 (botão "Exportar AFD" no Dashboard) implementados.
 > T30 parcialmente coberto: seção "Consentimentos" integrada ao Portal LGPD (T27).
 
 **Entregáveis Sprint 3:**
@@ -1766,4 +1811,5 @@ identificadas). As principais intersecções são:
 *Documento gerado em 17/07/2026 como parte da análise de conformidade do projeto Viggo.*
 *Atualizado em 23/07/2026 — F2, F3/F17, F4 e F18 implementados.*
 *Atualizado em 23/07/2026 — T27 (Portal LGPD do Funcionário) + T29 (Exportar AFD) implementados no frontend.*
+*Atualizado em 23/07/2026 — T28 (Tela de Justificativas employee/admin) implementada.*
 *Este documento deve ser revisado por assessor jurídico especializado em LGPD e legislação trabalhista antes da comercialização do produto.*
