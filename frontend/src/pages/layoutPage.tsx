@@ -75,6 +75,13 @@ export function LayoutPage() {
                             Histórico
                         </Link>
                         <Link
+                            to="/meus-dados"
+                            onClick={closeMenu}
+                            className="text-gray-600 hover:text-emerald-600 font-medium px-2 py-1 transition-colors"
+                        >
+                            Meus Dados
+                        </Link>
+                        <Link
                             to="/"
                             onClick={closeMenu}
                             className="text-emerald-600 hover:bg-emerald-600 hover:text-white rounded-xl font-medium px-2 py-1 transition-colors"

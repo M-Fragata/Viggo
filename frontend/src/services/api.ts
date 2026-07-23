@@ -171,6 +171,24 @@ export const api = {
         method: "POST",
       }),
   },
+
+  privacy: {
+    getMyData: () =>
+      fetchApi<MyDataResponse>("/privacy/my-data"),
+
+    deleteMyFace: () =>
+      fetchApi<{ message: string }>("/privacy/my-face", {
+        method: "DELETE",
+      }),
+
+    getMyLogs: () =>
+      fetchApi<{ logs: AuditLogEntry[] }>("/privacy/my-logs"),
+  },
+
+  consent: {
+    list: () =>
+      fetchApi<ConsentimentoResponse[]>("/consentimentos"),
+  },
 };
 
 export interface User {
@@ -440,3 +458,48 @@ export interface CompanyCheckinEmployee {
 export type UserRole = "MASTER" | "ENTERPRISE_ADMIN" | "EMPLOYEE";
 export type PlanTier = "TIER_I" | "TIER_II" | "TIER_III" | "ENTERPRISE_CUSTOM";
 export type CompanyStatus = "TRIAL" | "ACTIVE" | "SUSPENDED" | "CANCELLED";
+
+export interface MyDataResponse {
+  dadosPessoais: {
+    id: string;
+    nome: string;
+    email: string;
+    cpf: string | null;
+    cargo: string;
+    dataCadastro: string;
+    ultimoLogin: string | null;
+  };
+  dadosBiometricos: {
+    possuiDescriptor: boolean;
+    dimensoes: number;
+    observacao: string;
+  };
+  registrosPonto: {
+    id: string;
+    nsr: number;
+    createdAt: string;
+    type: "ENTRY" | "LUNCH_START" | "LUNCH_END" | "EXIT";
+    latitude: number;
+    longitude: number;
+    address: string | null;
+  }[];
+  consentimentos: ConsentimentoResponse[];
+}
+
+export interface ConsentimentoResponse {
+  tipo: string;
+  versao: string;
+  aceite: boolean;
+  createdAt: string;
+}
+
+export interface AuditLogEntry {
+  action: string;
+  entity: string;
+  entityId: string | null;
+  createdAt: string;
+  ip: string | null;
+  legalBasis: string | null;
+  purpose: string | null;
+  personalDataCategories: string[] | null;
+}

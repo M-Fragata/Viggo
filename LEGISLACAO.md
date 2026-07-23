@@ -1435,7 +1435,7 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 |---|-----------|--------|--------|------------|---------------|
 | F9 | Termos de Uso/Privacidade | Art. 7º, 9º | ✅ | 🔴 Bloqueante | `TermosDeUso.tsx`, `PoliticaPrivacidade.tsx` |
 | F10 | Consentimento biométrico | Art. 11 | ✅ | 🔴 Bloqueante | `ConsentController.ts` |
-| F11 | Portal do titular (DSAR) | Art. 18 | ✅ | 🔴 Bloqueante | `PrivacyController.ts` + `privacyRoutes.ts` |
+| F11 | Portal do titular (DSAR) | Art. 18 | ✅ | 🔴 Bloqueante | `PrivacyController.ts` + `privacyRoutes.ts` + `MeusDadosPage.tsx` (T27) |
 | F11.b | Descriptor exposto (SEC-14/15) | Art. 18 + 46 | ✅ | 🟠 Alto | `EmployeesController.ts` (token descartável) |
 | F19 | Política retenção/deleção | Art. 15, 16 | ✅ | 🔴 Bloqueante | `POLITICA_RETENCAO.md`, `retentionCleanup.ts` |
 | F12 | Criptografia descriptor trânsito | Art. 46 | ✅ | 🟠 Alto | `app.ts` (helmet + HSTS) |
@@ -1552,30 +1552,74 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 | **Justificativa** | `POST /justificativas` | ❌ Não existe | ❌ Nenhum | 🔴 Sem frontend |
 | **Justificativa** | `GET /justificativas` | ❌ Não existe | ❌ Nenhum | 🔴 Sem frontend |
 | **Justificativa** | `PUT /justificativas/:id/aprovar` | ❌ Não existe | ❌ Nenhum | 🔴 Sem frontend |
-| **Privacy/DSAR** | `GET /privacy/my-data` | ❌ Não existe | ❌ Nenhum | 🔴 Sem frontend |
-| **Privacy/DSAR** | `DELETE /privacy/my-face` | ❌ Não existe | ❌ Nenhum | 🔴 Sem frontend |
-| **Privacy/DSAR** | `GET /privacy/my-logs` | ❌ Não existe | ❌ Nenhum | 🔴 Sem frontend |
+| **Privacy/DSAR** | `GET /privacy/my-data` | ✅ `privacy.getMyData()` | ✅ `MeusDadosPage.tsx` | ✅ Implementado (T27) |
+| **Privacy/DSAR** | `DELETE /privacy/my-face` | ✅ `privacy.deleteMyFace()` | ✅ `MeusDadosPage.tsx` | ✅ Implementado (T27) |
+| **Privacy/DSAR** | `GET /privacy/my-logs` | ✅ `privacy.getMyLogs()` | ✅ `MeusDadosPage.tsx` | ✅ Implementado (T27) |
 | **Consent** | `POST /consentimentos` | ❌ Não existe | ❌ Nenhum | 🔴 Sem frontend |
-| **Consent** | `GET /consentimentos` | ❌ Não existe | ❌ Nenhum | 🔴 Sem frontend |
-| **AFD Export** | `GET /checkins/export/afd` | ✅ `exportAfd()` | ⚠️ API existe, sem botão | 🟡 Parcial |
+| **Consent** | `GET /consentimentos` | ✅ `consent.list()` | ✅ `MeusDadosPage.tsx` (seção) | ✅ Implementado (T27) |
+| **AFD Export** | `GET /checkins/export/afd` | ✅ `exportAfd()` | ✅ `DashboardPage.tsx` (T29) | ✅ Implementado (T29) |
 | **Funcionários** | `GET /employees` | ❌ Não existe | ❌ Nenhum | 🔴 Sem frontend |
 
 #### Telas Necessárias (Priorização Recomendada)
 
-| # | Tela | Endpoints Consumidos | Prioridade | Sugestão de Sprint |
-|---|------|---------------------|------------|-------------------|
-| 1 | **Portal LGPD do Funcionário** — "Meus Dados" com dados pessoais, biometria, checkins, consentimentos + botão "Excluir minha face" + "Meus logs de acesso" | `GET /privacy/my-data`, `DELETE /privacy/my-face`, `GET /privacy/my-logs` | 🔴 Alta | Sprint 3 |
-| 2 | **Tela de Justificativas** — Funcionário cria justificativa (ABONO, FALTA, ATESTADO, GERAL) + Admin vê lista e aprova/rejeita | `POST /justificativas`, `GET /justificativas`, `PUT /justificativas/:id/aprovar` | 🔴 Alta | Sprint 3 |
-| 3 | **Exportar AFD no Dashboard** — Botão "Exportar AFD" (Anexo II Portaria 671) com seletor de período | `GET /checkins/export/afd` | 🟡 Média | Sprint 3 |
-| 4 | **Dashboard de Consentimentos** — Funcionário vê histórico de consentimentos aceitos (Termos, Política, Biometria, DPA) | `GET /consentimentos` | 🟡 Média | Sprint 4 |
-| 5 | **Lista de Funcionários** — Admin vê e gerencia funcionários da empresa | `GET /employees` | 🟡 Média | Sprint 3 |
+| # | Tela | Endpoints Consumidos | Prioridade | Status |
+|---|------|---------------------|------------|--------|
+| 1 | **Portal LGPD do Funcionário** — "Meus Dados" com dados pessoais, biometria, checkins, consentimentos + botão "Excluir minha face" + "Meus logs de acesso" | `GET /privacy/my-data`, `DELETE /privacy/my-face`, `GET /privacy/my-logs` | 🔴 Alta | ✅ Implementado (T27) |
+| 2 | **Tela de Justificativas** — Funcionário cria justificativa (ABONO, FALTA, ATESTADO, GERAL) + Admin vê lista e aprova/rejeita | `POST /justificativas`, `GET /justificativas`, `PUT /justificativas/:id/aprovar` | 🔴 Alta | ❌ Sem frontend (T28) |
+| 3 | **Exportar AFD no Dashboard** — Botão "Exportar AFD" (Anexo II Portaria 671) com seletor de período | `GET /checkins/export/afd` | 🟡 Média | ✅ Implementado (T29) |
+| 4 | **Dashboard de Consentimentos** — Funcionário vê histórico de consentimentos aceitos (Termos, Política, Biometria, DPA) | `GET /consentimentos` | 🟡 Média | ✅ Parcial — integrado na seção "Consentimentos" do Portal LGPD (T27) |
+| 5 | **Lista de Funcionários** — Admin vê e gerencia funcionários da empresa | `GET /employees` | 🟡 Média | ❌ Sem frontend (T31) |
 
 #### Notas Técnicas
 
 - `PoliticaPrivacidade.tsx` é apenas texto estático legal — **não consome** os endpoints `/privacy/*`
-- `exportAfd()` já existe em `api.ts` mas **nenhum componente** o chama
+- `exportAfd()` já existe em `api.ts` e foi integrado ao `DashboardPage.tsx` no T29 (botão "Exportar AFD")
 - `GET /employees` não tem API method nem consumer no frontend
 - `GET /checkins/month` (listMonthly) não é chamado por nenhuma tela (foi removido do frontend no F20)
+- **T27 (Portal LGPD)** integrado: `MeusDadosPage.tsx` consome 4 endpoints (`getMyData`, `deleteMyFace`, `getMyLogs`, `consent.list`) — rota `/meus-dados` no `UserRoutes.tsx` + link "Meus Dados" no menu `layoutPage.tsx`
+
+---
+
+#### Implementação T27 — Portal LGPD do Funcionário (MeusDadosPage)
+
+> **Status:** ✅ IMPLEMENTADO (23/07/2026)
+> **Sprint:** Sprint 3 — Tarefa T27 (Gap Frontend)
+
+**Página:** `frontend/src/pages/MeusDadosPage.tsx`
+
+A página "Meus Dados — Portal LGPD" exibe em 5 seções os dados do funcionário, atendendo aos direitos do titular previstos no Art. 18 da LGPD:
+
+1. **Dados Pessoais** — `data.dadosPessoais` (nome, email, CPF, cargo, cadastro, último login)
+2. **Dados Biométricos** — `data.dadosBiometricos` (possui descriptor, dimensões, observação +
+   botão "Excluir Minha Biometria" com confirmação em 2 passos — Art. 18, VIII LGPD)
+3. **Registros de Ponto** — `data.registrosPonto` (tabela com Data/Hora, NSR, Tipo — últimos 100)
+4. **Consentimentos** — `data.consentimentos` (Termos, Política, Biometria, DPA — status Aceito/Revogado)
+5. **Logs de Acesso** — `logs` (`privacy.getMyLogs()` — últimos 50, com action, IP, base legal, finalidade)
+
+**API Methods adicionados em `api.ts`:**
+
+```typescript
+privacy: {
+  getMyData: ()    => fetchApi<MyDataResponse>("/privacy/my-data"),
+  deleteMyFace: () => fetchApi<{ message: string }>("/privacy/my-face", { method: "DELETE" }),
+  getMyLogs: ()    => fetchApi<{ logs: AuditLogEntry[] }>("/privacy/my-logs"),
+},
+consent: {
+  list: () => fetchApi<ConsentimentoResponse[]>("/consentimentos"),
+},
+```
+
+**Tipos novos:** `MyDataResponse`, `ConsentimentoResponse`, `AuditLogEntry`
+
+**Roteamento:**
+- `UserRoutes.tsx:26` — `<Route path="meus-dados" element={<MeusDadosPage />} />`
+- `layoutPage.tsx:77-84` — link "Meus Dados" no menu dropdown do employee
+
+**Arquivos afetados:**
+- Novo: `frontend/src/pages/MeusDadosPage.tsx`
+- Alterado: `frontend/src/services/api.ts` — `privacy.*` + `consent.*` + novos tipos
+- Alterado: `frontend/src/routes/UserRoutes.tsx` — rota `/meus-dados`
+- Alterado: `frontend/src/pages/layoutPage.tsx` — link de navegação no menu
 
 ---
 
@@ -1596,6 +1640,10 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 | T29 | **Gap FE** | Botão "Exportar AFD" no Dashboard admin | Baixo | Nenhuma |
 | T30 | **Gap FE** | Dashboard de Consentimentos — visualizar consentimentos aceitos | Baixo | Nenhuma |
 | T31 | **Gap FE** | Lista de Funcionários — `GET /employees` + tela admin | Médio | Nenhuma |
+
+> **Progresso Sprint 3:** T21 ❌ T22 ❌ T23 ❌ T24 ❌ T25 ❌ T26 ❌ T27 ✅ T28 ❌ T29 ✅ T30 ⚠️ T31 ❌
+> T27 (Portal LGPD — `MeusDadosPage.tsx` consumindo `/privacy/*` + `/consentimentos`) e T29 (botão "Exportar AFD" no Dashboard) implementados.
+> T30 parcialmente coberto: seção "Consentimentos" integrada ao Portal LGPD (T27).
 
 **Entregáveis Sprint 3:**
 - Suporte a ponto por exceção (settings + lógica)
@@ -1717,4 +1765,5 @@ identificadas). As principais intersecções são:
 
 *Documento gerado em 17/07/2026 como parte da análise de conformidade do projeto Viggo.*
 *Atualizado em 23/07/2026 — F2, F3/F17, F4 e F18 implementados.*
+*Atualizado em 23/07/2026 — T27 (Portal LGPD do Funcionário) + T29 (Exportar AFD) implementados no frontend.*
 *Este documento deve ser revisado por assessor jurídico especializado em LGPD e legislação trabalhista antes da comercialização do produto.*
