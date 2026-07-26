@@ -10,7 +10,6 @@ sequenceDiagram
     participant CORS as CORS Middleware
     participant Logger as LoggingMiddleware
     participant RateLimit as GeneralApiLimiter
-    participant Metrics as MetricsMiddleware
     participant EmployeesRoute as Employees Routes
     participant AuthMiddleware as AuthMiddleware
     participant FaceValidationLimiter as FaceValidationLimiter (30/hora)
@@ -25,8 +24,6 @@ sequenceDiagram
     Logger-->>Express: Next
     Express->>RateLimit: 100 req/min
     RateLimit-->>Express: OK
-    Express->>Metrics: Coleta métricas
-    Metrics-->>Express: Next
     Express->>EmployeesRoute: Roteamento
 
     EmployeesRoute->>AuthMiddleware: **Autenticação Obrigatória**
@@ -77,10 +74,9 @@ sequenceDiagram
 1. **CORS**
 2. **LoggingMiddleware**
 3. **GeneralApiLimiter** - 100 req/min
-4. **MetricsMiddleware**
-5. **AuthMiddleware** - JWT + contexto multi-tenancy
-6. **FaceValidationLimiter** - **30 req/hora por userId**
-7. **Controller** - EmployeesController.index
+4. **AuthMiddleware** - JWT + contexto multi-tenancy
+5. **FaceValidationLimiter** - **30 req/hora por userId**
+6. **Controller** - EmployeesController.index
 
 ## Observações Importantes
 

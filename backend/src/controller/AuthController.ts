@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { prisma } from '../database/prisma.js';
+import { hasFaceDescriptor } from '../utils/faceEncryption.js';
 
 export class AuthController {
   async me(req: Request, res: Response) {
@@ -34,7 +35,7 @@ export class AuthController {
           role: user.role,
           companyId: user.companyId,
           createdAt: user.createdAt,
-          hasFaceDescriptor: !!user.faceDescriptor,
+          hasFaceDescriptor: hasFaceDescriptor(user.faceDescriptor as string | null),
         },
       });
     } catch (error) {

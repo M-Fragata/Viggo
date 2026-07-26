@@ -10,7 +10,6 @@ sequenceDiagram
     participant CORS as CORS Middleware
     participant Logger as LoggingMiddleware
     participant RateLimit as GeneralApiLimiter
-    participant Metrics as MetricsMiddleware
     participant SessionRoute as Session Routes
     participant AuthLimiter as AuthLimiter (20 req/15min)
     participant SessionCtrl as SessionController.login
@@ -24,8 +23,6 @@ sequenceDiagram
     Logger-->>Express: Next
     Express->>RateLimit: Verifica limite 100 req/min por IP
     RateLimit-->>Express: OK
-    Express->>Metrics: Coleta métricas
-    Metrics-->>Express: Next
     Express->>SessionRoute: Roteamento
     SessionRoute->>AuthLimiter: Rate Limit específico de auth
     AuthLimiter->>AuthLimiter: Key: IP | Max: 20 | Window: 15min
@@ -77,9 +74,8 @@ sequenceDiagram
 1. **CORS** - Valida origin
 2. **LoggingMiddleware** - Log request
 3. **GeneralApiLimiter** - 100 req/min por IP
-4. **MetricsMiddleware** - Métricas
-5. **AuthLimiter** - **Rate limit específico: 20 req/15min por IP**
-6. **Roteamento** → SessionController.login
+4. **AuthLimiter** - **Rate limit específico: 20 req/15min por IP**
+5. **Roteamento** → SessionController.login
 
 ## Observações Importantes
 

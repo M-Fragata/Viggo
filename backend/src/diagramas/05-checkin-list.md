@@ -10,7 +10,6 @@ sequenceDiagram
     participant CORS as CORS Middleware
     participant Logger as LoggingMiddleware
     participant RateLimit as GeneralApiLimiter
-    participant Metrics as MetricsMiddleware
     participant CheckinRoute as Checkin Routes
     participant AuthMiddleware as AuthMiddleware
     participant CheckinCtrl as CheckinController.index
@@ -24,8 +23,6 @@ sequenceDiagram
     Logger-->>Express: Next
     Express->>RateLimit: 100 req/min por userId/IP
     RateLimit-->>Express: OK
-    Express->>Metrics: Coleta métricas
-    Metrics-->>Express: Next
     Express->>CheckinRoute: Roteamento
 
     CheckinRoute->>AuthMiddleware: **Autenticação Obrigatória**
@@ -81,9 +78,8 @@ sequenceDiagram
 1. **CORS**
 2. **LoggingMiddleware**
 3. **GeneralApiLimiter** - 100 req/min
-4. **MetricsMiddleware**
-5. **AuthMiddleware** - JWT verify + contexto multi-tenancy
-6. **Controller** - CheckinController.index
+4. **AuthMiddleware** - JWT verify + contexto multi-tenancy
+5. **Controller** - CheckinController.index
 
 ## Observações Importantes
 

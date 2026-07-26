@@ -10,7 +10,6 @@ sequenceDiagram
     participant CORS as CORS Middleware
     participant Logger as LoggingMiddleware
     participant RateLimit as GeneralApiLimiter
-    participant Metrics as MetricsMiddleware
     participant MasterRoute as Master Routes
     participant AuthMiddleware as AuthMiddleware
     participant RequireMaster as RequireMaster
@@ -25,8 +24,6 @@ sequenceDiagram
     Logger-->>Express: Next
     Express->>RateLimit: 100 req/min
     RateLimit-->>Express: OK
-    Express->>Metrics: Coleta métricas
-    Metrics-->>Express: Next
     Express->>MasterRoute: Roteamento
 
     MasterRoute->>AuthMiddleware: **Autenticação (isMaster)**
@@ -77,10 +74,9 @@ sequenceDiagram
 1. **CORS**
 2. **LoggingMiddleware**
 3. **GeneralApiLimiter**
-4. **MetricsMiddleware**
-5. **AuthMiddleware** - verifica isMaster
-6. **RequireMaster** - RoleGuard
-7. **Controller** - MasterController.getCompanyDetails
+4. **AuthMiddleware** - verifica isMaster
+5. **RequireMaster** - RoleGuard
+6. **Controller** - MasterController.getCompanyDetails
 
 ## Observações Importantes
 

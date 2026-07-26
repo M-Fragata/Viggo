@@ -10,7 +10,7 @@ import { addDays } from 'date-fns';
 import { FormattName } from "../../utils/formattName.js"
 
 import { Env } from "../../utils/environment.js"
-import { encryptCpf, decryptCpf, formatCpfDigits } from "../../utils/cpfEncryption.js"
+import { encryptCpf, decryptCpf, formatCpfDigits, hashCpf } from "../../utils/cpfEncryption.js"
 
 export class CompanyController {
 
@@ -57,7 +57,8 @@ export class CompanyController {
       }
 
       const encryptedCpf = encryptCpf(cpfValidation.formatted);
-      const existingCpf = await prisma.user.findUnique({ where: { cpf: encryptedCpf } });
+      const cpfHashValue = hashCpf(cpfValidation.formatted);
+      const existingCpf = await prisma.user.findUnique({ where: { cpfHash: cpfHashValue } });
       if (existingCpf) {
         return res.status(400).json({ message: 'CPF já cadastrado' });
       }
@@ -94,6 +95,7 @@ export class CompanyController {
           email,
           password: passwordHash,
           cpf: encryptedCpf,
+          cpfHash: cpfHashValue,
           role: 'ENTERPRISE_ADMIN',
           companyId: company.id,
         },
@@ -537,10 +539,19 @@ export class CompanyController {
       name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
       password: z.string().min(8, 'Senha deve ter no mínimo 8 caracteres'),
       confirmPassword: z.string(),
+      aceiteTermos: z.boolean().refine((v) => v === true, {
+        message: 'Você precisa aceitar os Termos de Uso',
+      }),
+      aceiteBiometria: z.boolean().refine((v) => v === true, {
+        message: 'Você precisa autorizar o uso da biometria facial',
+      }),
+      aceiteDpa: z.boolean().refine((v) => v === true, {
+        message: 'Você precisa aceitar o Contrato de Tratamento de Dados',
+      }),
     });
 
     try {
-      const { token, email, name, password, confirmPassword } = bodySchema.parse(req.body);
+      const { token, email, name, password, confirmPassword, aceiteTermos, aceiteBiometria, aceiteDpa } = bodySchema.parse(req.body);
 
       if (password !== confirmPassword) {
         return res.status(400).json({ message: 'Senhas não conferem' });
@@ -587,6 +598,17 @@ export class CompanyController {
             companyId: inviteToken.companyId,
           },
         });
+
+        // F9/F10/G3: Registrar consentimentos (Termos de Uso, Política de Privacidade, Biometria, DPA)
+        const ip = req.ip ?? req.socket.remoteAddress ?? null;
+        const consentimentos = [
+          { userId: user.id, tipo: "TERMOS_DE_USO", versao: "1.0", aceite: aceiteTermos, ip },
+          { userId: user.id, tipo: "POLITICA_PRIVACIDADE", versao: "1.0", aceite: aceiteTermos, ip },
+          { userId: user.id, tipo: "BIOMETRIA", versao: "1.0", aceite: aceiteBiometria, ip },
+          { userId: user.id, tipo: "DPA", versao: "1.0", aceite: aceiteDpa, ip },
+        ];
+
+        await tx.consentimento.createMany({ data: consentimentos });
 
         await tx.inviteTokenUsage.create({
           data: {

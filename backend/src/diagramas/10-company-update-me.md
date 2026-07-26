@@ -10,7 +10,6 @@ sequenceDiagram
     participant CORS as CORS Middleware
     participant Logger as LoggingMiddleware
     participant RateLimit as GeneralApiLimiter
-    participant Metrics as MetricsMiddleware
     participant CompanyRoute as Company Routes
     participant AuthMiddleware as AuthMiddleware
     participant PlanMiddleware as PlanMiddleware
@@ -26,8 +25,6 @@ sequenceDiagram
     Logger-->>Express: Next
     Express->>RateLimit: 100 req/min
     RateLimit-->>Express: OK
-    Express->>Metrics: Coleta métricas
-    Metrics-->>Express: Next
     Express->>CompanyRoute: Roteamento
 
     CompanyRoute->>AuthMiddleware: **Autenticação**
@@ -82,11 +79,10 @@ sequenceDiagram
 1. **CORS**
 2. **LoggingMiddleware**
 3. **GeneralApiLimiter**
-4. **MetricsMiddleware**
-5. **AuthMiddleware**
-6. **PlanMiddleware**
-7. **RequireEnterpriseAdmin** - **RoleGuard: role === ENTERPRISE_ADMIN || MASTER**
-8. **Controller** - CompanyController.updateMe
+4. **AuthMiddleware**
+5. **PlanMiddleware**
+6. **RequireEnterpriseAdmin** - **RoleGuard: role === ENTERPRISE_ADMIN || MASTER**
+7. **Controller** - CompanyController.updateMe
 
 ## RoleGuard - RequireEnterpriseAdmin
 

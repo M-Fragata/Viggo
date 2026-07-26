@@ -36,7 +36,7 @@ export async function runRetentionCleanup(): Promise<RetentionResult> {
   if (usersToClean.length > 0) {
     const result = await prisma.user.updateMany({
       where: { id: { in: usersToClean.map((u) => u.id) } },
-      data: { faceDescriptor: Prisma.JsonNull },
+      data: { faceDescriptor: Prisma.DbNull },
     });
     descriptorsRemovidos = result.count;
   }

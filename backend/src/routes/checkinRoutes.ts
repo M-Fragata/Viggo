@@ -4,13 +4,12 @@ import { AfdController } from "../controller/AfdController.js";
 
 import { authMiddleware } from "../middleware/AuthMiddleware.js";
 import { checkinLimiter } from "../middleware/RateLimitMiddleware.js";
-import { auditMiddleware } from "../middleware/AuditMiddleware.js";
 
 const checkinRoutes = Router();
 const checkinController = new CheckinController();
 const afdController = new AfdController();
 
-checkinRoutes.post("/", authMiddleware, checkinLimiter, auditMiddleware, checkinController.createCheckin);
+checkinRoutes.post("/", authMiddleware, checkinLimiter, checkinController.createCheckin);
 checkinRoutes.get("/export/afd", authMiddleware, afdController.exportAfd);
 checkinRoutes.get("/export/relatorio-mensal", authMiddleware, checkinController.exportRelatorioMensal);
 checkinRoutes.get("/company", authMiddleware, checkinController.listByCompany);

@@ -104,12 +104,12 @@ services:
 - **Rate Limiting (Duas Camadas):**
   - Edge: Cloudflare Rate Limiting Rules (IP + path `/checkins`, `/employees/face`)
   - Application: `express-rate-limit` com `keyGenerator` por `userId` + `companyId` nas rotas sensíveis (`backend/src/middleware/RateLimitMiddleware.ts`)
-- **Observabilidade:** Prometheus + Grafana em containers Docker isolados (`prom/prometheus`, `grafana/grafana`, `prom/node-exporter`, `google/cadvisor`) - `backend/docker-compose.yml`
+- **Observabilidade:** Logs estruturados + health checks
 - **Logs Estruturados:** JSON logs com correlation IDs, request/response sanitizados (`backend/src/middleware/LoggingMiddleware.ts`)
 - **Audit Logs:** Tabela `AuditLog` + Prisma middleware para capturar create/update/delete (`backend/src/middleware/AuditMiddleware.ts`)
 - **Health Checks:** `/health` (liveness) + `/ready` (readiness) no backend (`backend/src/middleware/HealthCheckMiddleware.ts`)
 - **CI/CD:** GitHub Actions → test → build → deploy to VPS via SSH (Docker Compose) (`.github/workflows/ci-cd.yml`)
-- **Métricas Prometheus:** `/metrics` endpoint com contadores, histogramas e gauges (`backend/src/middleware/MetricsMiddleware.ts`)
+
 
 ---
 
@@ -175,18 +175,16 @@ services:
 - `backend/src/database/prisma-extensions.ts` - Multi-tenancy extension ✅
 - `backend/src/middleware/RateLimitMiddleware.ts` - Rate limiting (auth, checkin, face, general) ✅
 - `backend/src/middleware/LoggingMiddleware.ts` - Pino logging + correlation IDs ✅
-- `backend/src/middleware/MetricsMiddleware.ts` - Prometheus metrics ✅
+
 - `backend/src/middleware/HealthCheckMiddleware.ts` - Health/readiness checks ✅
 - `backend/src/middleware/AuditMiddleware.ts` - Audit logging ✅
-- `backend/docker-compose.yml` - Prometheus, Grafana, node-exporter, cadvisor ✅
-- `backend/prometheus.yml` - Prometheus config ✅
-- `backend/grafana/provisioning/datasources/prometheus.yml` - Grafana datasource ✅
+
 - `backend/prisma/schema.prisma` - AuditLog model ✅
 - `backend/src/database/prisma-extensions.ts` - Multi-tenancy ✅
 - `backend/src/middleware/AuthMiddleware.ts` - CompanyId injection ✅
 - `backend/src/routes/*.ts` - Rate limiters aplicados ✅
 - `.github/workflows/ci-cd.yml` - GitHub Actions CI/CD ✅
-- `backend/package.json` - Dependencies (express-rate-limit, prom-client, pino, uuid) ✅
+- `backend/package.json` - Dependencies (express-rate-limit, pino, uuid) ✅
 
 ### 📦 **Fase 2 (Futuro):**
 - `face-api/Dockerfile`

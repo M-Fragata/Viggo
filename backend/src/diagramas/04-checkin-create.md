@@ -10,7 +10,6 @@ sequenceDiagram
     participant CORS as CORS Middleware
     participant Logger as LoggingMiddleware
     participant RateLimit as GeneralApiLimiter
-    participant Metrics as MetricsMiddleware
     participant CheckinRoute as Checkin Routes
     participant AuthMiddleware as AuthMiddleware
     participant CheckinLimiter as CheckinLimiter (10/hora)
@@ -26,8 +25,6 @@ sequenceDiagram
     Logger-->>Express: Next
     Express->>RateLimit: 100 req/min por userId/IP
     RateLimit-->>Express: OK
-    Express->>Metrics: Coleta métricas
-    Metrics-->>Express: Next
     Express->>CheckinRoute: Roteamento
 
     CheckinRoute->>AuthMiddleware: **Autenticação Obrigatória**
@@ -108,11 +105,10 @@ sequenceDiagram
 1. **CORS**
 2. **LoggingMiddleware**
 3. **GeneralApiLimiter** - 100 req/min
-4. **MetricsMiddleware**
-5. **AuthMiddleware** - **JWT verify + setCurrentCompanyId + setCurrentUserId**
-6. **CheckinLimiter** - 10 req/hora por userId
-7. **AuditMiddleware** - Intercepta response para log
-8. **Controller** - CheckinController.createCheckin
+4. **AuthMiddleware** - **JWT verify + setCurrentCompanyId + setCurrentUserId**
+5. **CheckinLimiter** - 10 req/hora por userId
+6. **AuditMiddleware** - Intercepta response para log
+7. **Controller** - CheckinController.createCheckin
 
 ## Contexto Multi-Tenancy (Crítico)
 

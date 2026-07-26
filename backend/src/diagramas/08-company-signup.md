@@ -10,7 +10,6 @@ sequenceDiagram
     participant CORS as CORS Middleware
     participant Logger as LoggingMiddleware
     participant RateLimit as GeneralApiLimiter
-    participant Metrics as MetricsMiddleware
     participant CompanyRoute as Company Routes
     participant CompanyCtrl as CompanyController.signup
     participant Prisma as Prisma Client
@@ -26,8 +25,6 @@ sequenceDiagram
     Logger-->>Express: Next
     Express->>RateLimit: 100 req/min
     RateLimit-->>Express: OK
-    Express->>Metrics: Coleta métricas
-    Metrics-->>Express: Next
     Express->>CompanyRoute: Roteamento (PÚBLICO - sem authMiddleware)
 
     CompanyRoute->>CompanyCtrl: Chama controller.signup(req, res)
@@ -144,8 +141,7 @@ sequenceDiagram
 1. **CORS**
 2. **LoggingMiddleware**
 3. **GeneralApiLimiter** - 100 req/min
-4. **MetricsMiddleware**
-5. **Roteamento** → CompanyController.signup (**SEM authMiddleware**)
+4. **Roteamento** → CompanyController.signup (**SEM authMiddleware**)
 
 ## Observações Importantes
 

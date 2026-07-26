@@ -7,61 +7,9 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
 import { Env } from "../utils/environment.js"
+import { encryptFaceDescriptor, hasFaceDescriptor } from "../utils/faceEncryption.js"
 
 export class SessionController {
-
-    async create(req: Request, res: Response) {
-        const bodySchema = z.object({
-            name: z.string().min(3, "O nome deve conter no mínimo 3 caracteres"),
-            email: z.email(),
-            password: z.string().min(6, "A senha deve conter no mínimo 6 caracteres"),
-            confirmPassword: z.string(),
-        })
-
-        try {
-
-            const { name, email, password, confirmPassword } = bodySchema.parse(req.body);
-
-            if (password !== confirmPassword) {
-                return res.status(400).json({ message: "Senhas diferentes" });
-            }
-
-            const passwordHash = await bcrypt.hash(password, 10);
-
-            const company = await prisma.company.findUnique({
-                where: {
-                    id: "1",
-                }
-            })
-
-            if (!company) {
-                throw new Error("Empresa não encontrada");
-            }
-
-            const user = await prisma.user.create({
-                data: {
-                    name,
-                    email,
-                    password: passwordHash,
-                    companyId: "1",
-                }
-            })
-
-            return res.status(201).json({
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                companyId: user.companyId,
-            });
-
-        } catch (error) {
-            if (error instanceof z.ZodError) {
-                return res.status(400).json({ message: "Dados inválidos", errors: error.issues });
-            }
-            return res.status(500).json({ message: "Erro ao criar usuário no BACKEND, tente novamente em alguns segundos!" });
-        }
-    }
 
     async login(req: Request, res: Response) {
 
@@ -101,7 +49,7 @@ export class SessionController {
                 email: user.email,
                 role: user.role,
                 companyId: user.companyId,
-                hasFaceDescriptor: !!user.faceDescriptor,
+                hasFaceDescriptor: hasFaceDescriptor(user.faceDescriptor as string | null),
             }
 
             const token = jwt.sign({
@@ -158,7 +106,7 @@ export class SessionController {
                     id: userId
                 },
                 data: {
-                    faceDescriptor: faceDescriptor
+                    faceDescriptor: encryptFaceDescriptor(faceDescriptor)
                 }
             })
 

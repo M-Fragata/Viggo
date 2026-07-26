@@ -14,6 +14,15 @@ const acceptInviteSchema = z.object({
   name: z.string().min(3, "O nome deve conter no mínimo 3 caracteres"),
   password: z.string().min(8, "A senha deve conter no mínimo 8 caracteres"),
   confirmPassword: z.string(),
+  aceiteTermos: z.boolean().refine((v) => v === true, {
+    message: "Você precisa aceitar os Termos de Uso",
+  }),
+  aceiteBiometria: z.boolean().refine((v) => v === true, {
+    message: "Você precisa autorizar o uso da biometria facial",
+  }),
+  aceiteDpa: z.boolean().refine((v) => v === true, {
+    message: "Você precisa aceitar o Contrato de Tratamento de Dados",
+  }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Senhas não coincidem",
   path: ["confirmPassword"],
@@ -55,7 +64,16 @@ export function AcceptInvitePage() {
 
     setIsSubmitting(true);
     try {
-      const result = await acceptInvite({ token, email: data.email, name: data.name, password: data.password, confirmPassword: data.confirmPassword });
+      const result = await acceptInvite({
+        token,
+        email: data.email,
+        name: data.name,
+        password: data.password,
+        confirmPassword: data.confirmPassword,
+        aceiteTermos: data.aceiteTermos,
+        aceiteBiometria: data.aceiteBiometria,
+        aceiteDpa: data.aceiteDpa,
+      });
       setSession(result.user, result.token, result.company.name);
       toast.success("Conta criada com sucesso!");
       navigate("/");
@@ -209,6 +227,73 @@ export function AcceptInvitePage() {
                   </button>
                   {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword.message}</p>}
                 </div>
+              </div>
+
+              <div className="space-y-3 pt-2">
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    id="aceiteTermos"
+                    {...register("aceiteTermos")}
+                    required
+                    className="mt-1 h-4 w-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500"
+                  />
+                  <label htmlFor="aceiteTermos" className="text-sm text-slate-600 leading-relaxed">
+                    Li e aceito os{" "}
+                    <a href="/termos-de-uso" target="_blank" rel="noopener noreferrer" className="text-emerald-600 underline hover:text-emerald-700">
+                      Termos de Uso
+                    </a>{" "}
+                    e a{" "}
+                    <a href="/politica-privacidade" target="_blank" rel="noopener noreferrer" className="text-emerald-600 underline hover:text-emerald-700">
+                      Política de Privacidade
+                    </a>
+                    , autorizando o tratamento dos meus dados pessoais para fins de
+                    controle de ponto eletrônico.
+                  </label>
+                </div>
+                {errors.aceiteTermos && (
+                  <p className="text-sm text-red-500 ml-7">{errors.aceiteTermos.message}</p>
+                )}
+
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    id="aceiteBiometria"
+                    {...register("aceiteBiometria")}
+                    required
+                    className="mt-1 h-4 w-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500"
+                  />
+                  <label htmlFor="aceiteBiometria" className="text-sm text-slate-600 leading-relaxed">
+                    Autorizo expressamente o uso da minha <strong>biometria facial</strong> (
+                    vetor matemático de 128 dimensões ) exclusivamente para validação
+                    de identidade no registro de ponto eletrônico, conforme Art. 11
+                    da Lei Geral de Proteção de Dados (Lei nº 13.709/2018).
+                  </label>
+                </div>
+                {errors.aceiteBiometria && (
+                  <p className="text-sm text-red-500 ml-7">{errors.aceiteBiometria.message}</p>
+                )}
+
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    id="aceiteDpa"
+                    {...register("aceiteDpa")}
+                    required
+                    className="mt-1 h-4 w-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500"
+                  />
+                  <label htmlFor="aceiteDpa" className="text-sm text-slate-600 leading-relaxed">
+                    Li e aceito o{" "}
+                    <a href="/docs/contrato-tratamento-dados.md" target="_blank" rel="noopener noreferrer" className="text-emerald-600 underline hover:text-emerald-700">
+                      Contrato de Tratamento de Dados Pessoais (DPA)
+                    </a>
+                    , autorizando o Viggo a tratar os dados dos meus funcionários exclusivamente
+                    para fins de registro de ponto eletrônico, conforme Art. 39 da LGPD.
+                  </label>
+                </div>
+                {errors.aceiteDpa && (
+                  <p className="text-sm text-red-500 ml-7">{errors.aceiteDpa.message}</p>
+                )}
               </div>
 
               <div className="pt-2 flex flex-col gap-2">

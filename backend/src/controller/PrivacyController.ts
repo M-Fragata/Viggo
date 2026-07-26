@@ -1,7 +1,9 @@
 import { type Request, type Response } from "express";
 import { extendedPrisma } from "../database/prisma-extensions.js";
 import { Prisma } from "@prisma/client";
+import { z } from "zod";
 import { decryptAndFormat } from "../utils/cpfEncryption.js";
+import { decryptFaceDescriptor, hasFaceDescriptor } from "../utils/faceEncryption.js";
 
 export class PrivacyController {
   /**
@@ -72,10 +74,10 @@ export class PrivacyController {
           ultimoLogin: user.lastLoginAt,
         },
         dadosBiometricos: {
-          possuiDescriptor: !!user.faceDescriptor,
-          dimensoes: user.faceDescriptor ? 128 : 0,
+          possuiDescriptor: hasFaceDescriptor(user.faceDescriptor as string | null),
+          dimensoes: hasFaceDescriptor(user.faceDescriptor as string | null) ? 128 : 0,
           observacao:
-            "Apenas o vetor matemático (128 floats) é armazenado. " +
+            "Apenas o vetor matemático (128 floats) é armazenado criptografado (AES-256-GCM). " +
             "Nenhuma imagem facial é gravada.",
         },
         registrosPonto: checkins,
@@ -86,6 +88,167 @@ export class PrivacyController {
       return res
         .status(500)
         .json({ message: "Erro ao buscar dados pessoais" });
+    }
+  }
+
+  /**
+   * PUT /privacy/my-data
+   * Correção de dados pessoais (Art. 18, III LGPD).
+   * Permite alterar: nome, email. CPF é imutável.
+   */
+  async updateMyData(req: Request, res: Response) {
+    const bodySchema = z.object({
+      name: z.string().min(3, "Nome deve ter no mínimo 3 caracteres").optional(),
+      email: z.email("Email inválido").optional(),
+    });
+
+    try {
+      const userId = req.user.id;
+      const data = bodySchema.parse(req.body);
+
+      if (Object.keys(data).length === 0) {
+        return res.status(400).json({ message: "Nenhum campo para atualizar" });
+      }
+
+      // Verificar se email já está em uso por outro usuário
+      if (data.email) {
+        const existing = await extendedPrisma.user.findFirst({
+          where: { email: data.email, id: { not: userId } },
+        });
+        if (existing) {
+          return res.status(400).json({ message: "Email já está em uso" });
+        }
+      }
+
+      const updateData: Record<string, unknown> = {};
+      if (data.name !== undefined) updateData.name = data.name;
+      if (data.email !== undefined) updateData.email = data.email;
+
+      const updated = await extendedPrisma.user.update({
+        where: { id: userId },
+        data: updateData,
+        select: { id: true, name: true, email: true },
+      });
+
+      return res.json({
+        message: "Dados atualizados com sucesso",
+        user: updated,
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Dados inválidos", errors: error.issues });
+      }
+      console.error("Erro ao atualizar dados do titular:", error);
+      return res.status(500).json({ message: "Erro ao atualizar dados pessoais" });
+    }
+  }
+
+  /**
+   * GET /privacy/export
+   * Portabilidade de dados (Art. 18, V LGPD).
+   * Retorna todos os dados do titular em formato JSON estruturado.
+   */
+  async exportMyData(req: Request, res: Response) {
+    try {
+      const userId = req.user.id;
+      const companyId = req.user.companyId;
+
+      if (!companyId) {
+        return res.status(403).json({ message: "Acesso negado" });
+      }
+
+      const user = await extendedPrisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          cpf: true,
+          role: true,
+          createdAt: true,
+          lastLoginAt: true,
+          faceDescriptor: true,
+        },
+      });
+
+      if (!user) {
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+
+      const checkins = await extendedPrisma.checkIn.findMany({
+        where: { userId, companyId },
+        select: {
+          id: true,
+          nsr: true,
+          createdAt: true,
+          type: true,
+          latitude: true,
+          longitude: true,
+          address: true,
+          employerCnpj: true,
+        },
+        orderBy: { createdAt: "asc" },
+      });
+
+      const consentimentos = await extendedPrisma.consentimento.findMany({
+        where: { userId },
+        select: {
+          tipo: true,
+          versao: true,
+          aceite: true,
+          ip: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "asc" },
+      });
+
+      const exportData = {
+        meta: {
+          exportadoEm: new Date().toISOString(),
+          fonte: "Viggo — Sistema de Registro de Ponto Eletrônico",
+          baseLegal: "Art. 18, V da Lei nº 13.709/2018 (LGPD) — Portabilidade",
+        },
+        dadosPessoais: {
+          id: user.id,
+          nome: user.name,
+          email: user.email,
+          cpf: user.cpf ? decryptAndFormat(user.cpf) : null,
+          cargo: user.role,
+          dataCadastro: user.createdAt,
+          ultimoLogin: user.lastLoginAt,
+        },
+        dadosBiometricos: {
+          possuiDescriptor: hasFaceDescriptor(user.faceDescriptor as string | null),
+          dimensoes: hasFaceDescriptor(user.faceDescriptor as string | null) ? 128 : 0,
+        },
+        registrosPonto: checkins.map((c) => ({
+          id: c.id,
+          nsr: c.nsr,
+          dataHora: c.createdAt,
+          tipo: c.type,
+          latitude: c.latitude,
+          longitude: c.longitude,
+          endereco: c.address,
+          cnpjEmpregador: c.employerCnpj,
+        })),
+        consentimentos: consentimentos.map((c) => ({
+          tipo: c.tipo,
+          versao: c.versao,
+          aceite: c.aceite,
+          ip: c.ip,
+          dataHora: c.createdAt,
+        })),
+      };
+
+      res.setHeader("Content-Type", "application/json; charset=utf-8");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="exportacao_viggo_${userId.slice(0, 8)}.json"`
+      );
+      return res.json(exportData);
+    } catch (error) {
+      console.error("Erro ao exportar dados do titular:", error);
+      return res.status(500).json({ message: "Erro ao exportar dados pessoais" });
     }
   }
 
@@ -106,7 +269,7 @@ export class PrivacyController {
         return res.status(404).json({ message: "Usuário não encontrado" });
       }
 
-      if (!user.faceDescriptor) {
+      if (!hasFaceDescriptor(user.faceDescriptor as string | null)) {
         return res.status(400).json({
           message: "Nenhum descriptor facial registrado para remoção",
         });

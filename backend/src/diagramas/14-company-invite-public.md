@@ -10,7 +10,6 @@ sequenceDiagram
     participant CORS as CORS Middleware
     participant Logger as LoggingMiddleware
     participant RateLimit as GeneralApiLimiter
-    participant Metrics as MetricsMiddleware
     participant CompanyRoute as Company Routes (PÚBLICO)
     participant CompanyCtrl as CompanyController.getInviteByToken
     participant Prisma as Prisma Client
@@ -23,8 +22,6 @@ sequenceDiagram
     Logger-->>Express: Next
     Express->>RateLimit: 100 req/min
     RateLimit-->>Express: OK
-    Express->>Metrics: Coleta métricas
-    Metrics-->>Express: Next
     Express->>CompanyRoute: Roteamento (FORA do authMiddleware!)
 
     Note over CompanyRoute: Rota PÚBLICA - sem authMiddleware, planMiddleware, RoleGuard
@@ -70,7 +67,6 @@ sequenceDiagram
     participant CORS as CORS Middleware
     participant Logger as LoggingMiddleware
     participant RateLimit as GeneralApiLimiter
-    participant Metrics as MetricsMiddleware
     participant CompanyRoute as Company Routes (PÚBLICO)
     participant CompanyCtrl as CompanyController.acceptInvite
     participant Prisma as Prisma Client
@@ -85,8 +81,6 @@ sequenceDiagram
     Logger-->>Express: Next
     Express->>RateLimit: 100 req/min
     RateLimit-->>Express: OK
-    Express->>Metrics: Coleta métricas
-    Metrics-->>Express: Next
     Express->>CompanyRoute: Roteamento (PÚBLICO)
 
     CompanyRoute->>CompanyCtrl: Chama controller.acceptInvite(req, res)
@@ -170,7 +164,7 @@ sequenceDiagram
 
 **NENHUM** (Rotas Públicas)
 - Registradas ANTES de `companyRoutes.use(authMiddleware)`
-- Apenas: CORS, LoggingMiddleware, GeneralApiLimiter, MetricsMiddleware (do app.ts)
+- Apenas: CORS, LoggingMiddleware, GeneralApiLimiter (do app.ts)
 
 ## Observações Importantes
 

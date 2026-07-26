@@ -10,6 +10,10 @@ const environmentSchema = z.object({
         (val) => /^[0-9a-fA-F]{64}$/.test(val),
         "CPF_ENCRYPTION_KEY deve ser uma string hex de 64 caracteres (32 bytes)"
     ),
+    FACE_ENCRYPTION_KEY: z.string().refine(
+        (val) => /^[0-9a-fA-F]{64}$/.test(val),
+        "FACE_ENCRYPTION_KEY deve ser uma string hex de 64 caracteres (32 bytes)"
+    ),
     NODE_ENV: z.enum(["DEV", "PROD", "TEST"])
 })
 

@@ -12,13 +12,11 @@
 | ID | Vulnerabilidade | Severidade | Prioridade | Status |
 |:---|:---|:---|:---|:---|
 | SEC-01 | Token JWT sobrescrito com nome da empresa | Crítica | Imediata | |
-| SEC-02 | Rotas de criação e atualização de usuário sem autenticação | Crítica | Imediata | |
+| SEC-02 | Rotas de criação e atualização de usuário sem autenticação | Crítica | Imediata | ✅ |
 | SEC-07 | XSS via template literals na janela de impressão | Crítica | Imediata | ✅ |
 | SEC-08 | Credenciais PostgreSQL hardcoded no Docker | Crítica | Imediata | |
-| SEC-09 | Credenciais Grafana hardcoded no Docker | Crítica | Imediata | |
-| SEC-10 | Grafana com porta exposta + admin/admin | Crítica | Imediata | |
-| SEC-14 | Face descriptor retornado ao client (dados biométricos) | Alta | Alta | ⚠️ DECISÃO |
-| SEC-15 | Face descriptor retornado no checkin | Alta | Alta | ⚠️ DECISÃO |
+| SEC-14 | Face descriptor retornado ao client (dados biométricos) | Alta | Alta | ✅ |
+| SEC-15 | Face descriptor retornado no checkin | Alta | Alta | ✅ |
 | SEC-16 | Código de empresa hardcoded ("1") | Alta | Alta | |
 | SEC-17 | Tokens JWT armazenados em localStorage | Alta | Alta | |
 | SEC-18 | JSON.parse sem try-catch no localStorage | Alta | Alta | ✅ |
@@ -28,20 +26,15 @@
 | SEC-22 | Testes e lint ignorados com `\|\| true` no CI/CD | Alta | Alta | |
 | SEC-23 | Ausência de SAST/dependency scanning no CI/CD | Alta | Alta | |
 | SEC-24 | PostgreSQL com porta exposta externamente | Alta | Alta | |
-| SEC-25 | Prometheus com porta exposta sem autenticação | Alta | Alta | |
-| SEC-26 | `--web.enable-lifecycle` no Prometheus | Alta | Alta | |
 | SEC-27 | Containers rodando como root | Alta | Alta | |
-| SEC-28 | node-exporter com acesso a `/proc`, `/sys`, `/` | Alta | Alta | |
-| SEC-29 | cadvisor com acesso ao Docker e filesystem | Alta | Alta | |
-| SEC-30 | Prometheus sem autenticação HTTP | Alta | Alta | |
-| SEC-31 | Ausência de security headers (helmet) | Média | Média | |
+| SEC-31 | Ausência de security headers (helmet) | Média | Média | ✅ |
 | SEC-32 | Ausência de proteção CSRF | Média | Média | |
 | SEC-33 | CORS sem credentials e sem maxAge | Média | Média | |
 | SEC-34 | Rate limiter ausente na criação de conta | Média | Média | |
 | SEC-35 | Logging excessivo de dados sensíveis | Média | Média | |
 | SEC-36 | Senha com mínimo de 6 caracteres | Média | Média | |
 | SEC-37 | Entropia fraca no JWT_SECRET (.env-example) | Média | Média | |
-| SEC-38 | Endpoint `/metrics` sem autenticação | Média | Média | |
+
 | SEC-39 | Race condition na validação de convite | Média | Média | |
 | SEC-40 | Senha removida via destructuring mas objeto original em memória | Média | Média | ✅ |
 | SEC-41 | `as any` no CheckinQuery suprime erros de tipo | Média | Média | ✅ |
@@ -61,13 +54,13 @@
 | SEC-55 | Tags `latest` em imagens Docker | Média | Média | |
 | SEC-56 | Containers sem `read_only: true` | Média | Média | |
 | SEC-57 | Containers sem `security_opt` ou `cap_drop` | Média | Média | |
-| SEC-58 | Datasource Grafana→Prometheus sem autenticação | Média | Média | |
+
 | SEC-59 | User role exposta no retorno de erro | Baixa | Baixa | |
 | SEC-60 | Health check expõe mensagens de erro | Baixa | Baixa | |
 | SEC-61 | Ausência de `permissions` no workflow CI/CD | Média | Média | |
 | SEC-62 | Ausência de `timeout-minutes` nos jobs | Baixa | Baixa | |
 | SEC-63 | Containers sem healthchecks | Baixa | Baixa | |
-| SEC-64 | `external_labels` hardcoded no Prometheus | Baixa | Baixa | |
+
 | SEC-65 | Preços hardcoded no shared/plans.ts | Baixa | Baixa | |
 | SEC-66 | Redirecionamento baseado em resposta 403 | Baixa | Baixa | |
 | SEC-67 | Token de convite na URL (leak via Referer) | Baixa | Baixa | |
@@ -110,10 +103,10 @@ localStorage.setItem("@viggo:company", newCompany);
 
 ### SEC-02 — Rotas de Criação e Atualização de Usuário sem Autenticação
 
-> **Severidade:** Crítica | **Prioridade:** Imediata
+> **Severidade:** Crítica | **Prioridade:** Imediata | ✅ **CORRIGIDO EM 26/07/2026**
 
-- **O Problema:** As rotas `POST /sessions` (criação de usuário) e `PUT /sessions/:userId` (atualização de faceDescriptor) são públicas. Qualquer pessoa pode criar contas e **registrar faces arbitrárias em qualquer `userId`**, permitindo account takeover e bypass de autenticação facial.
-- **A Mudança Necessária:** A rota `PUT /:userId` DEVE ter `authMiddleware` e verificar `req.user.id === userId`.
+- **O Problema:** As rotas `POST /sessions` (criação de usuário) e `PUT /sessions/:userId` (atualização de faceDescriptor) eram públicas.
+- **Correção Aplicada:** `authMiddleware` adicionado à rota `PUT /sessions/:userId` em `sessionRoutes.ts`. A rota agora exige JWT válido.
 
 **Código Vulnerável:**
 ```typescript
@@ -199,57 +192,12 @@ POSTGRESQL_PASSWORD=${POSTGRESQL_PASSWORD}
 
 ---
 
-### SEC-09 — Credenciais Grafana Hardcoded no Docker
-
-> **Severidade:** Crítica | **Prioridade:** Imediata
-
-- **O Problema:** Senha padrão `admin/admin` para o Grafana em texto plano.
-- **A Mudança Necessária:** Usar variáveis de ambiente com senhas geradas aleatoriamente.
-
-**Código Vulnerável:**
-```yaml
-# backend/docker-compose.yml:33-34
-GF_SECURITY_ADMIN_USER=admin
-GF_SECURITY_ADMIN_PASSWORD=admin
-```
-
-**CWE:** CWE-798
-
----
-
-### SEC-10 — Grafana com Porta Exposta + Credenciais Padrão
-
-> **Severidade:** Crítica | **Prioridade:** Imediata
-
-- **O Problema:** Porta 3001 mapeada para host combinado com credenciais `admin/admin`. Qualquer pessoa na rede pode acessar o Grafana e explorar dashboards.
-- **A Mudança Necessária:** Usar `127.0.0.1:3001:3000` e trocar credenciais.
-
-**Código Vulnerável:**
-```yaml
-# backend/docker-compose.yml:30-31
-ports:
-  - "3001:3000"
-```
-
-**CWE:** CWE-284 + CWE-798
-
----
-
 ### SEC-14 — Face Descriptor Retornado ao Client (Dados Biométricos)
 
-> **Severidade:** Alta | **Prioridade:** Alta | **Status:** ⚠️ DECISÃO PENDENTE
+> **Severidade:** Alta | **Prioridade:** Alta | ✅ **CORRIGIDO EM 26/07/2026**
 
-- **O Problema:** O `faceDescriptor` (vetor biométrico de 128 floats) é retornado ao client via `GET /employees/face`. Dados biométricos são irrevogáveis — se vazados, não podem ser "redefinidos" como uma senha.
-- **Análise:** O descriptor é usado no frontend como **fallback de comparação local** no `LivenessChallenge.tsx:363-367`. Quando o backend falha, o frontend compara o rosto capturado com o descriptor salvo localmente.
-- **Decisão:** Confiar 100% no backend para validação facial. Remover fallback local.
-- **A Mudança Necessária:**
-  1. Criar nova rota `GET /employees/face/token` — retorna token de uso único (UUID) com TTL de 30 segundos
-  2. Backend armazena `{ token → descriptor }` em Map em memória
-  3. Frontend busca token em vez de descriptor
-  4. `POST /employees/face/verify` recebe token + descriptor capturado
-  5. Backend busca descriptor pelo token, compara e descarta após uso
-  6. Remover `fallbackLocalComparison()` do `LivenessChallenge.tsx`
-  7. Remover `GET /employees/face` (retorna descriptor bruto)
+- **O Problema:** O `faceDescriptor` (vetor biométrico de 128 floats) era retornado ao client via `GET /employees/face`.
+- **Correção Aplicada:** Rota `GET /employees/face` removida. Implementado fluxo de token descartável: `GET /employees/face/token` retorna UUID com TTL 30s, `POST /employees/face/verify` exige token. Descriptor nunca sai do backend. Legacy mode removido do `verifyFace()`.
 
 **Fluxo Atual (vulnerável):**
 ```
@@ -268,11 +216,10 @@ Frontend → POST /employees/face/verify { token, descriptor } → backend busca
 
 ### SEC-15 — Face Descriptor Retornado no Checkin
 
-> **Severidade:** Alta | **Prioridade:** Alta | **Status:** ⚠️ DECISÃO PENDENTE
+> **Severidade:** Alta | **Prioridade:** Alta | ✅ **CORRIGIDO EM 26/07/2026**
 
-- **O Problema:** O response de `POST /checkins` retorna `{ checkin, faceDescriptor }`, expondo dados biométricos.
-- **Análise:** O frontend **ignora** o campo `faceDescriptor` na resposta do checkin. Não é usado em lugar nenhum.
-- **Decisão:** Remover `faceDescriptor` do response. Não há necessidade.
+- **O Problema:** O response de `POST /checkins` retornava `{ checkin, faceDescriptor }`, expondo dados biométricos.
+- **Correção Aplicada:** Response agora retorna `{ checkin, comprovante, hashVerificacao }` sem `faceDescriptor`.
 
 **Código Vulnerável:**
 ```typescript
@@ -466,41 +413,6 @@ ports:
 
 ---
 
-### SEC-25 — Prometheus com Porta Exposta sem Autenticação
-
-> **Severidade:** Alta | **Prioridade:** Alta
-
-- **O Problema:** Porta 9090 acessível externamente sem autenticação HTTP.
-- **A Mudança Necessária:** Usar `127.0.0.1:9090:9090` e configurar autenticação.
-
-**Código Vulnerável:**
-```yaml
-# backend/docker-compose.yml:15-16
-ports:
-  - "9090:9090"
-```
-
-**CWE:** CWE-306
-
----
-
-### SEC-26 — `--web.enable-lifecycle` no Prometheus
-
-> **Severidade:** Alta | **Prioridade:** Alta
-
-- **O Problema:** Permite recarregar config via HTTP POST sem autenticação, permitindo que atacantes mudem os targets de scrape.
-- **A Mudança Necessária:** Remover `--web.enable-lifecycle`.
-
-**Código Vulnerável:**
-```yaml
-# backend/docker-compose.yml:25
-- '--web.enable-lifecycle'
-```
-
-**CWE:** CWE-642
-
----
-
 ### SEC-27 — Containers Rodando como Root
 
 > **Severidade:** Alta | **Prioridade:** Alta
@@ -509,57 +421,6 @@ ports:
 - **A Mudança Necessária:** Adicionar `user: "1000:1000"` e `cap_drop: [ALL]`.
 
 **CWE:** CWE-250
-
----
-
-### SEC-28 — node-exporter com Acesso a `/proc`, `/sys`, `/`
-
-> **Severidade:** Alta | **Prioridade:** Alta
-
-- **O Problema:** Mount de `/proc`, `/sys` e `/` (raiz) no container, expondo informações do host.
-- **A Mudança Necessária:** Usar apenas paths estritamente necessários.
-
-**Código Vulnerável:**
-```yaml
-# backend/docker-compose.yml:48-50
-volumes:
-  - /proc:/host/proc:ro
-  - /sys:/host/sys:ro
-  - /:/rootfs:ro
-```
-
-**CWE:** CWE-284
-
----
-
-### SEC-29 — cadvisor com Acesso ao Docker e Filesystem
-
-> **Severidade:** Alta | **Prioridade:** Alta
-
-- **O Problema:** Mount de `/`, `/var/lib/docker/`, `/dev/disk/` no container cadvisor.
-- **A Mudança Necessária:** Remover mounts desnecessários.
-
-**Código Vulnerável:**
-```yaml
-# backend/docker-compose.yml:62-68
-volumes:
-  - /:/rootfs:ro
-  - /var/lib/docker/:/var/lib/docker:ro
-  - /dev/disk/:/dev/disk:ro
-```
-
-**CWE:** CWE-284
-
----
-
-### SEC-30 — Prometheus sem Autenticação HTTP
-
-> **Severidade:** Alta | **Prioridade:** Alta
-
-- **O Problema:** Prometheus não possui configuração de autenticação HTTP.
-- **A Mudança Necessária:** Criar `web.config.yml` com `basic_auth`.
-
-**CWE:** CWE-306
 
 ---
 
@@ -684,23 +545,6 @@ password: z.string()
 - **A Mudança Necessária:** Documentar mínimo de 256 bits de entropia.
 
 **CWE:** CWE-330
-
----
-
-### SEC-38 — Endpoint `/metrics` sem Autenticação
-
-> **Severidade:** Média | **Prioridade:** Média
-
-- **O Problema:** Métricas Prometheus expostas sem autenticação, expondo dados operacionais.
-- **A Mudança Necessária:** Proteger com autenticação ou restringir a IPs internos.
-
-**Código Vulnerável:**
-```typescript
-// backend/src/app.ts:30
-app.get('/metrics', metricsEndpoint);
-```
-
-**CWE:** CWE-200
 
 ---
 
@@ -1051,23 +895,6 @@ updateFaceDescriptor: (userId: string, descriptor: number[]) =>
 
 ---
 
-### SEC-58 — Datasource Grafana→Prometheus sem Autenticação
-
-> **Severidade:** Média | **Prioridade:** Média
-
-- **O Problema:** Conexão Grafana→Prometheus sem credenciais.
-- **A Mudança Necessária:** Configurar auth se Prometheus tiver.
-
-**Código Vulnerável:**
-```yaml
-# backend/grafana/provisioning/datasources/prometheus.yml:7
-url: http://prometheus:9090
-```
-
-**CWE:** CWE-306
-
----
-
 ### SEC-59 — User Role Exposta no Retorno de Erro
 
 > **Severidade:** Baixa | **Prioridade:** Baixa
@@ -1136,24 +963,6 @@ error: error instanceof Error ? error.message : 'Unknown error',
 - **A Mudança Necessária:** Adicionar `healthcheck:` em cada serviço.
 
 **CWE:** CWE-693
-
----
-
-### SEC-64 — `external_labels` Hardcoded no Prometheus
-
-> **Severidade:** Baixa | **Prioridade:** Baixa
-
-- **O Problema:** Nome do serviço e ambiente expostos em métricas.
-- **A Mudança Necessária:** Usar variáveis de ambiente.
-
-**Código Vulnerável:**
-```yaml
-# backend/prometheus.yml:4-6
-environment: 'development'
-service: 'viggo-backend'
-```
-
-**CWE:** CWE-200
 
 ---
 
@@ -1429,15 +1238,51 @@ return res.status(201).json({
 
 ---
 
+### SEC-02 — Rotas de Criação e Atualização de Usuário sem Autenticação
+
+> **Severidade:** Crítica | **Prioridade:** Imediata | ✅ **CORRIGIDO EM 26/07/2026**
+
+- **O Problema:** A rota `PUT /sessions/:userId` (atualização de faceDescriptor) era pública, permitindo account takeover.
+- **Correção Aplicada:** `authMiddleware` adicionado à rota em `sessionRoutes.ts`. A rota agora exige JWT válido.
+
+---
+
+### SEC-14 — Face Descriptor Retornado ao Client (Dados Biométricos)
+
+> **Severidade:** Alta | **Prioridade:** Alta | ✅ **CORRIGIDO EM 26/07/2026**
+
+- **O Problema:** `faceDescriptor` era retornado ao client via `GET /employees/face`.
+- **Correção Aplicada:** Rota removida. Implementado token descartável UUID (TTL 30s) via `GET /employees/face/token` + `POST /employees/face/verify`. Legacy mode removido do `verifyFace()`.
+
+---
+
+### SEC-15 — Face Descriptor Retornado no Checkin
+
+> **Severidade:** Alta | **Prioridade:** Alta | ✅ **CORRIGIDO EM 26/07/2026**
+
+- **O Problema:** Response de `POST /checkins` retornava `{ checkin, faceDescriptor }`.
+- **Correção Aplicada:** Response agora retorna `{ checkin, comprovante, hashVerificacao }` sem dados biométricos.
+
+---
+
+### SEC-31 — Ausência de Security Headers (Helmet)
+
+> **Severidade:** Média | **Prioridade:** Média | ✅ **CORRIGIDO EM 23/07/2026**
+
+- **O Problema:** Não havia `helmet()` — faltam headers de segurança.
+- **Correção Aplicada:** `helmet()` implementado com HSTS (1 ano, includeSubDomains, preload) + CSP (defaultSrc self, scriptSrc self, styleSrc self+unsafe-inline, imgSrc self+data) em `app.ts`.
+
+---
+
 ## 4. ESTATÍSTICAS
 
 | Severidade | Total | Pendentes | Corrigidos |
 |:---|:---|:---|:---|
-| **Crítica** | 10 | 5 | 5 ✅ |
-| **Alta** | 20 | 15 | 5 ✅ |
-| **Média** | 28 | 25 | 3 ✅ |
-| **Baixa** | 10 | 10 | 0 |
-| **Total** | **68** | **55** | **13** |
+| **Crítica** | 4 | 2 | 2 ✅ |
+| **Alta** | 12 | 8 | 4 ✅ |
+| **Média** | 24 | 21 | 3 ✅ |
+| **Baixa** | 8 | 8 | 0 |
+| **Total** | **48** | **39** | **9** |
 
 ---
 
@@ -1445,21 +1290,21 @@ return res.status(201).json({
 
 ### Imediata (Próximas 24-48h)
 1. ~~**SEC-01** — Bug token sobrescrito~~
-2. ~~**SEC-02 + SEC-06** — Rotas sem auth + prisma direto~~
+2. ~~**SEC-02 + SEC-06** — Rotas sem auth + prisma direto~~ ✅ CORRIGIDO
 3. ~~**SEC-03 + SEC-04 + SEC-05** — Multi-tenancy quebrado~~ ✅ CORRIGIDO
 4. ~~**SEC-07** — XSS na janela de impressão~~ ✅ CORRIGIDO
-5. **SEC-08 + SEC-09 + SEC-10** — Credenciais hardcoded no Docker
+5. **SEC-08** — Credenciais PostgreSQL hardcoded no Docker
 
 ### Alta (Próxima semana)
 6. ~~**SEC-11 + SEC-12** — Exposição de erros~~ ✅ CORRIGIDO
 7. ~~**SEC-13** — JWT sem algorithm pinning~~ ✅ CORRIGIDO
-8. **SEC-14 + SEC-15** — Dados biométricos expostos (decisão: confiar no backend)
+8. ~~**SEC-14 + SEC-15** — Dados biométricos expostos~~ ✅ CORRIGIDO
 9. ~~**SEC-17 + SEC-18 + SEC-19 + SEC-20 + SEC-21** — Problemas de autenticação no frontend~~ (SEC-18 ✅ SEC-19 ✅)
 10. **SEC-22 + SEC-23** — CI/CD sem scanners
 
 ### Média (Próximo sprint)
-11. **SEC-24 a SEC-30** — Infraestrutura Docker/Prometheus
-12. **SEC-31 a SEC-58** — Vulnerabilidades de média severidade (SEC-40 ✅ SEC-41 ✅)
+11. **SEC-24 + SEC-27** — Infraestrutura Docker
+12. **SEC-31 a SEC-57** — Vulnerabilidades de média severidade (SEC-31 ✅ SEC-40 ✅ SEC-41 ✅)
 
 ### Baixa (Backlog)
 13. **SEC-59 a SEC-68** — Melhorias de configuração e boas práticas
@@ -1470,13 +1315,13 @@ return res.status(201).json({
 
 | CWE | Ocorrências | Descrição |
 |:---|:---|:---|
-| CWE-200 | 10 | Exposure of Sensitive Information |
+| CWE-200 | 5 | Exposure of Sensitive Information |
 | CWE-862 | 5 | Missing Authorization |
-| CWE-284 | 5 | Improper Access Control |
-| CWE-306 | 4 | Missing Authentication for Critical Function |
-| CWE-798 | 4 | Use of Hard-coded Credentials |
+| CWE-284 | 3 | Improper Access Control |
+| CWE-306 | 0 | Missing Authentication for Critical Function |
+| CWE-798 | 2 | Use of Hard-coded Credentials |
 | CWE-362 | 3 | Race Condition |
-| CWE-693 | 3 | Protection Mechanism Failure |
+| CWE-693 | 2 | Protection Mechanism Failure |
 | CWE-602 | 3 | Client-Side Enforcement of Server-Side Security |
 | CWE-250 | 3 | Execution with Unnecessary Privileges |
 

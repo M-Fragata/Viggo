@@ -5,8 +5,8 @@ import helmet from 'helmet';
 import { routes } from './routes/index.js';
 import { loggingMiddleware } from './middleware/LoggingMiddleware.js';
 import { generalApiLimiter } from './middleware/RateLimitMiddleware.js';
-import { metricsMiddleware, metricsEndpoint } from './middleware/MetricsMiddleware.js';
 import { healthCheck, readinessCheck, setReady } from './middleware/HealthCheckMiddleware.js';
+import { auditMiddleware } from './middleware/AuditMiddleware.js';
 
 import { Env } from "./utils/environment.js"
 
@@ -37,14 +37,15 @@ app.use(helmet({
 app.use(express.json());
 app.use(loggingMiddleware);
 app.use(generalApiLimiter);
-app.use(metricsMiddleware);
-
 app.get('/health', healthCheck);
 app.get('/ready', readinessCheck);
 
-app.use(routes);
+// Global audit middleware — runs before routes so it can intercept all responses.
+// req.user is populated per-route by authMiddleware; the audit log is only written
+// when req.user is present at response time (checked inside res.json override).
+app.use(auditMiddleware);
 
-app.get('/metrics', metricsEndpoint);
+app.use(routes);
 
 setReady(true);
 

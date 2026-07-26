@@ -11,6 +11,10 @@ import {
   Trash2,
   Loader2,
   AlertTriangle,
+  Pencil,
+  Download,
+  Check,
+  X,
 } from "lucide-react";
 
 export function MeusDadosPage() {
@@ -21,6 +25,12 @@ export function MeusDadosPage() {
   const [isDeletingFace, setIsDeletingFace] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [editSuccess, setEditSuccess] = useState(false);
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
@@ -57,6 +67,54 @@ export function MeusDadosPage() {
     }
   }
 
+  function startEditing() {
+    if (!data) return;
+    setEditName(data.dadosPessoais.nome ?? "");
+    setEditEmail(data.dadosPessoais.email ?? "");
+    setIsEditing(true);
+    setEditSuccess(false);
+  }
+
+  function cancelEditing() {
+    setIsEditing(false);
+    setEditSuccess(false);
+  }
+
+  async function handleSaveProfile() {
+    setIsSaving(true);
+    setError(null);
+    try {
+      await api.privacy.updateMyData({ name: editName, email: editEmail });
+      setEditSuccess(true);
+      setIsEditing(false);
+      await refreshUser();
+      await loadData();
+      setTimeout(() => setEditSuccess(false), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao salvar dados.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleExportData() {
+    try {
+      const result = await api.privacy.exportMyData();
+      const json = JSON.stringify(result, null, 2);
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `exportacao_viggo_${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao exportar dados.");
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -82,11 +140,20 @@ export function MeusDadosPage() {
 
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6">
-      <header className="flex flex-col gap-2 bg-white p-4 sm:p-6 rounded-3xl border border-slate-200 shadow-sm">
-        <h1 className="text-xl sm:text-2xl font-bold text-slate-800">Meus Dados — Portal LGPD</h1>
-        <p className="text-xs sm:text-sm text-slate-400">
-          Exercício dos direitos do titular — Art. 18 da Lei nº 13.709/2018 (LGPD)
-        </p>
+      <header className="flex flex-col sm:flex-row sm:items-center gap-3 bg-white p-4 sm:p-6 rounded-3xl border border-slate-200 shadow-sm">
+        <div className="flex-1">
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-800">Meus Dados — Portal LGPD</h1>
+          <p className="text-xs sm:text-sm text-slate-400">
+            Exercício dos direitos do titular — Art. 18 da Lei nº 13.709/2018 (LGPD)
+          </p>
+        </div>
+        <button
+          onClick={handleExportData}
+          className="px-4 py-2.5 bg-slate-100 text-slate-700 border border-slate-200 rounded-xl hover:bg-slate-200 transition-colors font-semibold flex items-center gap-2 text-sm cursor-pointer"
+        >
+          <Download size={16} />
+          Exportar Meus Dados (JSON)
+        </button>
       </header>
 
       {/* DADOS PESSOAIS */}
@@ -96,15 +163,72 @@ export function MeusDadosPage() {
             <UserIcon className="text-emerald-600" size={20} />
           </div>
           <h2 className="text-lg font-bold text-slate-800">Dados Pessoais</h2>
+          {!isEditing && (
+            <button
+              onClick={startEditing}
+              className="ml-auto px-3 py-1.5 bg-slate-100 text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-200 transition-colors text-xs font-semibold flex items-center gap-1 cursor-pointer"
+            >
+              <Pencil size={14} />
+              Editar
+            </button>
+          )}
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <InfoField label="Nome" value={data.dadosPessoais.nome} />
-          <InfoField label="E-mail" value={data.dadosPessoais.email} />
-          <InfoField label="CPF" value={data.dadosPessoais.cpf ?? "Não informado"} />
-          <InfoField label="Cargo" value={cargoLabel} />
-          <InfoField label="Data de Cadastro" value={formatDate(data.dadosPessoais.dataCadastro)} />
-          <InfoField label="Último Login" value={data.dadosPessoais.ultimoLogin ? formatDate(data.dadosPessoais.ultimoLogin) : "—"} />
-        </div>
+
+        {editSuccess && (
+          <div className="mb-4 px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-700 font-medium">
+            Dados atualizados com sucesso!
+          </div>
+        )}
+
+        {isEditing ? (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Nome</label>
+              <input
+                type="text"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">E-mail</label>
+              <input
+                type="email"
+                value={editEmail}
+                onChange={(e) => setEditEmail(e.target.value)}
+                className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+              />
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={handleSaveProfile}
+                disabled={isSaving}
+                className="px-5 py-2.5 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors font-bold flex items-center gap-2 disabled:opacity-50 cursor-pointer text-sm"
+              >
+                {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+                {isSaving ? "Salvando..." : "Salvar"}
+              </button>
+              <button
+                onClick={cancelEditing}
+                disabled={isSaving}
+                className="px-5 py-2.5 bg-white text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors font-bold disabled:opacity-50 cursor-pointer text-sm"
+              >
+                <X size={16} className="inline mr-1" />
+                Cancelar
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <InfoField label="Nome" value={data.dadosPessoais.nome} />
+            <InfoField label="E-mail" value={data.dadosPessoais.email} />
+            <InfoField label="CPF" value={data.dadosPessoais.cpf ?? "Não informado"} />
+            <InfoField label="Cargo" value={cargoLabel} />
+            <InfoField label="Data de Cadastro" value={formatDate(data.dadosPessoais.dataCadastro)} />
+            <InfoField label="Último Login" value={data.dadosPessoais.ultimoLogin ? formatDate(data.dadosPessoais.ultimoLogin) : "—"} />
+          </div>
+        )}
       </section>
 
       {/* DADOS BIOMÉTRICOS */}

@@ -11,14 +11,14 @@ sequenceDiagram
     autonumber
     actor Client (Master)
     participant Express as Express App
-    participant Middlewares as Middlewares (CORS, Logger, RateLimit, Metrics, Auth, RequireMaster)
+    participant Middlewares as Middlewares (CORS, Logger, RateLimit, Auth, RequireMaster)
     participant MasterCtrl as MasterController.updateCompanyPlan
     participant Prisma as Prisma Client
     participant DB as PostgreSQL
     participant PlanLimits as planLimits.ts
 
     Client->>Express: PUT /master/companies/:id/plan {plan: "TIER_II", maxEmployees?: 50}
-    Express->>Middlewares: CORS, Logger, RateLimit, Metrics, Auth(MASTER), RequireMaster
+    Express->>Middlewares: CORS, Logger, RateLimit, Auth(MASTER), RequireMaster
     Middlewares-->>MasterCtrl: Next()
 
     MasterCtrl->>MasterCtrl: Valida params (id: uuid) + body (plan: enum, maxEmployees?: number)
@@ -79,7 +79,7 @@ sequenceDiagram
     participant DB as PostgreSQL
 
     Client->>Express: PUT /master/companies/:id/status {status: "SUSPENDED"}
-    Express->>Middlewares: CORS, Logger, RateLimit, Metrics, Auth(MASTER), RequireMaster
+    Express->>Middlewares: CORS, Logger, RateLimit, Auth(MASTER), RequireMaster
     Middlewares-->>MasterCtrl: Next()
 
     MasterCtrl->>MasterCtrl: Valida params (id: uuid) + body (status: enum ACTIVE/SUSPENDED/CANCELLED)
@@ -126,7 +126,7 @@ sequenceDiagram
     participant DB as PostgreSQL
 
     Client->>Express: POST /master/companies/:id/extend-trial {days: 15}
-    Express->>Middlewares: CORS, Logger, RateLimit, Metrics, Auth(MASTER), RequireMaster
+    Express->>Middlewares: CORS, Logger, RateLimit, Auth(MASTER), RequireMaster
     Middlewares-->>MasterCtrl: Next()
 
     MasterCtrl->>MasterCtrl: Valida params (id: uuid) + body (days: number 1-90, default 30)
@@ -166,8 +166,7 @@ sequenceDiagram
 1. **CORS**
 2. **LoggingMiddleware**
 3. **GeneralApiLimiter** (100 req/min)
-4. **MetricsMiddleware**
-5. **AuthMiddleware** (verifica isMaster)
+4. **AuthMiddleware** (verifica isMaster)
 6. **RequireMaster** (RoleGuard)
 7. **Controller**
 

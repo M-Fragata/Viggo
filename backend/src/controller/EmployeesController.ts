@@ -5,6 +5,7 @@ import { check, z } from "zod"
 import { parseISO, startOfDay, endOfDay } from "date-fns"
 import { euclideanDistance } from "../utils/euclideanDistance.js"
 import crypto from "node:crypto";
+import { decryptFaceDescriptor, hasFaceDescriptor } from "../utils/faceEncryption.js";
 
 interface FaceToken {
     descriptor: Float32Array;
@@ -29,6 +30,12 @@ export class EmployeesController {
             const employees = await extendedPrisma.user.findMany({
                 select: { id: true, name: true, email: true, role: true, companyId: true, faceDescriptor: true, createdAt: true, updatedAt: true }
             })
+
+            const employeesData = employees.map((employee) => ({
+                ...employee,
+                hasFaceDescriptor: hasFaceDescriptor(employee.faceDescriptor as string | null),
+                faceDescriptor: undefined,
+            }))
             const checkins = await extendedPrisma.checkIn.findMany({
                 where: {
                     createdAt: {
@@ -38,7 +45,7 @@ export class EmployeesController {
                 }
             })
 
-            const data = employees.map((employee) => {
+            const data = employeesData.map((employee) => {
 
                 let checkinUser: CheckIn[] = []
 
@@ -83,10 +90,8 @@ export class EmployeesController {
                 });
             }
 
+            const descriptor = decryptFaceDescriptor(user.faceDescriptor as string);
             const token = crypto.randomUUID();
-            const descriptor = new Float32Array(
-                Object.values(user.faceDescriptor as Record<string, number>)
-            );
             const expiresAt = new Date(Date.now() + 30_000);
 
             this.faceTokens.set(token, { descriptor, expiresAt });
@@ -103,77 +108,31 @@ export class EmployeesController {
     /**
      * POST /employees/face/verify
      * Valida descriptor facial capturado contra o descriptor salvo.
-     * Modo antigo: compara com descriptor do banco.
-     * Modo novo (token): consome token de uso único e compara internamente.
+     * Exige token de uso único (TTL 30s) — descriptor nunca é exposto ao client.
      */
     async verifyFace(req: Request, res: Response) {
-        const bodySchemaWithToken = z.object({
+        const bodySchema = z.object({
             token: z.string().uuid(),
             descriptor: z.array(z.number()).min(128).max(128),
         });
 
-        const bodySchemaLegacy = z.object({
-            descriptor: z.array(z.number()).min(128).max(128),
-        });
-
         try {
-            const userId = req.user.id;
+            const { token, descriptor } = bodySchema.parse(req.body);
 
-            const isTokenMode = 'token' in req.body;
+            const stored = this.faceTokens.get(token);
+            if (!stored) {
+                return res.status(401).json({ message: "Token inválido ou expirado" });
+            }
 
-            if (isTokenMode) {
-                const { token, descriptor } = bodySchemaWithToken.parse(req.body);
-
-                const stored = this.faceTokens.get(token);
-                if (!stored) {
-                    return res.status(401).json({ message: "Token inválido ou expirado" });
-                }
-
-                if (stored.expiresAt < new Date()) {
-                    this.faceTokens.delete(token);
-                    return res.status(401).json({ message: "Token expirado" });
-                }
-
+            if (stored.expiresAt < new Date()) {
                 this.faceTokens.delete(token);
-
-                const inputDescriptor = new Float32Array(descriptor);
-                const distance = euclideanDistance(inputDescriptor, stored.descriptor);
-                const threshold = 0.5;
-
-                if (distance < threshold) {
-                    return res.json({ success: true, distance });
-                }
-
-                return res.status(200).json({
-                    success: false,
-                    distance,
-                    message: "Rosto não reconhecido",
-                });
+                return res.status(401).json({ message: "Token expirado" });
             }
 
-            const { descriptor } = bodySchemaLegacy.parse(req.body);
+            this.faceTokens.delete(token);
 
-            const user = await extendedPrisma.user.findUnique({
-                where: { id: userId },
-            });
-
-            if (!user) {
-                return res.status(404).json({ message: "Usuário não encontrado" });
-            }
-
-            if (!user.faceDescriptor) {
-                return res.status(403).json({
-                    code: "FACE_NOT_REGISTERED",
-                    message: "Registro facial pendente. Por favor, cadastre sua face antes de bater o ponto.",
-                });
-            }
-
-            const savedDescriptor = new Float32Array(
-                Object.values(user.faceDescriptor as Record<string, number>)
-            );
             const inputDescriptor = new Float32Array(descriptor);
-
-            const distance = euclideanDistance(inputDescriptor, savedDescriptor);
+            const distance = euclideanDistance(inputDescriptor, stored.descriptor);
             const threshold = 0.5;
 
             if (distance < threshold) {

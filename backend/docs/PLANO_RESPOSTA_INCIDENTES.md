@@ -46,7 +46,7 @@ Aplica-se a todos os incidentes que possam acarretar risco ou dano relevante aos
 Detectar → Registrar → Classificar → Notificar equipe
 ```
 
-**Quem detecta:** Qualquer membro da equipe, sistema de monitoramento (AuditLog, Prometheus), ou denúncia de usuário.
+**Quem detecta:** Qualquer membro da equipe, sistema de monitoramento (AuditLog), ou denúncia de usuário.
 
 **Registro inicial:** Criar registro no sistema de auditoria com:
 - Data/hora da detecção

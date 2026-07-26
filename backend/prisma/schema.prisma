@@ -34,6 +34,7 @@ model User {
   password          String
   role              UserRole           @default(EMPLOYEE)
   cpf               String?            @unique
+  cpfHash           String?            @unique
   faceDescriptor    Json?
   companyId         String
   workScheduleId    String?

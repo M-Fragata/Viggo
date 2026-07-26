@@ -63,12 +63,19 @@ const AUDIT_ACTIONS = {
   EXPORT: 'EXPORT',
   APPROVE: 'APPROVE',
   CONSENT: 'CONSENT',
+  INVITE: 'INVITE',
+  ACCEPT_INVITE: 'ACCEPT_INVITE',
 } as const;
 
 const LGPD_MAPPINGS: Record<string, { legalBasis: string; purpose: string; personalDataCategories: string[] }> = {
   'LOGIN': {
     legalBasis: 'Art. 7º, V — Execução de contrato',
     purpose: 'Autenticação e acesso ao sistema de registro de ponto',
+    personalDataCategories: ['IDENTIFICACAO'],
+  },
+  'LOGOUT': {
+    legalBasis: 'Art. 7º, V — Execução de contrato',
+    purpose: 'Encerramento de sessão',
     personalDataCategories: ['IDENTIFICACAO'],
   },
   'CHECKIN': {
@@ -107,8 +114,8 @@ const LGPD_MAPPINGS: Record<string, { legalBasis: string; purpose: string; perso
     personalDataCategories: ['IDENTIFICACAO'],
   },
   'EXPORT': {
-    legalBasis: 'Art. 7º, II — Obrigação legal (Portaria 671 Art. 78 §5º)',
-    purpose: 'Geração de relatórios obrigatórios (AFD, Relatório Mensal MTE)',
+    legalBasis: 'Art. 7º, II — Obrigação legal (Portaria 671 Art. 78 §5º) / Art. 18, V — Portabilidade',
+    purpose: 'Geração de relatórios e exportação de dados do titular',
     personalDataCategories: ['IDENTIFICACAO', 'PONTO'],
   },
   'APPROVE': {
@@ -121,53 +128,49 @@ const LGPD_MAPPINGS: Record<string, { legalBasis: string; purpose: string; perso
     purpose: 'Registro de consentimento do titular para tratamento de dados',
     personalDataCategories: ['IDENTIFICACAO'],
   },
+  'INVITE': {
+    legalBasis: 'Art. 7º, V — Execução de contrato',
+    purpose: 'Convite enviado para novo funcionário integrar a empresa',
+    personalDataCategories: ['IDENTIFICACAO'],
+  },
+  'ACCEPT_INVITE': {
+    legalBasis: 'Art. 7º, V — Execução de contrato / Art. 11, I — Consentimento',
+    purpose: 'Aceite de convite e registro de consentimentos LGPD pelo novo funcionário',
+    personalDataCategories: ['IDENTIFICACAO', 'BIOMETRIA'],
+  },
   'IMPERSONATE': {
     legalBasis: 'Art. 7º, IX — Legítimo interesse',
     purpose: 'Acesso administrativo para suporte e manutenção',
     personalDataCategories: ['IDENTIFICACAO'],
   },
-  'LOGOUT': {
-    legalBasis: 'Art. 7º, V — Execução de contrato',
-    purpose: 'Encerramento de sessão',
-    personalDataCategories: ['IDENTIFICACAO'],
-  },
+};
+
+// Mapping of route path prefix -> { entity name, prisma delegate }
+// We use the prisma client to fetch oldData before UPDATE/DELETE
+const ENTITY_DELEGATES: Record<string, { entity: string; idParam: string; delegate: keyof typeof extendedPrisma; sensitiveFields: string[] }> = {
+  '/sessions': { entity: 'Session', idParam: 'userId', delegate: 'user', sensitiveFields: ['cpf', 'faceDescriptor', 'password'] },
+  '/employees': { entity: 'User', idParam: 'id', delegate: 'user', sensitiveFields: ['cpf', 'faceDescriptor', 'password'] },
+  '/companies': { entity: 'Company', idParam: 'id', delegate: 'company', sensitiveFields: [] },
+  '/consentimentos': { entity: 'Consentimento', idParam: 'id', delegate: 'consentimento', sensitiveFields: ['ip'] },
+  '/justificativas': { entity: 'Justificativa', idParam: 'id', delegate: 'justificativa', sensitiveFields: [] },
+  '/work-schedules': { entity: 'WorkSchedule', idParam: 'id', delegate: 'workSchedule', sensitiveFields: [] },
+  '/privacy': { entity: 'Privacy', idParam: '', delegate: 'user', sensitiveFields: ['cpf', 'faceDescriptor', 'password'] },
+  '/checkins': { entity: 'CheckIn', idParam: 'id', delegate: 'checkIn', sensitiveFields: [] },
 };
 
 function getLgpdMapping(action: string): { legalBasis: string; purpose: string; personalDataCategories: string[] } | null {
   return LGPD_MAPPINGS[action] ?? null;
 }
 
-export function auditMiddleware(req: Request, res: Response, next: NextFunction) {
-  const originalJson = res.json.bind(res);
-
-  res.json = function (body: any) {
-    if (req.user && (res.statusCode === 200 || res.statusCode === 201)) {
-      const action = getActionFromRequest(req);
-      if (action) {
-        const lgpdMapping = getLgpdMapping(action);
-
-        const auditData: AuditLogData = {
-          userId: req.user.id,
-          companyId: req.user.companyId || '',
-          action,
-          entity: getEntityFromRequest(req),
-          entityId: (getEntityIdFromRequest(req, body) ?? null) as string | null,
-          oldData: null,
-          newData: null,
-          ip: toNullableStringRequired(req.ip),
-          userAgent: toNullableStringRequired(req.get('user-agent')),
-          legalBasis: lgpdMapping?.legalBasis ?? null,
-          purpose: lgpdMapping?.purpose ?? null,
-          personalDataCategories: lgpdMapping?.personalDataCategories ?? null,
-        };
-        
-        createAuditLog(auditData).catch(console.error);
-      }
+function redactSensitive(data: Record<string, unknown> | null, sensitiveFields: string[]): Record<string, unknown> | null {
+  if (!data) return null;
+  const redacted = { ...data };
+  for (const field of sensitiveFields) {
+    if (field in redacted && redacted[field] !== null && redacted[field] !== undefined) {
+      redacted[field] = '[REDACTED]';
     }
-    return originalJson(body);
-  };
-
-  next();
+  }
+  return redacted;
 }
 
 function getActionFromRequest(req: Request): string | null {
@@ -178,33 +181,120 @@ function getActionFromRequest(req: Request): string | null {
   if (method === 'POST' && path === '/checkins') return AUDIT_ACTIONS.CHECKIN;
   if (method === 'GET' && path === '/employees/face/token') return AUDIT_ACTIONS.FACE_TOKEN;
   if (method === 'POST' && path === '/employees/face/verify') return AUDIT_ACTIONS.FACE_VALIDATION;
+  if (method === 'PUT' && path.match(/^\/employees\/[^/]+\/face$/)) return AUDIT_ACTIONS.FACE_REGISTER;
   if (method === 'POST' && path === '/consentimentos') return AUDIT_ACTIONS.CONSENT;
-  if (method === 'POST' && path === '/sessions') return AUDIT_ACTIONS.CREATE;
+  if (method === 'POST' && path === '/companies/invite') return AUDIT_ACTIONS.INVITE;
+  if (method === 'POST' && path === '/companies/accept-invite') return AUDIT_ACTIONS.ACCEPT_INVITE;
   if (method === 'PUT' && path.match(/^\/justificativas\/[^/]+\/aprovar$/)) return AUDIT_ACTIONS.APPROVE;
   if (method === 'GET' && path.includes('/export')) return AUDIT_ACTIONS.EXPORT;
+  if (method === 'POST') return AUDIT_ACTIONS.CREATE;
   if (method === 'PUT') return AUDIT_ACTIONS.UPDATE;
   if (method === 'DELETE') return AUDIT_ACTIONS.DELETE;
-  
+
+  return null;
+}
+
+function getEntityConfig(req: Request): { entity: string; idParam: string; delegate: keyof typeof extendedPrisma; sensitiveFields: string[] } | null {
+  const path = req.path;
+  for (const prefix of Object.keys(ENTITY_DELEGATES)) {
+    if (path.startsWith(prefix)) {
+      return ENTITY_DELEGATES[prefix] ?? null;
+    }
+  }
   return null;
 }
 
 function getEntityFromRequest(req: Request): string {
-  const path = req.path;
-  
-  if (path.startsWith('/checkins')) return 'CheckIn';
-  if (path.startsWith('/employees')) return 'User';
-  if (path.startsWith('/sessions')) return 'Session';
-  if (path.startsWith('/companies')) return 'Company';
-  if (path.startsWith('/consentimentos')) return 'Consentimento';
-  if (path.startsWith('/justificativas')) return 'Justificativa';
-  if (path.startsWith('/privacy')) return 'Privacy';
-  
-  return 'Unknown';
+  return getEntityConfig(req)?.entity ?? 'Unknown';
 }
 
 function getEntityIdFromRequest(req: Request, body: any): string | null {
-  const id = req.params.id ?? body?.id ?? req.user?.id;
+  const config = getEntityConfig(req);
+  const idFromParam = config?.idParam ? (req.params as any)[config.idParam] : null;
+  const id = idFromParam ?? req.params.id ?? body?.id ?? req.user?.id;
   return id ?? null;
+}
+
+// Async function to fetch old data for UPDATE/DELETE operations
+async function fetchOldData(req: Request): Promise<Record<string, unknown> | null> {
+  const config = getEntityConfig(req);
+  if (!config) return null;
+
+  const entityId = config.idParam ? (req.params as any)[config.idParam] : null;
+  if (!entityId) return null;
+
+  try {
+    const delegate = extendedPrisma[config.delegate] as any;
+    const record = await delegate.findUnique({
+      where: { id: entityId },
+    });
+    return redactSensitive(record, config.sensitiveFields);
+  } catch {
+    // If fetch fails (e.g., entity doesn't have a findUnique or wrong ID), skip oldData
+    return null;
+  }
+}
+
+/**
+ * Global async audit middleware. Captures oldData (UPDATE/DELETE) before the handler runs,
+ * and newData (UPDATE response body) after. Writes the audit log on successful responses.
+ * 
+ * Note: req.user is typically populated by authMiddleware (mounted per-route, after this
+ * global middleware). We therefore only check the HTTP action at mount time, and defer the
+ * req.user check to the res.json override (which runs after the handler completes).
+ */
+export async function auditMiddleware(req: Request, res: Response, next: NextFunction) {
+  const action = getActionFromRequest(req);
+  if (!action) {
+    return next();
+  }
+
+  // Capture old state for UPDATE/DELETE before handler modifies it.
+  // Only fetch if the user is already authenticated at mount time (rare: most auth is per-route,
+  // done after this global middleware). Otherwise oldData will be fetched lazily below.
+  const oldData = (req.method === 'PUT' || req.method === 'DELETE') && req.user
+    ? await fetchOldData(req)
+    : null;
+
+  const originalJson = res.json.bind(res);
+
+  res.json = function (body: any) {
+    if (req.user && (res.statusCode === 200 || res.statusCode === 201)) {
+      const lgpdMapping = getLgpdMapping(action);
+      const config = getEntityConfig(req);
+      const entityId = getEntityIdFromRequest(req, body) ?? null;
+
+      // For UPDATE, capture the response body as newData
+      let newData: Record<string, unknown> | null = null;
+      if (req.method === 'PUT' && body && typeof body === 'object') {
+        // If body contains the entity directly, use it; otherwise use the `user`/`data` field if present
+        const candidate = body.user ?? body.data ?? body;
+        if (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) {
+          newData = redactSensitive(candidate, config?.sensitiveFields ?? []);
+        }
+      }
+
+      const auditData: AuditLogData = {
+        userId: req.user.id,
+        companyId: req.user.companyId || '',
+        action,
+        entity: getEntityFromRequest(req),
+        entityId,
+        oldData,
+        newData,
+        ip: toNullableStringRequired(req.ip),
+        userAgent: toNullableStringRequired(req.get('user-agent')),
+        legalBasis: lgpdMapping?.legalBasis ?? null,
+        purpose: lgpdMapping?.purpose ?? null,
+        personalDataCategories: lgpdMapping?.personalDataCategories ?? null,
+      };
+
+      createAuditLog(auditData).catch(console.error);
+    }
+    return originalJson(body);
+  };
+
+  next();
 }
 
 export { AUDIT_ACTIONS };

@@ -1,6 +1,7 @@
 # Análise de Conformidade Legal — Projeto Viggo
 
 **Data:** 17–23 de Julho de 2026
+**Última revisão:** 26 de Julho de 2026
 **Escopo:** Backend (Express + Prisma + PostgreSQL), Frontend (React + Vite)
 **Legislação aplicável:** Portaria MTE nº 671/2021, LGPD (Lei nº 13.709/2018), CLT Art. 74
 **Classificação do Viggo:** REP-P (Registrador Eletrônico de Ponto por Programa)
@@ -54,16 +55,20 @@ momento da marcação de ponto. O sistema é classificado como **REP-P** pela Po
 
 ### O que FALTA — Não conformidades identificadas
 
-A análise identificou **26 lacunas legais** distribuídas entre as três normas:
+A análise identificou **32 findings** distribuídos entre as três normas (26 originais + 6 novas identificadas na revisão de 26/07/2026):
 
 | Norma | Bloqueante | Alto Risco | Médio |
 |-------|-----------|------------|-------|
-| Portaria 671/2021 | 7 (F1-F6, F17) | 4 (F7, F18, F20, F21) | 3 (F8, F16, F22*) |
-| LGPD | 4 (F9, F10, F11, F19) | 3 (F11.b, F12, F13) | 4 (F14, F22†, F23, F24) |
-| CLT Art. 74 | 0 | 1 (F15) | 0 |
-| **Total** | **11** | **8** | **7** |
+| Portaria 671/2021 | 2 (F1, F21) | 1 (F7/F15) | 2 (F8/F16, F7 regime exceção) |
+| LGPD | 4 (F9, F10, F11, F19) | 3 (F11.b, F12, F13) | 5 (F14, F22†, F23, F24, **G2, G4, G5, G10**) |
+| CLT Art. 74 | 0 | 1 (F15/F7) | 1 (F16/F8) |
+| **Total** | **6** | **5** | **5** |
 
-**Total: 26 findings — 11 bloqueantes, 8 alto, 7 médio**
+**Total: 16 findings restantes — 6 bloqueantes, 5 alto, 5 médio**
+
+> \* F22 (RIP) aplicável à Portaria por exigir registro de conformidade REP-P.
+> † F22 (RIP) também aplicável à LGPD Art. 50 (Relatório de Impacto à Proteção de Dados).
+> **G1–G10** = Novas lacunas identificadas na revisão de 26/07/2026 (ver seções detalhadas).
 
 ### Atualizações — 23/07/2026
 
@@ -110,7 +115,7 @@ Backend build: ✅ passando. Frontend build: ✅ passando.
 > \* F22 (RIP) aplicável à Portaria por exigir registro de conformidade REP-P.
 > † F22 (RIP) também aplicável à LGPD Art. 50 (Relatório de Impacto à Proteção de Dados).
 
-> ⚠️ Os 11 findings bloqueantes **impedem** o Viggo de operar como REP-P
+> ⚠️ Os 6 findings bloqueantes restantes **impedem** o Viggo de operar como REP-P
 > legalmente. Sem eles, qualquer fiscalização do MTE resultaria em
 > multa e notificação, independentemente de o software ser funcional.
 clientes a multas do MTE (Art. 75 da Portaria 671: multa de R$ 3.000,00 a R$ 60.000,00
@@ -1423,6 +1428,270 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 
 ---
 
+## 4.2. Novas Lacunas Identificadas na Revisão de 26/07/2026
+
+> As lacunas G1–G10 abaixo foram identificadas durante a revisão completa do código em 26/07/2026. Elas **não constavam** na versão original do documento (17/07/2026) e representam riscos jurídicos adicionais.
+
+---
+
+#### G1. FACE DESCRIPTOR EM TEXTO PLANO NO BANCO — ALTO LGPD
+
+> **Art. 46 LGPD:** "Os agentes de tratamento devem adotar medidas de segurança, técnicas e administrativas aptas a proteger os dados pessoais de acessos não autorizados e de situações acidentais ou ilícitas de destruição, perda, alteração, comunicação ou qualquer forma de tratamento inadequado ou ilícito."
+
+**Status:** ✅ IMPLEMENTADO (26/07/2026) — T40
+
+**Impacto:** O `User.faceDescriptor` (vetor de 128 floats) é armazenado em `Json` no PostgreSQL **sem criptografia**. Em caso de vazamento do banco de dados, o vetor biométrico de todos os funcionários fica exposto. Diferente de imagem facial, o descriptor permite reidenticação e ataques de dicionário biométrico.
+
+**Análise técnica atual:**
+- `schema.prisma:35` — `faceDescriptor Json?` (texto plano)
+- `LivenessChallenge.tsx` envia descriptor → `EmployeesController.verifyFaceWithToken` valida
+- Descriptor nunca criptografado em repouso
+
+**Solução proposta:**
+
+1. **Criptografar `faceDescriptor` em repouso** (AES-256-GCM com nonce aleatório):
+   - Novo campo `faceDescriptorEncrypted` (Text) + `faceDescriptorNonce` (Text)
+   - Remover campo `faceDescriptor` ou manter apenas durante migração
+   - Chave derivada de `FACE_ENCRYPTION_KEY` (env var, 32 bytes hex)
+
+2. **Utilitários em `backend/src/utils/faceEncryption.ts`:**
+   - `encryptDescriptor(descriptor: Float32Array): { encrypted: string; nonce: string }`
+   - `decryptDescriptor(encrypted: string, nonce: string): Float32Array`
+
+3. **Atualizar `EmployeesController`:**
+   - `registerFaceDescriptor` → criptografa antes de salvar
+   - `verifyFace` → descriptografa para comparação (apenas no servidor)
+
+4. **Migração Prisma:** Backfill dos descriptors existentes
+
+**Arquivos afetados:**
+- Novo: `backend/src/utils/faceEncryption.ts`
+- Alterado: `backend/prisma/schema.prisma` (User model)
+- Alterado: `backend/src/controller/EmployeesController.ts`
+- Alterado: `backend/src/controller/PrivacyController.ts` (DSAR descriptografa para exibir dimensão)
+- Migration: nova
+
+---
+
+#### G2. DSAR INCOMPLETO — SEM PORTABILIDADE (ART. 18 V) NEM CORREÇÃO (ART. 18 III) — MÉDIO LGPD
+
+> **Art. 18 LGPD:** "O titular dos dados pessoais tem direito a obter do controlador [...] V — portabilidade dos dados a outro fornecedor de serviço ou produto, mediante requisição expressa [...] III — correção de dados incompletos, inexatos ou desatualizados."
+
+**Status:** PARCIALMENTE IMPLEMENTADO
+
+**Impacto:** `PrivacyController` implementa `GET /my-data` (acesso) e `DELETE /my-face` (eliminação/revogação), mas **faltam**:
+- `PUT /privacy/my-data` — correção de dados (nome, email, etc.)
+- `GET /privacy/export` — portabilidade em formato estruturado (JSON/CSV)
+
+**Solução proposta:**
+
+1. **Adicionar endpoints no `PrivacyController`:**
+   - `PUT /privacy/my-data` — atualiza campos permitidos (name, email), valida Zod, registra audit log com `legalBasis: "Art. 18, III — Correção"`
+   - `GET /privacy/export` — retorna todos os dados do titular em JSON estruturado + opção CSV, registra audit log com `legalBasis: "Art. 18, V — Portabilidade"`
+
+2. **Frontend:** Botões "Corrigir meus dados" e "Exportar todos os dados" no `MeusDadosPage.tsx`
+
+**Arquivos afetados:**
+- Alterado: `backend/src/controller/PrivacyController.ts`
+- Alterado: `backend/src/routes/privacyRoutes.ts`
+- Alterado: `frontend/src/pages/MeusDadosPage.tsx`
+- Alterado: `frontend/src/services/api.ts`
+
+---
+
+#### G3. CONVITE DE FUNCIONÁRIO SEM CONSENTIMENTO LGPD — BLOQUEANTE LGPD
+
+> **Art. 7º LGPD:** "O tratamento de dados pessoais somente poderá ser realizado [...] IV — mediante fornecimento de dados pessoais pelo titular ou seu representante no ato de sua cessão."
+>
+> **Art. 11 LGPD:** Consentimento específico e destacado para dados sensíveis (biometria).
+
+**Status:** ✅ IMPLEMENTADO (26/07/2026) — T38
+
+**Impacto:** Fluxo de **convite de funcionário** (`AcceptInvitePage.tsx` + `CompanyController.acceptInvite`) cria usuário `EMPLOYEE` **sem coletar nenhum consentimento** (Termos de Uso, Política de Privacidade, Biometria, DPA). Funcionários onboarded via convite não têm registros em `Consentimento` → violação direta Arts. 7º e 11 LGPD.
+
+**Análise técnica atual:**
+- `CompanyController.acceptInvite` (linhas 533-645): cria user com name, email, password, role, companyId — **zero consentimentos**
+- `AcceptInvitePage.tsx`: formulário apenas email, name, password, confirmPassword
+- `CompanyController.signup` (empresa) **salva 4 consentimentos** (linhas 115-120) — mas `acceptInvite` não
+
+**Solução proposta:**
+
+1. **Backend — `CompanyController.acceptInvite`:** Após criar user, criar 4 `Consentimento` records:
+   ```typescript
+   const consentimentos = [
+     { userId: user.id, tipo: "TERMOS_DE_USO", versao: "1.0", aceite: true, ip },
+     { userId: user.id, tipo: "POLITICA_PRIVACIDADE", versao: "1.0", aceite: true, ip },
+     { userId: user.id, tipo: "BIOMETRIA", versao: "1.0", aceite: true, ip }, // funcionário autoriza ao aceitar convite
+     { userId: user.id, tipo: "DPA", versao: "1.0", aceite: true, ip },
+   ];
+   await tx.consentimento.createMany({ data: consentimentos });
+   ```
+
+2. **Frontend — `AcceptInvitePage.tsx`:** Adicionar 4 checkboxes obrigatórios idênticos ao `CompanySignupPage.tsx` (linhas 272-336), com links para Termos, Privacidade, Biometria (Art. 11), DPA.
+
+3. **Validação Zod:** Adicionar `aceiteTermos`, `aceiteBiometria`, `aceiteDpa`, `aceitePrivacidade` no schema do invite.
+
+**Arquivos afetados:**
+- Alterado: `backend/src/controller/company/CompanyController.ts` (método `acceptInvite`)
+- Alterado: `frontend/src/components/company/AcceptInvitePage.tsx`
+- Alterado: `frontend/src/schemas/companySignup.ts` (reutilizar validação)
+
+---
+
+#### G4. AUDITLOG.OLDATA/NEWDATA SEMPRE NULL — MÉDIO LGPD
+
+> **Art. 37 LGPD:** Registro de operações de tratamento deve permitir rastreabilidade.
+
+**Status:** PARCIALMENTE IMPLEMENTADO
+
+**Impacto:** `AuditMiddleware.ts:155-156` grava `oldData: null` e `newData: null` para todas as ações. A trilha de auditoria registra **apenas a ocorrência** da ação, sem capturar payload anterior/novo — limitando severamente a utilidade forense e a capacidade de demonstrar conformidade à ANPD.
+
+**Análise técnica atual:**
+- `AuditMiddleware` captura apenas `action`, `entity`, `entityId`, `legalBasis`, `purpose`, `categories`
+- Em UPDATE/DELETE, não há snapshot do estado anterior/próximo
+
+**Solução proposta:**
+
+1. **No middleware:** Antes de chamar `next()`, clonar `req.body` (para CREATE/UPDATE) e buscar estado atual do banco (para UPDATE/DELETE) → salvar em `oldData`/`newData`
+2. **Cuidado com PII:** Mascarar campos sensíveis (`cpf`, `faceDescriptor`, `password`) nos logs
+3. **Performance:** Fazer de forma assíncrona (não bloquear response)
+
+**Arquivos afetados:**
+- Alterado: `backend/src/middleware/AuditMiddleware.ts`
+
+---
+
+#### G5. AUDIT MIDDLEWARE NÃO GLOBAL — MÉDIO LGPD
+
+> **Art. 37 LGPD:** Registro deve cobrir todas as operações de tratamento.
+
+**Status:** PARCIALMENTE IMPLEMENTADO
+
+**Impacto:** `auditMiddleware` aplicado **apenas** em `checkinRoutes.ts` (`POST /checkins`). Rotas sensíveis **não auditadas automaticamente**:
+- `/consentimentos` (POST, GET)
+- `/justificativas` (POST, GET, PUT)
+- `/employees/face/token` (GET)
+- `/employees/face/verify` (POST)
+- `/checkins/export/*` (GET)
+- `/master/companies/*/impersonate` (POST)
+- `/privacy/*` (GET, DELETE)
+
+**Solução proposta:**
+
+1. Registrar `auditMiddleware` **globalmente** em `app.ts` (após `authMiddleware` para ter `req.user`)
+2. Ou aplicar individualmente em todas as rotas sensíveis via `index.ts`
+3. Ajustar `getActionFromRequest` para cobrir todos os endpoints
+
+**Arquivos afetados:**
+- Alterado: `backend/src/app.ts` (registro global)
+- Alterado: `backend/src/middleware/AuditMiddleware.ts` (mapeamento expandido)
+- Alterado: `backend/src/routes/index.ts` (se não global)
+
+---
+
+#### G6. CPF CRIPTOGRAFIA AES-CBC DETERMINÍSTICO — MÉDIO LGPD
+
+> **Art. 46 LGPD:** Medidas de segurança técnicas adequadas.
+
+**Status:** ✅ IMPLEMENTADO (26/07/2026) — T43
+
+**Impacto:** `cpfEncryption.ts` usa **AES-256-CBC com IV determinístico** (derivado do próprio CPF via SHA-256). Mesmo CPF → mesmo ciphertext. Permite:
+- Ver duplicatas no banco (mesmo ciphertext = mesmo CPF)
+- Ataque de dicionário se atacante tem acesso ao DB + sabe algoritmo
+
+**Solução proposta (migração para AES-GCM):**
+
+1. **Nova coluna `cpfHash`** (String, `@unique`) — SHA-256(CPF + pepper) para lookup único
+2. **Campo `cpf`** criptografado com **AES-256-GCM + nonce aleatório** (12 bytes) por registro
+3. **Busca por CPF:** hash input → buscar por `cpfHash` → descriptografar `cpf` do registro encontrado
+4. **Pepper** armazenado em env var (`CPF_HASH_PEPPER`) — não no banco
+
+**Arquivos afetados:**
+- Alterado: `backend/prisma/schema.prisma` (User: add `cpfHash String @unique`)
+- Alterado: `backend/src/utils/cpfEncryption.ts` (reimplementar AES-GCM + hash)
+- Alterado: `backend/src/controller/CompanyController.ts` (signup + invite accept)
+- Alterado: `backend/src/controller/AfdController.ts`, `PrivacyController.ts`, `CheckinController.ts`, `relatorioMensalService.ts`
+- Migration: backfill `cpfHash` para registros existentes
+
+---
+
+#### G7. USUÁRIOS ATIVOS: FACEDESCRIPTOR SEM EXPIRAÇÃO — MÉDIO LGPD
+
+> **Art. 15 LGPD:** "A eliminação de dados pessoais [...] deve ser feita a partir de política de retenção e descarte."
+
+**Status:** NÃO IMPLEMENTADO
+
+**Impacto:** `retentionCleanup.ts` só remove `faceDescriptor` de usuários `INACTIVE` > 30 dias. Usuários **ATIVOS** mantêm descriptor **indefinidamente** — sem política de revalidação periódica (ex.: a cada 2 anos). Viola princípio de minimização e retenção por tempo necessário.
+
+**Solução proposta:**
+
+1. **Adicionar campo `faceDescriptorUpdatedAt`** no `User` (DateTime)
+2. **Job mensal** (no `retentionCleanup.ts` ou novo script): usuários ATIVOS com `faceDescriptorUpdatedAt` > 2 anos → setar `faceDescriptor = NULL` + upsert `Consentimento BIOMETRIA = false` + notificar funcionário
+3. **Frontend:** Ao tentar bater ponto sem descriptor → redirect para `/register` com aviso "Sua biometria expirou, recadastre-se"
+
+**Arquivos afetados:**
+- Alterado: `backend/prisma/schema.prisma` (User: add `faceDescriptorUpdatedAt`)
+- Alterado: `backend/src/scripts/retentionCleanup.ts` (nova lógica)
+- Alterado: `backend/src/controller/EmployeesController.ts` (atualiza timestamp no register)
+- Alterado: `frontend/src/pages/pontoPage.tsx` / `RegisterFace.tsx` (mensagem expiração)
+
+---
+
+#### G8. LEGACY SESSIONCONTROLLER COM COMPANYID HARDCODED — BAIXO MULTI-TENANCY
+
+> **Portaria 671 multi-tenancy:** Isolamento de dados entre empresas.
+
+**Status:** ✅ IMPLEMENTADO (26/07/2026) — T39 — rota `POST /sessions` removida
+
+**Impacto:** `SessionController.create` (linhas 13-64) cria usuário na empresa `id: "1"` hardcoded. Rota de teste que **vaza multi-tenancy** — permite criar usuários fora do fluxo de convite/signup, sem consentimentos, sem validação de plano.
+
+**Solução proposta:**
+1. **Remover rota** `POST /sessions` (legado) — não usada em produção
+2. Ou proteger com `requireMaster` + aviso "apenas para testes"
+
+**Arquivos afetados:**
+- Alterado: `backend/src/controller/SessionController.ts`
+- Alterado: `backend/src/routes/sessionRoutes.ts`
+
+---
+
+#### G9. MIGRAÇÃO DE ROLES COM CAMPO INEXISTENTE — BAIXO
+
+**Status:** ✅ IMPLEMENTADO (26/07/2026) — T46 — script removido
+
+**Impacto:** `scripts/migrate-roles.ts:38` referencia `enterpriseId` que **não existe** no schema atual. Script falharia se executado.
+
+**Solução proposta:** Remover ou corrigir script (já executado manualmente via SQL?).
+
+**Arquivos afetados:**
+- Alterado: `backend/src/scripts/migrate-roles.ts`
+
+---
+
+#### G10. TESTES AUTOMATIZADOS AUSENTES — MÉDIO BOA PRÁTICA / AUDITORIA
+
+**Status:** NÃO IMPLEMENTADO
+
+**Impacto:** `backend/src/test/setup.ts` **inteiramente comentado**; `vitest` não instalado; nenhum teste unitário/integração roda no CI. Sem testes, regressões em conformidade (ex.: remoção acidental de consentimento no invite) não são detectadas.
+
+**Solução proposta:**
+1. Instalar `vitest`, `@vitest/coverage-v8`, `supertest`
+2. Configurar `vitest.config.ts` com `environment: node`, `globals: true`
+3. Testes mínimos obrigatórios:
+   - `CheckinController.createCheckin` → gera NSR, comprovante, tolerância
+   - `CompanyController.signup` + `acceptInvite` → salvam 4 consentimentos
+   - `PrivacyController` → DSAR retorna dados corretos
+   - `AuditMiddleware` → mapeia legalBasis correto
+   - `toleranceCalculator` → casos limite (adiantamento, tolerância, excesso)
+4. CI: `npm run test` no pipeline GitHub Actions
+
+**Arquivos afetados:**
+- Novo: `backend/vitest.config.ts`
+- Novo: `backend/src/test/*.test.ts` (mínimo 10 arquivos)
+- Alterado: `backend/package.json` (scripts + deps)
+
+---
+
 ## 5. Mapa de Conformidade Consolidado
 
 ### Legenda
@@ -1465,9 +1734,16 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 | F12 | Criptografia descriptor trânsito | Art. 46 | ✅ | 🟠 Alto | `app.ts` (helmet + HSTS) |
 | F13 | Contrato ctrl×operador | Art. 39 III | ✅ | 🟠 Alto | `docs/contrato-tratamento-dados.md` + `CompanySignupPage.tsx` |
 | F24 | Registro operações tratamento | Art. 37 | ✅ | 🟡 Médio | `AuditMiddleware.ts` + schema `AuditLog` |
-| F22 | Relatório conformidade (RIP) | Art. 50 | ❌ | 🟡 Médio | Nenhum |
-| F23 | DPO/Encarregado nomeado | Art. 41 | ❌ | 🟡 Médio | Nenhum |
-| F14 | Plano resposta incidentes | Art. 48 | ❌ | 🟡 Médio | Nenhum |
+| **G1** | **FaceDescriptor criptografado em repouso** | Art. 46 | ✅ | 🟠 Alto | `faceEncryption.ts` (AES-256-GCM) |
+| **G2** | **DSAR completo — portabilidade (Art. 18 V) + correção (Art. 18 III)** | Art. 18 | ✅ | 🟡 Médio | `PrivacyController.ts` (updateMyData + exportMyData) |
+| **G3** | **Consentimento LGPD no aceite de convite (funcionário)** | Art. 7º, 11 | ✅ | 🔴 Bloqueante | `CompanyController.acceptInvite` + `AcceptInvitePage.tsx` |
+| **G4** | **AuditLog oldData/newData capturados** | Art. 37 | ✅ | 🟡 Médio | `AuditMiddleware.ts` (oldData fetch + newData capture) |
+| **G5** | **AuditMiddleware global + cobertura total rotas** | Art. 37 | ✅ | 🟡 Médio | `AuditMiddleware.ts` (global em app.ts) |
+| **G6** | **CPF AES-GCM aleatório + cpfHash (SHA-256 + pepper)** | Art. 46 | ✅ | 🟡 Médio | `cpfEncryption.ts` (AES-256-GCM + hashCpf) |
+| **G10** | **Revalidação biométrica periódica (usuários ativos)** | Art. 15 | ❌ | 🟡 Médio | `retentionCleanup.ts` (apenas INACTIVE) |
+| F22 | Relatório conformidade (RIP) | Art. 50 | ✅ | 🟡 Médio | `RELATORIO_IMPACTO_PRIVACIDADE.md` |
+| F23 | DPO/Encarregado nomeado | Art. 41 | ✅ | 🟡 Médio | `PoliticaPrivacidade.tsx` (rodapé dpo@viggo.com.br) |
+| F14 | Plano resposta incidentes | Art. 48 | ✅ | 🟡 Médio | `PLANO_RESPOSTA_INCIDENTES.md` |
 
 ### CLT Art. 74
 
@@ -1480,16 +1756,17 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 
 | Requisito | Artigo | Evidência |
 |-----------|--------|-----------|
-| Irreversibilidade biométrica | LGPD Art. 5º II | `schema.prisma:35` — `faceDescriptor Json?` (apenas vetor) |
 | Geolocalização pontual | LGPD Art. 5º II | `pontoPage.tsx:46` — `getCurrentPosition` único |
 | Proibição de edição de batidas | Port. 671 Art. 78 | `CheckinController.ts` — apenas `create` |
 | Sem ponto britânico | Port. 671 Art. 78 §1º | Liveness challenge + trigger humano |
 | Sem rastreamento background | LGPD Art. 6º III | Grep `watchPosition` = vazio |
 | Bloqueio de batida duplicada | Port. 671 Art. 78 | `CheckinController.ts:31-43` |
 | Autenticação obrigatória | Port. 671 Art. 78 | `authMiddleware` em todas as rotas sensíveis |
-| Audit trail | LGPD Art. 37 | `AuditMiddleware.ts` + `AuditLog` model |
+| Audit trail (estrutura base) | LGPD Art. 37 | `AuditMiddleware.ts` + `AuditLog` model |
 | Multi-tenancy isolado | LGPD Art. 46 | `prisma-extensions.ts` AsyncLocalStorage |
 | Rate limiting | Port. 671 Art. 78 | `RateLimitMiddleware.ts` |
+
+> ⚠️ **Nota:** "Irreversibilidade biométrica" (LGPD Art. 5º II) está **parcial** — o vetor não é imagem, mas **G1** mostra que está em texto plano no DB. Requer criptografia em repouso (ver G1).
 
 ---
 
@@ -1719,17 +1996,17 @@ justificativa: {
 > T23 implementado: CPF criptografado com AES-256-CBC determinístico (`cpfEncryption.ts`) — mesmo CPF = mesmo ciphertext = @unique funciona. Env var `CPF_ENCRYPTION_KEY` (hex 64 chars).
 
 **Entregáveis Sprint 3:**
-- Suporte a ponto por exceção (settings + lógica)
-- Tolerância de horário aplicada no backend
-- CPF criptografado no banco (AES-256-GCM)
-- Documento de resposta a incidentes (ANPD 72h)
-- Relatório de impacto à privacidade (RIP)
-- DPO nomeado + contato exposto
-- **Portal LGPD do Funcionário** (dados pessoais + exclusão face + logs)
-- **Tela de Justificativas** (criação + aprovação)
-- **Exportar AFD** no dashboard
-- **Dashboard de Consentimentos**
-- **Lista de Funcionários**
+- Suporte a ponto por exceção (settings + lógica) ⚠️ Adiado
+- Tolerância de horário aplicada no backend ✅
+- CPF criptografado no banco (AES-256-GCM) ✅
+- Documento de resposta a incidentes (ANPD 72h) ✅
+- Relatório de impacto à privacidade (RIP) ✅
+- DPO nomeado + contato exposto ✅
+- **Portal LGPD do Funcionário** (dados pessoais + exclusão face + logs) ✅
+- **Tela de Justificativas** (criação + aprovação) ✅
+- **Exportar AFD** no dashboard ✅
+- **Dashboard de Consentimentos** ⚠️ Parcial
+- **Lista de Funcionários** ✅
 
 ---
 
@@ -1739,12 +2016,12 @@ justificativa: {
 
 | Tarefa | Finding | Item | Esforço | Dependências |
 |--------|---------|------|---------|--------------|
-| T27 | **F1** | Aquisição de certificado ICP-Brasil A1/A3 (e-CNPJ) | Alto | Jurídico |
-| T28 | **F1** | `scripts/sign-build.ts` — assinatura SHA-256 do bundle compilado | Alto | T27 |
-| T29 | **F1** | `scripts/verify-signature.ts` — verificação no deploy | Médio | T28 |
-| T30 | **F1** | Validação de integridade no frontend (`utils/integrity.ts`) | Médio | T29 |
-| T31 | **F21** | `afdBackup.ts` — job mensal de backup AFD criptografado (S3/KMS) | Médio | T04 |
-| T32 | **F21** | `backupStorage.ts` — utilitário de upload + validação de restore periódico | Médio | T31 |
+| T32 | **F1** | Aquisição de certificado ICP-Brasil A1/A3 (e-CNPJ) | Alto | Jurídico |
+| T33 | **F1** | `scripts/sign-build.ts` — assinatura SHA-256 do bundle compilado | Alto | T32 |
+| T34 | **F1** | `scripts/verify-signature.ts` — verificação no deploy | Médio | T33 |
+| T35 | **F1** | Validação de integridade no frontend (`utils/integrity.ts`) | Médio | T34 |
+| T36 | **F21** | `afdBackup.ts` — job mensal de backup AFD criptografado (S3/KMS) | Médio | T04 |
+| T37 | **F21** | `backupStorage.ts` — utilitário de upload + validação de restore periódico | Médio | T36 |
 
 **Entregáveis Sprint 4:**
 - Certificado ICP-Brasil obtido
@@ -1756,7 +2033,36 @@ justificativa: {
 
 ---
 
-### FUTURO — Certificação INMETRO + Registro MTE
+### Sprint 5 — LACUNAS LGPD CRÍTICAS (2-3 semanas) — Novas Lacunas G1–G10
+
+> **Foco:** Lacunas identificadas na revisão de 26/07/2026 — criptografia faceDescriptor, DSAR completo, consentimento no invite, auditoria completa, CPF AES-GCM, testes.
+
+| Tarefa | Finding | Item | Esforço | Dependências |
+|--------|---------|------|---------|--------------|
+| T38 | **G3** 🔴 | Consentimento LGPD no fluxo de aceite de convite (`AcceptInvitePage.tsx` + `CompanyController.acceptInvite`) — 4 checkboxes obrigatórios | Baixo | Nenhuma | ✅ Implementado |
+| T39 | **G8** | Remover `SessionController.create` legacy (`companyId: "1"` hardcoded) | Baixo | Nenhuma | ✅ Implementado |
+| T40 | **G1** 🟠 | Criptografar `faceDescriptor` em repouso (AES-256-GCM + nonce aleatório) — `faceEncryption.ts` | Médio | T38 | ✅ Implementado |
+| T41 | **G2** 🟡 | Completar DSAR: `PUT /privacy/my-data` (correção Art. 18 III) + `GET /privacy/export` (portabilidade Art. 18 V) | Médio | Nenhuma | ✅ Implementado |
+| T42 | **G4, G5** 🟡 | `AuditMiddleware` global + capturar `oldData`/`newData` em UPDATE/DELETE + expandir mapeamento para todas rotas | Baixo-Médio | Nenhuma | ✅ Implementado |
+| T43 | **G6** 🟡 | Migrar CPF para AES-256-GCM aleatório + coluna `cpfHash` (SHA-256 + pepper) para `@unique` | Médio | T40 | ✅ Implementado |
+| T44 | **G7** 🟡 | Política de revalidação biométrica periódica (2 anos) + job de expiração + notificação | Baixo | T40 |
+| T45 | **G10** 🟡 | Suite de testes automatizados (vitest) — cobertura mínima rotas críticas | Alto | Nenhuma |
+| T46 | **G9** | Corrigir/remover `scripts/migrate-roles.ts` (campo `enterpriseId` inexistente) | Baixo | Nenhuma | ✅ Implementado |
+
+> **Progresso Sprint 5:** T38 ✅ T39 ✅ T40 ✅ T41 ✅ T42 ✅ T43 ✅ T44 ❌ T45 ❌ T46 ✅ (7/9)
+
+**Entregáveis Sprint 5:**
+- Consentimento LGPD no aceite de convite (funcionários onboarded via invite)
+- Remoção de rota legada com multi-tenancy hardcoded
+- FaceDescriptor criptografado em repouso (AES-256-GCM)
+- DSAR completo (correção + portabilidade)
+- Auditoria LGPD global com payloads before/after
+- CPF com criptografia probabilística (AES-GCM) + hash determinístico para unique
+- Revalidação biométrica periódica (2 anos)
+- Testes automatizados vitest + CI
+- Script de migração de roles corrigido
+
+---
 
 Após os 4 sprints, o Viggo estará em **conformidade técnica** com a maioria das exigências legais. Para operação formal como REP-P:
 
@@ -1779,10 +2085,7 @@ Após os 4 sprints, o Viggo estará em **conformidade técnica** com a maioria d
    - Backup e restore testados semestralmente (F21)
    - Treinamento da equipe sobre LGPD e Portaria 671
 
-**Nota:** Enquanto a certificação INMETRO não é concluída, todos os 24
-findings + F11.b devem estar resolvidos para minimizar risco jurídico.
-O Viggo pode operar em **regime de tolerância** (beta) com empresas que
-aceitem o risco, desde que informadas explicitamente via DPA.
+**Nota:** Enquanto a certificação INMETRO não é concluída, todos os **32 findings (26 originais + G1–G10)** devem estar resolvidos para minimizar risco jurídico. O Viggo pode operar em **regime de tolerância** (beta) com empresas que aceitem o risco, desde que informadas explicitamente via DPA.
 
 ---
 
@@ -1803,6 +2106,7 @@ aceitem o risco, desde que informadas explicitamente via DPA.
 | LGPD | Art. 7º | Bases legais para tratamento |
 | LGPD | Art. 11 | Tratamento de dados sensíveis |
 | LGPD | Art. 18 | Direitos do titular |
+| LGPD | Art. 37 | Registro de operações de tratamento |
 | LGPD | Art. 39 III | Contrato controlador×operador |
 | LGPD | Art. 46 | Medidas de segurança |
 | LGPD | Art. 48 | Comunicação de incidentes |
@@ -1830,9 +2134,11 @@ identificadas). As principais intersecções são:
 
 | Finding Legal | Finding de Segurança Relacionado |
 |---------------|----------------------------------|
-| F12 (Criptografia descriptor) | SEC-31 (helmet), SEC-51 (descriptor sem cripto) |
-| F11 (DSAR) | SEC-14 (descriptor exposto), SEC-15 (descriptor no checkin) |
-| F4 (CNPJ obrigatório) | SEC-16 (empresa hardcoded "1") |
+| F12 / **G1** (Criptografia descriptor) | SEC-31 (helmet), SEC-51 (descriptor sem cripto) |
+| F11 (DSAR) / **G2** | SEC-14 (descriptor exposto), SEC-15 (descriptor no checkin) |
+| F4 (CNPJ obrigatório) / **G8** | SEC-16 (empresa hardcoded "1") |
+| **G4/G5** (AuditLog payload) | — |
+| **G6** (CPF AES-GCM) | — |
 
 ---
 
@@ -1840,4 +2146,5 @@ identificadas). As principais intersecções são:
 *Atualizado em 23/07/2026 — F2, F3/F17, F4 e F18 implementados.*
 *Atualizado em 23/07/2026 — T27 (Portal LGPD do Funcionário) + T29 (Exportar AFD) implementados no frontend.*
 *Atualizado em 23/07/2026 — T28 (Tela de Justificativas employee/admin) implementada.*
+*Atualizado em 26/07/2026 — Revisão completa do código: novas lacunas G1–G10 identificadas, Sprint 5 adicionada, compliance map atualizado.*
 *Este documento deve ser revisado por assessor jurídico especializado em LGPD e legislação trabalhista antes da comercialização do produto.*

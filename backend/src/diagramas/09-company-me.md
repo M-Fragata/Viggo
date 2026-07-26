@@ -10,7 +10,6 @@ sequenceDiagram
     participant CORS as CORS Middleware
     participant Logger as LoggingMiddleware
     participant RateLimit as GeneralApiLimiter
-    participant Metrics as MetricsMiddleware
     participant CompanyRoute as Company Routes
     participant AuthMiddleware as AuthMiddleware
     participant PlanMiddleware as PlanMiddleware
@@ -26,8 +25,6 @@ sequenceDiagram
     Logger-->>Express: Next
     Express->>RateLimit: 100 req/min por userId
     RateLimit-->>Express: OK
-    Express->>Metrics: Coleta métricas
-    Metrics-->>Express: Next
     Express->>CompanyRoute: Roteamento
 
     CompanyRoute->>AuthMiddleware: **Autenticação Obrigatória**
@@ -78,10 +75,9 @@ sequenceDiagram
 1. **CORS**
 2. **LoggingMiddleware**
 3. **GeneralApiLimiter** - 100 req/min
-4. **MetricsMiddleware**
-5. **AuthMiddleware** - JWT + contexto
-6. **PlanMiddleware** - **Busca plano, valida status, injeta planInfo no request**
-7. **Controller** - CompanyController.getMe
+4. **AuthMiddleware** - JWT + contexto
+5. **PlanMiddleware** - **Busca plano, valida status, injeta planInfo no request**
+6. **Controller** - CompanyController.getMe
 
 ## PlanMiddleware - O que Verifica
 

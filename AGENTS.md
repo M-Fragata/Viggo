@@ -9,8 +9,7 @@
 - **Prisma ORM** - Acesso ao banco PostgreSQL
 - **Zod** - Validação de schemas
 - **Pino** - Logging estruturado
-- **Prometheus** - Métricas
-- **Docker Compose** - Orquestração local (Postgres, Grafana, Prometheus)
+- **Docker Compose** - Orquestração local (Postgres)
 
 ### Frontend (`frontend/`)
 - **React 19** + **Vite** + **TypeScript**
@@ -92,7 +91,7 @@ Viggo/
 ### Raiz do Projeto (`Viggo/`)
 
 ```bash
-# Subir infraestrutura (Postgres, Grafana, Prometheus)
+# Subir infraestrutura (Postgres)
 docker-compose -f backend/docker-compose.yml up -d
 
 # Parar infraestrutura

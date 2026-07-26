@@ -67,6 +67,10 @@ export class AfdController {
                 return res.status(404).json({ message: "Empresa não encontrada" });
             }
 
+            if (!company.cnpj) {
+                return res.status(400).json({ message: "CNPJ da empresa é obrigatório para gerar o AFD" });
+            }
+
             const cnpjClean = company.cnpj.replace(/\D/g, "");
 
             const checkins = await extendedPrisma.checkIn.findMany({

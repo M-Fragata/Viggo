@@ -178,6 +178,15 @@ export const api = {
     getMyData: () =>
       fetchApi<MyDataResponse>("/privacy/my-data"),
 
+    updateMyData: (data: { name?: string; email?: string }) =>
+      fetchApi<{ message: string; user: { id: string; name: string; email: string } }>(
+        "/privacy/my-data",
+        { method: "PUT", body: JSON.stringify(data) }
+      ),
+
+    exportMyData: () =>
+      fetchApi<unknown>("/privacy/export"),
+
     deleteMyFace: () =>
       fetchApi<{ message: string }>("/privacy/my-face", {
         method: "DELETE",
@@ -373,6 +382,9 @@ export interface AcceptInviteDto {
   name: string;
   password: string;
   confirmPassword: string;
+  aceiteTermos: boolean;
+  aceiteBiometria: boolean;
+  aceiteDpa: boolean;
 }
 
 export interface MasterListParams {

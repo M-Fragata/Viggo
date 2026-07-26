@@ -10,7 +10,6 @@ sequenceDiagram
     participant CORS as CORS Middleware
     participant Logger as LoggingMiddleware
     participant RateLimit as GeneralApiLimiter
-    participant Metrics as MetricsMiddleware
     participant SessionRoute as Session Routes
     participant AuthLimiter as AuthLimiter (NÃO aplicado aqui)
     participant SessionCtrl as SessionController.create
@@ -24,8 +23,6 @@ sequenceDiagram
     Logger-->>Express: Next
     Express->>RateLimit: Verifica limite 100 req/min por IP
     RateLimit-->>Express: OK (ou 429)
-    Express->>Metrics: Coleta métricas (latência, status)
-    Metrics-->>Express: Next
     Express->>SessionRoute: Roteamento para /sessions
     SessionRoute->>SessionCtrl: Chama controller.create(req, res)
 
@@ -74,8 +71,7 @@ sequenceDiagram
 1. **CORS** - Valida origin, methods, headers permitidos
 2. **LoggingMiddleware** - Loga request (method, url, ip, user-agent, timestamp)
 3. **GeneralApiLimiter** - 100 req/min por IP (keyGenerator: IP)
-4. **MetricsMiddleware** - Coleta latência, status code, métricas Prometheus
-5. **Roteamento** - `/sessions` → SessionController.create
+4. **Roteamento** - `/sessions` → SessionController.create
 
 ## Observações Importantes
 

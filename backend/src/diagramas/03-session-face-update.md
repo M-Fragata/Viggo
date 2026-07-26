@@ -10,7 +10,6 @@ sequenceDiagram
     participant CORS as CORS Middleware
     participant Logger as LoggingMiddleware
     participant RateLimit as GeneralApiLimiter
-    participant Metrics as MetricsMiddleware
     participant SessionRoute as Session Routes
     participant SessionCtrl as SessionController.update
     participant Prisma as Prisma Client
@@ -23,8 +22,6 @@ sequenceDiagram
     Logger-->>Express: Next
     Express->>RateLimit: 100 req/min por IP
     RateLimit-->>Express: OK
-    Express->>Metrics: Coleta métricas
-    Metrics-->>Express: Next
     Express->>SessionRoute: Roteamento
     SessionRoute->>SessionCtrl: Chama controller.update(req, res)
 
@@ -76,8 +73,7 @@ sequenceDiagram
 1. **CORS**
 2. **LoggingMiddleware**
 3. **GeneralApiLimiter** - 100 req/min por IP
-4. **MetricsMiddleware**
-5. **Roteamento** → SessionController.update
+4. **Roteamento** → SessionController.update
 
 ## Observações Importantes
 
