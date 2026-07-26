@@ -144,7 +144,13 @@ export function PoliticaPrivacidade() {
           </section>
         </article>
 
-        <footer className="mt-8 pt-6 border-t border-slate-200 text-center">
+        <footer className="mt-8 pt-6 border-t border-slate-200 text-center space-y-3">
+          <p className="text-sm text-slate-500">
+            Encarregado de Proteção de Dados (DPO):{" "}
+            <a href={`mailto:${EMAIL_DPO}`} className="text-emerald-600 hover:text-emerald-700 font-medium">
+              {EMAIL_DPO}
+            </a>
+          </p>
           <Link to="/company/signup" className="text-emerald-600 hover:text-emerald-700 font-medium">
             &larr; Voltar ao cadastro
           </Link>

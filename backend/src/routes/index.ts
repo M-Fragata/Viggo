@@ -9,6 +9,7 @@ import { authRoutes } from "./authRoutes.js";
 import { consentRoutes } from "./consentRoutes.js";
 import { privacyRoutes } from "./privacyRoutes.js";
 import { justificativaRoutes } from "./justificativaRoutes.js";
+import { workScheduleRoutes } from "./workScheduleRoutes.js";
 
 const routes = Router();
 
@@ -21,5 +22,6 @@ routes.use("/master", masterRoutes);
 routes.use("/consentimentos", consentRoutes);
 routes.use("/privacy", privacyRoutes);
 routes.use("/justificativas", justificativaRoutes);
+routes.use("/work-schedules", workScheduleRoutes);
 
 export { routes }

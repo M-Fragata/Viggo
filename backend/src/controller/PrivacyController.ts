@@ -1,6 +1,7 @@
 import { type Request, type Response } from "express";
 import { extendedPrisma } from "../database/prisma-extensions.js";
 import { Prisma } from "@prisma/client";
+import { decryptAndFormat } from "../utils/cpfEncryption.js";
 
 export class PrivacyController {
   /**
@@ -65,7 +66,7 @@ export class PrivacyController {
           id: user.id,
           nome: user.name,
           email: user.email,
-          cpf: user.cpf,
+          cpf: user.cpf ? decryptAndFormat(user.cpf) : null,
           cargo: user.role,
           dataCadastro: user.createdAt,
           ultimoLogin: user.lastLoginAt,

@@ -24,6 +24,7 @@ model Company {
   subscriptions   Subscription[]
   invites         InviteToken[]
   justificativas  Justificativa[]
+  workSchedules   WorkSchedule[]
 }
 
 model User {
@@ -35,6 +36,7 @@ model User {
   cpf               String?            @unique
   faceDescriptor    Json?
   companyId         String
+  workScheduleId    String?
   status            UserStatus         @default(ACTIVE)
   deactivatedAt     DateTime?
   lastLoginAt       DateTime?
@@ -42,6 +44,7 @@ model User {
   updatedAt         DateTime           @updatedAt
   checkIns          CheckIn[]
   company           Company            @relation(fields: [companyId], references: [id])
+  workSchedule      WorkSchedule?      @relation(fields: [workScheduleId], references: [id])
   inviteTokenUsages InviteTokenUsage[]
   consentimentos    Consentimento[]
   justificativas    Justificativa[]
@@ -164,6 +167,30 @@ enum CheckInType {
   LUNCH_START
   LUNCH_END
   EXIT
+}
+
+model WorkSchedule {
+  id          String   @id @default(uuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id])
+  name        String
+
+  entryTime   Int      // minutos desde meia-noite (480 = 08:00)
+  lunchStart  Int      // 720 = 12:00
+  lunchEnd    Int      // 780 = 13:00
+  exitTime    Int      // 1020 = 17:00
+
+  daysOfWeek  Int      @default(31) // bitmask: Seg=1, Ter=2, Qua=4, Qui=8, Sex=16, Sab=32, Dom=64
+
+  checkinToleranceMinutes Int @default(5)
+  lunchToleranceMinutes   Int @default(15)
+
+  users       User[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([companyId, name])
+  @@index([companyId])
 }
 
 model Consentimento {

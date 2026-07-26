@@ -10,6 +10,7 @@ import { addDays } from 'date-fns';
 import { FormattName } from "../../utils/formattName.js"
 
 import { Env } from "../../utils/environment.js"
+import { encryptCpf, decryptCpf, formatCpfDigits } from "../../utils/cpfEncryption.js"
 
 export class CompanyController {
 
@@ -55,7 +56,8 @@ export class CompanyController {
         return res.status(400).json({ message: 'Email já cadastrado' });
       }
 
-      const existingCpf = await prisma.user.findUnique({ where: { cpf: cpfValidation.formatted } });
+      const encryptedCpf = encryptCpf(cpfValidation.formatted);
+      const existingCpf = await prisma.user.findUnique({ where: { cpf: encryptedCpf } });
       if (existingCpf) {
         return res.status(400).json({ message: 'CPF já cadastrado' });
       }
@@ -91,7 +93,7 @@ export class CompanyController {
           name: nameUser,
           email,
           password: passwordHash,
-          cpf: cpfValidation.formatted,
+          cpf: encryptedCpf,
           role: 'ENTERPRISE_ADMIN',
           companyId: company.id,
         },

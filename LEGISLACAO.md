@@ -67,7 +67,7 @@ A análise identificou **26 lacunas legais** distribuídas entre as três normas
 
 ### Atualizações — 23/07/2026
 
-Foram implementados 8 findings (Sprint 1) + 9 tarefas (Sprint 2) + 4 gaps frontend (Sprint 3):
+Foram implementados 8 findings (Sprint 1) + 9 tarefas (Sprint 2) + 8 tarefas (Sprint 3):
 
 #### Sprint 1 — Fundação Legal (Backend) — 11/11 ✅
 | Finding | Descrição | Status |
@@ -92,14 +92,17 @@ Foram implementados 8 findings (Sprint 1) + 9 tarefas (Sprint 2) + 4 gaps fronte
 | **F13** | Template DPA (`docs/contrato-tratamento-dados.md`) + aceite no cadastro empresa | ✅ Implementado |
 | **F24** | `AuditLog` enriquecido — colunas `legalBasis`, `purpose`, `personalDataCategories` + mapeamento automático no `AuditMiddleware` | ✅ Implementado |
 
-#### Sprint 3 — Gaps Frontend — 4/6 ✅
+#### Sprint 3 — Gaps Frontend + Documentos — 8/11 ✅
 | Tarefa | Descrição | Status |
 |--------|-----------|--------|
+| **T24** | Plano de Resposta a Incidentes — `docs/PLANO_RESPOSTA_INCIDENTES.md` (template ANPD 72h) | ✅ Implementado |
+| **T25** | Relatório de Impacto à Proteção de Dados — `docs/RELATORIO_IMPACTO_PRIVACIDADE.md` (RIP) | ✅ Implementado |
+| **T26** | DPO — e-mail `dpo@viggo.com.br` no rodapé da Política de Privacidade | ✅ Implementado |
 | **T27** | Portal LGPD do Funcionário (`/meus-dados`) — `MeusDadosPage.tsx` consumindo `/privacy/*` + `/consentimentos` | ✅ Implementado |
 | **T28** | Tela de Justificativas — `JustificativasPage.tsx` adaptativa employee/admin (criar + listar/aprovar) | ✅ Implementado |
 | **T29** | Botão "Exportar AFD" no Dashboard admin — `DashboardPage.tsx` | ✅ Implementado |
 | **T30** | Dashboard de Consentimentos — integrado na seção "Consentimentos" do Portal LGPD (T27) | ⚠️ Parcial |
-| **T31** | Lista de Funcionários — `GET /employees` + tela admin | ❌ Pendente |
+| **T31** | Lista de Funcionários — aba "Funcionários" no Dashboard com `api.employees.list()`, seletor de data, biometria e checkins | ✅ Implementado |
 
 Migrations aplicadas: `f4_cnpj_obrigatorio`, `f3f17_nsr_anual`, `f18_employer_cnpj_snapshot`, `f9f10_consentimento`, `f19_user_status`.
 Backend build: ✅ passando. Frontend build: ✅ passando.
@@ -1068,7 +1071,7 @@ Apresentar o DPA no fluxo de cadastro da empresa e solicitar assinatura digital.
 > [...] a ocorrência de incidente de segurança que possa acarretar
 > risco ou dano relevante aos titulares, no prazo de 72 horas."
 
-**Status:** NÃO IMPLEMENTADO
+**Status:** ✅ IMPLEMENTADO (24/07/2026) — `backend/docs/PLANO_RESPOSTA_INCIDENTES.md` (T24)
 
 **Solução proposta:**
 
@@ -1306,7 +1309,7 @@ export async function backupAllAFDs() {
 > **Art. 50 da LGPD:** "O controlador deverá manter relatório de impacto
 > à privacidade (RIP) (...)" e indicadores de conformidade periódicos."
 
-**Status:** NÃO IMPLEMENTADO
+**Status:** ✅ IMPLEMENTADO (24/07/2026) — `backend/docs/RELATORIO_IMPACTO_PRIVACIDADE.md` (T25)
 
 **Impacto:** Sem relatório periódico, não há evidência de boas práticas.
 Em fiscalização ANPD, ausência de RIP = agravante.
@@ -1330,7 +1333,7 @@ Em fiscalização ANPD, ausência de RIP = agravante.
 > (DPO - Data Protection Officer) pelo tratamento de dados pessoais,
 > com obrigação de comunicação com a ANPD e titulares."
 
-**Status:** NÃO IMPLEMENTADO
+**Status:** ✅ IMPLEMENTADO (24/07/2026) — e-mail `dpo@viggo.com.br` no rodapé da Política de Privacidade (T26)
 
 **Impacto:** Ausência de DPO impede comunicação formal com a ANPD em
 caso de incidente (Art. 48), e geraSKTOP no Termo de Uso ao titular.
@@ -1589,7 +1592,7 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 | 2 | **Tela de Justificativas** — Funcionário cria justificativa (ABONO, FALTA, ATESTADO, GERAL) + Admin vê lista e aprova/rejeita | `POST /justificativas`, `GET /justificativas`, `PUT /justificativas/:id/aprovar` | 🔴 Alta | ✅ Implementado (T28) |
 | 3 | **Exportar AFD no Dashboard** — Botão "Exportar AFD" (Anexo II Portaria 671) com seletor de período | `GET /checkins/export/afd` | 🟡 Média | ✅ Implementado (T29) |
 | 4 | **Dashboard de Consentimentos** — Funcionário vê histórico de consentimentos aceitos (Termos, Política, Biometria, DPA) | `GET /consentimentos` | 🟡 Média | ✅ Parcial — integrado na seção "Consentimentos" do Portal LGPD (T27) |
-| 5 | **Lista de Funcionários** — Admin vê e gerencia funcionários da empresa | `GET /employees` | 🟡 Média | ❌ Sem frontend (T31) |
+| 5 | **Lista de Funcionários** — Admin vê e gerencia funcionários da empresa | `GET /employees` | 🟡 Média | ✅ Implementado (T31) — aba "Funcionários" no Dashboard com seletor de data, biometria e checkins |
 
 #### Notas Técnicas
 
@@ -1697,7 +1700,7 @@ justificativa: {
 |--------|---------|------|---------|--------------|
 | T21 | **F7** | Flag `regimePonto` no settings + lógica no controller para regime de exceção | Médio | T17 |
 | T22 | **F8** | `toleranceCalculator.ts` integrado ao `CheckinController` | Baixo | Nenhuma |
-| T23 | **F12** | Criptografia de CPF no banco (`utils/encryption.ts` + migration) | Médio | Nenhuma |
+| T23 | **F12** | Criptografia de CPF no banco (`utils/cpfEncryption.ts` — AES-256-CBC determinístico) | Médio | Nenhuma |
 | T24 | **F14** | `docs/PLANO_RESPOSTA_INCIDENTES.md` (template ANPD 72h) | Baixo | Nenhuma |
 | T25 | **F22** | `docs/RELATORIO_IMPACTO_PRIVACIDADE.md` (RIP) | Baixo | Nenhuma |
 | T26 | **F23** | Nomear DPO + incluir contato no rodapé da Política de Privacidade | Baixo | T06 |
@@ -1707,9 +1710,13 @@ justificativa: {
 | T30 | **Gap FE** | Dashboard de Consentimentos — visualizar consentimentos aceitos | Baixo | Nenhuma |
 | T31 | **Gap FE** | Lista de Funcionários — `GET /employees` + tela admin | Médio | Nenhuma |
 
-> **Progresso Sprint 3:** T21 ❌ T22 ❌ T23 ❌ T24 ❌ T25 ❌ T26 ❌ T27 ✅ T28 ✅ T29 ✅ T30 ⚠️ T31 ❌
+> **Progresso Sprint 3:** T21 ❌ T22 ✅ T23 ✅ T24 ✅ T25 ✅ T26 ✅ T27 ✅ T28 ✅ T29 ✅ T30 ⚠️ T31 ✅
+> T24 (Plano de Resposta a Incidentes — `PLANO_RESPOSTA_INCIDENTES.md`), T25 (Relatório de Impacto — `RELATORIO_IMPACTO_PRIVACIDADE.md`), T26 (DPO no rodapé da Política de Privacidade) implementados.
 > T27 (Portal LGPD — `MeusDadosPage.tsx` consumindo `/privacy/*` + `/consentimentos`), T28 (Tela de Justificativas — `JustificativasPage.tsx` adaptativa employee/admin) e T29 (botão "Exportar AFD" no Dashboard) implementados.
 > T30 parcialmente coberto: seção "Consentimentos" integrada ao Portal LGPD (T27).
+> T31 implementado: aba "Funcionários" no Dashboard reescrita para consumir `GET /employees` com seletor de data, status biométrico e checkins do dia.
+> T22 implementado: `WorkSchedule` model + `toleranceCalculator.ts` + CRUD (`WorkScheduleController`) + aba "Horários" no Dashboard + tolerância integrada ao `CheckinController`.
+> T23 implementado: CPF criptografado com AES-256-CBC determinístico (`cpfEncryption.ts`) — mesmo CPF = mesmo ciphertext = @unique funciona. Env var `CPF_ENCRYPTION_KEY` (hex 64 chars).
 
 **Entregáveis Sprint 3:**
 - Suporte a ponto por exceção (settings + lógica)

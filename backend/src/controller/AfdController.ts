@@ -1,6 +1,7 @@
 import { type Request, type Response } from "express";
 import { z } from "zod";
 import { extendedPrisma } from "../database/prisma-extensions.js";
+import { decryptCpf } from "../utils/cpfEncryption.js";
 
 /**
  * AFD - Arquivo Fonte de Dados
@@ -102,7 +103,7 @@ export class AfdController {
             // --- Detalhe (Registros Tipo 2) ---
             // Formato: tipo|cnpjEmpregador|cpfEmpregado|nsr|dataHora|codigo
             for (const checkin of checkins) {
-                const cpf = checkin.user?.cpf?.replace(/\D/g, "") ?? "";
+                const cpf = decryptCpf(checkin.user?.cpf ?? "").replace(/\D/g, "");
                 const dataHora = formatDateAfd(checkin.createdAt);
                 const codigo = mapCheckinTypeToAfdCode(checkin.type);
                 const nsrFmt = String(checkin.nsr).padStart(6, "0");

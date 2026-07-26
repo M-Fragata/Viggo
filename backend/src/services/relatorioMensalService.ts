@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { extendedPrisma } from "../database/prisma-extensions.js";
 import { startOfMonth, endOfMonth, format, eachDayOfInterval, isSameDay } from "date-fns";
+import { decryptCpf } from "../utils/cpfEncryption.js";
 
 interface RelatorioResult {
   csv: string;
@@ -72,7 +73,7 @@ export async function gerarRelatorioMensal(
 
   // Uma página por funcionário
   for (const emp of employees) {
-    const empCpf = emp.cpf?.replace(/\D/g, "") ?? "";
+    const empCpf = decryptCpf(emp.cpf ?? "").replace(/\D/g, "");
     lines.push(`FUNCIONARIO: ${emp.name} | CPF: ${empCpf}`);
     lines.push("Dia|Sem|Entrada|Saida Intervalo|Retorno Intervalo|Saida|Observacao");
 

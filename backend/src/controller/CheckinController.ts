@@ -2,8 +2,10 @@ import { type Request, type Response } from "express";
 import { z } from "zod"
 import { extendedPrisma } from "../database/prisma-extensions.js";
 import { getNextNSR, currentYear, NsrLimitExceededError } from "../utils/nsrGenerator.js";
+import { decryptCpf, formatCpfDigits } from "../utils/cpfEncryption.js"
 import { gerarComprovante } from "../utils/comprovanteGenerator.js";
 import { gerarRelatorioMensal } from "../services/relatorioMensalService.js";
+import { aplicarTolerancia, minutosParaDate, tipoParaHorarioPrevisto, tipoParaTolerancia, isDiaUtil } from "../utils/toleranceCalculator.js";
 
 import { parseISO, startOfDay, endOfDay, startOfMonth, endOfMonth } from "date-fns"
 
@@ -60,6 +62,27 @@ export class CheckinController {
                 return res.status(404).json({ message: "Empresa não encontrada" });
             }
 
+            // F8/F16/T22: Aplicar tolerância CLT Art. 74 §2º
+            // Se o funcionário possui horário atribuído e hoje é dia útil,
+            // compara o horário real com o previsto e ajusta se dentro da tolerância.
+            let effectiveCreatedAt = new Date();
+            const userWithSchedule = await extendedPrisma.user.findUnique({
+                where: { id: userId },
+                include: { workSchedule: true },
+            });
+
+            if (userWithSchedule?.workSchedule && isDiaUtil(userWithSchedule.workSchedule.daysOfWeek, today)) {
+                const schedule = userWithSchedule.workSchedule;
+                const minutosPrevistos = tipoParaHorarioPrevisto(type, schedule);
+
+                if (minutosPrevistos !== null) {
+                    const horarioPrevisto = minutosParaDate(minutosPrevistos, today);
+                    const tolerancia = tipoParaTolerancia(type, schedule);
+                    const resultado = aplicarTolerancia(today, horarioPrevisto, tolerancia);
+                    effectiveCreatedAt = resultado.horarioEfetivo;
+                }
+            }
+
             // Gerar NSR e criar CheckIn em transacao para garantir atomicidade.
             // Usamos extendedPrisma.$transaction para que o `tx` herde a extensao
             // multi-tenant (injecao automatica de companyId via AsyncLocalStorage).
@@ -78,6 +101,7 @@ export class CheckinController {
                         userId,
                         companyId,
                         employerCnpj: company.cnpj,
+                        createdAt: effectiveCreatedAt,
                     }
                 });
             });
@@ -87,7 +111,7 @@ export class CheckinController {
                 companyName: company.name,
                 companyCnpj: company.cnpj,
                 employeeName: user.name,
-                employeeCpf: user.cpf ?? "",
+                employeeCpf: formatCpfDigits(decryptCpf(user.cpf ?? "")),
                 checkinType: type,
                 checkinDate: checkin.createdAt,
                 latitude,

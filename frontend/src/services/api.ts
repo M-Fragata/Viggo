@@ -104,6 +104,8 @@ export const api = {
   },
 
   employees: {
+    list: (date?: string) =>
+      fetchApi<EmployeeListItem[]>(`/employees${date ? `?date=${date}` : ""}`),
     issueFaceToken: () => fetchApi<FaceTokenResponse>("/employees/face/token"),
     updateFaceDescriptor: (userId: string, descriptor: number[]) =>
       fetchApi<User>(`/sessions/${userId}`, {
@@ -204,6 +206,34 @@ export const api = {
       fetchApi<JustificativaResponse>(`/justificativas/${id}/aprovar`, {
         method: "PUT",
         body: JSON.stringify({ aprovado }),
+      }),
+  },
+
+  workSchedules: {
+    list: () =>
+      fetchApi<WorkScheduleResponse[]>("/work-schedules"),
+
+    create: (body: WorkScheduleCreateBody) =>
+      fetchApi<WorkScheduleResponse>("/work-schedules", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+
+    update: (id: string, body: Partial<WorkScheduleCreateBody>) =>
+      fetchApi<WorkScheduleResponse>(`/work-schedules/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(body),
+      }),
+
+    remove: (id: string) =>
+      fetchApi<void>(`/work-schedules/${id}`, {
+        method: "DELETE",
+      }),
+
+    assignToEmployee: (employeeId: string, workScheduleId: string | null) =>
+      fetchApi<{ id: string; name: string; workScheduleId: string | null }>("/work-schedules/assign", {
+        method: "POST",
+        body: JSON.stringify({ employeeId, workScheduleId }),
       }),
   },
 };
@@ -472,6 +502,24 @@ export interface CompanyCheckinEmployee {
   }[];
 }
 
+export interface EmployeeListItem {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  companyId: string;
+  faceDescriptor: Record<string, number> | null;
+  createdAt: string;
+  updatedAt: string;
+  checkins: {
+    id: string;
+    createdAt: string;
+    type: "ENTRY" | "LUNCH_START" | "LUNCH_END" | "EXIT";
+    latitude: number;
+    longitude: number;
+  }[];
+}
+
 export type UserRole = "MASTER" | "ENTERPRISE_ADMIN" | "EMPLOYEE";
 export type PlanTier = "TIER_I" | "TIER_II" | "TIER_III" | "ENTERPRISE_CUSTOM";
 export type CompanyStatus = "TRIAL" | "ACTIVE" | "SUSPENDED" | "CANCELLED";
@@ -541,6 +589,33 @@ export interface JustificativaResponse {
   comprovante: string | null;
   aprovado: boolean | null;
   aprovadoPor: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WorkScheduleCreateBody {
+  name: string;
+  entryTime: number;
+  lunchStart: number;
+  lunchEnd: number;
+  exitTime: number;
+  daysOfWeek?: number;
+  checkinToleranceMinutes?: number;
+  lunchToleranceMinutes?: number;
+}
+
+export interface WorkScheduleResponse {
+  id: string;
+  companyId: string;
+  name: string;
+  entryTime: number;
+  lunchStart: number;
+  lunchEnd: number;
+  exitTime: number;
+  daysOfWeek: number;
+  checkinToleranceMinutes: number;
+  lunchToleranceMinutes: number;
+  _count: { users: number };
   createdAt: string;
   updatedAt: string;
 }
