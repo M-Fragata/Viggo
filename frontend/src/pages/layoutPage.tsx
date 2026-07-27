@@ -57,7 +57,7 @@ export function LayoutPage() {
                 {/* MENU DROPDOWN */}
                 <div className={`flex justify-center text-center
                      overflow-hidden transition-all duration-300 ease-in-out
-                    ${isMenuOpen ? "max-h-60 opacity-100 border-t border-emerald-600 mt-4" : "max-h-0 opacity-0 pointer-events-none"}
+                    ${isMenuOpen ? "max-h-80 opacity-100 border-t border-emerald-600 mt-4" : "max-h-0 opacity-0 pointer-events-none"}
                 `}>
                     <nav className="flex flex-col gap-4 py-4 w-full">
                         <Link
