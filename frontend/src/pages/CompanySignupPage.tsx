@@ -113,8 +113,8 @@ export function CompanySignupPage() {
 
   return (
     <div className="flex items-center justify-center w-dvw h-dvh px-2 py-2 my-4 md:my-0">
-      <div className="flex flex-col md:flex-row w-full max-w-5xl rounded-l-2xl shadow-2xl min-h-[500px] md:h-[700px] ">
-        <section className="flex flex-col items-center justify-center bg-emerald-400 w-full md:w-1/2 h-1/3 md:h-full p-8 transition-all duration-500 md:rounded-l-2xl md:rounded-t-none rounded-t-2xl">
+      <div className="flex flex-col md:flex-row w-full max-w-5xl rounded-l-2xl shadow-2xl h-full md:h-[700px]">
+        <section className="flex flex-col items-center justify-center bg-emerald-400 w-full md:w-1/2 h-24 md:h-full p-4 md:p-8 transition-all duration-500 md:rounded-l-2xl md:rounded-t-none rounded-t-2xl">
           <div className="flex flex-col items-center gap-4 animate-in fade-in slide-in-from-left duration-700 rounded-2xl">
             <span className="text-4xl font-bold text-white">Viggo</span>
             <p className="text-white/90 text-center">
@@ -123,7 +123,7 @@ export function CompanySignupPage() {
           </div>
         </section>
 
-        <main className="flex-1 flex flex-col items-center p-8 md:p-16 border-emerald-400 border-2 md:rounded-r-2xl md:rounded-b-none rounded-b-2xl overflow-y-auto">
+        <main className="flex-1 min-h-0 flex flex-col items-center p-6 md:p-16 border-emerald-400 border-2 md:rounded-r-2xl md:rounded-b-none rounded-b-2xl overflow-y-auto">
           <div className="w-full space-y-8 animate-in fade-in slide-in-from-right duration-700">
             <header className="text-center md:text-left">
               <h1 className="text-3xl font-black text-slate-800 tracking-tight">
