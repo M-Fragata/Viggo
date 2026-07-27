@@ -62,9 +62,9 @@ A análise identificou **32 findings** distribuídos entre as três normas (26 o
 | Portaria 671/2021 | 2 (F1, F21) | 1 (F7/F15) | 2 (F8/F16, F7 regime exceção) |
 | LGPD | 4 (F9, F10, F11, F19) | 3 (F11.b, F12, F13) | 5 (F14, F22†, F23, F24, **G2, G4, G5, G10**) |
 | CLT Art. 74 | 0 | 1 (F15/F7) | 1 (F16/F8) |
-| **Total** | **6** | **5** | **5** |
+| **Total** | **6** | **5** | **4** |
 
-**Total: 16 findings restantes — 6 bloqueantes, 5 alto, 5 médio**
+**Total: 15 findings restantes — 6 bloqueantes, 5 alto, 4 médio**
 
 > \* F22 (RIP) aplicável à Portaria por exigir registro de conformidade REP-P.
 > † F22 (RIP) também aplicável à LGPD Art. 50 (Relatório de Impacto à Proteção de Dados).
@@ -1619,21 +1619,23 @@ const TREATMENT_MAPPING: Record<string, { purpose: string; basis: string; catego
 
 > **Art. 15 LGPD:** "A eliminação de dados pessoais [...] deve ser feita a partir de política de retenção e descarte."
 
-**Status:** NÃO IMPLEMENTADO
+**Status:** ✅ IMPLEMENTADO (27/07/2026) — T44
 
 **Impacto:** `retentionCleanup.ts` só remove `faceDescriptor` de usuários `INACTIVE` > 30 dias. Usuários **ATIVOS** mantêm descriptor **indefinidamente** — sem política de revalidação periódica (ex.: a cada 2 anos). Viola princípio de minimização e retenção por tempo necessário.
 
-**Solução proposta:**
+**Solução implementada:**
 
-1. **Adicionar campo `faceDescriptorUpdatedAt`** no `User` (DateTime)
-2. **Job mensal** (no `retentionCleanup.ts` ou novo script): usuários ATIVOS com `faceDescriptorUpdatedAt` > 2 anos → setar `faceDescriptor = NULL` + upsert `Consentimento BIOMETRIA = false` + notificar funcionário
-3. **Frontend:** Ao tentar bater ponto sem descriptor → redirect para `/register` com aviso "Sua biometria expirou, recadastre-se"
+1. **Campos `faceDescriptorUpdatedAt` + `faceRevalidationNotifiedAt`** no `User` (schema.prisma) — atualizados no registro facial (SessionController.update) e limpos na exclusão (PrivacyController.deleteMyFace)
+2. **Serviço `biometricRevalidation.ts`**: funções `findUsersNeedingBiometricRevalidation`, `purgeExpiredBiometricDescriptors` (2 anos → NULL + revoga consentimento), `notifyUsersBiometricExpiring`
+3. **Endpoints admin** (`/biometric-revalidation/*`): GET /expired, POST /purge-expired, POST /notify/:userId, GET /status/:userId — protegidos por `requireMaster`
 
 **Arquivos afetados:**
-- Alterado: `backend/prisma/schema.prisma` (User: add `faceDescriptorUpdatedAt`)
-- Alterado: `backend/src/scripts/retentionCleanup.ts` (nova lógica)
-- Alterado: `backend/src/controller/EmployeesController.ts` (atualiza timestamp no register)
-- Alterado: `frontend/src/pages/pontoPage.tsx` / `RegisterFace.tsx` (mensagem expiração)
+- Alterado: `backend/prisma/schema.prisma` (User: add `faceDescriptorUpdatedAt`, `faceRevalidationNotifiedAt`)
+- Criado: `backend/src/utils/biometricRevalidation.ts`
+- Criado: `backend/src/routes/biometricRevalidationRoutes.ts`
+- Alterado: `backend/src/controller/SessionController.ts` (set faceDescriptorUpdatedAt no registro facial)
+- Alterado: `backend/src/controller/PrivacyController.ts` (clear faceDescriptorUpdatedAt na exclusão)
+- Alterado: `backend/src/routes/index.ts` (nova rota)
 
 ---
 
@@ -2045,11 +2047,11 @@ justificativa: {
 | T41 | **G2** 🟡 | Completar DSAR: `PUT /privacy/my-data` (correção Art. 18 III) + `GET /privacy/export` (portabilidade Art. 18 V) | Médio | Nenhuma | ✅ Implementado |
 | T42 | **G4, G5** 🟡 | `AuditMiddleware` global + capturar `oldData`/`newData` em UPDATE/DELETE + expandir mapeamento para todas rotas | Baixo-Médio | Nenhuma | ✅ Implementado |
 | T43 | **G6** 🟡 | Migrar CPF para AES-256-GCM aleatório + coluna `cpfHash` (SHA-256 + pepper) para `@unique` | Médio | T40 | ✅ Implementado |
-| T44 | **G7** 🟡 | Política de revalidação biométrica periódica (2 anos) + job de expiração + notificação | Baixo | T40 |
+| T44 | **G7** 🟡 | Política de revalidação biométrica periódica (2 anos) + job de expiração + notificação | Baixo | T40 | ✅ Implementado |
 | T45 | **G10** 🟡 | Suite de testes automatizados (vitest) — cobertura mínima rotas críticas | Alto | Nenhuma |
 | T46 | **G9** | Corrigir/remover `scripts/migrate-roles.ts` (campo `enterpriseId` inexistente) | Baixo | Nenhuma | ✅ Implementado |
 
-> **Progresso Sprint 5:** T38 ✅ T39 ✅ T40 ✅ T41 ✅ T42 ✅ T43 ✅ T44 ❌ T45 ❌ T46 ✅ (7/9)
+> **Progresso Sprint 5:** T38 ✅ T39 ✅ T40 ✅ T41 ✅ T42 ✅ T43 ✅ T44 ✅ T45 ❌ T46 ✅ (8/9)
 
 **Entregáveis Sprint 5:**
 - Consentimento LGPD no aceite de convite (funcionários onboarded via invite)

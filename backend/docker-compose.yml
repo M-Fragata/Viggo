@@ -4,6 +4,7 @@ services:
   postgres:
     image: postgres:15-alpine
     container_name: viggo-postgres
+    user: "999:999"
     ports:
       - "5433:5432" 
     environment:

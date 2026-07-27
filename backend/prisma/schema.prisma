@@ -28,27 +28,29 @@ model Company {
 }
 
 model User {
-  id                String             @id @default(uuid())
-  name              String
-  email             String             @unique
-  password          String
-  role              UserRole           @default(EMPLOYEE)
-  cpf               String?            @unique
-  cpfHash           String?            @unique
-  faceDescriptor    Json?
-  companyId         String
-  workScheduleId    String?
-  status            UserStatus         @default(ACTIVE)
-  deactivatedAt     DateTime?
-  lastLoginAt       DateTime?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  checkIns          CheckIn[]
-  company           Company            @relation(fields: [companyId], references: [id])
-  workSchedule      WorkSchedule?      @relation(fields: [workScheduleId], references: [id])
-  inviteTokenUsages InviteTokenUsage[]
-  consentimentos    Consentimento[]
-  justificativas    Justificativa[]
+  id                        String             @id @default(uuid())
+  name                      String
+  email                     String             @unique
+  password                  String
+  role                      UserRole           @default(EMPLOYEE)
+  cpf                       String?            @unique
+  cpfHash                   String?            @unique
+  faceDescriptor            Json?
+  faceDescriptorUpdatedAt   DateTime?
+  faceRevalidationNotifiedAt DateTime?
+  companyId                 String
+  workScheduleId            String?
+  status                    UserStatus         @default(ACTIVE)
+  deactivatedAt             DateTime?
+  lastLoginAt               DateTime?
+  createdAt                 DateTime           @default(now())
+  updatedAt                 DateTime           @updatedAt
+  checkIns                  CheckIn[]
+  company                   Company            @relation(fields: [companyId], references: [id])
+  workSchedule              WorkSchedule?      @relation(fields: [workScheduleId], references: [id])
+  inviteTokenUsages         InviteTokenUsage[]
+  consentimentos            Consentimento[]
+  justificativas            Justificativa[]
 }
 
 model CheckIn {

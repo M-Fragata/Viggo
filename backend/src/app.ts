@@ -15,7 +15,8 @@ const app = express();
 app.use(cors({
   origin: Env.FRONTEND_URL,
   methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"]
+  allowedHeaders: ["Content-Type", "Authorization"],
+  maxAge: 86400,
 }))
 
 app.use(helmet({
@@ -30,6 +31,9 @@ app.use(helmet({
       scriptSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:"],
+      frameAncestors: ["'none'"],
+      formAction: ["'self'"],
+      baseUri: ["'self'"],
     },
   },
 }));

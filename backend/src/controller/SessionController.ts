@@ -15,7 +15,7 @@ export class SessionController {
 
         const bodySchema = z.object({
             email: z.email(),
-            password: z.string().min(6, "A senha deve conter no mínimo 6 caracteres"),
+            password: z.string().min(8, "A senha deve conter no mínimo 8 caracteres"),
         })
 
         try {
@@ -106,7 +106,9 @@ export class SessionController {
                     id: userId
                 },
                 data: {
-                    faceDescriptor: encryptFaceDescriptor(faceDescriptor)
+                    faceDescriptor: encryptFaceDescriptor(faceDescriptor),
+                    faceDescriptorUpdatedAt: new Date(),
+                    faceRevalidationNotifiedAt: null,
                 }
             })
 

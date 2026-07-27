@@ -277,7 +277,11 @@ export class PrivacyController {
 
       await extendedPrisma.user.update({
         where: { id: userId },
-        data: { faceDescriptor: Prisma.DbNull },
+        data: { 
+          faceDescriptor: Prisma.DbNull,
+          faceDescriptorUpdatedAt: null,
+          faceRevalidationNotifiedAt: null,
+        },
       });
 
       await extendedPrisma.consentimento.upsert({
