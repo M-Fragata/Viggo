@@ -144,14 +144,14 @@ export function AcceptInvitePage() {
 
   return (
     <div className="flex items-center justify-center w-dvw h-dvh px-2 py-2">
-      <div className="flex flex-col md:flex-row w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden min-h-[500px] md:h-[600px]">
+      <div className="flex flex-col md:flex-row w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden h-full md:h-[600px]">
         {/* LADO ESQUERDO: Info da empresa */}
-        <section className="flex flex-col items-center justify-center bg-emerald-400 w-full md:w-1/2 h-1/3 md:h-full p-8 transition-all duration-500 md:rounded-l-2xl md:rounded-t-none rounded-t-2xl">
+        <section className="flex flex-col items-center justify-center bg-emerald-400 w-full md:w-1/2 h-24 md:h-full p-4 md:p-8 transition-all duration-500 md:rounded-l-2xl md:rounded-t-none rounded-t-2xl">
           <img src={logo} alt="Viggo Logo" className="w-32 md:w-56 h-auto drop-shadow-xl rounded-2xl" />
         </section>
 
         {/* LADO DIREITO: Form de cadastro */}
-        <main className="flex-1 flex flex-col items-center justify-center p-8 md:p-16 border-emerald-400 border-2 md:rounded-r-2xl md:rounded-b-none rounded-b-2xl">
+        <main className="flex-1 min-h-0 flex flex-col items-center p-6 md:p-16 border-emerald-400 border-2 md:rounded-r-2xl md:rounded-b-none rounded-b-2xl overflow-y-auto">
           <div className="w-full space-y-8 animate-in fade-in slide-in-from-right duration-700">
             <header className="text-center md:text-left">
               <h1 className="text-3xl font-black text-slate-800 tracking-tight">
