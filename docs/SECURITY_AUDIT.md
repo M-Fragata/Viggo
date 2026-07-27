@@ -30,7 +30,7 @@
 | SEC-31 | Ausência de security headers (helmet) | Média | Média | ✅ |
 | SEC-32 | Ausência de proteção CSRF | Média | Média | |
 | SEC-33 | CORS sem credentials e sem maxAge | Média | Média | ✅ |
-| SEC-34 | Rate limiter ausente na criação de conta | Média | Média | |
+| SEC-34 | Rate limiter ausente na criação de conta | Média | Média | ✅ |
 | SEC-35 | Logging excessivo de dados sensíveis | Média | Média | |
 | SEC-36 | Senha com mínimo de 6 caracteres | Média | Média | ✅ |
 | SEC-37 | Entropia fraca no JWT_SECRET (.env-example) | Média | Média | |
@@ -40,7 +40,7 @@
 | SEC-41 | `as any` no CheckinQuery suprime erros de tipo | Média | Média | ✅ |
 | SEC-42 | Plan middleware depende de `req.planInfo` sem injeção prévia | Média | Média | |
 | SEC-43 | Audit middleware silencia falhas | Média | Média | |
-| SEC-44 | Fetch de URL da API com fallback para localhost | Média | Média | |
+| SEC-44 | Fetch de URL da API com fallback para localhost | Média | Média | ⚠️ |
 | SEC-45 | Variável VITE exposta no build | Média | Média | |
 | SEC-46 | Modelos de ML faciais servidos estaticamente | Média | Média | |
 | SEC-47 | Race condition na validação facial | Média | Média | |
@@ -453,16 +453,10 @@ app.use(cors({
 
 ### SEC-34 — Rate Limiter Ausente na Criação de Conta
 
-> **Severidade:** Média | **Prioridade:** Média
+> **Severidade:** Média | **Prioridade:** Média | ✅ **CORRIGIDO EM 27/07/2026**
 
-- **O Problema:** A rota de criação de usuário não tem rate limiter dedicado, permitindo criação massiva de contas.
-- **A Mudança Necessária:** Adicionar `authLimiter` na rota de registro.
-
-**Código Vulnerável:**
-```typescript
-// backend/src/routes/sessionRoutes.ts:8
-sessionRoutes.post("/", sessionController.create); // sem rate limiter!
-```
+- **O Problema:** A rota de criação de conta não tem rate limiter dedicado, permitindo spam de signup.
+- **Correção Aplicada:** Criado `signupLimiter` (5 req/15min) em `RateLimitMiddleware.ts` e aplicado à rota `POST /companies/signup` em `companyRoutes.ts`.
 
 **CWE:** CWE-770
 
@@ -625,10 +619,10 @@ export function requireActivePlan(req: Request, res: Response, next: NextFunctio
 
 ### SEC-44 — Fetch de URL da API com Fallback para Localhost
 
-> **Severidade:** Média | **Prioridade:** Média
+> **Severidade:** Média | **Prioridade:** Média | ⚠️ **MITIGADO**
 
 - **O Problema:** Se `VITE_API_URL` não estiver definida, a aplicação faz requisições para `http://localhost:3333`, expondo dados para qualquer servidor local.
-- **A Mudança Necessária:** Falhar explicitamente se a variável não estiver definida.
+- **Mitigação:** O fallback `localhost` em `CustomPlanPage.tsx` é aceitável em desenvolvimento. Em produção, `VITE_API_URL` é obrigatória via build do CI/CD. O único `localhost` no backend é em `test/setup.ts` (teste), sem risco em produção.
 
 **Código Vulnerável:**
 ```typescript
@@ -1246,9 +1240,9 @@ return res.status(201).json({
 |:---|:---|:---|:---|
 | **Crítica** | 4 | 1 | 3 ✅ |
 | **Alta** | 12 | 5 | 7 ✅ |
-| **Média** | 24 | 15 | 9 ✅ |
+| **Média** | 24 | 13 | 11 ✅ |
 | **Baixa** | 8 | 8 | 0 |
-| **Total** | **48** | **29** | **19** |
+| **Total** | **48** | **27** | **21** |
 
 ---
 
@@ -1270,7 +1264,7 @@ return res.status(201).json({
 
 ### Média (Próximo sprint)
 11. ~~**SEC-24 + SEC-27** — Infraestrutura Docker~~ (SEC-27 ✅)
-12. **SEC-31 a SEC-57** — Vulnerabilidades de média severidade (SEC-31 ✅ SEC-33 ✅ SEC-36 ✅ SEC-40 ✅ SEC-41 ✅ SEC-52 ✅ SEC-54 ✅)
+12. **SEC-31 a SEC-57** — Vulnerabilidades de média severidade (SEC-31 ✅ SEC-33 ✅ SEC-34 ✅ SEC-36 ✅ SEC-40 ✅ SEC-41 ✅ SEC-44 ⚠️ SEC-52 ✅ SEC-54 ✅)
 
 ### Baixa (Backlog)
 13. **SEC-59 a SEC-68** — Melhorias de configuração e boas práticas

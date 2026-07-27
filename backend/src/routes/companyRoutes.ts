@@ -3,12 +3,13 @@ import { CompanyController } from '../controller/company/CompanyController.js';
 import { authMiddleware } from '../middleware/AuthMiddleware.js';
 import { requireEnterpriseAdmin } from '../middleware/RoleGuard.js';
 import { planMiddleware, requireEmployeeLimit } from '../middleware/PlanMiddleware.js';
+import { signupLimiter } from '../middleware/RateLimitMiddleware.js';
 
 const companyRoutes = Router();
 const companyController = new CompanyController();
 
 // Public routes
-companyRoutes.post('/signup', companyController.signup);
+companyRoutes.post('/signup', signupLimiter, companyController.signup);
 companyRoutes.get('/invites/:token', companyController.getInviteByToken);
 companyRoutes.post('/invites/accept', companyController.acceptInvite);
 

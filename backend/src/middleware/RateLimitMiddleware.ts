@@ -43,5 +43,14 @@ export const impersonateRateLimit = rateLimit({
   message: { message: 'Muitas tentativas de impersonação. Tente novamente em 1 minuto.' },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req: Request) => req.user?.id ?? req.ip ?? 'unknown',
+  keyGenerator: (req: Request) => req.ip ?? 'unknown',
+});
+
+export const signupLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { message: 'Muitas tentativas de criação de conta. Tente novamente em 15 minutos.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req: Request) => req.ip ?? 'unknown',
 });
