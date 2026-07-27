@@ -8,7 +8,7 @@ import { ImpersonationBanner } from "../components/master/ImpersonationBanner";
 
 export function LayoutPage() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const { name, logout, isImpersonated } = useAuth();
+    const { name, logout, isImpersonated, isEnterpriseAdmin, isMaster } = useAuth();
 
     const closeMenu = () => setIsMenuOpen(false);
 
@@ -88,13 +88,15 @@ export function LayoutPage() {
                         >
                             Justificativas
                         </Link>
-                        <Link
-                            to="/"
-                            onClick={closeMenu}
-                            className="text-emerald-600 hover:bg-emerald-600 hover:text-white rounded-xl font-medium px-2 py-1 transition-colors"
-                        >
-                            Painel Admin
-                        </Link>
+                        {(isEnterpriseAdmin || isMaster) && (
+                            <Link
+                                to="/"
+                                onClick={closeMenu}
+                                className="text-emerald-600 hover:bg-emerald-600 hover:text-white rounded-xl font-medium px-2 py-1 transition-colors"
+                            >
+                                Painel Admin
+                            </Link>
+                        )}
                         <button
                             onClick={logout}
                             className="flex justify-center items-center gap-2 text-red-500 font-medium px-2 py-1 hover:text-red-600 transition-colors cursor-pointer border-t border-gray-100 mt-2 pt-4"
