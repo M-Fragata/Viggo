@@ -40,10 +40,10 @@ export function UsageProgressBar({ current, limit, label, showPercentage = true,
   return (
     <div className="w-full space-y-1.5">
       {label && (
-        <div className="flex justify-between items-center">
+        <div className="flex gap-2 items-center">
           <span className={`font-medium ${textSizeClasses[size]} text-slate-700`}>{label}</span>
           <span className={`font-mono font-semibold ${textSizeClasses[size]} text-slate-600`}>
-            {isUnlimited ? `∞` : `${current} / ${limit}`}
+            {isUnlimited ? `∞` : `${current}/${limit}`}
             {showPercentage && !isUnlimited && ` (${percentage}%)`}
           </span>
         </div>
