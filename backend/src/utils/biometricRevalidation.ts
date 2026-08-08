@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { extendedPrisma } from "../database/prisma-extensions.js";
+import { prisma } from "../database/prisma.js";
 
 const BIOMETRIC_REVALIDATION_MONTHS = 24;
 
@@ -33,7 +34,7 @@ export async function purgeExpiredBiometricDescriptors(): Promise<{
 
   for (const user of users) {
     try {
-      await extendedPrisma.$transaction(async (tx) => {
+      await prisma.$transaction(async (tx) => {
         await tx.user.update({
           where: { id: user.id },
           data: {

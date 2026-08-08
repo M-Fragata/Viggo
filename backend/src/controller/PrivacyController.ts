@@ -1,5 +1,6 @@
 import { type Request, type Response } from "express";
 import { extendedPrisma } from "../database/prisma-extensions.js";
+import { prisma } from "../database/prisma.js";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { decryptAndFormat } from "../utils/cpfEncryption.js";
@@ -52,7 +53,7 @@ export class PrivacyController {
         take: 100,
       });
 
-      const consentimentos = await extendedPrisma.consentimento.findMany({
+      const consentimentos = await prisma.consentimento.findMany({
         where: { userId },
         select: {
           tipo: true,
@@ -190,7 +191,7 @@ export class PrivacyController {
         orderBy: { createdAt: "asc" },
       });
 
-      const consentimentos = await extendedPrisma.consentimento.findMany({
+      const consentimentos = await prisma.consentimento.findMany({
         where: { userId },
         select: {
           tipo: true,
@@ -284,7 +285,7 @@ export class PrivacyController {
         },
       });
 
-      await extendedPrisma.consentimento.upsert({
+      await prisma.consentimento.upsert({
         where: {
           userId_tipo_versao: {
             userId,

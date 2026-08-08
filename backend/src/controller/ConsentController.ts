@@ -1,5 +1,5 @@
 import { type Request, type Response } from "express";
-import { extendedPrisma } from "../database/prisma-extensions.js";
+import { prisma } from "../database/prisma.js";
 import { z } from "zod";
 
 export class ConsentController {
@@ -18,7 +18,7 @@ export class ConsentController {
       const { tipo, versao, aceite } = bodySchema.parse(req.body);
       const userId = req.user.id;
 
-      const consentimento = await extendedPrisma.consentimento.upsert({
+      const consentimento = await prisma.consentimento.upsert({
         where: {
           userId_tipo_versao: { userId, tipo, versao },
         },
@@ -54,7 +54,7 @@ export class ConsentController {
     try {
       const userId = req.user.id;
 
-      const consentimentos = await extendedPrisma.consentimento.findMany({
+      const consentimentos = await prisma.consentimento.findMany({
         where: { userId },
         orderBy: { createdAt: "desc" },
         select: {
