@@ -448,7 +448,8 @@ function consentUrl(tipo: string): string | null {
   const urls: Record<string, string> = {
     TERMOS_DE_USO: "/termos-de-uso",
     POLITICA_PRIVACIDADE: "/politica-privacidade",
-    DPA: "/docs/contrato-tratamento-dados.md",
+    BIOMETRIA: "/consentimento-biometria",
+    DPA: "/contrato-de-tratamento-de-dados",
   };
   return urls[tipo] ?? null;
 }

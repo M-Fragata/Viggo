@@ -304,8 +304,11 @@ export function CompanySignupPage() {
                     className="mt-1 h-4 w-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500"
                   />
                   <label htmlFor="aceiteBiometria" className="text-sm text-slate-600 leading-relaxed">
-                    Autorizo expressamente o uso da minha <strong>biometria facial</strong> (
-                    vetor matemático de 128 dimensões ) exclusivamente para validação
+                    Autorizo expressamente o uso da minha{" "}
+                    <a href="/consentimento-biometria" target="_blank" rel="noopener noreferrer" className="text-emerald-600 underline hover:text-emerald-700">
+                      biometria facial
+                    </a>{" "}
+                    (vetor matemático de 128 dimensões) exclusivamente para validação
                     de identidade no registro de ponto eletrônico, conforme Art. 11
                     da Lei Geral de Proteção de Dados (Lei nº 13.709/2018).
                   </label>
@@ -324,7 +327,7 @@ export function CompanySignupPage() {
                   />
                   <label htmlFor="aceiteDpa" className="text-sm text-slate-600 leading-relaxed">
                     Li e aceito o{" "}
-                    <a href="/docs/contrato-tratamento-dados.md" target="_blank" rel="noopener noreferrer" className="text-emerald-600 underline hover:text-emerald-700">
+                    <a href="/contrato-de-tratamento-de-dados" target="_blank" rel="noopener noreferrer" className="text-emerald-600 underline hover:text-emerald-700">
                       Contrato de Tratamento de Dados Pessoais (DPA)
                     </a>
                     , autorizando o Viggo a tratar os dados dos meus funcionários exclusivamente

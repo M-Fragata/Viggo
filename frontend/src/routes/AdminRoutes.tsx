@@ -12,6 +12,8 @@ import { NotFoundPage } from "../pages/NotFoundPage";
 const LandingPage = lazy(() => import("../pages/LandingPage").then((m) => ({ default: m.LandingPage })));
 const TermosDeUso = lazy(() => import("../pages/TermosDeUso").then((m) => ({ default: m.TermosDeUso })));
 const PoliticaPrivacidade = lazy(() => import("../pages/PoliticaPrivacidade").then((m) => ({ default: m.PoliticaPrivacidade })));
+const ConsentimentoBiometria = lazy(() => import("../pages/ConsentimentoBiometria").then((m) => ({ default: m.ConsentimentoBiometria })));
+const ContratoTratamentoDados = lazy(() => import("../pages/ContratoTratamentoDados").then((m) => ({ default: m.ContratoTratamentoDados })));
 
 export function AdminRoutes() {
   const { user } = useAuth();
@@ -24,6 +26,8 @@ export function AdminRoutes() {
       <Route path="/page" element={<LandingPage />} />
       <Route path="/termos-de-uso" element={<TermosDeUso />} />
       <Route path="/politica-privacidade" element={<PoliticaPrivacidade />} />
+      <Route path="/consentimento-biometria" element={<ConsentimentoBiometria />} />
+      <Route path="/contrato-de-tratamento-de-dados" element={<ContratoTratamentoDados />} />
       <Route path="/" element={<LayoutPage />}>
         <Route index element={<DashboardPage />} />
         <Route path="ponto" element={<PontoPage />} />

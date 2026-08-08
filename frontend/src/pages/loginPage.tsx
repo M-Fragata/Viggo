@@ -98,12 +98,6 @@ export function LoginPage() {
                   disabled={isDisabled}
                   className="w-full bg-emerald-400 hover:bg-emerald-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-emerald-200 transition-all active:scale-[0.98] disabled:bg-slate-200 disabled:shadow-none uppercase tracking-widest text-xs cursor-pointer"
                 />
-                <Link
-                  to="/accept-invite"
-                  className="text-center text-slate-600 hover:text-emerald-500 text-sm transition-colors"
-                >
-                  Recebeu um convite? Aceite aqui
-                </Link>
               </div>
             </form>
           </div>
