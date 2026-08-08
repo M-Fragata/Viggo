@@ -1,6 +1,8 @@
 import { Link } from "react-router";
-import { TypewriterText } from "../components/TypewriterText";
+import TextType from "../components/TextType";
 import { PricingSection } from "../components/PricingSection";
+import GradientWaves from "../components/GradientWaves";
+import SpecularButton from "../components/SpecularButton";
 import { useScrollReveal } from "../hooks/useScrollReveal";
 import { TRIAL_DAYS } from "../../../shared/plans";
 
@@ -49,19 +51,31 @@ export function LandingPage() {
   useScrollReveal();
 
   return (
-    <div className="min-h-screen bg-canvas">
-      <header className="border-b border-hairline">
+    <div className="min-h-screen bg-black">
+      <header className="pt-1">
         <nav className="mx-auto max-w-7xl px-8" aria-label="Global">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center">
               <img src={logo} alt="Viggo Logo" className="w-25 md:w-32 h-auto drop-shadow-xl rounded-2xl" />
             </div>
-            <div className="hidden md:flex md:items-center md:gap-8">
-              <Link
-                to="/company/signup"
-                className="rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-on-primary hover:bg-charcoal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors"
-              >
-                Criar conta grátis
+            <div className="md:flex md:items-center md:gap-8">
+              <Link to="/company/signup">
+                <SpecularButton
+                  size="md"
+                  radius={24}
+                  textColor="#ffffff"
+                  lineColor="#009966"
+                  baseColor="#ffffff"
+                  intensity={1.2}
+                  shineSize={12}
+                  shineFade={35}
+                  thickness={1.5}
+                  speed={0.4}
+                  followMouse={true}
+                  proximity={200}
+                >
+                  Criar conta grátis
+                </SpecularButton>
               </Link>
             </div>
           </div>
@@ -69,29 +83,44 @@ export function LandingPage() {
       </header>
 
       <main>
-        <section className="relative py-24 lg:py-30 bg-gradient-to-br from-hero-dark-from via-hero-dark-from to-hero-dark-to overflow-hidden">
-          <div className="mx-auto max-w-7xl px-8 relative z-10">
-            <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
-              <div className="hidden lg:flex justify-center lg:w-2/5">
-                <picture className="parallax-slow">
-                  <img
-                    src="/viggo front.png"
-                    alt="Viggo - Controle de ponto com reconhecimento facial"
-                    className="h-auto max-w-[360px] w-full object-cover rounded-lg border border-hairline-dark shadow-[0_24px_48px_-8px_rgba(0,0,0,0.12)] reveal-scale"
-                    loading="eager"
-                    fetchPriority="high"
-                  />
-                </picture>
-              </div>
-              <div className="text-center lg:text-left lg:w-3/5 max-w-2xl flex flex-col justify-center gap-5 reveal">
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-on-dark leading-[1.1]">
+        {/* Hero section */}
+        <section className="relative h-screen overflow-hidden">
+          <div className="absolute inset-0 z-0">
+            <GradientWaves
+              horizonColor="#00D4A4"
+              waveColor="#00D4A4"
+              crestColor="#000000"
+              speed={0.4}
+              amplitude={2.5}
+              waveScale={0.6}
+              waveRatio={0.9}
+              swell={35}
+              turbulence={20}
+              tilt={1.11}
+              zoom={1}
+              height={10}
+              fogDepth={15}
+              detail="medium"
+              brightness={1.1}
+              opacity={1}
+              mouseInteraction={false}
+              parallaxStrength={0.4}
+              grain={true}
+              grainIntensity={0.05}
+              className="absolute inset-0"
+            />
+          </div>
+          <div className="max-w-7xl mx-auto px-8 relative z-10 h-full flex items-center justify-center">
+            <div className="flex flex-col items-center gap-12">
+              <div className="text-center max-w-3xl flex flex-col items-center gap-5 reveal">
+                <h1 className="text-5xl sm:text-6xl lg:text-7xl font-semibold tracking-tight text-on-dark leading-[1.1]">
                   Controle de ponto com{" "}<br />
                   <span className="text-brand-green">
-                    <TypewriterText
-                      words={HERO_WORDS}
+                    <TextType
+                      text={HERO_WORDS}
                       className="text-brand-green"
-                      typeSpeed={80}
-                      deleteSpeed={40}
+                      typingSpeed={80}
+                      deletingSpeed={40}
                       pauseDuration={2000}
                       cursorClassName="text-brand-green-deep"
                     />
@@ -101,7 +130,7 @@ export function LandingPage() {
                   Elimine fraudes, ganhe agilidade e tenha total conformidade legal.
                   Setup em minutos, sem hardware extra.
                 </p>
-                <div className="mt-10 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+                <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
                   <Link
                     to="/company/signup"
                     className="rounded-full bg-brand-green px-8 py-3.5 text-sm font-medium text-primary hover:bg-brand-green-deep focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-green transition-colors"
@@ -117,22 +146,11 @@ export function LandingPage() {
                 </div>
               </div>
             </div>
-
-            <div className="lg:hidden mt-12 mb-12 w-[300px] mx-auto">
-              <picture>
-                <img
-                  src="/viggo front.png"
-                  alt="Viggo - Controle de ponto com reconhecimento facial"
-                  className="w-full h-auto object-cover rounded-lg border border-hairline-dark shadow-[0_24px_48px_-8px_rgba(0,0,0,0.12)]"
-                  loading="eager"
-                  fetchPriority="high"
-                />
-              </picture>
-            </div>
           </div>
         </section>
 
-        <section className="bg-surface py-24">
+        {/* User features section */}
+        <section className="bg-surface max-h-screen py-24">
           <div className="mx-auto max-w-7xl px-8">
             <div className="text-center mb-16 reveal">
               <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-ink leading-[1.2]">
@@ -143,16 +161,8 @@ export function LandingPage() {
               </p>
             </div>
 
-            <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
-              <div className="w-full lg:w-2/5 reveal-left">
-                <img
-                  src="/celular na mao.webp"
-                  alt="Viggo no celular - Registro de ponto com verificação facial"
-                  className="w-full h-auto rounded-lg border border-hairline-dark shadow-[0_4px_12px_rgba(0,0,0,0.08)] object-cover"
-                  loading="lazy"
-                />
-              </div>
-              <div className="w-full lg:w-3/5 reveal-right">
+            <div className="flex flex-col items-center gap-12 lg:gap-16">
+              <div className="w-full max-w-2xl reveal-right">
                 <span className="inline-block rounded-full bg-brand-green/15 px-3 py-1 text-sm font-medium text-brand-green">
                   Para você
                 </span>
@@ -175,10 +185,11 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section className="bg-[#1a3d4a] py-24">
+        {/* Company features section */}
+        <section className="bg-[#1a3d4a] max-h-screen py-24">
           <div className="mx-auto max-w-7xl px-8">
-            <div className="mt-24 flex flex-col-reverse lg:flex-row items-center gap-12 lg:gap-16">
-              <div className="w-full lg:w-3/5 reveal-left">
+            <div className="flex flex-col items-center gap-12 lg:gap-16">
+              <div className="w-full max-w-2xl reveal-left">
                 <span className="inline-block rounded-full bg-on-dark/10 px-3 py-1 text-sm font-medium text-on-dark-muted">
                   Para sua empresa
                 </span>
@@ -197,20 +208,14 @@ export function LandingPage() {
                   ))}
                 </ul>
               </div>
-              <div className="w-full lg:w-2/5 reveal-right">
-                <img
-                  src="/viggo front.png"
-                  alt="Viggo - Painel administrativo para gestão de ponto"
-                  className="w-full h-auto rounded-lg border border-hairline-dark shadow-[0_4px_12px_rgba(0,0,0,0.08)] object-cover"
-                  loading="lazy"
-                />
-              </div>
             </div>
           </div>
         </section>
 
+        {/* Pricing section */}
         <PricingSection />
 
+        {/* CTA section */}
         <section className="py-24 bg-canvas-dark">
           <div className="mx-auto max-w-7xl px-8 text-center reveal">
             <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-on-dark leading-[1.2]">
