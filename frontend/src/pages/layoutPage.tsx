@@ -112,7 +112,7 @@ export function LayoutPage() {
             </header>
 
             {/* CONTEÚDO PRINCIPAL */}
-            <main className={`flex-1 flex flex-col justify-center w-full mx-auto md:p-6 overflow-y-auto pb-20 md:pb-6 ${isMenuOpen ? "z-30" : "z-40"}`}>
+            <main className={`flex-1 flex flex-col justify-start w-full mx-auto md:p-6 overflow-y-auto pb-20 md:pb-6 ${isMenuOpen ? "z-30" : "z-40"}`}>
                 <Outlet />
             </main>
 
