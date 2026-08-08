@@ -36,7 +36,7 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 overflow-hidden">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
       <header className="flex flex-col sm:flex-row justify-between items-start gap-2 sm:items-center bg-white p-4 sm:p-6 rounded-3xl border border-slate-200 shadow-sm">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-800">Painel de Controle</h1>
