@@ -38,7 +38,7 @@ export function LayoutPage() {
                         </div>
                     </div>
 
-                    <div className="flex justify-center gap-2">
+                    <div className="flex justify-center gap-2 items-center">
                         <div className="flex flex-col justify-center">
                             {name ? (
                                 <p className="text-sm sm:text-base text-gray-600">
@@ -46,9 +46,18 @@ export function LayoutPage() {
                                 </p>
                             ) : null}
                         </div>
+                        {/* LOGOUT DIRETO NO MOBILE */}
+                        <button
+                            onClick={logout}
+                            className="p-2 text-red-500 transition-all duration-300 cursor-pointer rounded-md hover:bg-red-50 md:hidden"
+                            title="Sair"
+                        >
+                            <LogOut size={24} />
+                        </button>
+                        {/* HAMBURGER SÓ NO DESKTOP */}
                         <button
                             onClick={() => setIsMenuOpen(!isMenuOpen)}
-                            className="p-2 text-emerald-600 transition-all duration-300 cursor-pointer rounded-md hover:bg-emerald-50"
+                            className="p-2 text-emerald-600 transition-all duration-300 cursor-pointer rounded-md hover:bg-emerald-50 hidden md:block"
                         >
                             {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
                         </button>
