@@ -69,7 +69,6 @@ export function AcceptInvitePage() {
         confirmPassword: data.confirmPassword,
         aceiteTermos: data.aceiteTermos,
         aceiteBiometria: data.aceiteBiometria,
-        aceiteDpa: data.aceiteDpa,
       });
       setSession(result.user, result.token, result.company.name);
       toast.success("Conta criada com sucesso!");

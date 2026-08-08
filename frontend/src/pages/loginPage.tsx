@@ -1,6 +1,6 @@
 import { useActionState } from "react";
 import { z } from "zod";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 
 import { Input } from "../components/Input";
 import { Button } from "../components/Button";

@@ -37,6 +37,14 @@ const TIPO_COLORS: Record<JustificativaTipo, string> = {
 };
 
 export function JustificativasPage() {
+  return (
+    <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6">
+      <JustificativasContent />
+    </div>
+  );
+}
+
+export function JustificativasContent() {
   const { user } = useAuth();
   const isAdmin = user?.role === "ENTERPRISE_ADMIN" || user?.role === "MASTER";
 
@@ -152,23 +160,21 @@ export function JustificativasPage() {
 
   if (error) {
     return (
-      <div className="p-4 md:p-8 max-w-4xl mx-auto">
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
-          <AlertTriangle className="mx-auto text-red-500 mb-3" size={32} />
-          <p className="text-red-700 font-medium">{error}</p>
-          <button
-            onClick={loadJustificativas}
-            className="mt-4 px-5 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors font-bold text-sm cursor-pointer"
-          >
-            Tentar novamente
-          </button>
-        </div>
+      <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
+        <AlertTriangle className="mx-auto text-red-500 mb-3" size={32} />
+        <p className="text-red-700 font-medium">{error}</p>
+        <button
+          onClick={loadJustificativas}
+          className="mt-4 px-5 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors font-bold text-sm cursor-pointer"
+        >
+          Tentar novamente
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6">
+    <>
       {/* HEADER */}
       <header className="flex flex-col gap-2 bg-white p-4 sm:p-6 rounded-3xl border border-slate-200 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -363,7 +369,7 @@ export function JustificativasPage() {
           </div>
         )}
       </section>
-    </div>
+    </>
   );
 }
 

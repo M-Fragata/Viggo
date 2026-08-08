@@ -6,11 +6,12 @@ import { PlanBadge, PlanComparisonModal, UsageProgressBar, TrialCountdown } from
 import { InvitesTab } from "../components/company";
 import { CheckinTable } from "../components/checkin/CheckinTable";
 import { EmployeeTabSkeleton } from "../components/EmployeeTabSkeleton";
-import { Users, CheckCircle, CreditCard, Mail, ArrowUpRight, Building2, ChevronDown, ChevronUp, FileText, Loader2, Download, Clock } from "lucide-react";
+import { Users, CheckCircle, CreditCard, Mail, ArrowUpRight, Building2, ChevronDown, ChevronUp, FileText, Loader2, Download, Clock, ClipboardList } from "lucide-react";
 import type { CompanyResponse, EmployeeListItem, WorkScheduleResponse } from "../services/api";
 import { api } from "../services/api";
+import { JustificativasContent } from "./JustificativasPage";
 
-const TABS = ["Funcionários", "Presentes", "Folha Mensal", "Horários", "Plano", "Convites"] as const;
+const TABS = ["Funcionários", "Presentes", "Folha Mensal", "Horários", "Plano", "Convites", "Justificativas"] as const;
 type Tab = (typeof TABS)[number];
 
 export function DashboardPage() {
@@ -69,6 +70,7 @@ export function DashboardPage() {
             {tab === "Horários" && <Clock size={18} className="shrink-0" />}
             {tab === "Plano" && <CreditCard size={18} className="shrink-0" />}
             {tab === "Convites" && <Mail size={18} className="shrink-0" />}
+            {tab === "Justificativas" && <ClipboardList size={18} className="shrink-0" />}
             <span className="truncate">{tab}</span>
           </button>
         ))}
@@ -107,6 +109,10 @@ export function DashboardPage() {
 
       {activeTab === "Convites" && (
         <InvitesTab />
+      )}
+
+      {activeTab === "Justificativas" && (
+        <JustificativasContent />
       )}
 
       <PlanComparisonModal isOpen={showPlanModal} onClose={() => setShowPlanModal(false)} currentPlan={plan!} />

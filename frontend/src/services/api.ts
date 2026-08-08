@@ -384,7 +384,6 @@ export interface AcceptInviteDto {
   confirmPassword: string;
   aceiteTermos: boolean;
   aceiteBiometria: boolean;
-  aceiteDpa: boolean;
 }
 
 export interface MasterListParams {

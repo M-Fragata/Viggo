@@ -5,6 +5,7 @@ import { LogOut, Menu, X } from "lucide-react";
 import logo from "../assets/logo.png"
 import { useAuth } from "../hooks/useAuth";
 import { ImpersonationBanner } from "../components/master/ImpersonationBanner";
+import { MobileNav } from "../components/MobileNav";
 
 export function LayoutPage() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -81,13 +82,6 @@ export function LayoutPage() {
                         >
                             Meus Dados
                         </Link>
-                        <Link
-                            to="/justificativas"
-                            onClick={closeMenu}
-                            className="text-gray-600 hover:text-emerald-600 font-medium px-2 py-1 transition-colors"
-                        >
-                            Justificativas
-                        </Link>
                         {(isEnterpriseAdmin || isMaster) && (
                             <Link
                                 to="/"
@@ -109,18 +103,21 @@ export function LayoutPage() {
             </header>
 
             {/* CONTEÚDO PRINCIPAL */}
-            <main className={`flex-1 flex flex-col justify-center w-full mx-auto md:p-6 overflow-y-auto ${isMenuOpen ? "z-30" : "z-40"}`}>
+            <main className={`flex-1 flex flex-col justify-center w-full mx-auto md:p-6 overflow-y-auto pb-20 md:pb-6 ${isMenuOpen ? "z-30" : "z-40"}`}>
                 <Outlet />
             </main>
 
             {/* FOOTER */}
-            <footer className="bg-white border-t border-gray-200 py-3 px-6 mt-auto z-30">
+            <footer className="bg-white border-t border-gray-200 py-3 px-6 mt-auto z-30 hidden md:block">
                 <div className="max-w-7xl mx-auto">
                     <p className="text-gray-500 text-sm text-center">
                         © 2026 Viggo. Todos os direitos reservados.
                     </p>
                 </div>
             </footer>
+
+            {/* MOBILE BOTTOM NAV */}
+            <MobileNav />
         </div>
     );
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { api } from "../services/api";
 import type { MyDataResponse, AuditLogEntry } from "../services/api";
 import { useAuth } from "../hooks/useAuth";
@@ -16,10 +16,12 @@ import {
   Download,
   Check,
   X,
+  ScanFace,
 } from "lucide-react";
 
 export function MeusDadosPage() {
   const { refreshUser } = useAuth();
+  const navigate = useNavigate();
   const [data, setData] = useState<MyDataResponse | null>(null);
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -247,6 +249,15 @@ export function MeusDadosPage() {
         <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-4">
           <p className="text-sm text-slate-500">{data.dadosBiometricos.observacao}</p>
         </div>
+        {!data.dadosBiometricos.possuiDescriptor && (
+          <button
+            onClick={() => navigate("/register")}
+            className="px-5 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors font-bold flex items-center gap-2 cursor-pointer text-sm mb-4"
+          >
+            <ScanFace size={18} />
+            Cadastrar Biometria
+          </button>
+        )}
         {data.dadosBiometricos.possuiDescriptor && (
           <>
             {!showDeleteConfirm ? (
