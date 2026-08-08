@@ -1,17 +1,21 @@
-import { Link } from "react-router";
+import { useNavigate } from "react-router";
 
 const VERSAO = "1.0";
 const DATA_VIGENCIA = "23 de julho de 2026";
 const EMAIL_DPO = "dpo@viggo.com.br";
 
 export function PoliticaPrivacidade() {
+  const navigate = useNavigate();
   return (
     <div className="min-h-dvh bg-slate-50 py-12 px-4">
       <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-lg p-8 md:p-12">
         <header className="mb-8 border-b border-slate-200 pb-6">
-          <Link to="/" className="text-emerald-600 hover:text-emerald-700 text-sm font-medium mb-4 inline-block">
+          <button
+            onClick={() => navigate(-1)}
+            className="text-emerald-600 hover:text-emerald-700 text-sm font-medium mb-4 inline-block cursor-pointer"
+          >
             &larr; Voltar
-          </Link>
+          </button>
           <h1 className="text-3xl font-black text-slate-800 tracking-tight">
             Política de Privacidade
           </h1>
@@ -151,9 +155,12 @@ export function PoliticaPrivacidade() {
               {EMAIL_DPO}
             </a>
           </p>
-          <Link to="/company/signup" className="text-emerald-600 hover:text-emerald-700 font-medium">
-            &larr; Voltar ao cadastro
-          </Link>
+          <button
+            onClick={() => navigate(-1)}
+            className="text-emerald-600 hover:text-emerald-700 font-medium cursor-pointer"
+          >
+            &larr; Voltar
+          </button>
         </footer>
       </div>
     </div>
