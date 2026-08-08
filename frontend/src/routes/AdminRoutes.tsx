@@ -5,6 +5,7 @@ import { DashboardPage } from "../pages/DashboardPage";
 import { PontoPage } from "../pages/pontoPage";
 import { PontoViewPage } from "../pages/pontoViewPage";
 import { RegisterFace } from "../pages/RegisterFace";
+import { MeusDadosPage } from "../pages/MeusDadosPage";
 import { useAuth } from "../hooks/useAuth";
 import { NotFoundPage } from "../pages/NotFoundPage";
 
@@ -32,6 +33,7 @@ export function AdminRoutes() {
         <Route path="ponto" element={<PontoPage />} />
         <Route path="pontos" element={<PontoViewPage />} />
         <Route path="register" element={<RegisterFace />} />
+        <Route path="meus-dados" element={<MeusDadosPage />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

@@ -4,6 +4,7 @@ import { MasterLayout } from "../components/master/MasterLayout";
 import { MasterDashboard } from "../pages/MasterDashboard";
 import { MasterCompanies } from "../pages/MasterCompanies";
 import { CompanyManagePage } from "../pages/CompanyManagePage";
+import { MeusDadosPage } from "../pages/MeusDadosPage";
 import { useAuth } from "../hooks/useAuth";
 import { NotFoundPage } from "../pages/NotFoundPage";
 
@@ -30,6 +31,7 @@ export function MasterRoutes() {
         <Route index element={<MasterDashboard />} />
         <Route path="companies" element={<MasterCompanies />} />
         <Route path="companies/:id" element={<CompanyManagePage />} />
+        <Route path="meus-dados" element={<MeusDadosPage />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
