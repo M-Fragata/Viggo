@@ -10,6 +10,8 @@ import { useAuth } from "../hooks/useAuth";
 import { NotFoundPage } from "../pages/NotFoundPage";
 
 const LandingPage = lazy(() => import("../pages/LandingPage").then((m) => ({ default: m.LandingPage })));
+const TermosDeUso = lazy(() => import("../pages/TermosDeUso").then((m) => ({ default: m.TermosDeUso })));
+const PoliticaPrivacidade = lazy(() => import("../pages/PoliticaPrivacidade").then((m) => ({ default: m.PoliticaPrivacidade })));
 
 export function AdminRoutes() {
   const { user } = useAuth();
@@ -20,6 +22,8 @@ export function AdminRoutes() {
   return (
     <Routes>
       <Route path="/page" element={<LandingPage />} />
+      <Route path="/termos-de-uso" element={<TermosDeUso />} />
+      <Route path="/politica-privacidade" element={<PoliticaPrivacidade />} />
       <Route path="/" element={<LayoutPage />}>
         <Route index element={<DashboardPage />} />
         <Route path="ponto" element={<PontoPage />} />

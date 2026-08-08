@@ -8,6 +8,8 @@ import { useAuth } from "../hooks/useAuth";
 import { NotFoundPage } from "../pages/NotFoundPage";
 
 const LandingPage = lazy(() => import("../pages/LandingPage").then((m) => ({ default: m.LandingPage })));
+const TermosDeUso = lazy(() => import("../pages/TermosDeUso").then((m) => ({ default: m.TermosDeUso })));
+const PoliticaPrivacidade = lazy(() => import("../pages/PoliticaPrivacidade").then((m) => ({ default: m.PoliticaPrivacidade })));
 
 export function MasterRoutes() {
   const { user } = useAuth();
@@ -18,6 +20,8 @@ export function MasterRoutes() {
     <Routes>
       <Route path="/" element={<Navigate to="/master" replace />} />
       <Route path="/page" element={<LandingPage />} />
+      <Route path="/termos-de-uso" element={<TermosDeUso />} />
+      <Route path="/politica-privacidade" element={<PoliticaPrivacidade />} />
       <Route path="/master" element={<MasterLayout />}>
         <Route index element={<MasterDashboard />} />
         <Route path="companies" element={<MasterCompanies />} />
