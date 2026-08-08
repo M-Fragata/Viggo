@@ -54,12 +54,12 @@ export function DashboardPage() {
         </div>
       </header>
 
-      <div className="flex flex-col sm:flex-row gap-2 bg-slate-100 p-1.5 rounded-2xl w-full overflow-x-auto">
+      <div className="flex gap-2 bg-slate-100 p-1.5 rounded-2xl w-full overflow-x-auto scrollbar-green">
         {TABS.map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm transition-all cursor-pointer whitespace-nowrap ${activeTab === tab
+            className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm transition-all cursor-pointer whitespace-nowrap shrink-0 ${activeTab === tab
               ? "bg-white text-emerald-600 shadow-sm"
               : "text-slate-500 hover:text-slate-800"
               }`}

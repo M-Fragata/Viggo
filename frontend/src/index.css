@@ -102,3 +102,21 @@
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
 }
+
+.scrollbar-green {
+    scrollbar-width: thin;
+    scrollbar-color: #10b981 transparent;
+}
+
+.scrollbar-green::-webkit-scrollbar {
+    height: 4px;
+}
+
+.scrollbar-green::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.scrollbar-green::-webkit-scrollbar-thumb {
+    background-color: #10b981;
+    border-radius: 9999px;
+}
