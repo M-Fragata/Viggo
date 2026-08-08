@@ -3,17 +3,17 @@ import { useAuth } from "../hooks/useAuth";
 import { Fingerprint, Clock, User, LayoutDashboard } from "lucide-react";
 
 const NAV_ITEMS_EMPLOYEE = [
-  { to: "/ponto", icon: Clock, label: "Ponto" },
-  { to: "/pontos", icon: Fingerprint, label: "Histórico" },
+  { to: "/ponto", icon: Fingerprint, label: "Ponto" },
+  { to: "/pontos", icon: Clock, label: "Histórico" },
   { to: "/meus-dados", icon: User, label: "Meus Dados" },
   { to: "/justificativas", icon: LayoutDashboard, label: "Justificativas" },
 ] as const;
 
 const NAV_ITEMS_ADMIN = [
-  { to: "/ponto", icon: Clock, label: "Ponto" },
-  { to: "/pontos", icon: Fingerprint, label: "Histórico" },
-  { to: "/meus-dados", icon: User, label: "Meus Dados" },
   { to: "/", icon: LayoutDashboard, label: "Painel" },
+  { to: "/meus-dados", icon: User, label: "Meus Dados" },
+  { to: "/ponto", icon: Fingerprint, label: "Ponto" },
+  { to: "/pontos", icon: Clock, label: "Histórico" },
 ] as const;
 
 export function MobileNav() {
