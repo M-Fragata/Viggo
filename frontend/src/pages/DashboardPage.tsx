@@ -36,7 +36,7 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 overflow-hidden">
       <header className="flex flex-col sm:flex-row justify-between items-start gap-2 sm:items-center bg-white p-4 sm:p-6 rounded-3xl border border-slate-200 shadow-sm">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-800">Painel de Controle</h1>
@@ -54,7 +54,7 @@ export function DashboardPage() {
         </div>
       </header>
 
-      <div className="flex gap-2 bg-slate-100 p-1.5 rounded-2xl w-full overflow-x-auto scrollbar-green">
+      <div className="flex gap-2 bg-slate-100 p-1.5 rounded-2xl min-w-0 overflow-x-auto scrollbar-green">
         {TABS.map((tab) => (
           <button
             key={tab}
