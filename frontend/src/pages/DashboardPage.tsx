@@ -3,7 +3,7 @@ import { useCompany, usePlanLimits } from "../hooks/useCompany";
 import { useAuth, useCompanyStatus } from "../hooks/useAuth";
 import { useCheckins } from "../hooks/useCheckins";
 import { PlanBadge, PlanComparisonModal, UsageProgressBar, TrialCountdown } from "../components/plan";
-import { InvitesTab } from "../components/company";
+import { InvitesTab, EmployeeScheduleModal, AssignScheduleModal } from "../components/company";
 import { CheckinTable } from "../components/checkin/CheckinTable";
 import { EmployeeTabSkeleton } from "../components/EmployeeTabSkeleton";
 import { Users, CheckCircle, CreditCard, Mail, ArrowUpRight, Building2, ChevronDown, ChevronUp, FileText, Loader2, Download, Clock, ClipboardList } from "lucide-react";
@@ -138,6 +138,8 @@ function EmployeeTab({ company, planLimit }: {
   const [employees, setEmployees] = useState<EmployeeListItem[]>([]);
   const [isLoadingEmployees, setIsLoadingEmployees] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [schedules, setSchedules] = useState<WorkScheduleResponse[]>([]);
+  const [scheduleModalEmployee, setScheduleModalEmployee] = useState<{ id: string; name: string; scheduleId: string | null } | null>(null);
 
   const fetchEmployees = useCallback(async () => {
     try {
@@ -151,9 +153,19 @@ function EmployeeTab({ company, planLimit }: {
     }
   }, [selectedDate]);
 
+  const fetchSchedules = useCallback(async () => {
+    try {
+      const data = await api.workSchedules.list();
+      setSchedules(data);
+    } catch {
+      setSchedules([]);
+    }
+  }, []);
+
   useEffect(() => {
     fetchEmployees();
-  }, [fetchEmployees]);
+    fetchSchedules();
+  }, [fetchEmployees, fetchSchedules]);
 
   return (
     <div className="space-y-6">
@@ -218,6 +230,24 @@ function EmployeeTab({ company, planLimit }: {
                             </span>
                           </div>
                           <div>
+                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Horário</span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setScheduleModalEmployee({ id: emp.id, name: emp.name, scheduleId: emp.workScheduleId });
+                              }}
+                              className="text-left cursor-pointer hover:underline"
+                            >
+                              {emp.workScheduleId ? (
+                                <span className="text-sm font-medium text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full">
+                                  {schedules.find((s) => s.id === emp.workScheduleId)?.name ?? "Horário atribuído"}
+                                </span>
+                              ) : (
+                                <span className="text-sm text-slate-400 italic">Sem horário</span>
+                              )}
+                            </button>
+                          </div>
+                          <div>
                             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Check-ins ({selectedDate})</span>
                             <span className="text-sm text-slate-600">{emp.checkins.length} registro(s)</span>
                           </div>
@@ -230,20 +260,21 @@ function EmployeeTab({ company, planLimit }: {
             </div>
 
             <div className="hidden sm:block overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[850px]">
+              <table className="w-full text-left border-collapse min-w-[950px]">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-100 text-slate-400 text-xs font-bold uppercase tracking-wider">
-                    <th className="p-4 w-[25%] min-w-[150px]">Nome</th>
-                    <th className="p-4 w-[25%] min-w-[150px]">E-mail</th>
-                    <th className="p-4 w-[12%] min-w-[100px]">Cargo</th>
-                    <th className="p-4 w-[12%] min-w-[100px]">Biometria</th>
-                    <th className="p-4 w-[12%] min-w-[100px]">Check-ins</th>
+                    <th className="p-4 w-[22%] min-w-[140px]">Nome</th>
+                    <th className="p-4 w-[22%] min-w-[140px]">E-mail</th>
+                    <th className="p-4 w-[10%] min-w-[90px]">Cargo</th>
+                    <th className="p-4 w-[10%] min-w-[90px]">Biometria</th>
+                    <th className="p-4 w-[14%] min-w-[110px]">Horário</th>
+                    <th className="p-4 w-[8%] min-w-[80px]">Check-ins</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-sm text-slate-600">
                   {employees.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="p-8 text-center text-slate-400">Nenhum funcionário cadastrado</td>
+                      <td colSpan={6} className="p-8 text-center text-slate-400">Nenhum funcionário cadastrado</td>
                     </tr>
                   ) : (
                     employees.map((emp) => (
@@ -261,6 +292,20 @@ function EmployeeTab({ company, planLimit }: {
                           </span>
                         </td>
                         <td className="p-4">
+                          <button
+                            onClick={() => setScheduleModalEmployee({ id: emp.id, name: emp.name, scheduleId: emp.workScheduleId })}
+                            className="cursor-pointer hover:underline"
+                          >
+                            {emp.workScheduleId ? (
+                              <span className="text-xs font-medium text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full">
+                                {schedules.find((s) => s.id === emp.workScheduleId)?.name ?? "Horário atribuído"}
+                              </span>
+                            ) : (
+                              <span className="text-slate-400 italic">Sem horário</span>
+                            )}
+                          </button>
+                        </td>
+                        <td className="p-4">
                           <span className="text-slate-700 font-medium">{emp.checkins.length}</span>
                         </td>
                       </tr>
@@ -272,6 +317,20 @@ function EmployeeTab({ company, planLimit }: {
           </>
         )}
       </div>
+
+      {scheduleModalEmployee && (
+        <EmployeeScheduleModal
+          employeeId={scheduleModalEmployee.id}
+          employeeName={scheduleModalEmployee.name}
+          currentScheduleId={scheduleModalEmployee.scheduleId}
+          schedules={schedules}
+          onClose={() => setScheduleModalEmployee(null)}
+          onAssigned={() => {
+            fetchEmployees();
+            fetchSchedules();
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -497,6 +556,7 @@ function WorkScheduleTab() {
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [assignModalSchedule, setAssignModalSchedule] = useState<WorkScheduleResponse | null>(null);
   const [form, setForm] = useState({
     name: "",
     entryTime: 480,
@@ -695,7 +755,13 @@ function WorkScheduleTab() {
                     {formatMinutes(s.entryTime)} – {formatMinutes(s.exitTime)} | Almoço: {formatMinutes(s.lunchStart)} – {formatMinutes(s.lunchEnd)}
                   </p>
                   <p className="text-xs text-slate-400">
-                    Dias: {formatDays(s.daysOfWeek)} | Tolerância: {s.checkinToleranceMinutes}min (ponto) / {s.lunchToleranceMinutes}min (almoço) | {s._count.users} funcionário(s)
+                    Dias: {formatDays(s.daysOfWeek)} | Tolerância: {s.checkinToleranceMinutes}min (ponto) / {s.lunchToleranceMinutes}min (almoço) |{" "}
+                    <button
+                      onClick={() => setAssignModalSchedule(s)}
+                      className="text-emerald-600 hover:text-emerald-700 font-semibold hover:underline cursor-pointer"
+                    >
+                      {s._count.users} funcionário(s)
+                    </button>
                   </p>
                 </div>
                 <div className="flex gap-2 shrink-0">
@@ -713,6 +779,16 @@ function WorkScheduleTab() {
           </div>
         )}
       </div>
+
+      {assignModalSchedule && (
+        <AssignScheduleModal
+          schedule={assignModalSchedule}
+          onClose={() => setAssignModalSchedule(null)}
+          onAssigned={() => {
+            fetchSchedules();
+          }}
+        />
+      )}
     </div>
   );
 }

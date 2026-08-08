@@ -67,6 +67,7 @@ model CheckIn {
   companyId     String
   company       Company     @relation(fields: [companyId], references: [id])
   user          User        @relation(fields: [userId], references: [id])
+  justificativas Justificativa[]
 
   @@unique([companyId, nsr, ano])
   @@index([userId, createdAt])
@@ -223,9 +224,12 @@ model Justificativa {
   comprovante String?
   aprovado    Boolean?
   aprovadoPor String?
+  checkinId   String?
+  checkin     CheckIn?  @relation(fields: [checkinId], references: [id], onDelete: SetNull)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
   @@index([userId, dataInicio])
   @@index([companyId, dataInicio])
+  @@index([checkinId])
 }

@@ -4,6 +4,7 @@ import type {
   JustificativaResponse,
   JustificativaTipo,
   JustificativaCreateBody,
+  CheckinResponse,
 } from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 import {
@@ -16,6 +17,10 @@ import {
   Clock,
   Calendar,
   Filter,
+  LogIn,
+  Utensils,
+  Coffee,
+  LogOut,
 } from "lucide-react";
 
 type JustificativaWithUser = JustificativaResponse & {
@@ -35,6 +40,36 @@ const TIPO_COLORS: Record<JustificativaTipo, string> = {
   ATESTADO: "bg-amber-100 text-amber-700",
   JUSTIFICATIVA_GERAL: "bg-slate-100 text-slate-700",
 };
+
+function getCheckinIcon(type: string) {
+  switch (type) {
+    case "ENTRY":
+      return <LogIn size={16} className="text-emerald-600" />;
+    case "LUNCH_START":
+      return <Utensils size={16} className="text-emerald-600" />;
+    case "LUNCH_END":
+      return <Coffee size={16} className="text-emerald-600" />;
+    case "EXIT":
+      return <LogOut size={16} className="text-red-500" />;
+    default:
+      return <Clock size={16} className="text-slate-600" />;
+  }
+}
+
+function getCheckinLabel(type: string): string {
+  switch (type) {
+    case "ENTRY":
+      return "Entrada";
+    case "LUNCH_START":
+      return "Início Almoço";
+    case "LUNCH_END":
+      return "Retorno Almoço";
+    case "EXIT":
+      return "Saída";
+    default:
+      return type;
+  }
+}
 
 export function JustificativasPage() {
   return (
@@ -61,12 +96,17 @@ export function JustificativasContent() {
     descricao: string;
     dataInicio: string;
     dataFim: string;
+    checkinId: string | null;
   }>({
     tipo: "JUSTIFICATIVA_GERAL",
     descricao: "",
     dataInicio: new Date().toISOString().split("T")[0],
     dataFim: "",
+    checkinId: null,
   });
+
+  const [checkinsForDate, setCheckinsForDate] = useState<CheckinResponse[]>([]);
+  const [isLoadingCheckins, setIsLoadingCheckins] = useState(false);
 
   const [actionPending, setActionPending] = useState<string | null>(null);
 
@@ -87,6 +127,48 @@ export function JustificativasContent() {
     loadJustificativas();
   }, [loadJustificativas]);
 
+  // Buscar check-ins quando a data muda
+  const fetchCheckinsForDate = useCallback(async (date: string) => {
+    if (!date) {
+      setCheckinsForDate([]);
+      return;
+    }
+    setIsLoadingCheckins(true);
+    try {
+      const data = await api.checkins.list(date);
+      setCheckinsForDate(data);
+    } catch {
+      setCheckinsForDate([]);
+    } finally {
+      setIsLoadingCheckins(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (showForm) {
+      fetchCheckinsForDate(formData.dataInicio);
+    }
+  }, [showForm, formData.dataInicio, fetchCheckinsForDate]);
+
+  function handleDateChange(date: string) {
+    setFormData((prev) => ({ ...prev, dataInicio: date, checkinId: null }));
+  }
+
+  function handleSelectCheckin(checkinId: string | null) {
+    setFormData((prev) => ({ ...prev, checkinId }));
+  }
+
+  function resetForm() {
+    setFormData({
+      tipo: "JUSTIFICATIVA_GERAL",
+      descricao: "",
+      dataInicio: new Date().toISOString().split("T")[0],
+      dataFim: "",
+      checkinId: null,
+    });
+    setCheckinsForDate([]);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setFormError(null);
@@ -104,17 +186,15 @@ export function JustificativasContent() {
     if (formData.dataFim) {
       body.dataFim = formData.dataFim;
     }
+    if (formData.checkinId) {
+      body.checkinId = formData.checkinId;
+    }
 
     setIsSubmitting(true);
     try {
       await api.justificativa.create(body);
       setShowForm(false);
-      setFormData({
-        tipo: "JUSTIFICATIVA_GERAL",
-        descricao: "",
-        dataInicio: new Date().toISOString().split("T")[0],
-        dataFim: "",
-      });
+      resetForm();
       await loadJustificativas();
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Erro ao registrar justificativa.");
@@ -236,7 +316,7 @@ export function JustificativasContent() {
                     type="date"
                     required
                     value={formData.dataInicio}
-                    onChange={(e) => setFormData({ ...formData, dataInicio: e.target.value })}
+                    onChange={(e) => handleDateChange(e.target.value)}
                     className="w-full border border-slate-300 rounded-xl p-2.5 text-sm text-slate-700 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
                   />
                 </div>
@@ -253,6 +333,107 @@ export function JustificativasContent() {
                 </div>
               </div>
             </div>
+
+            {/* Seleção de Check-in */}
+            <div>
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                Ponto a Justificar
+              </label>
+              {isLoadingCheckins ? (
+                <div className="flex items-center gap-2 p-4 bg-slate-50 rounded-xl">
+                  <Loader2 size={16} className="animate-spin text-slate-400" />
+                  <span className="text-sm text-slate-500">Carregando pontos...</span>
+                </div>
+              ) : checkinsForDate.length === 0 ? (
+                <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                  <div className="flex items-center gap-2 mb-1">
+                    <AlertTriangle size={16} className="text-amber-600" />
+                    <span className="text-sm font-medium text-amber-800">Nenhum ponto registrado neste dia</span>
+                  </div>
+                  <p className="text-xs text-amber-600">
+                    Você pode criar uma justificativa de ausência/falta para este dia.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectCheckin(null)}
+                    className={`mt-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                      formData.checkinId === null
+                        ? "bg-amber-500 text-white"
+                        : "bg-amber-100 text-amber-700 hover:bg-amber-200"
+                    }`}
+                  >
+                    Justificar ausência
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {/* Botão para justificar ausência (sem check-in específico) */}
+                  <button
+                    type="button"
+                    onClick={() => handleSelectCheckin(null)}
+                    className={`flex items-center gap-3 w-full p-3 rounded-xl border text-left transition-colors ${
+                      formData.checkinId === null
+                        ? "border-amber-400 bg-amber-50"
+                        : "border-slate-200 hover:bg-slate-50"
+                    }`}
+                  >
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                      formData.checkinId === null ? "border-amber-500" : "border-slate-300"
+                    }`}>
+                      {formData.checkinId === null && (
+                        <div className="w-2 h-2 rounded-full bg-amber-500" />
+                      )}
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-slate-700">Justificar ausência/falta</span>
+                      <span className="text-xs text-slate-400 block">Sem check-in específico</span>
+                    </div>
+                  </button>
+
+                  {/* Lista de check-ins */}
+                  {checkinsForDate.map((checkin) => {
+                    const checkinTime = new Date(checkin.createdAt).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    });
+                    const isSelected = formData.checkinId === checkin.id;
+                    const icon = getCheckinIcon(checkin.type);
+                    const label = getCheckinLabel(checkin.type);
+
+                    return (
+                      <button
+                        key={checkin.id}
+                        type="button"
+                        onClick={() => handleSelectCheckin(checkin.id)}
+                        className={`flex items-center gap-3 w-full p-3 rounded-xl border text-left transition-colors ${
+                          isSelected
+                            ? "border-emerald-500 bg-emerald-50"
+                            : "border-slate-200 hover:bg-slate-50"
+                        }`}
+                      >
+                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                          isSelected ? "border-emerald-500" : "border-slate-300"
+                        }`}>
+                          {isSelected && (
+                            <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                          )}
+                        </div>
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                          isSelected ? "bg-emerald-100" : "bg-slate-100"
+                        }`}>
+                          {icon}
+                        </div>
+                        <div className="flex-1">
+                          <span className="text-sm font-medium text-slate-700">{label}</span>
+                          <span className="text-xs text-slate-400 block">Registrado às {checkinTime}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
             <div>
               <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
                 Descrição
@@ -291,6 +472,7 @@ export function JustificativasContent() {
                 onClick={() => {
                   setShowForm(false);
                   setFormError(null);
+                  resetForm();
                 }}
                 disabled={isSubmitting}
                 className="px-5 py-2.5 bg-white text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors font-bold disabled:opacity-50 cursor-pointer text-sm"

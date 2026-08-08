@@ -520,6 +520,7 @@ export interface EmployeeListItem {
   role: UserRole;
   companyId: string;
   faceDescriptor: Record<string, number> | null;
+  workScheduleId: string | null;
   createdAt: string;
   updatedAt: string;
   checkins: {
@@ -587,6 +588,7 @@ export interface JustificativaCreateBody {
   descricao: string;
   dataInicio: string;
   dataFim?: string;
+  checkinId?: string;
 }
 
 export interface JustificativaResponse {

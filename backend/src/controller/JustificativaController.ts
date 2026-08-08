@@ -13,15 +13,26 @@ export class JustificativaController {
       descricao: z.string().min(10).max(500),
       dataInicio: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
       dataFim: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+      checkinId: z.string().uuid().optional(),
     });
 
     try {
-      const { tipo, descricao, dataInicio, dataFim } = bodySchema.parse(req.body);
+      const { tipo, descricao, dataInicio, dataFim, checkinId } = bodySchema.parse(req.body);
       const userId = req.user.id;
       const companyId = req.user.companyId;
 
       if (!companyId) {
         return res.status(403).json({ message: "Acesso negado" });
+      }
+
+      // Se informou checkinId, verificar se pertence ao usuário e à empresa
+      if (checkinId) {
+        const checkin = await extendedPrisma.checkIn.findFirst({
+          where: { id: checkinId, userId, companyId },
+        });
+        if (!checkin) {
+          return res.status(404).json({ message: "Check-in não encontrado" });
+        }
       }
 
       const justificativa = await extendedPrisma.justificativa.create({
@@ -32,6 +43,7 @@ export class JustificativaController {
           dataFim: dataFim ? new Date(dataFim) : null,
           userId,
           companyId,
+          checkinId: checkinId ?? null,
           aprovado: null,
         },
       });

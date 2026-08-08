@@ -28,7 +28,7 @@ export class EmployeesController {
             const parsedDate = parseISO(date)
 
             const employees = await extendedPrisma.user.findMany({
-                select: { id: true, name: true, email: true, role: true, companyId: true, faceDescriptor: true, createdAt: true, updatedAt: true }
+                select: { id: true, name: true, email: true, role: true, companyId: true, faceDescriptor: true, workScheduleId: true, createdAt: true, updatedAt: true }
             })
 
             const employeesData = employees.map((employee) => ({
