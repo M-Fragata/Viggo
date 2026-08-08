@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { Link } from "react-router";
 import { api } from "../services/api";
 import type { MyDataResponse, AuditLogEntry } from "../services/api";
 import { useAuth } from "../hooks/useAuth";
@@ -343,19 +344,32 @@ export function MeusDadosPage() {
           <p className="text-slate-400 text-sm text-center py-8">Nenhum consentimento registrado.</p>
         ) : (
           <div className="space-y-3">
-            {data.consentimentos.map((consent, i) => (
-              <div key={i} className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-2xl p-4">
-                <div>
-                  <p className="font-semibold text-slate-700">{consentTipoLabel(consent.tipo)}</p>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Versão {consent.versao} • Aceito em {formatDate(consent.createdAt)}
-                  </p>
+            {data.consentimentos.map((consent, i) => {
+              const url = consentUrl(consent.tipo);
+              return (
+                <div key={i} className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-2xl p-4">
+                  <div>
+                    {url ? (
+                      <Link
+                        to={url}
+                        target={url.startsWith("http") ? "_blank" : undefined}
+                        className="font-semibold text-emerald-700 hover:underline"
+                      >
+                        {consentTipoLabel(consent.tipo)}
+                      </Link>
+                    ) : (
+                      <p className="font-semibold text-slate-700">{consentTipoLabel(consent.tipo)}</p>
+                    )}
+                    <p className="text-xs text-slate-400 mt-1">
+                      Versão {consent.versao} • Aceito em {formatDate(consent.createdAt)}
+                    </p>
+                  </div>
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${consent.aceite ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
+                    {consent.aceite ? "Aceito" : "Revogado"}
+                  </span>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${consent.aceite ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
-                  {consent.aceite ? "Aceito" : "Revogado"}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
@@ -428,6 +442,15 @@ function consentTipoLabel(tipo: string): string {
     DPA: "Contrato de Tratamento de Dados (DPA)",
   };
   return labels[tipo] ?? tipo;
+}
+
+function consentUrl(tipo: string): string | null {
+  const urls: Record<string, string> = {
+    TERMOS_DE_USO: "/termos-de-uso",
+    POLITICA_PRIVACIDADE: "/politica-privacidade",
+    DPA: "/docs/contrato-tratamento-dados.md",
+  };
+  return urls[tipo] ?? null;
 }
 
 function formatDate(iso: string): string {
