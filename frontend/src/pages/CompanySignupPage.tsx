@@ -298,28 +298,6 @@ export function CompanySignupPage() {
                 <div className="flex items-start gap-3">
                   <input
                     type="checkbox"
-                    id="aceiteBiometria"
-                    name="aceiteBiometria"
-                    required
-                    className="mt-1 h-4 w-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500"
-                  />
-                  <label htmlFor="aceiteBiometria" className="text-sm text-slate-600 leading-relaxed">
-                    Autorizo expressamente o uso da minha{" "}
-                    <a href="/consentimento-biometria" target="_blank" rel="noopener noreferrer" className="text-emerald-600 underline hover:text-emerald-700">
-                      biometria facial
-                    </a>{" "}
-                    (vetor matemático de 128 dimensões) exclusivamente para validação
-                    de identidade no registro de ponto eletrônico, conforme Art. 11
-                    da Lei Geral de Proteção de Dados (Lei nº 13.709/2018).
-                  </label>
-                </div>
-                {state.fieldErrors.aceiteBiometria && (
-                  <p className="text-sm text-red-500 ml-7">{state.fieldErrors.aceiteBiometria}</p>
-                )}
-
-                <div className="flex items-start gap-3">
-                  <input
-                    type="checkbox"
                     id="aceiteDpa"
                     name="aceiteDpa"
                     required

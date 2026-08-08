@@ -11,9 +11,6 @@ export const companySignupSchema = z.object({
   aceiteTermos: z.boolean().refine((v) => v === true, {
     message: "Você precisa aceitar os Termos de Uso",
   }),
-  aceiteBiometria: z.boolean().refine((v) => v === true, {
-    message: "Você precisa autorizar o uso da biometria facial",
-  }),
   aceiteDpa: z.boolean().refine((v) => v === true, {
     message: "Você precisa aceitar o Contrato de Tratamento de Dados",
   }),

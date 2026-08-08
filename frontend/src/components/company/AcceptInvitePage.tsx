@@ -20,9 +20,6 @@ const acceptInviteSchema = z.object({
   aceiteBiometria: z.boolean().refine((v) => v === true, {
     message: "Você precisa autorizar o uso da biometria facial",
   }),
-  aceiteDpa: z.boolean().refine((v) => v === true, {
-    message: "Você precisa aceitar o Contrato de Tratamento de Dados",
-  }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Senhas não coincidem",
   path: ["confirmPassword"],
@@ -275,27 +272,6 @@ export function AcceptInvitePage() {
                 </div>
                 {errors.aceiteBiometria && (
                   <p className="text-sm text-red-500 ml-7">{errors.aceiteBiometria.message}</p>
-                )}
-
-                <div className="flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    id="aceiteDpa"
-                    {...register("aceiteDpa")}
-                    required
-                    className="mt-1 h-4 w-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500"
-                  />
-                  <label htmlFor="aceiteDpa" className="text-sm text-slate-600 leading-relaxed">
-                    Li e aceito o{" "}
-                    <a href="/contrato-de-tratamento-de-dados" target="_blank" rel="noopener noreferrer" className="text-emerald-600 underline hover:text-emerald-700">
-                      Contrato de Tratamento de Dados Pessoais (DPA)
-                    </a>
-                    , autorizando o Viggo a tratar os dados dos meus funcionários exclusivamente
-                    para fins de registro de ponto eletrônico, conforme Art. 39 da LGPD.
-                  </label>
-                </div>
-                {errors.aceiteDpa && (
-                  <p className="text-sm text-red-500 ml-7">{errors.aceiteDpa.message}</p>
                 )}
               </div>
 
