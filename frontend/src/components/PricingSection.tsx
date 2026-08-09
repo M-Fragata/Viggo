@@ -161,7 +161,7 @@ export function PricingSection() {
             className={`
               grid gap-8
               lg:grid-cols-2
-              lg:items-start
+              lg:items-stretch
               ${highlightedPlan ? "lg:pt-8" : ""}
             `}
             role="list"

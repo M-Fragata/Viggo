@@ -75,9 +75,9 @@ export function PricingCard({ plan, onCtaClick }: PricingCardProps) {
     <div
       ref={cardRef}
       className={`
-        relative rounded-lg p-8 bg-canvas flex flex-col h-full transition-all duration-300 border-1 hover:scale-101 opacity-0
+        relative rounded-lg p-8 bg-canvas flex flex-col transition-all duration-300 border hover:scale-101 opacity-0
         ${isHighlighted
-          ? "border-1 border-brand-green shadow-[0_8px_24px_rgba(0,212,164,0.08)] lg:-mt-8 z-10 hover:border-2"
+          ? " border-brand-green shadow-[0_8px_24px_rgba(0,212,164,0.08)] lg:-mt-8 z-10 hover:border-2"
           : "border-hairline hover:border-stone hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)]"
         }
       `}

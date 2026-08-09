@@ -30,17 +30,17 @@ export const DYNAMIC_PLAN: PlanData = {
   name: "Viggo",
   price: PRICING.BASE_PRICE,
   period: "/mês",
-  maxEmployees: null,
+  maxEmployees: 10,
   features: [
-    { text: "Reconhecimento facial ilimitado", included: true },
+    { text: "Até 10 funcionários incluídos", included: true },
+    { text: "+R$ 5,00 por funcionário extra", included: true },
+    { text: "Reconhecimento facial", included: true },
     { text: "Controle de localização (GPS)", included: true },
     { text: "Espelho de ponto e relatórios", included: true },
-    { text: "Convites por link/QR code", included: true },
-    { text: "Suporte por email", included: true },
-    { text: "A partir de 10 funcionários", included: true },
+    { text: "Suporte por Email e Whatsapp", included: true },
   ],
   highlighted: true,
-  ctaText: "Começar trial grátis",
+  ctaText: "Iniciar grátis",
   ctaVariant: "primary",
 };
 
@@ -51,12 +51,9 @@ export const ENTERPRISE_PLAN: PlanData = {
   period: "",
   maxEmployees: null,
   features: [
-    { text: "Funcionários ilimitados", included: true },
+    { text: "Acima de 50 funcionários", included: true },
+    { text: "Plano personalizado", included: true },
     { text: "Tudo do plano Viggo", included: true },
-    { text: "SLA garantido 99.9%", included: true },
-    { text: "Gerente de conta dedicado", included: true },
-    { text: "Integrações customizadas", included: true },
-    { text: "Suporte prioritário 24/7", included: true },
   ],
   highlighted: false,
   ctaText: CUSTOM_PLAN_CTA,
@@ -120,6 +117,6 @@ export function formatPrice(price: number | null): string {
 }
 
 export function formatMaxEmployees(max: number | null): string {
-  if (max === null) return "Funcionários ilimitados";
+  if (max === null) return "Plano personalizado";
   return `Até ${max} funcionários`;
 }
