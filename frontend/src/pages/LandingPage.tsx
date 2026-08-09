@@ -16,37 +16,6 @@ const HERO_WORDS = [
   "conformidade CLT",
 ];
 
-const USER_FEATURES = [
-  { title: "Cara, ponto.", desc: "Câmera frontal confirma que é você. Sem chance de terceiros baterem seu ponto." },
-  { title: "GPS no momento certo", desc: "Localização capturada só na hora da marcação. Sem rastreamento em background." },
-  { title: "Comprovante na hora", desc: "Cada ponto gera um recibo. Você vê, baixa, guarda." },
-  { title: "Linha do tempo", desc: "Todos os seus registros num histórico limpo. Filtra por data, exporta quando quiser." },
-  { title: "Celular é suficiente", desc: "Sem terminais, sem biometria dedicada. Seu android ou iPhone resolve." },
-];
-
-const COMPANY_FEATURES = [
-  { title: "Painel em tempo real", desc: "Veja quem bateu ponto, quem faltou, quem está atrasado — tudo atualizado ao vivo." },
-  { title: "Prova de cada ponto", desc: "Foto + GPS + horário. Ninguém contesta um registro desses." },
-  { title: "Convites em segundos", desc: "Cadastra o funcionário, ele recebe o link e cria a conta sozinho." },
-  { title: "Folha pronta", desc: "Fechamento mensal automático por funcionário. Sem planilha, sem erro." },
-  { title: "100% CLT", desc: "Regras de jornada, intervalos e banco de horas configurados. Você não advinha a lei, o sistema aplica." },
-];
-
-function CheckIcon() {
-  return (
-    <svg
-      className="mt-0.5 h-5 w-5 shrink-0 text-brand-green"
-      fill="none"
-      viewBox="0 0 24 24"
-      strokeWidth="2"
-      stroke="currentColor"
-      aria-hidden="true"
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-  );
-}
-
 export function LandingPage() {
   useScrollReveal();
 
@@ -149,66 +118,15 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* User features section */}
-        <section className="bg-surface max-h-screen py-24">
-          <div className="mx-auto max-w-7xl px-8">
-            <div className="text-center mb-16 reveal">
-              <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-ink leading-[1.2]">
-                Dois lados, uma plataforma
-              </h2>
-              <p className="mt-4 text-lg leading-relaxed text-steel max-w-2xl mx-auto">
-                Funcionário bate ponto no celular. Empresa acompanha tudo no painel. Simples assim.
-              </p>
-            </div>
-
-            <div className="flex flex-col items-center gap-12 lg:gap-16">
-              <div className="w-full max-w-2xl reveal-right">
-                <span className="inline-block rounded-full bg-brand-green/15 px-3 py-1 text-sm font-medium text-brand-green">
-                  Para você
-                </span>
-                <h3 className="mt-4 text-xl font-semibold text-ink leading-[1.3]">
-                  Ponto direto do celular
-                </h3>
-                <ul className="mt-6 space-y-4 reveal-stagger">
-                  {USER_FEATURES.map((feature, i) => (
-                    <li key={i} className="flex items-start gap-3">
-                      <CheckIcon />
-                      <div className="text-base leading-relaxed">
-                        <span className="font-medium text-ink">{feature.title}</span>
-                        <span className="text-steel"> — {feature.desc}</span>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
+        {/* Employee perspective section */}
+        <section className="h-screen bg-surface overflow-hidden">
+          <div className="mx-auto max-w-7xl px-8 h-full flex items-center justify-center">
           </div>
         </section>
 
-        {/* Company features section */}
-        <section className="bg-[#1a3d4a] max-h-screen py-24">
-          <div className="mx-auto max-w-7xl px-8">
-            <div className="flex flex-col items-center gap-12 lg:gap-16">
-              <div className="w-full max-w-2xl reveal-left">
-                <span className="inline-block rounded-full bg-on-dark/10 px-3 py-1 text-sm font-medium text-on-dark-muted">
-                  Para sua empresa
-                </span>
-                <h3 className="mt-4 text-xl font-semibold text-on-dark leading-[1.3]">
-                  Gestão de ponto sem dor de cabeça
-                </h3>
-                <ul className="mt-6 space-y-4 reveal-stagger">
-                  {COMPANY_FEATURES.map((feature, i) => (
-                    <li key={i} className="flex items-start gap-3">
-                      <CheckIcon />
-                      <div className="text-base leading-relaxed">
-                        <span className="font-medium text-on-dark">{feature.title}</span>
-                        <span className="text-on-dark-muted"> — {feature.desc}</span>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
+        {/* Employer perspective section */}
+        <section className="h-screen bg-[#1a3d4a] overflow-hidden">
+          <div className="mx-auto max-w-7xl px-8 h-full flex items-center justify-center">
           </div>
         </section>
 
