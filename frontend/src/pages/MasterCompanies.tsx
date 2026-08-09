@@ -88,9 +88,7 @@ export function MasterCompanies() {
               className="px-4 py-2.5 border border-slate-200 rounded-xl focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 outline-none transition-colors bg-white"
             >
               <option value="">Todos os planos</option>
-              <option value="TIER_I">Tier I</option>
-              <option value="TIER_II">Tier II</option>
-              <option value="TIER_III">Tier III</option>
+              <option value="DYNAMIC">Viggo</option>
               <option value="ENTERPRISE_CUSTOM">Enterprise</option>
             </select>
           </div>
@@ -137,6 +135,14 @@ export function MasterCompanies() {
                         </span>
                       </div>
                     </div>
+                    {company.pricing && (
+                      <div>
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Preço Mensal</span>
+                        <span className="text-sm font-bold text-emerald-600">
+                          R$ {company.pricing.total.toFixed(2)}/mês
+                        </span>
+                      </div>
+                    )}
                     <div>
                       <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Funcionários</span>
                       <div className="flex items-center gap-2">
@@ -177,13 +183,14 @@ export function MasterCompanies() {
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100 text-slate-400 text-xs font-bold uppercase tracking-wider">
                 <th className="p-4 w-12"></th>
-                <th className="p-4 w-[25%] min-w-[180px]">Empresa</th>
-                <th className="p-4 w-[15%] min-w-[130px]">CNPJ</th>
-                <th className="p-4 w-[10%] min-w-[90px]">Plano</th>
-                <th className="p-4 w-[12%] min-w-[100px]">Status</th>
-                <th className="p-4 w-[15%] min-w-[120px]">Funcionários</th>
-                <th className="p-4 w-[15%] min-w-[120px]">Validade</th>
-                <th className="p-4 w-[10%] min-w-[100px] text-right">Ações</th>
+                <th className="p-4 w-[22%] min-w-[160px]">Empresa</th>
+                <th className="p-4 w-[13%] min-w-[110px]">CNPJ</th>
+                <th className="p-4 w-[8%] min-w-[80px]">Plano</th>
+                <th className="p-4 w-[10%] min-w-[90px]">Status</th>
+                <th className="p-4 w-[12%] min-w-[100px]">Funcionários</th>
+                <th className="p-4 w-[10%] min-w-[80px]">Preço</th>
+                <th className="p-4 w-[12%] min-w-[100px]">Validade</th>
+                <th className="p-4 w-[8%] min-w-[80px] text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-sm text-slate-600">
@@ -218,6 +225,15 @@ export function MasterCompanies() {
                           <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${company.employeeUsagePercent}%` }} />
                         </div>
                       </div>
+                    </td>
+                    <td className="p-4">
+                      {company.pricing ? (
+                        <span className="text-sm font-bold text-emerald-600">
+                          R$ {company.pricing.total.toFixed(2)}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-slate-400">—</span>
+                      )}
                     </td>
                     <td className="p-4">
                       <TrialCountdown planExpiresAt={company.planExpiresAt} status={company.status} size="sm" />

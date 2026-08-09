@@ -6,6 +6,8 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { validateDocument } from '../../utils/cpfCnpjValidator.js';
 import { getPlanLimits, TRIAL_DAYS, PlanTier, CompanyStatus } from '../../utils/planLimits.js';
+import { calculateDynamicPrice } from '../../utils/pricingCalculator.js';
+import * as asaasService from '../../services/asaasService.js';
 import { addDays } from 'date-fns';
 import { FormattName } from "../../utils/formattName.js"
 
@@ -75,7 +77,7 @@ export class CompanyController {
         data: {
           name: companyName,
           cnpj: validateDocument(cnpj).formatted,
-          plan: PlanTier.TIER_I,
+          plan: PlanTier.DYNAMIC,
           status: CompanyStatus.TRIAL,
           maxEmployees: 10,
           planExpiresAt: trialExpiresAt,
@@ -83,6 +85,21 @@ export class CompanyController {
           settings: {},
         },
       });
+
+      // Criar customer no Asaas (silencioso — não bloqueia signup)
+      try {
+        const customer = await asaasService.createCustomer({
+          name: companyName,
+          cpfCnpj: validateDocument(cnpj).formatted,
+          email,
+        });
+        await prisma.company.update({
+          where: { id: company.id },
+          data: { asaasCustomerId: customer.id },
+        });
+      } catch (asaasError) {
+        console.error('Erro ao criar customer no Asaas (signup continua):', asaasError);
+      }
 
       const nameUser = FormattName(name)
 
@@ -101,9 +118,13 @@ export class CompanyController {
       await prisma.subscription.create({
         data: {
           companyId: company.id,
-          planTier: PlanTier.TIER_I,
+          planTier: PlanTier.DYNAMIC,
           price: 0,
           status: 'TRIAL',
+          basePrice: 54.90,
+          extraEmployees: 0,
+          extraPricePerUnit: 5.00,
+          calculatedTotal: 54.90,
           startedAt: new Date(),
           expiresAt: trialExpiresAt,
         },
@@ -181,6 +202,8 @@ export class CompanyController {
           maxEmployees: true,
           settings: true,
           trialUsed: true,
+          billingType: true,
+          asaasPaymentMethod: true,
           createdAt: true,
           _count: { select: { users: true } },
         },
@@ -192,6 +215,7 @@ export class CompanyController {
 
       const limits = getPlanLimits(company.plan as PlanTier);
       const currentEmployees = company._count.users;
+      const pricing = calculateDynamicPrice(currentEmployees);
 
       return res.json({
         ...company,
@@ -199,6 +223,7 @@ export class CompanyController {
         employeeLimit: limits.maxEmployees,
         employeeUsagePercent: limits.maxEmployees ? Math.round((currentEmployees / limits.maxEmployees) * 100) : 0,
         canCreateEmployee: limits.maxEmployees === null || currentEmployees < limits.maxEmployees,
+        pricing,
       });
 
     } catch (error) {
@@ -318,6 +343,7 @@ export class CompanyController {
         },
         apiLimits: limits.api,
         plan: company.plan,
+        pricing: calculateDynamicPrice(company._count.users),
       });
 
     } catch (error) {
@@ -349,14 +375,7 @@ export class CompanyController {
         return res.status(404).json({ message: 'Empresa não encontrada' });
       }
 
-      const limits = getPlanLimits(company.plan as PlanTier);
-      if (limits.maxEmployees !== null && company._count.users >= limits.maxEmployees) {
-        return res.status(403).json({
-          message: 'Limite de funcionários atingido',
-          code: 'EMPLOYEE_LIMIT_REACHED',
-        });
-      }
-
+      // No plano dinâmico, sempre pode criar funcionários (preço ajusta automaticamente)
       const { expiresInDays, maxUses } = bodySchema.parse(req.body);
 
       const token = crypto.randomBytes(16).toString('hex');

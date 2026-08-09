@@ -1,7 +1,5 @@
 export enum PlanTier {
-  TIER_I = 'TIER_I',
-  TIER_II = 'TIER_II',
-  TIER_III = 'TIER_III',
+  DYNAMIC = 'DYNAMIC',
   ENTERPRISE_CUSTOM = 'ENTERPRISE_CUSTOM',
 }
 
@@ -29,31 +27,13 @@ export interface PlanLimits {
 }
 
 export const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
-  [PlanTier.TIER_I]: {
-    maxEmployees: 10,
-    price: 49.90,
+  [PlanTier.DYNAMIC]: {
+    maxEmployees: null,
+    price: 54.90,
     api: {
       general: 100,
       checkin: 10,
       faceValidation: 30,
-    },
-  },
-  [PlanTier.TIER_II]: {
-    maxEmployees: 50,
-    price: 149.90,
-    api: {
-      general: 300,
-      checkin: 20,
-      faceValidation: 60,
-    },
-  },
-  [PlanTier.TIER_III]: {
-    maxEmployees: 150,
-    price: 349.90,
-    api: {
-      general: 600,
-      checkin: 50,
-      faceValidation: 100,
     },
   },
   [PlanTier.ENTERPRISE_CUSTOM]: {
@@ -68,19 +48,19 @@ export const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
 };
 
 export function getPlanLimits(plan: PlanTier): PlanLimits {
-  return PLAN_LIMITS[plan] ?? PLAN_LIMITS[PlanTier.TIER_I];
+  return PLAN_LIMITS[plan] ?? PLAN_LIMITS[PlanTier.DYNAMIC];
 }
 
-export function canCreateEmployee(plan: PlanTier, currentCount: number): boolean {
-  const limits = getPlanLimits(plan);
-  if (limits.maxEmployees === null) return true;
-  return currentCount < limits.maxEmployees;
+/**
+ * No novo modelo dinâmico, sempre pode criar funcionário.
+ * O preço ajusta automaticamente.
+ */
+export function canCreateEmployee(_plan: PlanTier, _currentCount: number): boolean {
+  return true;
 }
 
-export function getEmployeeUsagePercentage(plan: PlanTier, currentCount: number): number {
-  const limits = getPlanLimits(plan);
-  if (limits.maxEmployees === null) return 0;
-  return Math.min(100, Math.round((currentCount / limits.maxEmployees) * 100));
+export function getEmployeeUsagePercentage(_plan: PlanTier, _currentCount: number): number {
+  return 0;
 }
 
 export function isTrialExpired(planExpiresAt: Date | null): boolean {
@@ -96,5 +76,5 @@ export function getTrialDaysRemaining(planExpiresAt: Date | null): number {
 }
 
 export const TRIAL_DAYS = 30;
-export const DEFAULT_PLAN = PlanTier.TIER_I;
+export const DEFAULT_PLAN = PlanTier.DYNAMIC;
 export const DEFAULT_MAX_EMPLOYEES = 10;

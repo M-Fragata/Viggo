@@ -10,70 +10,35 @@ interface PlanComparisonModalProps {
 }
 
 const planFeatures = {
-  TIER_I: {
-    name: "Tier I",
-    price: 49.9,
-    maxEmployees: 10,
-    apiLimits: { general: 100, checkin: 10, faceValidation: 30 },
+  DYNAMIC: {
+    name: "Viggo",
+    price: 54.90,
+    maxEmployees: null,
     features: [
-      "Até 10 funcionários",
-      "Check-in com foto",
-      "Validação facial básica",
-      "Relatórios mensais",
+      "Até 10 funcionários: R$ 54,90/mês",
+      "Funcionários extras: +R$ 5,00/pessoa",
+      "Reconhecimento facial ilimitado",
+      "Controle de localização (GPS)",
+      "Espelho de ponto e relatórios",
+      "Convites por link/QR code",
       "Suporte por email",
-      "API: 100 req/min",
+      "Pix ou Cartão de Crédito",
     ],
     color: "emerald",
-  },
-  TIER_II: {
-    name: "Tier II",
-    price: 149.9,
-    maxEmployees: 50,
-    apiLimits: { general: 300, checkin: 20, faceValidation: 60 },
-    features: [
-      "Até 50 funcionários",
-      "Check-in com foto + biometria",
-      "Validação facial avançada",
-      "Relatórios semanais + mensais",
-      "Suporte prioritário (email + chat)",
-      "API: 300 req/min",
-      "Webhooks",
-      "Múltiplos locais",
-    ],
-    color: "blue",
-  },
-  TIER_III: {
-    name: "Tier III",
-    price: 349.9,
-    maxEmployees: 150,
-    apiLimits: { general: 600, checkin: 50, faceValidation: 100 },
-    features: [
-      "Até 150 funcionários",
-      "Todas as funcionalidades do Tier II",
-      "Relatórios em tempo real",
-      "Suporte 24/7 (telefone + chat)",
-      "API: 600 req/min",
-      "SSO (SAML/OIDC)",
-      "Auditoria completa",
-      "Integrações personalizadas",
-    ],
-    color: "purple",
   },
   ENTERPRISE_CUSTOM: {
     name: "Enterprise",
     price: null,
     maxEmployees: null,
-    apiLimits: { general: 1000, checkin: 100, faceValidation: 200 },
     features: [
       "Funcionários ilimitados",
-      "Todas as funcionalidades do Tier III",
+      "Tudo do plano Viggo",
       "SLA garantido 99.9%",
       "Gerente de conta dedicado",
-      "API: 1000 req/min",
+      "Integrações customizadas",
+      "Suporte prioritário 24/7",
       "Implantação on-premise",
-      "Customizações sob demanda",
       "Treinamento da equipe",
-      "Migração assistida",
     ],
     color: "amber",
   },
@@ -92,12 +57,12 @@ export function PlanComparisonModal({ isOpen, onClose, currentPlan }: PlanCompar
 
   if (!isOpen) return null;
 
-  const plans: PlanKey[] = ["TIER_I", "TIER_II", "TIER_III", "ENTERPRISE_CUSTOM"];
+  const plans: PlanKey[] = ["DYNAMIC", "ENTERPRISE_CUSTOM"];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-in fade-in">
       <dialog
-        className="w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-xl animate-in zoom-in-95"
+        className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-xl animate-in zoom-in-95"
         open
       >
         <div className="flex justify-between items-start mb-6">
@@ -113,11 +78,10 @@ export function PlanComparisonModal({ isOpen, onClose, currentPlan }: PlanCompar
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {plans.map((planKey) => {
             const plan = planFeatures[planKey];
             const isCurrent = planKey === currentPlan;
-            const isUpgrade = plans.indexOf(planKey) > plans.indexOf(currentPlan as PlanKey);
 
             return (
               <div
@@ -144,29 +108,11 @@ export function PlanComparisonModal({ isOpen, onClose, currentPlan }: PlanCompar
                       <>
                         <span className="text-3xl font-bold text-slate-800">R$ {plan.price.toFixed(2)}</span>
                         <span className="text-slate-500">/mês</span>
+                        <p className="text-xs text-slate-400 mt-1">+R$ 5,00 por funcionário extra</p>
                       </>
                     ) : (
                       <span className="text-2xl font-bold text-slate-800">Sob consulta</span>
                     )}
-                  </div>
-                </div>
-
-                <div className="space-y-4 mb-6">
-                  <div className="flex items-center justify-center gap-2 text-slate-600">
-                    <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-4.997M13 16a3 3 0 01-3 3H7" />
-                    </svg>
-                    <span className="font-medium">
-                      {plan.maxEmployees ? `${plan.maxEmployees} funcionários` : "Ilimitado"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-center gap-2 text-slate-600">
-                    <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                    </svg>
-                    <span className="font-medium">
-                      API: {plan.apiLimits.general} req/min
-                    </span>
                   </div>
                 </div>
 
@@ -189,7 +135,7 @@ export function PlanComparisonModal({ isOpen, onClose, currentPlan }: PlanCompar
                   }`}
                   disabled={isCurrent}
                 >
-                  {isCurrent ? "Plano Atual" : isUpgrade ? "Upgrade" : "Downgrade"}
+                  {isCurrent ? "Plano Atual" : planKey === "DYNAMIC" ? "Escolher plano" : "Contatar vendas"}
                 </button>
               </div>
             );

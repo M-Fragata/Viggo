@@ -2,13 +2,19 @@ export const TRIAL_DAYS = 30;
 
 export const CUSTOM_PLAN_CTA = "Falar com vendas";
 
+export const PRICING = {
+  BASE_PRICE: 54.90,
+  BASE_MAX_EMPLOYEES: 10,
+  EXTRA_PRICE_PER_EMPLOYEE: 5.00,
+} as const;
+
 export interface PlanFeature {
   text: string;
   included: boolean;
 }
 
 export interface PlanData {
-  id: "TIER_I" | "TIER_II" | "TIER_III" | "ENTERPRISE_CUSTOM";
+  id: "DYNAMIC" | "ENTERPRISE_CUSTOM";
   name: string;
   price: number | null;
   period: string;
@@ -19,93 +25,45 @@ export interface PlanData {
   ctaVariant: "primary" | "secondary" | "outline";
 }
 
-export const PLANS: readonly PlanData[] = [
-  {
-    id: "TIER_I",
-    name: "Starter",
-    price: 49.9,
-    period: "/mês",
-    maxEmployees: 10,
-    features: [
-      { text: "Até 10 funcionários", included: true },
-      { text: "Reconhecimento facial ilimitado", included: true },
-      { text: "Controle de localização (GPS)", included: true },
-      { text: "Espelho de ponto e relatórios", included: true },
-      { text: "Convites por link/QR code", included: true },
-      { text: "Suporte por email", included: true },
-      { text: "API pública", included: false },
-      { text: "Integrações avançadas", included: false },
-      { text: "SLA garantido", included: false },
-    ],
-    highlighted: false,
-    ctaText: "Começar trial grátis",
-    ctaVariant: "outline",
-  },
-  {
-    id: "TIER_II",
-    name: "Professional",
-    price: 149.9,
-    period: "/mês",
-    maxEmployees: 50,
-    features: [
-      { text: "Até 50 funcionários", included: true },
-      { text: "Reconhecimento facial ilimitado", included: true },
-      { text: "Controle de localização (GPS)", included: true },
-      { text: "Espelho de ponto e relatórios", included: true },
-      { text: "Convites por link/QR code", included: true },
-      { text: "Suporte prioritário (email + chat)", included: true },
-      { text: "API pública (10k req/mês)", included: true },
-      { text: "Integrações (Slack, Teams, Webhooks)", included: true },
-      { text: "SLA 99.5%", included: true },
-    ],
-    highlighted: true,
-    ctaText: "Começar trial grátis",
-    ctaVariant: "primary",
-  },
-  {
-    id: "TIER_III",
-    name: "Enterprise",
-    price: 349.9,
-    period: "/mês",
-    maxEmployees: 150,
-    features: [
-      { text: "Até 150 funcionários", included: true },
-      { text: "Reconhecimento facial ilimitado", included: true },
-      { text: "Controle de localização (GPS)", included: true },
-      { text: "Espelho de ponto e relatórios avançados", included: true },
-      { text: "Convites por link/QR code", included: true },
-      { text: "Suporte 24/7 (telefone + chat + email)", included: true },
-      { text: "API pública (100k req/mês)", included: true },
-      { text: "Integrações completas + SSO (SAML/OIDC)", included: true },
-      { text: "SLA 99.9% + contrato", included: true },
-      { text: "Gerente de conta dedicado", included: true },
-      { text: "Customizações de branding", included: true },
-    ],
-    highlighted: false,
-    ctaText: "Começar trial grátis",
-    ctaVariant: "outline",
-  },
-  {
-    id: "ENTERPRISE_CUSTOM",
-    name: "Personalizado",
-    price: null,
-    period: "",
-    maxEmployees: null,
-    features: [
-      { text: "Funcionários ilimitados", included: true },
-      { text: "Tudo do Enterprise", included: true },
-      { text: "Desenvolvimento de features customizadas", included: true },
-      { text: "Integração com sistemas legados", included: true },
-      { text: "On-premise / Private cloud", included: true },
-      { text: "Auditoria e compliance dedicados", included: true },
-      { text: "Treinamento da equipe incluso", included: true },
-      { text: "Contrato e negociação personalizados", included: true },
-    ],
-    highlighted: false,
-    ctaText: "Falar com vendas",
-    ctaVariant: "secondary",
-  },
-] as const;
+export const DYNAMIC_PLAN: PlanData = {
+  id: "DYNAMIC",
+  name: "Viggo",
+  price: PRICING.BASE_PRICE,
+  period: "/mês",
+  maxEmployees: null,
+  features: [
+    { text: "Reconhecimento facial ilimitado", included: true },
+    { text: "Controle de localização (GPS)", included: true },
+    { text: "Espelho de ponto e relatórios", included: true },
+    { text: "Convites por link/QR code", included: true },
+    { text: "Suporte por email", included: true },
+    { text: "A partir de 10 funcionários", included: true },
+  ],
+  highlighted: true,
+  ctaText: "Começar trial grátis",
+  ctaVariant: "primary",
+};
+
+export const ENTERPRISE_PLAN: PlanData = {
+  id: "ENTERPRISE_CUSTOM",
+  name: "Enterprise",
+  price: null,
+  period: "",
+  maxEmployees: null,
+  features: [
+    { text: "Funcionários ilimitados", included: true },
+    { text: "Tudo do plano Viggo", included: true },
+    { text: "SLA garantido 99.9%", included: true },
+    { text: "Gerente de conta dedicado", included: true },
+    { text: "Integrações customizadas", included: true },
+    { text: "Suporte prioritário 24/7", included: true },
+  ],
+  highlighted: false,
+  ctaText: CUSTOM_PLAN_CTA,
+  ctaVariant: "secondary",
+};
+
+export const PLANS = [DYNAMIC_PLAN, ENTERPRISE_PLAN] as const;
 
 export function getPlanById(id: PlanData["id"]): PlanData | undefined {
   return PLANS.find((p) => p.id === id);
@@ -113,6 +71,43 @@ export function getPlanById(id: PlanData["id"]): PlanData | undefined {
 
 export function getHighlightedPlan(): PlanData | undefined {
   return PLANS.find((p) => p.highlighted);
+}
+
+/**
+ * Calcula o preço do plano dinâmico baseado no total de funcionários.
+ * Desconta 1 do total para excluir o ENTERPRISE_ADMIN.
+ *
+ * @param totalUsers - Total de usuários na empresa (incluindo admin)
+ * @returns Preço total do plano para o ciclo
+ */
+export function calculatePrice(totalUsers: number): number {
+  const paidEmployees = Math.max(0, totalUsers - 1);
+  const extras = Math.max(0, paidEmployees - PRICING.BASE_MAX_EMPLOYEES);
+  return Math.round((PRICING.BASE_PRICE + extras * PRICING.EXTRA_PRICE_PER_EMPLOYEE) * 100) / 100;
+}
+
+/**
+ * Calcula o preço do plano dinâmico com detalhes completos.
+ *
+ * @param totalUsers - Total de usuários na empresa (incluindo admin)
+ * @returns Objeto com detalhes do cálculo
+ */
+export function calculateDynamicPrice(totalUsers: number) {
+  const paidEmployees = Math.max(0, totalUsers - 1);
+  const extraEmployees = Math.max(0, paidEmployees - PRICING.BASE_MAX_EMPLOYEES);
+  const basePrice = PRICING.BASE_PRICE;
+  const extraTotal = extraEmployees * PRICING.EXTRA_PRICE_PER_EMPLOYEE;
+  const total = basePrice + extraTotal;
+
+  return {
+    basePrice,
+    baseMaxEmployees: PRICING.BASE_MAX_EMPLOYEES,
+    paidEmployees,
+    extraEmployees,
+    extraPricePerUnit: PRICING.EXTRA_PRICE_PER_EMPLOYEE,
+    extraTotal,
+    total: Math.round(total * 100) / 100,
+  };
 }
 
 export function formatPrice(price: number | null): string {
@@ -125,6 +120,6 @@ export function formatPrice(price: number | null): string {
 }
 
 export function formatMaxEmployees(max: number | null): string {
-  if (max === null) return "Ilimitado";
+  if (max === null) return "Funcionários ilimitados";
   return `Até ${max} funcionários`;
 }

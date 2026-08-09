@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useCompany, usePlanLimits } from "../hooks/useCompany";
 import { useAuth, useCompanyStatus } from "../hooks/useAuth";
 import { useCheckins } from "../hooks/useCheckins";
-import { PlanBadge, PlanComparisonModal, UsageProgressBar, TrialCountdown } from "../components/plan";
+import { PlanBadge, PlanComparisonModal, UsageProgressBar, TrialCountdown, PaymentStatus, PaymentHistory, CheckoutModal } from "../components/plan";
 import { InvitesTab, EmployeeScheduleModal, AssignScheduleModal } from "../components/company";
 import { CheckinTable } from "../components/checkin/CheckinTable";
 import { EmployeeTabSkeleton } from "../components/EmployeeTabSkeleton";
@@ -818,28 +818,31 @@ function PlanTab({
   getTrialDaysRemaining: (planExpiresAt: string | null) => number;
   setShowPlanModal: (show: boolean) => void;
 }) {
-  const daysRemaining = company?.planExpiresAt ? getTrialDaysRemaining(company.planExpiresAt) : 0;
+  const [showCheckout, setShowCheckout] = useState(false);
 
   return (
     <div className="space-y-6">
+      {/* Status do Pagamento */}
+      {company && (
+        <PaymentStatus company={company} onOpenCheckout={() => setShowCheckout(true)} />
+      )}
+
+      {/* Detalhes do Plano */}
       <div className="bg-white border border-slate-200 rounded-3xl shadow-sm p-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div>
-            <h2 className="text-lg font-bold text-slate-800">Plano Atual</h2>
-            <p className="text-slate-500 text-sm">{getPlanLabel(company?.plan!)} - R$ {planLimit?.price?.toFixed(2)}/mês</p>
+            <h2 className="text-lg font-bold text-slate-800">Detalhes do Plano</h2>
+            <p className="text-slate-500 text-sm">
+              {getPlanLabel(company?.plan!)}
+              {company?.pricing && company.plan === "DYNAMIC" && (
+                <> — {company.pricing.paidEmployees} funcionário{company.pricing.paidEmployees !== 1 ? "s" : ""} pago{company.pricing.paidEmployees !== 1 ? "s" : ""}</>
+              )}
+            </p>
           </div>
           <PlanBadge plan={company?.plan!} size="lg" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <div className="bg-slate-50 rounded-2xl p-5">
-            <div className="flex items-center gap-2 text-slate-500 text-sm mb-1">
-              <CreditCard className={`w-4 h-4 text-${planColor}-500`} />
-              <span className="font-medium">Status</span>
-            </div>
-            <TrialCountdown planExpiresAt={company?.planExpiresAt ?? null} status={company?.status!} size="lg" />
-          </div>
-
           <div className="bg-slate-50 rounded-2xl p-5">
             <div className="flex items-center gap-2 text-slate-500 text-sm mb-1">
               <Users className={`w-4 h-4 text-${planColor}-500`} />
@@ -873,19 +876,54 @@ function PlanTab({
               </div>
             </div>
           </div>
+
+          {company?.pricing && company.plan === "DYNAMIC" && (
+            <div className="bg-slate-50 rounded-2xl p-5">
+              <div className="flex items-center gap-2 text-slate-500 text-sm mb-1">
+                <CreditCard className={`w-4 h-4 text-${planColor}-500`} />
+                <span className="font-medium">Cálculo do Preço</span>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between text-slate-600">
+                  <span>Base (até {company.pricing.baseMaxEmployees})</span>
+                  <span className="font-mono font-bold">R$ {company.pricing.basePrice.toFixed(2)}</span>
+                </div>
+                {company.pricing.extraEmployees > 0 && (
+                  <div className="flex justify-between text-slate-600">
+                    <span>{company.pricing.extraEmployees} extra{company.pricing.extraEmployees > 1 ? "s" : ""}</span>
+                    <span className="font-mono font-bold">R$ {company.pricing.extraTotal.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="border-t border-slate-200 pt-2 flex justify-between font-bold text-slate-800">
+                  <span>Total</span>
+                  <span className="text-emerald-600">R$ {company.pricing.total.toFixed(2)}/mês</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
-        <div className="border-t border-slate-200 pt-6">
+        <div className="border-t border-slate-200 pt-6 flex flex-wrap gap-3">
+          {(company?.status === "TRIAL" || company?.status === "SUSPENDED" || company?.status === "CANCELLED") && (
+            <button
+              onClick={() => setShowCheckout(true)}
+              className="px-6 py-3 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors font-bold flex items-center justify-center gap-2"
+            >
+              <CreditCard size={18} />
+              {company.status === "TRIAL" ? "Ativar plano" : "Reativar plano"}
+            </button>
+          )}
           <button
             onClick={() => setShowPlanModal(true)}
-            className="w-full sm:w-auto px-6 py-3 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors font-bold flex items-center justify-center gap-2"
+            className="px-6 py-3 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-colors font-bold flex items-center justify-center gap-2"
           >
             <ArrowUpRight size={18} />
-            Comparar Planos e Upgrade
+            Comparar planos
           </button>
         </div>
       </div>
 
+      {/* Trial ativo */}
       {company?.status === "TRIAL" && !isTrialExpired && (
         <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5">
           <div className="flex items-center gap-3">
@@ -894,12 +932,13 @@ function PlanTab({
             </div>
             <div>
               <h3 className="font-bold text-emerald-800">Trial de 30 dias ativo</h3>
-              <p className="text-emerald-600 text-sm">{daysRemaining} dias restantes para decidir seu plano</p>
+              <p className="text-emerald-600 text-sm">{getTrialDaysRemaining(company.planExpiresAt)} dias restantes para decidir seu plano</p>
             </div>
           </div>
         </div>
       )}
 
+      {/* Trial expirado */}
       {isTrialExpired && (
         <div className="bg-red-50 border border-red-200 rounded-2xl p-5">
           <div className="flex items-center gap-3">
@@ -910,11 +949,24 @@ function PlanTab({
             </div>
             <div>
               <h3 className="font-bold text-red-800">Trial Expirado</h3>
-              <p className="text-red-600 text-sm">Seu período de teste acabou. Faça upgrade para continuar usando.</p>
+              <p className="text-red-600 text-sm">Seu período de teste acabou. Ative seu plano para continuar usando.</p>
             </div>
           </div>
         </div>
       )}
+
+      {/* Histórico de Pagamentos */}
+      <div className="bg-white border border-slate-200 rounded-3xl shadow-sm p-6">
+        <h2 className="text-lg font-bold text-slate-800 mb-4">Histórico de Pagamentos</h2>
+        <PaymentHistory />
+      </div>
+
+      {/* Modal de Checkout */}
+      <CheckoutModal
+        isOpen={showCheckout}
+        onClose={() => setShowCheckout(false)}
+        onSuccess={() => window.location.reload()}
+      />
     </div>
   );
 }

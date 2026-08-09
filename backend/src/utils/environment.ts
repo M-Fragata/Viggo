@@ -14,7 +14,10 @@ const environmentSchema = z.object({
         (val) => /^[0-9a-fA-F]{64}$/.test(val),
         "FACE_ENCRYPTION_KEY deve ser uma string hex de 64 caracteres (32 bytes)"
     ),
-    NODE_ENV: z.enum(["DEV", "PROD", "TEST"])
+    NODE_ENV: z.enum(["DEV", "PROD", "TEST"]),
+    ASAAS_API_KEY: z.string().optional(),
+    ASAAS_ENVIRONMENT: z.enum(["sandbox", "production"]).default("sandbox"),
+    ASAAS_WEBHOOK_TOKEN: z.string().optional(),
 })
 
 const EnvRaw = environmentSchema.safeParse(process.env)

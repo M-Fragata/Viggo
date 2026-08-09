@@ -1,7 +1,8 @@
 import type { Request, Response } from 'express';
 import { prisma } from '../../database/prisma.js';
 import { z } from 'zod';
-import { PlanTier, CompanyStatus, getPlanLimits } from '../../utils/planLimits.js';
+import { PlanTier, CompanyStatus } from '../../utils/planLimits.js';
+import { calculateDynamicPrice } from '../../utils/pricingCalculator.js';
 import { startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import jwt from 'jsonwebtoken';
 import { Env } from '../../utils/environment.js';
@@ -13,7 +14,7 @@ export class MasterController {
       page: z.coerce.number().min(1).default(1),
       limit: z.coerce.number().min(1).max(100).default(20),
       status: z.enum(['TRIAL', 'ACTIVE', 'SUSPENDED', 'CANCELLED']).optional(),
-      plan: z.enum(['TIER_I', 'TIER_II', 'TIER_III', 'ENTERPRISE_CUSTOM']).optional(),
+      plan: z.enum(['DYNAMIC', 'ENTERPRISE_CUSTOM']).optional(),
       search: z.string().optional(),
     });
     try {
@@ -42,12 +43,16 @@ export class MasterController {
         prisma.company.count({ where }),
       ]);
       return res.json({
-        data: companies.map(company => ({
-          ...company,
-          employeesCount: company._count.users,
-          checkinsCount: company._count.checkIns,
-          employeeUsagePercent: company.maxEmployees ? Math.round((company._count.users / company.maxEmployees) * 100) : 0,
-        })),
+        data: companies.map(company => {
+          const pricing = calculateDynamicPrice(company._count.users);
+          return {
+            ...company,
+            employeesCount: company._count.users,
+            checkinsCount: company._count.checkIns,
+            employeeUsagePercent: company.maxEmployees ? Math.round((company._count.users / company.maxEmployees) * 100) : 0,
+            pricing: company.plan === 'DYNAMIC' ? pricing : null,
+          };
+        }),
         pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
       });
     } catch (error) {
@@ -75,7 +80,14 @@ export class MasterController {
         },
       });
       if (!company) return res.status(404).json({ message: 'Empresa não encontrada' });
-      return res.json(company);
+      const pricing = calculateDynamicPrice(company._count.users);
+      return res.json({
+        ...company,
+        employeesCount: company._count.users,
+        checkinsCount: company._count.checkIns,
+        subscriptionsCount: company._count.subscriptions,
+        pricing: company.plan === 'DYNAMIC' ? pricing : null,
+      });
     } catch (error) {
       if (error instanceof z.ZodError) return res.status(400).json({ message: 'Parâmetros inválidos', errors: error.issues });
       console.error('Erro ao buscar detalhes:', error);
@@ -89,7 +101,7 @@ export class MasterController {
       const startOfThisMonth = startOfMonth(now);
       const startOfLastMonth = startOfMonth(subMonths(now, 1));
       const endOfLastMonth = endOfMonth(subMonths(now, 1));
-      const [totalCompanies, activeCompanies, trialCompanies, suspendedCompanies, cancelledCompanies, planDistribution, totalUsers, checkinsThisMonth, checkinsLastMonth] = await Promise.all([
+      const [totalCompanies, activeCompanies, trialCompanies, suspendedCompanies, cancelledCompanies, planDistribution, totalUsers, checkinsThisMonth, checkinsLastMonth, activeSubscriptions] = await Promise.all([
         prisma.company.count(),
         prisma.company.count({ where: { status: CompanyStatus.ACTIVE } }),
         prisma.company.count({ where: { status: CompanyStatus.TRIAL } }),
@@ -99,9 +111,19 @@ export class MasterController {
         prisma.user.count(),
         prisma.checkIn.count({ where: { createdAt: { gte: startOfThisMonth } } }),
         prisma.checkIn.count({ where: { createdAt: { gte: startOfLastMonth, lte: endOfLastMonth } } }),
+        prisma.subscription.findMany({
+          where: { status: 'ACTIVE' },
+          select: { calculatedTotal: true, price: true, planTier: true, companyId: true },
+        }),
       ]);
       const planDist = planDistribution.reduce((acc, p) => { acc[p.plan] = p._count.plan; return acc; }, {} as Record<string, number>);
-      const mrr = Object.entries(planDist).reduce((sum, [plan, count]) => { const limits = getPlanLimits(plan as PlanTier); return sum + (limits.price ?? 0) * (count as number); }, 0);
+
+      // MRR: soma dos calculatedTotal de assinaturas ativas (ou fallback para preço do plano)
+      const mrr = activeSubscriptions.reduce((sum, sub) => {
+        const value = sub.calculatedTotal ? Number(sub.calculatedTotal) : Number(sub.price ?? 0);
+        return sum + value;
+      }, 0);
+
       const churnRate = totalCompanies > 0 ? Math.round((cancelledCompanies / totalCompanies) * 100) : 0;
       const growthRate = checkinsLastMonth > 0 ? Math.round(((checkinsThisMonth - checkinsLastMonth) / checkinsLastMonth) * 100) : 0;
       return res.json({
@@ -119,16 +141,60 @@ export class MasterController {
 
   async updateCompanyPlan(req: Request, res: Response) {
     const paramsSchema = z.object({ id: z.uuid() });
-    const bodySchema = z.object({ plan: z.enum(['TIER_I', 'TIER_II', 'TIER_III', 'ENTERPRISE_CUSTOM']), maxEmployees: z.number().min(1).optional() });
+    const bodySchema = z.object({ plan: z.enum(['DYNAMIC', 'ENTERPRISE_CUSTOM']), maxEmployees: z.number().min(1).optional() });
     try {
       const { id } = paramsSchema.parse(req.params);
       const { plan, maxEmployees } = bodySchema.parse(req.body);
-      const company = await prisma.company.findUnique({ where: { id } });
+      const company = await prisma.company.findUnique({
+        where: { id },
+        select: { id: true, name: true, plan: true, maxEmployees: true, _count: { select: { users: true } } },
+      });
       if (!company) return res.status(404).json({ message: 'Empresa não encontrada' });
-      const limits = getPlanLimits(plan as PlanTier);
-      const finalMaxEmployees = maxEmployees ?? limits.maxEmployees ?? company.maxEmployees;
-      const updated = await prisma.company.update({ where: { id }, data: { plan: plan as any, maxEmployees: finalMaxEmployees, status: CompanyStatus.ACTIVE, planExpiresAt: null } });
-      await prisma.subscription.create({ data: { companyId: id, planTier: plan as any, price: limits.price ?? 0, status: 'ACTIVE', startedAt: new Date() } });
+
+      // Para plano DYNAMIC, calcular preço baseado em funcionários atuais
+      let price = 0;
+      let calculatedTotal = 0;
+      let extraEmployees = 0;
+      if (plan === 'DYNAMIC') {
+        const pricing = calculateDynamicPrice(company._count.users);
+        price = pricing.total;
+        calculatedTotal = pricing.total;
+        extraEmployees = pricing.extraEmployees;
+      }
+
+      const finalMaxEmployees = plan === 'DYNAMIC' ? null : (maxEmployees ?? company.maxEmployees);
+
+      // Cancelar assinatura anterior se existir
+      await prisma.subscription.updateMany({
+        where: { companyId: id, status: 'ACTIVE' },
+        data: { status: 'CANCELLED', cancelledAt: new Date() },
+      });
+
+      const updated = await prisma.company.update({
+        where: { id },
+        data: {
+          plan: plan as any,
+          maxEmployees: finalMaxEmployees as any,
+          status: CompanyStatus.ACTIVE,
+          planExpiresAt: null,
+        },
+      });
+
+      await prisma.subscription.create({
+        data: {
+          companyId: id,
+          planTier: plan as any,
+          price,
+          status: 'ACTIVE',
+          billingType: 'MANUAL',
+          basePrice: plan === 'DYNAMIC' ? 54.90 : 0,
+          extraEmployees,
+          extraPricePerUnit: plan === 'DYNAMIC' ? 5.00 : 0,
+          calculatedTotal,
+          startedAt: new Date(),
+        },
+      });
+
       return res.json({ id: updated.id, name: updated.name, plan: updated.plan, status: updated.status, maxEmployees: updated.maxEmployees });
     } catch (error) {
       if (error instanceof z.ZodError) return res.status(400).json({ message: 'Dados inválidos', errors: error.issues });

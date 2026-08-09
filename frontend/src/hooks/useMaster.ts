@@ -25,7 +25,7 @@ export function useMasterCompanies() {
 
   return {
     companies: data?.data || [],
-    pagination: data?.meta,
+    pagination: data?.pagination,
     isLoading,
     error,
     fetchCompanies,

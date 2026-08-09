@@ -4,7 +4,7 @@ import { useMasterCompany, useMasterActions } from "../hooks/useMaster";
 import { useAuth } from "../hooks/useAuth";
 import { useToast } from "../hooks/useToast";
 import { PlanBadge, TrialCountdown } from "../components/plan";
-import { UserCheck, ArrowLeft, Users, Building2, Calendar, CreditCard, CheckCircle, Clock, XCircle, Loader2 } from "lucide-react";
+import { UserCheck, ArrowLeft, Users, Building2, Calendar, CreditCard, DollarSign, CheckCircle, Clock, XCircle, Loader2 } from "lucide-react";
 import type { CompanyStatus, PlanTier } from "../services/api";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -28,9 +28,7 @@ const STATUS_OPTIONS: { value: CompanyStatus; label: string; icon: any; color: s
 ];
 
 const PLAN_OPTIONS: { value: PlanTier; label: string }[] = [
-  { value: "TIER_I", label: "Tier I" },
-  { value: "TIER_II", label: "Tier II" },
-  { value: "TIER_III", label: "Tier III" },
+  { value: "DYNAMIC", label: "Viggo" },
   { value: "ENTERPRISE_CUSTOM", label: "Enterprise" },
 ];
 
@@ -71,7 +69,8 @@ export function CompanyManagePage() {
     setPlanLoading(newPlan);
     try {
       await updatePlan(company.id, newPlan);
-      toast.success("Plano alterado", { description: `${company.name} agora no ${newPlan.replace("TIER_", "Tier ").replace("ENTERPRISE_CUSTOM", "Enterprise")}` });
+      const planLabel = newPlan === "DYNAMIC" ? "Viggo" : "Enterprise";
+      toast.success("Plano alterado", { description: `${company.name} agora no plano ${planLabel}` });
       fetchCompany();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao alterar plano");
@@ -158,7 +157,7 @@ export function CompanyManagePage() {
       </div>
 
       {/* Info Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white border border-slate-200 rounded-2xl p-5">
           <div className="flex items-center gap-2 text-slate-500 text-sm mb-2">
             <Users size={18} />
@@ -181,6 +180,21 @@ export function CompanyManagePage() {
           </div>
           <TrialCountdown planExpiresAt={company.planExpiresAt} status={company.status} size="md" />
         </div>
+
+        {company.pricing && (
+          <div className="bg-white border border-slate-200 rounded-2xl p-5">
+            <div className="flex items-center gap-2 text-slate-500 text-sm mb-2">
+              <DollarSign size={18} />
+              <span className="font-medium">Preço Mensal</span>
+            </div>
+            <p className="text-3xl font-bold text-emerald-600">
+              R$ {company.pricing.total.toFixed(2)}
+            </p>
+            <p className="text-xs text-slate-400 mt-1">
+              {company.pricing.paidEmployees} funcionário{company.pricing.paidEmployees !== 1 ? "s" : ""} pago{company.pricing.paidEmployees !== 1 ? "s" : ""}
+            </p>
+          </div>
+        )}
 
         <div className="bg-white border border-slate-200 rounded-2xl p-5">
           <div className="flex items-center gap-2 text-slate-500 text-sm mb-2">

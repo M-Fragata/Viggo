@@ -7,24 +7,27 @@ datasource db {
 }
 
 model Company {
-  id              String         @id @default(uuid())
-  name            String
-  cnpj            String         @unique
-  plan            PlanTier       @default(TIER_I)
-  status          CompanyStatus  @default(TRIAL)
-  planExpiresAt   DateTime?
-  maxEmployees    Int            @default(10)
-  asaasCustomerId String?
-  settings        Json?
-  trialUsed       Boolean        @default(false)
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  checkIns        CheckIn[]
-  users           User[]
-  subscriptions   Subscription[]
-  invites         InviteToken[]
-  justificativas  Justificativa[]
-  workSchedules   WorkSchedule[]
+  id                  String         @id @default(uuid())
+  name                String
+  cnpj                String         @unique
+  plan                PlanTier       @default(DYNAMIC)
+  status              CompanyStatus  @default(TRIAL)
+  planExpiresAt       DateTime?
+  maxEmployees        Int            @default(10)
+  asaasCustomerId     String?
+  billingType         String?        // 'RECURRENT' | 'MANUAL'
+  asaasPaymentMethod  String?        // 'PIX' | 'CREDIT_CARD'
+  settings            Json?
+  trialUsed           Boolean        @default(false)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  checkIns            CheckIn[]
+  users               User[]
+  subscriptions       Subscription[]
+  payments            Payment[]
+  invites             InviteToken[]
+  justificativas      Justificativa[]
+  workSchedules       WorkSchedule[]
 }
 
 model User {
@@ -76,19 +79,51 @@ model CheckIn {
 }
 
 model Subscription {
+  id                    String    @id @default(uuid())
+  companyId             String
+  company               Company   @relation(fields: [companyId], references: [id])
+  planTier              PlanTier
+  price                 Decimal   @db.Decimal(10, 2)
+  status                String    // 'TRIAL', 'ACTIVE', 'OVERDUE', 'CANCELLED'
+  asaasSubscriptionId   String?
+  billingType           String?   // 'RECURRENT' | 'MANUAL'
+  paymentMethod         String?   // 'PIX' | 'CREDIT_CARD'
+  basePrice             Decimal?  @db.Decimal(10, 2)   // 54.90
+  extraEmployees        Int?      @default(0)           // funcionários além dos 10
+  extraPricePerUnit     Decimal?  @db.Decimal(10, 2)    // 5.00
+  calculatedTotal       Decimal?  @db.Decimal(10, 2)    // total do ciclo
+  nfseStatus            String?   // 'PENDING' | 'ISSUED' | 'NOT_APPLICABLE'
+  nfseNumber            String?   // número da NFS-e quando emitida
+  nfseUrl               String?   // link para download da NFS-e
+  startedAt             DateTime  @default(now())
+  expiresAt             DateTime?
+  cancelledAt           DateTime?
+  createdAt             DateTime  @default(now())
+
+  @@index([companyId])
+  @@index([status])
+}
+
+model Payment {
   id                  String    @id @default(uuid())
   companyId           String
   company             Company   @relation(fields: [companyId], references: [id])
-  planTier            PlanTier
-  price               Decimal   @db.Decimal(10, 2)
-  status              String
-  asaasSubscriptionId String?
-  startedAt           DateTime  @default(now())
-  expiresAt           DateTime?
-  cancelledAt         DateTime?
+  subscriptionId      String?
+  asaasPaymentId      String?   @unique
+  amount              Decimal   @db.Decimal(10, 2)
+  billingType         String    // 'PIX' | 'CREDIT_CARD' | 'BOLETO'
+  status              String    // 'PENDING', 'CONFIRMED', 'OVERDUE', 'CANCELLED', 'REFUNDED'
+  paymentUrl          String?   // link de pagamento (Asaas checkout)
+  invoiceUrl          String?   // URL do boleto/cobrança
+  nfseStatus          String?   // 'PENDING' | 'ISSUED' | 'NOT_APPLICABLE'
+  nfseNumber          String?
+  nfseUrl             String?
+  dueDate             DateTime
+  paidAt              DateTime?
   createdAt           DateTime  @default(now())
 
   @@index([companyId])
+  @@index([asaasPaymentId])
   @@index([status])
 }
 
@@ -153,9 +188,7 @@ enum UserStatus {
 }
 
 enum PlanTier {
-  TIER_I
-  TIER_II
-  TIER_III
+  DYNAMIC
   ENTERPRISE_CUSTOM
 }
 

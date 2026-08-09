@@ -57,22 +57,27 @@ export function useCompany() {
 
 export function usePlanLimits() {
   const limits = {
-    TIER_I: { maxEmployees: 10, price: 49.9, api: { general: 100, checkin: 10, faceValidation: 30 } },
-    TIER_II: { maxEmployees: 50, price: 149.9, api: { general: 300, checkin: 20, faceValidation: 60 } },
-    TIER_III: { maxEmployees: 150, price: 349.9, api: { general: 600, checkin: 50, faceValidation: 100 } },
-    ENTERPRISE_CUSTOM: { maxEmployees: null, price: null, api: { general: 1000, checkin: 100, faceValidation: 200 } },
+    DYNAMIC: {
+      maxEmployees: null,
+      price: 54.90,
+      basePrice: 54.90,
+      baseMaxEmployees: 10,
+      extraPricePerEmployee: 5.00,
+      api: { general: 100, checkin: 10, faceValidation: 30 },
+    },
+    ENTERPRISE_CUSTOM: {
+      maxEmployees: null,
+      price: null,
+      api: { general: 1000, checkin: 100, faceValidation: 200 },
+    },
   } as const;
 
   const getPlanLimit = (plan: keyof typeof limits) => limits[plan];
 
   const getPlanColor = (plan: keyof typeof limits) => {
     switch (plan) {
-      case "TIER_I":
+      case "DYNAMIC":
         return "emerald";
-      case "TIER_II":
-        return "blue";
-      case "TIER_III":
-        return "purple";
       case "ENTERPRISE_CUSTOM":
         return "amber";
       default:
@@ -82,12 +87,8 @@ export function usePlanLimits() {
 
   const getPlanLabel = (plan: keyof typeof limits) => {
     switch (plan) {
-      case "TIER_I":
-        return "Tier I";
-      case "TIER_II":
-        return "Tier II";
-      case "TIER_III":
-        return "Tier III";
+      case "DYNAMIC":
+        return "Viggo";
       case "ENTERPRISE_CUSTOM":
         return "Enterprise";
       default:
@@ -95,7 +96,11 @@ export function usePlanLimits() {
     }
   };
 
-  return { limits, getPlanLimit, getPlanColor, getPlanLabel };
+  const calculatePrice = (totalUsers: number) => {
+    const paidEmployees = Math.max(0, totalUsers - 1);
+    const extras = Math.max(0, paidEmployees - limits.DYNAMIC.baseMaxEmployees);
+    return Math.round((limits.DYNAMIC.basePrice + extras * limits.DYNAMIC.extraPricePerEmployee) * 100) / 100;
+  };
+
+  return { limits, getPlanLimit, getPlanColor, getPlanLabel, calculatePrice };
 }
-
-

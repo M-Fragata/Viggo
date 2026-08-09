@@ -201,6 +201,20 @@ export const api = {
       fetchApi<ConsentimentoResponse[]>("/consentimentos"),
   },
 
+  payments: {
+    createCheckout: (data: { billingType: string }) =>
+      fetchApi<CheckoutResponse>("/companies/payments/checkout", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    getHistory: () =>
+      fetchApi<PaymentHistoryItem[]>("/companies/payments/history"),
+    cancel: () =>
+      fetchApi<{ message: string }>("/companies/payments/cancel", {
+        method: "POST",
+      }),
+  },
+
   justificativa: {
     create: (body: JustificativaCreateBody) =>
       fetchApi<JustificativaResponse>("/justificativas", {
@@ -311,9 +325,20 @@ export interface CompanyResponse {
   currentEmployees: number;
   employeeUsagePercent: number;
   canCreateEmployee: boolean;
+  billingType: string | null;
+  asaasPaymentMethod: string | null;
   settings: CompanySettings;
   trialUsed: boolean;
   createdAt: string;
+  pricing: {
+    basePrice: number;
+    baseMaxEmployees: number;
+    paidEmployees: number;
+    extraEmployees: number;
+    extraPricePerUnit: number;
+    extraTotal: number;
+    total: number;
+  };
 }
 
 export interface UpdateCompanyDto {
@@ -338,6 +363,35 @@ export interface UsageResponse {
     faceValidation: number;
   };
   plan: PlanTier;
+  pricing: {
+    basePrice: number;
+    baseMaxEmployees: number;
+    paidEmployees: number;
+    extraEmployees: number;
+    extraPricePerUnit: number;
+    extraTotal: number;
+    total: number;
+  };
+}
+
+export interface PaymentHistoryItem {
+  id: string;
+  amount: number;
+  billingType: string;
+  status: string;
+  dueDate: string;
+  paidAt: string | null;
+  paymentUrl: string | null;
+  nfseStatus: 'PENDING' | 'ISSUED' | 'NOT_APPLICABLE';
+  nfseNumber: string | null;
+  nfseUrl: string | null;
+}
+
+export interface CheckoutResponse {
+  subscriptionId: string;
+  billingType: string;
+  amount: number;
+  paymentUrl: string;
 }
 
 export interface CreateInviteTokenDto {
@@ -396,7 +450,7 @@ export interface MasterListParams {
 
 export interface MasterCompaniesResponse {
   data: MasterCompanyListItem[];
-  meta: {
+  pagination: {
     total: number;
     page: number;
     limit: number;
@@ -416,11 +470,23 @@ export interface MasterCompanyListItem {
   employeeUsagePercent: number;
   settings: CompanySettings;
   createdAt: string;
+  pricing: {
+    basePrice: number;
+    baseMaxEmployees: number;
+    paidEmployees: number;
+    extraEmployees: number;
+    extraPricePerUnit: number;
+    extraTotal: number;
+    total: number;
+  } | null;
 }
 
 export interface MasterCompanyDetail extends MasterCompanyListItem {
   users: User[];
   subscriptions: Subscription[];
+  employeesCount: number;
+  checkinsCount: number;
+  subscriptionsCount: number;
 }
 
 export interface Subscription {
@@ -430,6 +496,15 @@ export interface Subscription {
   price: number;
   status: string;
   asaasSubscriptionId: string | null;
+  billingType: string | null;
+  paymentMethod: string | null;
+  basePrice: number | null;
+  extraEmployees: number | null;
+  extraPricePerUnit: number | null;
+  calculatedTotal: number | null;
+  nfseStatus: string | null;
+  nfseNumber: string | null;
+  nfseUrl: string | null;
   startedAt: string;
   expiresAt: string | null;
   cancelledAt: string | null;
@@ -533,7 +608,7 @@ export interface EmployeeListItem {
 }
 
 export type UserRole = "MASTER" | "ENTERPRISE_ADMIN" | "EMPLOYEE";
-export type PlanTier = "TIER_I" | "TIER_II" | "TIER_III" | "ENTERPRISE_CUSTOM";
+export type PlanTier = "DYNAMIC" | "ENTERPRISE_CUSTOM";
 export type CompanyStatus = "TRIAL" | "ACTIVE" | "SUSPENDED" | "CANCELLED";
 
 export interface MyDataResponse {

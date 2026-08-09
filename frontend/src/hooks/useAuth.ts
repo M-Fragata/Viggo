@@ -22,5 +22,5 @@ export function useCompanyStatus() {
 }
 
 export type UserRole = "MASTER" | "ENTERPRISE_ADMIN" | "EMPLOYEE";
-export type PlanTier = "TIER_I" | "TIER_II" | "TIER_III" | "ENTERPRISE_CUSTOM";
+export type PlanTier = "DYNAMIC" | "ENTERPRISE_CUSTOM";
 export type CompanyStatus = "TRIAL" | "ACTIVE" | "SUSPENDED" | "CANCELLED";
