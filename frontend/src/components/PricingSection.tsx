@@ -15,7 +15,6 @@ export function PricingSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const paragraphRef = useRef<HTMLParagraphElement>(null);
-  const cardsRef = useRef<HTMLDivElement>(null);
   const bottomBoxRef = useRef<HTMLDivElement>(null);
   const calculatorRef = useRef<HTMLDivElement>(null);
 
@@ -50,6 +49,11 @@ export function PricingSection() {
           if (entry.isIntersecting) {
             // Title split words
             if (titleRef.current) {
+              gsap.fromTo(titleRef.current,
+                { opacity: 0 },
+                { opacity: 1, duration: 0.01 },
+              );
+
               const titleSplitter = new TextSplitter(titleRef.current, {
                 type: "words",
                 wordsClass: "word",
@@ -66,6 +70,11 @@ export function PricingSection() {
 
             // Paragraph split lines
             if (paragraphRef.current) {
+              gsap.fromTo(paragraphRef.current,
+                { opacity: 0 },
+                { opacity: 1, duration: 0.01 },
+              );
+
               const paraSplitter = new TextSplitter(paragraphRef.current, {
                 type: "lines",
                 linesClass: "line",
@@ -81,40 +90,6 @@ export function PricingSection() {
               });
             }
 
-            // Cards appear from bottom
-            if (cardsRef.current) {
-              const cards = cardsRef.current.querySelectorAll(":scope > *");
-              gsap.fromTo(
-                cards,
-                { opacity: 0, y: 60 },
-                {
-                  opacity: 1,
-                  y: 0,
-                  stagger: 0.15,
-                  duration: 0.6,
-                  delay: 0.5,
-                  ease: "power3.out",
-                  clearProps: "transform",
-                }
-              );
-            }
-
-            // Bottom box appear
-            if (bottomBoxRef.current) {
-              gsap.fromTo(
-                bottomBoxRef.current,
-                { opacity: 0, y: 40 },
-                {
-                  opacity: 1,
-                  y: 0,
-                  duration: 0.5,
-                  delay: 0.9,
-                  ease: "power3.out",
-                  clearProps: "transform",
-                }
-              );
-            }
-
             observer.disconnect();
           }
         });
@@ -123,6 +98,36 @@ export function PricingSection() {
     );
 
     observer.observe(sectionRef.current);
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!bottomBoxRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            gsap.fromTo(
+              bottomBoxRef.current!,
+              { opacity: 0, y: 40 },
+              {
+                opacity: 1,
+                y: 0,
+                duration: 0.5,
+                ease: "power3.out",
+                clearProps: "transform",
+              }
+            );
+            observer.disconnect();
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(bottomBoxRef.current);
 
     return () => observer.disconnect();
   }, []);
@@ -138,13 +143,13 @@ export function PricingSection() {
           <h2
             ref={titleRef}
             id="pricing-heading"
-            className="text-4xl font-semibold tracking-tight text-on-dark leading-[1.2]"
+            className="text-4xl font-semibold tracking-tight text-on-dark leading-[1.2] opacity-0"
           >
             Planos simples e transparentes
           </h2>
           <p
             ref={paragraphRef}
-            className="mt-4 text-lg leading-relaxed text-on-dark-muted max-w-2xl mx-auto"
+            className="mt-4 text-lg leading-relaxed text-on-dark-muted max-w-2xl mx-auto opacity-0"
           >
             Todos os planos incluem trial de 30 dias, sem cartão de crédito.
             Cancele quando quiser.
@@ -153,7 +158,6 @@ export function PricingSection() {
 
         <div className="relative">
           <div
-            ref={cardsRef}
             className={`
               grid gap-8
               lg:grid-cols-2
@@ -180,7 +184,7 @@ export function PricingSection() {
           </div>
         </div>
 
-        <div ref={bottomBoxRef} className="mt-16">
+        <div ref={bottomBoxRef} className="mt-16 opacity-0">
           <div className="rounded-lg border border-hairline bg-surface p-8 md:p-12 text-center">
             <div className="mx-auto max-w-2xl">
               <h3 className="text-3xl font-semibold text-ink leading-snug sm:text-4xl">

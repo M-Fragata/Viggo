@@ -1,4 +1,6 @@
+import { useRef, useEffect } from "react";
 import { type PlanData, type PlanFeature, formatPrice, formatMaxEmployees } from "../../../shared/plans";
+import { gsap } from "gsap";
 
 interface PricingCardProps {
   plan: PlanData;
@@ -37,11 +39,43 @@ function CrossIcon() {
 
 export function PricingCard({ plan, onCtaClick }: PricingCardProps) {
   const isHighlighted = plan.highlighted;
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!cardRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            gsap.fromTo(
+              cardRef.current,
+              { opacity: 0, y: 60 },
+              {
+                opacity: 1,
+                y: 0,
+                duration: 0.6,
+                ease: "power3.out",
+                clearProps: "transform",
+              }
+            );
+            observer.disconnect();
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(cardRef.current);
+
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div
+      ref={cardRef}
       className={`
-        relative rounded-lg p-8 bg-canvas flex flex-col h-full transition-all duration-300 border-1 hover:scale-101
+        relative rounded-lg p-8 bg-canvas flex flex-col h-full transition-all duration-300 border-1 hover:scale-101 opacity-0
         ${isHighlighted
           ? "border-1 border-brand-green shadow-[0_8px_24px_rgba(0,212,164,0.08)] lg:-mt-8 z-10 hover:border-2"
           : "border-hairline hover:border-stone hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)]"
