@@ -2,7 +2,7 @@ import { Env } from '../utils/environment.js';
 
 const ASAAS_BASE_URL = Env.ASAAS_ENVIRONMENT === 'production'
   ? 'https://api.asaas.com/v3'
-  : 'https://sandbox.asaas.com/api/v3';
+  : 'https://api-sandbox.asaas.com/v3';
 
 const ASAAS_HEADERS = {
   'Content-Type': 'application/json',

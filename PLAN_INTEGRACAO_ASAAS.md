@@ -1112,10 +1112,7 @@ export const ENTERPRISE_PLAN: PlanData = {
   features: [
     { text: "Funcionários ilimitados", included: true },
     { text: "Tudo do plano Viggo", included: true },
-    { text: "SLA garantido 99.9%", included: true },
-    { text: "Gerente de conta dedicado", included: true },
-    { text: "Integrações customizadas", included: true },
-    { text: "Suporte prioritário 24/7", included: true },
+
   ],
   highlighted: false,
   ctaText: CUSTOM_PLAN_CTA,
