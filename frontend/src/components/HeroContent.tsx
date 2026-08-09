@@ -12,18 +12,29 @@ const HERO_WORDS = [
   "conformidade CLT",
 ];
 
-export function HeroContent() {
+interface HeroContentProps {
+  startAnimation?: boolean;
+}
+
+export function HeroContent({ startAnimation = true }: HeroContentProps) {
   const titleRef = useRef<HTMLHeadingElement>(null);
   const paragraphRef = useRef<HTMLParagraphElement>(null);
   const buttonsRef = useRef<HTMLDivElement>(null);
   const [showTypewriter, setShowTypewriter] = useState(false);
 
   useEffect(() => {
+    if (!startAnimation) return;
+
     const ctx = gsap.context(() => {
-      const tl = gsap.timeline({ defaults: { ease: 'power3.out' }, delay: 0.5 });
+      const tl = gsap.timeline({ defaults: { ease: 'power3.out' }, delay: 0.2 });
 
       // Split title by chars
       if (titleRef.current) {
+        tl.fromTo(titleRef.current.closest("h1")!,
+          { opacity: 0 },
+          { opacity: 1, duration: 0.01 },
+        );
+
         const titleSplitter = new TextSplitter(titleRef.current, {
           type: 'chars',
           charsClass: 'char'
@@ -95,11 +106,11 @@ export function HeroContent() {
     });
 
     return () => ctx.revert();
-  }, []);
+  }, [startAnimation]);
 
   return (
     <div className="text-center max-w-3xl flex flex-col items-center gap-5">
-      <h1 className="text-5xl sm:text-6xl lg:text-7xl font-semibold tracking-tight text-on-dark leading-[1.1]">
+      <h1 className="text-5xl sm:text-6xl lg:text-7xl font-semibold tracking-tight text-on-dark leading-[1.1] opacity-0">
         <span ref={titleRef}>Controle de ponto com</span>
         <br />
         <span className="text-brand-green inline-block min-h-[1.2em]">

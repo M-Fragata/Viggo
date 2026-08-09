@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router";
 import { PricingSection } from "../components/PricingSection";
 import { CTASection } from "../components/CTASection";
@@ -8,6 +9,7 @@ import Silk from "../components/Silk";
 import { HeroContent } from "../components/HeroContent";
 import { AnimatedTitle } from "../components/AnimatedTitle";
 import { useScrollReveal } from "../hooks/useScrollReveal";
+import { Preloader } from "../components/Preloader";
 
 import logo from "../assets/logo.png";
 import "../scroll-animations.css";
@@ -50,9 +52,17 @@ const EMPLOYER_SLIDES = [
 
 export function LandingPage() {
   useScrollReveal();
+  const [showPreloader, setShowPreloader] = useState(true);
+  const [startHeroAnimation, setStartHeroAnimation] = useState(false);
+
+  const handlePreloaderComplete = () => {
+    setShowPreloader(false);
+    setStartHeroAnimation(true);
+  };
 
   return (
     <div className="min-h-screen bg-black">
+      {showPreloader && <Preloader onComplete={handlePreloaderComplete} />}
       <header className="pt-1">
         <nav className="mx-auto max-w-7xl px-8" aria-label="Global">
           <div className="flex h-16 items-center justify-between">
@@ -112,7 +122,7 @@ export function LandingPage() {
             />
           </div>
           <div className="max-w-7xl mx-auto px-4 lg:px-8 relative z-10 h-full flex items-center justify-center">
-            <HeroContent />
+            <HeroContent startAnimation={startHeroAnimation} />
           </div>
         </section>
 
