@@ -94,9 +94,9 @@ export function PricingCard({ plan, onCtaClick }: PricingCardProps) {
         onClick={onCtaClick ?? (() => {})}
         className={`cursor-pointer w-full rounded-full px-6 py-3.5 text-sm font-medium
           transition-all duration-200 active:scale-[0.98]
-          focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
+          
           ${plan.ctaVariant === "primary"
-            ? "bg-primary text-on-primary hover:bg-charcoal focus-visible:outline-primary border border-brand-green"
+            ? "bg-primary text-on-primary hover:bg-brand-green-deep focus-visible:outline-primary border border-brand-green"
             : plan.ctaVariant === "secondary"
             ? "bg-canvas text-primary hover:bg-surface focus-visible:outline-canvas border border-hairline"
             : "border border-hairline bg-canvas text-ink hover:bg-surface focus-visible:outline-primary"

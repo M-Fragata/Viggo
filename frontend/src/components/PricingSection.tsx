@@ -1,11 +1,23 @@
-import { Link, useNavigate } from "react-router";
+import { useRef, useEffect, useState } from "react";
+import { useNavigate } from "react-router";
+import { gsap } from "gsap";
 import { PLANS, getHighlightedPlan } from "../../../shared/plans";
 import { PricingCard } from "./PricingCard";
+import { PricingCalculator } from "./PricingCalculator";
+import { TextSplitter } from "../utils/textSplitter";
 
 export function PricingSection() {
   const navigate = useNavigate();
   const highlightedPlan = getHighlightedPlan();
   const otherPlans = PLANS.filter((p) => !p.highlighted);
+  const [showCalculator, setShowCalculator] = useState(false);
+
+  const sectionRef = useRef<HTMLElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const paragraphRef = useRef<HTMLParagraphElement>(null);
+  const cardsRef = useRef<HTMLDivElement>(null);
+  const bottomBoxRef = useRef<HTMLDivElement>(null);
+  const calculatorRef = useRef<HTMLDivElement>(null);
 
   const handleCtaClick = (planId: string) => {
     if (planId === "ENTERPRISE_CUSTOM") {
@@ -15,14 +27,125 @@ export function PricingSection() {
     }
   };
 
+  const handleShowCalculator = () => {
+    setShowCalculator((prev) => {
+      const next = !prev;
+      setTimeout(() => {
+        if (next) {
+          calculatorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        } else {
+          bottomBoxRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 100);
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    if (!sectionRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            // Title split words
+            if (titleRef.current) {
+              const titleSplitter = new TextSplitter(titleRef.current, {
+                type: "words",
+                wordsClass: "word",
+              });
+              const titleWords = titleSplitter.getElements();
+              gsap.from(titleWords, {
+                opacity: 0,
+                y: 20,
+                stagger: 0.06,
+                duration: 0.5,
+                ease: "power3.out",
+              });
+            }
+
+            // Paragraph split lines
+            if (paragraphRef.current) {
+              const paraSplitter = new TextSplitter(paragraphRef.current, {
+                type: "lines",
+                linesClass: "line",
+              });
+              const lines = paraSplitter.getElements();
+              gsap.from(lines, {
+                opacity: 0,
+                y: 15,
+                stagger: 0.1,
+                duration: 0.4,
+                delay: 0.3,
+                ease: "power3.out",
+              });
+            }
+
+            // Cards appear from bottom
+            if (cardsRef.current) {
+              const cards = cardsRef.current.querySelectorAll(":scope > *");
+              gsap.fromTo(
+                cards,
+                { opacity: 0, y: 60 },
+                {
+                  opacity: 1,
+                  y: 0,
+                  stagger: 0.15,
+                  duration: 0.6,
+                  delay: 0.5,
+                  ease: "power3.out",
+                  clearProps: "transform",
+                }
+              );
+            }
+
+            // Bottom box appear
+            if (bottomBoxRef.current) {
+              gsap.fromTo(
+                bottomBoxRef.current,
+                { opacity: 0, y: 40 },
+                {
+                  opacity: 1,
+                  y: 0,
+                  duration: 0.5,
+                  delay: 0.9,
+                  ease: "power3.out",
+                  clearProps: "transform",
+                }
+              );
+            }
+
+            observer.disconnect();
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(sectionRef.current);
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <section className="py-24 bg-canvas-dark" aria-labelledby="pricing-heading">
-      <div className="mx-auto max-w-7xl px-8">
-        <header className="text-center mb-16 reveal">
-          <h2 id="pricing-heading" className="text-4xl font-semibold tracking-tight text-on-dark leading-[1.2]">
+    <section
+      ref={sectionRef}
+      className="py-10 lg:py-24 bg-canvas-dark"
+      aria-labelledby="pricing-heading"
+    >
+      <div className="mx-auto max-w-7xl px-4 lg:px-8">
+        <header className="text-center mb-16">
+          <h2
+            ref={titleRef}
+            id="pricing-heading"
+            className="text-4xl font-semibold tracking-tight text-on-dark leading-[1.2]"
+          >
             Planos simples e transparentes
           </h2>
-          <p className="mt-4 text-lg leading-relaxed text-on-dark-muted max-w-2xl mx-auto">
+          <p
+            ref={paragraphRef}
+            className="mt-4 text-lg leading-relaxed text-on-dark-muted max-w-2xl mx-auto"
+          >
             Todos os planos incluem trial de 30 dias, sem cartão de crédito.
             Cancele quando quiser.
           </p>
@@ -30,11 +153,11 @@ export function PricingSection() {
 
         <div className="relative">
           <div
+            ref={cardsRef}
             className={`
               grid gap-8
               lg:grid-cols-2
               lg:items-start
-              reveal-stagger
               ${highlightedPlan ? "lg:pt-8" : ""}
             `}
             role="list"
@@ -57,24 +180,30 @@ export function PricingSection() {
           </div>
         </div>
 
-        <div className="mt-16 reveal">
+        <div ref={bottomBoxRef} className="mt-16">
           <div className="rounded-lg border border-hairline bg-surface p-8 md:p-12 text-center">
             <div className="mx-auto max-w-2xl">
               <h3 className="text-3xl font-semibold text-ink leading-snug sm:text-4xl">
-                Precisa de algo maior?
+                Ficou com alguma dúvida sobre os valores?
               </h3>
               <p className="mt-4 text-lg leading-relaxed text-steel">
-                Funcionários ilimitados, integrações customizadas,
-                deploy on-premise, SLA personalizado e muito mais.
+                Use nossa calculadora para estimar o custo ideal para sua empresa.
               </p>
               <div className="mt-8">
-                <Link
-                  to="/planos/custom"
-                  className="inline-flex items-center justify-center rounded-full bg-primary px-8 py-3.5 text-sm font-medium text-on-primary hover:bg-charcoal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors"
+                <button
+                  onClick={handleShowCalculator}
+                  className="inline-flex items-center justify-center rounded-full bg-primary px-8 py-3.5 text-sm font-medium text-on-primary hover:bg-charcoal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors cursor-pointer"
                 >
-                  Falar com vendas
-                </Link>
+                  {showCalculator ? "Ocultar calculadora" : "Ver calculadora de preços"}
+                </button>
               </div>
+              {showCalculator && (
+                <div ref={calculatorRef} className="mt-10 flex justify-center">
+                  <div className="w-full">
+                    <PricingCalculator />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

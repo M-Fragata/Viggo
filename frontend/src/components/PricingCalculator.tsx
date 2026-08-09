@@ -21,7 +21,7 @@ export function PricingCalculator({ onCtaClick }: PricingCalculatorProps) {
   };
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-lg">
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 lg:p-8  shadow-lg">
       <div className="text-center mb-8">
         <span className="inline-block px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-full border border-emerald-200 mb-4">
           Plano Viggo

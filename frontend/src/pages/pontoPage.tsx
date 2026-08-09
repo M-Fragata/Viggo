@@ -400,7 +400,7 @@ export function PontoPage() {
                             <Button
                                 title="Cadastrar Facial"
                                 onClick={() => window.location.href = "/register"}
-                                className="w-full bg-emerald-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-amber-100 transition-all active:scale-95 cursor-pointer hover:bg-emerald-600"
+                                className="w-full bg-emerald-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-emerald-100 transition-all active:scale-95 cursor-pointer hover:bg-emerald-600"
                             />
                         </section>
                     </div>

@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { gsap } from 'gsap';
+import { TextSplitter } from '../utils/textSplitter';
 
 export interface CarouselSlide {
   image: string;
@@ -16,29 +18,114 @@ interface ImageCarouselProps {
 export function ImageCarousel({
   slides,
   autoPlay = true,
-  autoPlayInterval = 4000,
+  autoPlayInterval = 5000,
   className = ''
 }: ImageCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [descriptionKey, setDescriptionKey] = useState(0);
+
+  const descriptionRef = useRef<HTMLParagraphElement>(null);
+  const imageContainerRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLSpanElement>(null);
+  const isFirstRender = useRef(true);
 
   const goTo = useCallback((index: number) => {
+    if (isAnimating || index === activeIndex) return;
     setActiveIndex(index);
-  }, []);
+  }, [isAnimating, activeIndex]);
 
   const goNext = useCallback(() => {
+    if (isAnimating) return;
     setActiveIndex((prev) => (prev + 1) % slides.length);
-  }, [slides.length]);
+  }, [slides.length, isAnimating]);
 
   const goPrev = useCallback(() => {
+    if (isAnimating) return;
     setActiveIndex((prev) => (prev - 1 + slides.length) % slides.length);
-  }, [slides.length]);
+  }, [slides.length, isAnimating]);
 
   useEffect(() => {
-    if (!autoPlay || isPaused) return;
+    if (!autoPlay || isPaused || isAnimating) return;
     const interval = setInterval(goNext, autoPlayInterval);
     return () => clearInterval(interval);
-  }, [autoPlay, autoPlayInterval, isPaused, goNext]);
+  }, [autoPlay, autoPlayInterval, isPaused, goNext, isAnimating]);
+
+  useEffect(() => {
+    // Skip animation on first render
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    setIsAnimating(true);
+
+    // Force description to re-render with new content
+    setDescriptionKey(prev => prev + 1);
+
+    const tl = gsap.timeline({
+      onComplete: () => setIsAnimating(false)
+    });
+
+    // Fade out image
+    if (imageContainerRef.current) {
+      tl.to(imageContainerRef.current, {
+        opacity: 0,
+        scale: 0.95,
+        duration: 0.2,
+        ease: 'power2.in'
+      });
+    }
+
+    // Fade in image
+    if (imageContainerRef.current) {
+      tl.fromTo(imageContainerRef.current,
+        { opacity: 0, scale: 1.05 },
+        { opacity: 1, scale: 1, duration: 0.4, ease: 'power2.out' }
+      );
+    }
+
+    // Fade in title
+    if (titleRef.current) {
+      tl.from(titleRef.current, {
+        opacity: 0,
+        x: -10,
+        duration: 0.3,
+        ease: 'power2.out'
+      }, '-=0.3');
+    }
+
+    return () => {
+      tl.kill();
+    };
+  }, [activeIndex]);
+
+  // Separate effect for description split words animation
+  useEffect(() => {
+    if (isFirstRender.current || !descriptionRef.current) return;
+
+    // Wait for React to render the new text, then split and animate
+    const timeout = setTimeout(() => {
+      if (!descriptionRef.current) return;
+
+      const splitter = new TextSplitter(descriptionRef.current, {
+        type: 'words',
+        wordsClass: 'word'
+      });
+      const words = splitter.getElements();
+
+      gsap.from(words, {
+        opacity: 0,
+        y: 15,
+        stagger: 0.03,
+        duration: 0.3,
+        ease: 'power2.out'
+      });
+    }, 50);
+
+    return () => clearTimeout(timeout);
+  }, [descriptionKey]);
 
   const getSlideIndex = (offset: number) => {
     return (activeIndex + offset + slides.length) % slides.length;
@@ -56,8 +143,11 @@ export function ImageCarousel({
       <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-sm p-6 md:p-8">
 
         {/* Texto explicativo */}
-        <div className="mb-6 rounded-xl bg-white/10 px-6 py-4">
-          <p className="text-sm md:text-base text-on-dark leading-relaxed">
+        <div className="mb-6 rounded-xl bg-white/10 px-6 py-4 min-h-[80px]">
+          <p
+            ref={descriptionRef}
+            className="text-sm md:text-base text-on-dark leading-relaxed"
+          >
             {currentSlide.description}
           </p>
         </div>
@@ -82,7 +172,10 @@ export function ImageCarousel({
 
           {/* Imagem central */}
           <div className="flex-shrink-0 w-full md:w-[55%] h-full relative">
-            <div className="w-full h-full rounded-2xl overflow-hidden shadow-2xl transition-all duration-500">
+            <div
+              ref={imageContainerRef}
+              className="w-full h-full rounded-2xl overflow-hidden shadow-2xl"
+            >
               <img
                 src={currentSlide.image}
                 alt={currentSlide.title}
@@ -92,7 +185,10 @@ export function ImageCarousel({
 
             {/* Label do nome da página */}
             <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-sm rounded-lg px-4 py-2">
-              <span className="text-sm font-medium text-white">
+              <span
+                ref={titleRef}
+                className="text-sm font-medium text-white"
+              >
                 {currentSlide.title}
               </span>
             </div>
