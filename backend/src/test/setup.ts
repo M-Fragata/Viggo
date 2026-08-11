@@ -1,4 +1,5 @@
-import { beforeAll, afterAll, vi } from "vitest";
+/// <reference types="node" />
+import { afterAll, vi } from "vitest";
 
 process.env.NODE_ENV = "TEST";
 process.env.JWT_SECRET = "test-jwt-secret-key-for-testing-only";
@@ -12,17 +13,15 @@ process.env.ASAAS_API_KEY = "test-asaas-key";
 process.env.ASAAS_ENVIRONMENT = "sandbox";
 process.env.ASAAS_WEBHOOK_TOKEN = "test-webhook-token";
 
-beforeAll(() => {
-  vi.mock("../utils/logger.ts", () => ({
-    default: {
-      info: vi.fn(),
-      warn: vi.fn(),
-      error: vi.fn(),
-      debug: vi.fn(),
-      child: vi.fn().mockReturnThis(),
-    },
-  }));
-});
+vi.mock("../utils/logger.ts", () => ({
+  default: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+    child: vi.fn().mockReturnThis(),
+  },
+}));
 
 afterAll(() => {
   vi.restoreAllMocks();

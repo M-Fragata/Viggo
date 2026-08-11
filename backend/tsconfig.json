@@ -45,6 +45,5 @@
     "dist",
     "prisma",
     "prisma.config.ts",
-    "src/test"
   ]
 }

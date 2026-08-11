@@ -95,11 +95,20 @@ export class SessionController {
             const { userId } = paramsSchema.parse(req.params)
             const { faceDescriptor } = bodySchema.parse(req.body)
 
+            const authenticatedUserId = req.user?.id;
+            if (!authenticatedUserId) {
+                return res.status(401).json({ message: "Não autenticado" })
+            }
+
             const user = await prisma.user.findUnique({
                 where: { id: userId }
             })
 
             if (!user) return res.status(404).json({ message: "Usuário não encontrado" })
+
+            if (user.companyId !== req.user?.companyId) {
+                return res.status(404).json({ message: "Usuário não encontrado" })
+            }
 
             await prisma.user.update({
                 where: {
