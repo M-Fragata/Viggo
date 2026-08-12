@@ -11,9 +11,9 @@ const NAV_ITEMS_EMPLOYEE = [
 
 const NAV_ITEMS_ADMIN = [
   { to: "/", icon: LayoutDashboard, label: "Painel" },
-  { to: "/meus-dados", icon: User, label: "Meus Dados" },
   { to: "/ponto", icon: Fingerprint, label: "Ponto" },
   { to: "/pontos", icon: Clock, label: "Histórico" },
+  { to: "/meus-dados", icon: User, label: "Meus Dados" },
 ] as const;
 
 export function MobileNav() {

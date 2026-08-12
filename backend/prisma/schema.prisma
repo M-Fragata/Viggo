@@ -19,6 +19,8 @@ model Company {
   asaasPaymentMethod  String?        // 'PIX' | 'CREDIT_CARD'
   settings            Json?
   trialUsed           Boolean        @default(false)
+  totemPinHash        String?
+  totemActive         Boolean        @default(false)
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
   checkIns            CheckIn[]

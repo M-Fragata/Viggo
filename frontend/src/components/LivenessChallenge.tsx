@@ -12,6 +12,7 @@ interface LivenessChallengeProps {
   onComplete: (bestFrameDescriptor: Float32Array) => void;
   onCancel: () => void;
   faceToken?: string;
+  verifyOverride?: (descriptor: Float32Array) => Promise<{ success: boolean; distance: number }>;
   onModelsLoaded?: () => void;
   onStepChange?: (message: string) => void;
 }
@@ -228,6 +229,7 @@ export function LivenessChallenge({
   onComplete,
   onCancel,
   faceToken,
+  verifyOverride,
   onModelsLoaded,
   onStepChange
 }: LivenessChallengeProps) {
@@ -370,6 +372,9 @@ export function LivenessChallenge({
 
   const validateDescriptorWithBackend = useCallback(async (descriptor: Float32Array): Promise<{ success: boolean; distance: number }> => {
     try {
+      if (verifyOverride) {
+        return await verifyOverride(descriptor);
+      }
       if (!faceToken) {
         return { success: true, distance: 0 };
       }
@@ -380,7 +385,7 @@ export function LivenessChallenge({
       console.error('Erro na verificação backend:', err);
       return { success: false, distance: -1 };
     }
-  }, [faceToken]);
+  }, [faceToken, verifyOverride]);
 
   const handleValidationSuccess = useCallback((descriptor: Float32Array) => {
     setBestFrameDescriptor(descriptor);

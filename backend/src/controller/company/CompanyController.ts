@@ -202,6 +202,7 @@ export class CompanyController {
           maxEmployees: true,
           settings: true,
           trialUsed: true,
+          totemActive: true,
           billingType: true,
           asaasPaymentMethod: true,
           createdAt: true,

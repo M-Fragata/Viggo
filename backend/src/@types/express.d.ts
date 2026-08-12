@@ -7,5 +7,8 @@ declare namespace Express {
             planTier?: string;
             isMaster?: boolean;
         }
+        totemContext?: {
+            companyId: string;
+        }
     }
 }

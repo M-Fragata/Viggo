@@ -21,6 +21,7 @@ export function LoginPage() {
   });
 
   async function handleSubmit(_prevState: unknown, formData: FormData) {
+
     const bodySchema = z.object({
       email: z.email("Email inválido"),
       password: z.string().min(6, "A senha deve conter no mínimo 6 caracteres"),
@@ -41,9 +42,9 @@ export function LoginPage() {
       } else {
         navigate("/");
       }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Erro ao fazer login, tente novamente";
-      return { message, payload };
+    } catch (err: any) {
+      const message = (err instanceof Error ? err.message : "Erro ao fazer login, tente novamente");
+      return { message: message, payload };
     }
   }
 

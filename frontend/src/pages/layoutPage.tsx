@@ -1,17 +1,30 @@
 import { useState } from "react";
-import { Link, Outlet } from "react-router";
+import { Link, Outlet, useNavigate } from "react-router";
 import { LogOut, Menu, X } from "lucide-react";
 
 import logo from "../assets/logo.png"
 import { useAuth } from "../hooks/useAuth";
 import { ImpersonationBanner } from "../components/master/ImpersonationBanner";
 import { MobileNav } from "../components/MobileNav";
+import { TotemActivateModal } from "../components/admin/TotemActivateModal";
 
 export function LayoutPage() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isTotemModalOpen, setIsTotemModalOpen] = useState(false);
     const { name, logout, isImpersonated, isEnterpriseAdmin, isMaster } = useAuth();
+    const navigate = useNavigate();
 
     const closeMenu = () => setIsMenuOpen(false);
+
+    const handleTotemClick = () => {
+        const token = localStorage.getItem("@viggo:totem");
+        if (token) {
+            navigate("/totem");
+        } else {
+            setIsTotemModalOpen(true);
+        }
+        closeMenu();
+    };
 
     return (
         <div className="min-h-screen flex flex-col overflow-hidden bg-gray-50 relative">
@@ -46,18 +59,10 @@ export function LayoutPage() {
                                 </p>
                             ) : null}
                         </div>
-                        {/* LOGOUT DIRETO NO MOBILE */}
-                        <button
-                            onClick={logout}
-                            className="p-2 text-red-500 transition-all duration-300 cursor-pointer rounded-md hover:bg-red-50 md:hidden"
-                            title="Sair"
-                        >
-                            <LogOut size={24} />
-                        </button>
-                        {/* HAMBURGER SÓ NO DESKTOP */}
+                        {/* HAMBURGER EM TODAS AS TELAS */}
                         <button
                             onClick={() => setIsMenuOpen(!isMenuOpen)}
-                            className="p-2 text-emerald-600 transition-all duration-300 cursor-pointer rounded-md hover:bg-emerald-50 hidden md:block"
+                            className="p-2 text-emerald-600 transition-all duration-300 cursor-pointer rounded-md hover:bg-emerald-50"
                         >
                             {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
                         </button>
@@ -66,43 +71,105 @@ export function LayoutPage() {
 
                 {/* MENU DROPDOWN */}
                 <div className={`flex justify-center text-center
-                     overflow-hidden transition-all duration-300 ease-in-out
-                    ${isMenuOpen ? "max-h-80 opacity-100 border-t border-emerald-600 mt-4" : "max-h-0 opacity-0 pointer-events-none"}
+                     overflow-y-auto transition-all duration-300 ease-in-out
+                    ${isMenuOpen ? "max-h-[640px] opacity-100 border-t border-emerald-600 mt-4" : "max-h-0 opacity-0 pointer-events-none"}
                 `}>
-                    <nav className="flex flex-col gap-4 py-4 w-full">
+                    <nav className="flex flex-col gap-2 py-4 w-full mx-auto px-2">
+                        {/* Páginas comuns (todos os usuários) */}
                         <Link
                             to="/ponto"
                             onClick={closeMenu}
-                            className="text-gray-600 hover:text-emerald-600 font-medium px-2 py-1 transition-colors"
+                            className="text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 font-medium px-3 py-2 rounded-xl transition-colors"
                         >
                             Bater Ponto
                         </Link>
                         <Link
                             to="/pontos"
                             onClick={closeMenu}
-                            className="text-gray-600 hover:text-emerald-600 font-medium px-2 py-1 transition-colors"
+                            className="text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 font-medium px-3 py-2 rounded-xl transition-colors"
                         >
                             Histórico
                         </Link>
                         <Link
                             to="/meus-dados"
                             onClick={closeMenu}
-                            className="text-gray-600 hover:text-emerald-600 font-medium px-2 py-1 transition-colors"
+                            className="text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 font-medium px-3 py-2 rounded-xl transition-colors"
                         >
                             Meus Dados
                         </Link>
+
+                        {/* Divisor verde + seção admin */}
                         {(isEnterpriseAdmin || isMaster) && (
-                            <Link
-                                to="/"
-                                onClick={closeMenu}
-                                className="text-emerald-600 hover:bg-emerald-600 hover:text-white rounded-xl font-medium px-2 py-1 transition-colors"
-                            >
-                                Painel Admin
-                            </Link>
+                            <>
+                                <div className="border-b-2 border-emerald-500 my-2 mx-2" />
+                                <Link
+                                    to="/"
+                                    onClick={closeMenu}
+                                    className="text-emerald-700 hover:bg-emerald-50 font-semibold px-3 py-2 rounded-xl transition-colors"
+                                >
+                                    Painel Admin
+                                </Link>
+                                <Link
+                                    to="/funcionarios"
+                                    onClick={closeMenu}
+                                    className="text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 font-medium px-3 py-2 rounded-xl transition-colors"
+                                >
+                                    Funcionários
+                                </Link>
+                                <Link
+                                    to="/presentes"
+                                    onClick={closeMenu}
+                                    className="text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 font-medium px-3 py-2 rounded-xl transition-colors"
+                                >
+                                    Presentes
+                                </Link>
+                                <Link
+                                    to="/folha-mensal"
+                                    onClick={closeMenu}
+                                    className="text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 font-medium px-3 py-2 rounded-xl transition-colors"
+                                >
+                                    Folha Mensal
+                                </Link>
+                                <Link
+                                    to="/horarios"
+                                    onClick={closeMenu}
+                                    className="text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 font-medium px-3 py-2 rounded-xl transition-colors"
+                                >
+                                    Horários
+                                </Link>
+                                <Link
+                                    to="/convites"
+                                    onClick={closeMenu}
+                                    className="text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 font-medium px-3 py-2 rounded-xl transition-colors"
+                                >
+                                    Convites
+                                </Link>
+                                <Link
+                                    to="/justificativas"
+                                    onClick={closeMenu}
+                                    className="text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 font-medium px-3 py-2 rounded-xl transition-colors"
+                                >
+                                    Justificativas
+                                </Link>
+                                <Link
+                                    to="/plano"
+                                    onClick={closeMenu}
+                                    className="text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 font-medium px-3 py-2 rounded-xl transition-colors"
+                                >
+                                    Meu Plano
+                                </Link>
+                                <button
+                                    onClick={handleTotemClick}
+                                    className="text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 font-medium px-3 py-2 rounded-xl transition-colors cursor-pointer"
+                                >
+                                    Modo Totem
+                                </button>
+                            </>
                         )}
+
                         <button
                             onClick={logout}
-                            className="flex justify-center items-center gap-2 text-red-500 font-medium px-2 py-1 hover:text-red-600 transition-colors cursor-pointer border-t border-gray-100 mt-2 pt-4"
+                            className="flex justify-center items-center gap-2 text-red-500 font-medium px-3 py-2 hover:text-red-600 transition-colors cursor-pointer border-t border-gray-100 mt-2 pt-4"
                         >
                             <LogOut size={20} />
                             <span>Sair</span>
@@ -127,6 +194,13 @@ export function LayoutPage() {
 
             {/* MOBILE BOTTOM NAV */}
             <MobileNav />
+
+            {/* MODAL ATIVAÇÃO TOTEM */}
+            <TotemActivateModal
+                isOpen={isTotemModalOpen}
+                onClose={() => setIsTotemModalOpen(false)}
+                onActivated={() => navigate("/totem")}
+            />
         </div>
     );
 }

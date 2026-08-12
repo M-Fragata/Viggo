@@ -2,12 +2,17 @@ import { API_URL } from "../utils/api";
 
 interface FetchOptions extends RequestInit {
   requiresAuth?: boolean;
+  totemToken?: boolean;
 }
 
 async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {
-  const { requiresAuth = true, headers = {}, ...restOptions } = options;
+  const { requiresAuth = true, totemToken = false, headers = {}, ...restOptions } = options;
 
-  const token = requiresAuth ? localStorage.getItem("@viggo:token") : null;
+  const token = totemToken
+    ? localStorage.getItem("@viggo:totem")
+    : requiresAuth
+      ? localStorage.getItem("@viggo:token")
+      : null;
 
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...restOptions,
@@ -19,6 +24,11 @@ async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promis
   });
 
   if (response.status === 401) {
+    if (totemToken) {
+      localStorage.removeItem("@viggo:totem");
+      window.location.href = "/";
+      return new Promise<T>(() => { }) as Promise<T>;
+    }
     localStorage.removeItem("@viggo:token");
     window.location.href = "/";
     return new Promise<T>(() => { }) as Promise<T>;
@@ -26,7 +36,7 @@ async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promis
 
   if (response.status === 403) {
     const error = await response.json().catch(() => ({}));
-    if (error.code === "FACE_NOT_REGISTERED") {
+    if (!totemToken && error.code === "FACE_NOT_REGISTERED") {
       window.location.href = "/register";
       return new Promise<T>(() => { }) as Promise<T>;
     }
@@ -259,6 +269,44 @@ export const api = {
         body: JSON.stringify({ employeeId, workScheduleId }),
       }),
   },
+
+  totem: {
+    activate: (pin: string) =>
+      fetchApi<{ totemToken: string; expiresIn: number }>("/totem/companies/me/totem/activate", {
+        method: "POST",
+        body: JSON.stringify({ pin }),
+      }),
+
+    deactivate: (pin: string) =>
+      fetchApi<{ message: string }>("/totem/companies/me/totem/deactivate", {
+        method: "POST",
+        body: JSON.stringify({ pin }),
+      }),
+
+    verify: (email: string, password: string) =>
+      fetchApi<TotemVerifyResponse>("/totem/verify", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+        requiresAuth: false,
+        totemToken: true,
+      }),
+
+    checkin: (data: TotemCheckinDto) =>
+      fetchApi<TotemCheckinResponse>("/totem/checkin", {
+        method: "POST",
+        body: JSON.stringify(data),
+        requiresAuth: false,
+        totemToken: true,
+      }),
+
+    verifyFace: (token: string, descriptor: number[]) =>
+      fetchApi<VerifyFaceResponse>("/totem/face/verify", {
+        method: "POST",
+        body: JSON.stringify({ token, descriptor }),
+        requiresAuth: false,
+        totemToken: true,
+      }),
+  },
 };
 
 export interface User {
@@ -329,6 +377,7 @@ export interface CompanyResponse {
   asaasPaymentMethod: string | null;
   settings: CompanySettings;
   trialUsed: boolean;
+  totemActive: boolean;
   createdAt: string;
   pricing: {
     basePrice: number;
@@ -706,4 +755,27 @@ export interface WorkScheduleResponse {
   _count: { users: number };
   createdAt: string;
   updatedAt: string;
+}
+
+export interface TotemVerifyResponse {
+  faceToken: string;
+  expiresIn: number;
+  userId: string;
+  userName: string;
+}
+
+export interface TotemCheckinDto {
+  userId: string;
+  type: "ENTRY" | "LUNCH_START" | "LUNCH_END" | "EXIT";
+  latitude: number;
+  longitude: number;
+  faceToken: string;
+}
+
+export interface TotemCheckinResponse {
+  checkin: {
+    checkin: CheckinResponse;
+  };
+  comprovante: string;
+  hashVerificacao: string;
 }

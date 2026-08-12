@@ -95,7 +95,7 @@ export function AcceptInvitePage() {
   if (error || !invite) {
     return (
       <div className="flex items-center justify-center w-dvw h-dvh px-2 py-2">
-        <div className="w-full max-w-md text-center p-8 bg-white rounded-2xl border border-slate-200 shadow-lg">
+        <div className="w-full max-w-7xl text-center p-8 bg-white rounded-2xl border border-slate-200 shadow-lg">
           <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
             <Shield className="w-8 h-8 text-red-500" />
           </div>
@@ -118,7 +118,7 @@ export function AcceptInvitePage() {
   if (isExpired) {
     return (
       <div className="flex items-center justify-center w-dvw h-dvh px-2 py-2">
-        <div className="w-full max-w-md text-center p-8 bg-white rounded-2xl border border-slate-200 shadow-lg">
+        <div className="w-full max-w-7xl text-center p-8 bg-white rounded-2xl border border-slate-200 shadow-lg">
           <div className="w-16 h-16 mx-auto mb-4 bg-amber-100 rounded-full flex items-center justify-center">
             <svg className="w-8 h-8 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />

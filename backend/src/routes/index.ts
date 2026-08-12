@@ -11,6 +11,7 @@ import { privacyRoutes } from "./privacyRoutes.js";
 import { justificativaRoutes } from "./justificativaRoutes.js";
 import { workScheduleRoutes } from "./workScheduleRoutes.js";
 import { biometricRevalidationRoutes } from "./biometricRevalidationRoutes.js";
+import { totemRoutes } from "./totemRoutes.js";
 
 const routes = Router();
 
@@ -25,5 +26,6 @@ routes.use("/privacy", privacyRoutes);
 routes.use("/justificativas", justificativaRoutes);
 routes.use("/work-schedules", workScheduleRoutes);
 routes.use("/biometric-revalidation", biometricRevalidationRoutes);
+routes.use("/totem", totemRoutes);
 
 export { routes }

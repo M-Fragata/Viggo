@@ -13,12 +13,28 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    setupFiles: ["./src/test/setup.ts"],
-    globalSetup: "./src/test/globalSetup.ts",
-    include: ["src/**/*.test.ts"],
-    exclude: ["node_modules", "dist"],
     testTimeout: 30000,
     hookTimeout: 30000,
+    projects: [
+      {
+        test: {
+          name: "unit",
+          include: ["src/**/*.test.ts"],
+          exclude: ["src/**/integration/**", "node_modules", "dist"],
+          setupFiles: ["./src/test/setup.ts"],
+          globalSetup: "./src/test/globalSetup.ts",
+        },
+      },
+      {
+        test: {
+          name: "integration",
+          include: ["src/**/integration/**/*.test.ts"],
+          exclude: ["node_modules", "dist"],
+          setupFiles: ["./src/test/integration/setup.ts"],
+          globalSetup: "./src/test/globalSetup.ts",
+        },
+      },
+    ],
     coverage: {
       provider: "v8",
       reporter: ["text", "html", "lcov"],

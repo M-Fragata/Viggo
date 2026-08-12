@@ -23,18 +23,25 @@ export const extendedPrisma = prisma.$extends({
   name: 'multi-tenancy',
   query: {
     $allModels: {
-      async $allOperations({ args, query, operation }) {
+      async $allOperations({ args, query, operation, model }) {
         const store = prismaContextStore.getStore();
         const companyId = store?.companyId;
+
+        if (model === 'Company') {
+          return query(args);
+        }
 
         if (companyId && operationsWithWhere.includes(operation)) {
           if (args && typeof args === 'object' && 'where' in args) {
             const typedArgs = args as Record<string, unknown>;
             if (typedArgs.where) {
-              typedArgs.where = {
-                ...(typedArgs.where as Record<string, unknown>),
-                companyId,
-              };
+              const where = typedArgs.where as Record<string, unknown>;
+              if (!('companyId' in where) && !('id' in where && Object.keys(where).length === 1)) {
+                typedArgs.where = {
+                  ...where,
+                  companyId,
+                };
+              }
             } else {
               typedArgs.where = { companyId };
             }
