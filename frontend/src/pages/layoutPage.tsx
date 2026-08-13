@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, Outlet, useNavigate } from "react-router";
 import { LogOut, Menu, X } from "lucide-react";
 
@@ -7,14 +7,14 @@ import { useAuth } from "../hooks/useAuth";
 import { ImpersonationBanner } from "../components/master/ImpersonationBanner";
 import { MobileNav } from "../components/MobileNav";
 import { TotemActivateModal } from "../components/admin/TotemActivateModal";
+import { StaggeredMenu, type StaggeredMenuHandle, type StaggeredMenuItem } from "../components/StaggeredMenu";
 
 export function LayoutPage() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isTotemModalOpen, setIsTotemModalOpen] = useState(false);
+    const menuRef = useRef<StaggeredMenuHandle>(null);
     const { name, logout, isImpersonated, isEnterpriseAdmin, isMaster } = useAuth();
     const navigate = useNavigate();
-
-    const closeMenu = () => setIsMenuOpen(false);
 
     const handleTotemClick = () => {
         const token = localStorage.getItem("@viggo:totem");
@@ -23,20 +23,39 @@ export function LayoutPage() {
         } else {
             setIsTotemModalOpen(true);
         }
-        closeMenu();
+    };
+
+    const commonItems: StaggeredMenuItem[] = [
+        { label: "Bater Ponto", ariaLabel: "Bater Ponto", link: "/ponto" },
+        { label: "Histórico", ariaLabel: "Histórico", link: "/pontos" },
+        { label: "Meus Dados", ariaLabel: "Meus Dados", link: "/meus-dados" },
+        { label: "Justificativas", ariaLabel: "Justificativas", link: "/justificativas" },
+    ];
+
+    const adminItems: StaggeredMenuItem[] = [
+        { label: "Painel Admin", ariaLabel: "Painel Admin", link: "/" },
+        { label: "Funcionários", ariaLabel: "Funcionários", link: "/funcionarios" },
+        { label: "Presentes", ariaLabel: "Presentes", link: "/presentes" },
+        { label: "Folha Mensal", ariaLabel: "Folha Mensal", link: "/folha-mensal" },
+        { label: "Horários", ariaLabel: "Horários", link: "/horarios" },
+        { label: "Convites", ariaLabel: "Convites", link: "/convites" },
+        { label: "Meu Plano", ariaLabel: "Meu Plano", link: "/plano" },
+        { label: "Modo Totem", ariaLabel: "Modo Totem", link: "/totem" },
+    ];
+
+    const items = isEnterpriseAdmin || isMaster ? [...commonItems, ...adminItems] : commonItems;
+
+    const handleItemClick = (item: StaggeredMenuItem) => {
+        if (item.link === "/totem") {
+            handleTotemClick();
+        } else {
+            navigate(item.link);
+        }
     };
 
     return (
         <div className="min-h-screen flex flex-col overflow-hidden bg-gray-50 relative">
             <ImpersonationBanner />
-
-            {/* OVERLAY: Aparece apenas quando o menu está aberto */}
-            {isMenuOpen && (
-                <div
-                    className="fixed inset-0 z-31 bg-black/5 backdrop-blur-[1px] transition-opacity"
-                    onClick={closeMenu}
-                />
-            )}
 
             {/* HEADER */}
             <header className={`fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 py-2 px-6 shadow-sm ${isImpersonated ? "top-16" : "top-0"}`}>
@@ -44,7 +63,7 @@ export function LayoutPage() {
                     {/* LOGO */}
                     <div>
                         <div>
-                            <Link to="/" onClick={closeMenu}>
+                            <Link to="/" onClick={() => menuRef.current?.close()}>
                                 <img className="w-28 h-auto"
                                     src={logo} alt="Logo" />
                             </Link>
@@ -61,125 +80,17 @@ export function LayoutPage() {
                         </div>
                         {/* HAMBURGER EM TODAS AS TELAS */}
                         <button
-                            onClick={() => setIsMenuOpen(!isMenuOpen)}
+                            onClick={() => (isMenuOpen ? menuRef.current?.close() : menuRef.current?.open())}
                             className="p-2 text-emerald-600 transition-all duration-300 cursor-pointer rounded-md hover:bg-emerald-50"
                         >
                             {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
                         </button>
                     </div>
                 </div>
-
-                {/* MENU DROPDOWN */}
-                <div className={`flex justify-center text-center
-                     overflow-y-auto transition-all duration-300 ease-in-out
-                    ${isMenuOpen ? "max-h-[640px] opacity-100 border-t border-emerald-600 mt-4" : "max-h-0 opacity-0 pointer-events-none"}
-                `}>
-                    <nav className="flex flex-col gap-2 py-4 w-full mx-auto px-2">
-                        {/* Páginas comuns (todos os usuários) */}
-                        <Link
-                            to="/ponto"
-                            onClick={closeMenu}
-                            className={`text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 font-medium px-3 py-2 rounded-xl transition-colors ${isEnterpriseAdmin || isMaster ? "hidden md:block" : ""}`}
-                        >
-                            Bater Ponto
-                        </Link>
-                        <Link
-                            to="/pontos"
-                            onClick={closeMenu}
-                            className={`text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 font-medium px-3 py-2 rounded-xl transition-colors ${isEnterpriseAdmin || isMaster ? "hidden md:block" : ""}`}
-                        >
-                            Histórico
-                        </Link>
-                        <Link
-                            to="/meus-dados"
-                            onClick={closeMenu}
-                            className={`text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 font-medium px-3 py-2 rounded-xl transition-colors ${isEnterpriseAdmin || isMaster ? "hidden md:block" : ""}`}
-                        >
-                            Meus Dados
-                        </Link>
-
-                        {/* Divisor verde + seção admin */}
-                        {(isEnterpriseAdmin || isMaster) && (
-                            <>
-                                <div className="border-b-2 border-emerald-500 my-2 mx-2" />
-                                <Link
-                                    to="/"
-                                    onClick={closeMenu}
-                                    className="text-emerald-700 hover:bg-emerald-50 font-semibold px-3 py-2 rounded-xl transition-colors"
-                                >
-                                    Painel Admin
-                                </Link>
-                                <Link
-                                    to="/funcionarios"
-                                    onClick={closeMenu}
-                                    className="text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 font-medium px-3 py-2 rounded-xl transition-colors"
-                                >
-                                    Funcionários
-                                </Link>
-                                <Link
-                                    to="/presentes"
-                                    onClick={closeMenu}
-                                    className="text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 font-medium px-3 py-2 rounded-xl transition-colors"
-                                >
-                                    Presentes
-                                </Link>
-                                <Link
-                                    to="/folha-mensal"
-                                    onClick={closeMenu}
-                                    className="text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 font-medium px-3 py-2 rounded-xl transition-colors"
-                                >
-                                    Folha Mensal
-                                </Link>
-                                <Link
-                                    to="/horarios"
-                                    onClick={closeMenu}
-                                    className="text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 font-medium px-3 py-2 rounded-xl transition-colors"
-                                >
-                                    Horários
-                                </Link>
-                                <Link
-                                    to="/convites"
-                                    onClick={closeMenu}
-                                    className="text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 font-medium px-3 py-2 rounded-xl transition-colors"
-                                >
-                                    Convites
-                                </Link>
-                                <Link
-                                    to="/justificativas"
-                                    onClick={closeMenu}
-                                    className="text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 font-medium px-3 py-2 rounded-xl transition-colors"
-                                >
-                                    Justificativas
-                                </Link>
-                                <Link
-                                    to="/plano"
-                                    onClick={closeMenu}
-                                    className="text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 font-medium px-3 py-2 rounded-xl transition-colors"
-                                >
-                                    Meu Plano
-                                </Link>
-                                <button
-                                    onClick={handleTotemClick}
-                                    className="text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 font-medium px-3 py-2 rounded-xl transition-colors cursor-pointer"
-                                >
-                                    Modo Totem
-                                </button>
-                            </>
-                        )}
-
-                        <button
-                            onClick={logout}
-                            className="flex justify-center items-center gap-2 text-red-500 font-medium px-3 py-2 hover:text-red-600 transition-colors cursor-pointer border-t border-gray-100 mt-2 pt-4"
-                        >
-                            <LogOut size={20} />
-                            <span>Sair</span>
-                        </button>
-                    </nav>
-                </div>
             </header>
 
             {/* CONTEÚDO PRINCIPAL */}
-            <main className={`flex-1 flex flex-col justify-start w-full mx-auto overflow-y-auto pb-20 md:pb-6 md:px-6 ${isMenuOpen ? "z-30" : "z-40"} ${isImpersonated ? "pt-32" : "pt-16"}`}>
+            <main className={`flex-1 flex flex-col justify-start w-full mx-auto overflow-y-auto pb-20 md:pb-6 md:px-6 ${isImpersonated ? "pt-32" : "pt-16"}`}>
                 <Outlet />
             </main>
 
@@ -194,6 +105,34 @@ export function LayoutPage() {
 
             {/* MOBILE BOTTOM NAV */}
             <MobileNav />
+
+            {/* MENU ANIMADO (PAINEL DESLIZANTE) */}
+            <StaggeredMenu
+                ref={menuRef}
+                isFixed
+                showHeader={false}
+                colors={["#064e3b", "#065f46", "#047857", "#059669"]}
+                accentColor="#059669"
+                items={items}
+                displaySocials={false}
+                displayItemNumbering={true}
+                offsetTop={isImpersonated ? 64 : 0}
+                onMenuOpen={() => setIsMenuOpen(true)}
+                onMenuClose={() => setIsMenuOpen(false)}
+                onItemClick={handleItemClick}
+                footerContent={
+                    <button
+                        onClick={() => {
+                            menuRef.current?.close();
+                            logout();
+                        }}
+                        className="flex justify-center items-center gap-2 text-red-500 font-medium px-3 py-2 hover:text-red-600 transition-colors cursor-pointer border-t border-gray-100 mt-2 pt-4"
+                    >
+                        <LogOut size={20} />
+                        <span>Sair</span>
+                    </button>
+                }
+            />
 
             {/* MODAL ATIVAÇÃO TOTEM */}
             <TotemActivateModal
