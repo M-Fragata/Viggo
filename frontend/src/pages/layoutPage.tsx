@@ -39,7 +39,7 @@ export function LayoutPage() {
             )}
 
             {/* HEADER */}
-            <header className={`bg-white border-b border-gray-200 py-2 px-6 shadow-sm sticky z-32 ${isImpersonated ? "top-16" : "top-0"}`}>
+            <header className={`fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 py-2 px-6 shadow-sm ${isImpersonated ? "top-16" : "top-0"}`}>
                 <div className="max-w-7xl mx-auto flex justify-between items-center">
                     {/* LOGO */}
                     <div>
@@ -79,21 +79,21 @@ export function LayoutPage() {
                         <Link
                             to="/ponto"
                             onClick={closeMenu}
-                            className="text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 font-medium px-3 py-2 rounded-xl transition-colors"
+                            className={`text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 font-medium px-3 py-2 rounded-xl transition-colors ${isEnterpriseAdmin || isMaster ? "hidden md:block" : ""}`}
                         >
                             Bater Ponto
                         </Link>
                         <Link
                             to="/pontos"
                             onClick={closeMenu}
-                            className="text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 font-medium px-3 py-2 rounded-xl transition-colors"
+                            className={`text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 font-medium px-3 py-2 rounded-xl transition-colors ${isEnterpriseAdmin || isMaster ? "hidden md:block" : ""}`}
                         >
                             Histórico
                         </Link>
                         <Link
                             to="/meus-dados"
                             onClick={closeMenu}
-                            className="text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 font-medium px-3 py-2 rounded-xl transition-colors"
+                            className={`text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 font-medium px-3 py-2 rounded-xl transition-colors ${isEnterpriseAdmin || isMaster ? "hidden md:block" : ""}`}
                         >
                             Meus Dados
                         </Link>
@@ -179,7 +179,7 @@ export function LayoutPage() {
             </header>
 
             {/* CONTEÚDO PRINCIPAL */}
-            <main className={`flex-1 flex flex-col justify-start w-full mx-auto md:p-6 overflow-y-auto pb-20 md:pb-6 ${isMenuOpen ? "z-30" : "z-40"}`}>
+            <main className={`flex-1 flex flex-col justify-start w-full mx-auto overflow-y-auto pb-20 md:pb-6 md:px-6 ${isMenuOpen ? "z-30" : "z-40"} ${isImpersonated ? "pt-32" : "pt-16"}`}>
                 <Outlet />
             </main>
 
