@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 import crypto from "node:crypto";
 import { extendedPrisma } from "../database/prisma-extensions.js";
 import { Env } from "../utils/environment.js";
-import { decryptFaceDescriptor } from "../utils/faceEncryption.js";
+import { decryptFaceDescriptor, encryptFaceDescriptor } from "../utils/faceEncryption.js";
 import { decryptCpf, formatCpfDigits } from "../utils/cpfEncryption.js";
 import { gerarComprovante } from "../utils/comprovanteGenerator.js";
 import { getNextNSR, currentYear, NsrLimitExceededError } from "../utils/nsrGenerator.js";
@@ -95,7 +95,7 @@ export class TotemController {
 
             const valid = await bcrypt.compare(pin, company.totemPinHash);
             if (!valid) {
-                return res.status(401).json({ message: "PIN incorreto" });
+                return res.status(403).json({ message: "PIN incorreto" });
             }
 
             await extendedPrisma.company.update({
@@ -110,6 +110,63 @@ export class TotemController {
             }
             console.error("Erro ao desativar totem:", error);
             return res.status(500).json({ message: "Erro ao desativar modo totem" });
+        }
+    }
+
+    /**
+     * POST /totem/recover
+     * Recupera a saída do modo totem validando email+senha de um administrador.
+     */
+    async recover(req: Request, res: Response) {
+        const bodySchema = z.object({
+            email: z.string().email(),
+            password: z.string().min(8),
+        });
+
+        try {
+            const { email, password } = bodySchema.parse(req.body);
+
+            const companyId = req.totemContext?.companyId;
+            if (!companyId) {
+                return res.status(403).json({ message: "Contexto de totem inválido" });
+            }
+
+            const user = await extendedPrisma.user.findUnique({
+                where: { email },
+                select: {
+                    id: true,
+                    role: true,
+                    companyId: true,
+                    password: true,
+                    status: true,
+                },
+            });
+
+            const isAdmin =
+                user &&
+                (user.role === "MASTER" || (user.role === "ENTERPRISE_ADMIN" && user.companyId === companyId));
+
+            if (!isAdmin || user.status !== "ACTIVE") {
+                return res.status(403).json({ message: "Credenciais inválidas para recuperação" });
+            }
+
+            const passwordValid = await bcrypt.compare(password, user.password);
+            if (!passwordValid) {
+                return res.status(403).json({ message: "Credenciais inválidas para recuperação" });
+            }
+
+            await extendedPrisma.company.update({
+                where: { id: companyId },
+                data: { totemActive: false },
+            });
+
+            return res.json({ message: "Modo totem desativado" });
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                return res.status(400).json({ message: "Dados inválidos", errors: error.issues });
+            }
+            console.error("Erro ao recuperar modo totem:", error);
+            return res.status(500).json({ message: "Erro ao recuperar modo totem" });
         }
     }
 
@@ -155,13 +212,14 @@ export class TotemController {
 
             const passwordValid = await bcrypt.compare(password, user.password);
             if (!passwordValid) {
-                return res.status(401).json({ message: "Credenciais inválidas" });
+                return res.status(403).json({ message: "Credenciais inválidas" });
             }
 
             if (!user.faceDescriptor) {
                 return res.status(403).json({
                     code: "FACE_NOT_REGISTERED",
                     message: "Registro facial pendente. Procure o administrador para cadastrar sua biometria.",
+                    userId: user.id,
                 });
             }
 
@@ -365,6 +423,53 @@ export class TotemController {
             }
             console.error("Erro ao verificar face no totem:", error);
             return res.status(500).json({ message: "Erro ao verificar face" });
+        }
+    }
+
+    /**
+     * POST /totem/face/register
+     * Totem cadastra o descriptor facial do funcionário identificado em /totem/verify
+     * quando ele ainda não possui biometria cadastrada.
+     */
+    async registerFace(req: Request, res: Response) {
+        const bodySchema = z.object({
+            userId: z.string().uuid(),
+            descriptor: z.array(z.number()).min(128).max(128),
+        });
+
+        try {
+            const { userId, descriptor } = bodySchema.parse(req.body);
+
+            const companyId = req.totemContext?.companyId;
+            if (!companyId) {
+                return res.status(403).json({ message: "Contexto de totem inválido" });
+            }
+
+            const user = await extendedPrisma.user.findUnique({
+                where: { id: userId },
+                select: { id: true, companyId: true },
+            });
+
+            if (!user || user.companyId !== companyId) {
+                return res.status(404).json({ message: "Funcionário não encontrado nesta empresa" });
+            }
+
+            await extendedPrisma.user.update({
+                where: { id: userId },
+                data: {
+                    faceDescriptor: encryptFaceDescriptor(descriptor),
+                    faceDescriptorUpdatedAt: new Date(),
+                    faceRevalidationNotifiedAt: null,
+                },
+            });
+
+            return res.json({ message: "Face registrada com sucesso!" });
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                return res.status(400).json({ message: "Dados inválidos", errors: error.issues });
+            }
+            console.error("Erro ao registrar face no totem:", error);
+            return res.status(500).json({ message: "Erro ao registrar face" });
         }
     }
 }

@@ -65,3 +65,12 @@ export const signupLimiter = createLimiter({
   legacyHeaders: false,
   keyGenerator: (req: Request) => req.ip ?? 'unknown',
 });
+
+export const totemPinLimiter = createLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { message: 'Muitas tentativas de PIN incorreto. Tente novamente em 15 minutos.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req: Request) => req.totemContext?.companyId ?? req.user?.companyId ?? req.ip ?? 'unknown',
+});

@@ -5,6 +5,7 @@ import { TotemController } from "../controller/TotemController.js";
 import { totemAuthMiddleware } from "../middleware/TotemAuthMiddleware.js";
 import { authMiddleware } from "../middleware/AuthMiddleware.js";
 import { requireEnterpriseAdmin } from "../middleware/RoleGuard.js";
+import { totemPinLimiter } from "../middleware/RateLimitMiddleware.js";
 
 const totemController = new TotemController();
 
@@ -28,6 +29,8 @@ export const totemRoutes = Router();
 totemRoutes.post("/verify", totemAuthMiddleware, totemController.verify);
 totemRoutes.post("/checkin", totemAuthMiddleware, totemCheckinLimiter, totemController.checkin);
 totemRoutes.post("/face/verify", totemAuthMiddleware, totemController.verifyFace);
+totemRoutes.post("/face/register", totemAuthMiddleware, totemController.registerFace);
+totemRoutes.post("/recover", totemAuthMiddleware, totemPinLimiter, totemController.recover);
 
 totemRoutes.post("/companies/me/totem/activate", authMiddleware, requireEnterpriseAdmin, totemController.activate);
-totemRoutes.post("/companies/me/totem/deactivate", authMiddleware, requireEnterpriseAdmin, totemController.deactivate);
+totemRoutes.post("/companies/me/totem/deactivate", authMiddleware, requireEnterpriseAdmin, totemPinLimiter, totemController.deactivate);

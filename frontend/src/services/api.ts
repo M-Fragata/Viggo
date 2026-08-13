@@ -5,6 +5,20 @@ interface FetchOptions extends RequestInit {
   totemToken?: boolean;
 }
 
+export class ApiError extends Error {
+  code?: string;
+  status?: number;
+  data?: Record<string, unknown>;
+
+  constructor(message: string, code?: string, status?: number, data?: Record<string, unknown>) {
+    super(message);
+    this.name = "ApiError";
+    this.code = code;
+    this.status = status;
+    this.data = data;
+  }
+}
+
 async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {
   const { requiresAuth = true, totemToken = false, headers = {}, ...restOptions } = options;
 
@@ -40,12 +54,12 @@ async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promis
       window.location.href = "/register";
       return new Promise<T>(() => { }) as Promise<T>;
     }
-    throw new Error(error.message || `Erro ${response.status}`);
+    throw new ApiError(error.message || `Erro ${response.status}`, error.code, response.status, error);
   }
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: "Erro na requisição" }));
-    throw new Error(error.message || `Erro ${response.status}`);
+    throw new ApiError(error.message || `Erro ${response.status}`, error.code, response.status, error);
   }
 
   if (response.status === 204) {
@@ -283,6 +297,14 @@ export const api = {
         body: JSON.stringify({ pin }),
       }),
 
+    recover: (email: string, password: string) =>
+      fetchApi<{ message: string }>("/totem/recover", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+        requiresAuth: false,
+        totemToken: true,
+      }),
+
     verify: (email: string, password: string) =>
       fetchApi<TotemVerifyResponse>("/totem/verify", {
         method: "POST",
@@ -303,6 +325,14 @@ export const api = {
       fetchApi<VerifyFaceResponse>("/totem/face/verify", {
         method: "POST",
         body: JSON.stringify({ token, descriptor }),
+        requiresAuth: false,
+        totemToken: true,
+      }),
+
+    registerFace: (userId: string, descriptor: number[]) =>
+      fetchApi<{ message: string }>("/totem/face/register", {
+        method: "POST",
+        body: JSON.stringify({ userId, descriptor }),
         requiresAuth: false,
         totemToken: true,
       }),

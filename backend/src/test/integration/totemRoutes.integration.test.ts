@@ -8,6 +8,7 @@ import {
   type TestDataContext,
 } from "../helpers/authHelper.js";
 import bcrypt from "bcrypt";
+import { Prisma } from "@prisma/client";
 import { encryptFaceDescriptor } from "../../utils/faceEncryption.js";
 import { encryptCpf, hashCpf } from "../../utils/cpfEncryption.js";
 
@@ -49,6 +50,18 @@ describe("totemRoutes (integração)", () => {
         companyId: ctx.companyId,
         cpf: null,
         status: "INACTIVE",
+      },
+    });
+
+    await prisma.user.create({
+      data: {
+        name: "Funcionario Sem Face",
+        email: `noface-${uid}@test.com`,
+        password: passwordHash,
+        role: "EMPLOYEE",
+        companyId: ctx.companyId,
+        cpf: null,
+        faceDescriptor: Prisma.DbNull,
       },
     });
   });
@@ -150,14 +163,14 @@ describe("totemRoutes (integração)", () => {
       expect(res.status).toBe(404);
     });
 
-    it("deve retornar 401 com senha incorreta", async () => {
+    it("deve retornar 403 com senha incorreta", async () => {
       const faceUser = await getFaceEmployee();
       const res = await request(app)
         .post("/totem/verify")
         .set("Authorization", `Bearer ${totemToken}`)
         .send({ email: faceUser.email, password: "SenhaErrada123!" });
 
-      expect(res.status).toBe(401);
+      expect(res.status).toBe(403);
     });
 
     it("deve retornar 403 para conta inativa", async () => {
@@ -181,6 +194,7 @@ describe("totemRoutes (integração)", () => {
 
       expect(res.status).toBe(403);
       expect(res.body.code).toBe("FACE_NOT_REGISTERED");
+      expect(res.body.userId).toBe(ctx.employeeId);
     });
 
     it("deve emitir faceToken para funcionário com face", async () => {
@@ -246,6 +260,86 @@ describe("totemRoutes (integração)", () => {
         .send({ token: faceToken, descriptor: [1, 2, 3] });
 
       expect(res.status).toBe(400);
+    });
+  });
+
+  describe("POST /totem/face/register", () => {
+    async function getNoFaceUser() {
+      const noFaceUser = await prisma.user.findFirst({
+        where: { companyId: ctx.companyId, name: "Funcionario Sem Face" },
+      });
+      if (!noFaceUser) throw new Error("Funcionário sem face não encontrado");
+      return noFaceUser;
+    }
+
+    it("deve retornar 401 sem token totem", async () => {
+      const res = await request(app)
+        .post("/totem/face/register")
+        .send({ userId: ctx.employeeId, descriptor: new Array(128).fill(0.5) });
+
+      expect(res.status).toBe(401);
+    });
+
+    it("deve retornar 404 para usuário inexistente", async () => {
+      const res = await request(app)
+        .post("/totem/face/register")
+        .set("Authorization", `Bearer ${totemToken}`)
+        .send({ userId: "00000000-0000-4000-8000-000000000001", descriptor: new Array(128).fill(0.5) });
+
+      expect(res.status).toBe(404);
+    });
+
+    it("deve retornar 400 com descriptor de tamanho inválido", async () => {
+      const noFaceUser = await getNoFaceUser();
+      const res = await request(app)
+        .post("/totem/face/register")
+        .set("Authorization", `Bearer ${totemToken}`)
+        .send({ userId: noFaceUser.id, descriptor: [1, 2, 3] });
+
+      expect(res.status).toBe(400);
+    });
+
+    it("deve registrar face e liberar o fluxo completo de checkin", async () => {
+      const noFaceUser = await getNoFaceUser();
+
+      const verifyBefore = await request(app)
+        .post("/totem/verify")
+        .set("Authorization", `Bearer ${totemToken}`)
+        .send({ email: noFaceUser.email, password: "TestPassword123!" });
+
+      expect(verifyBefore.status).toBe(403);
+      expect(verifyBefore.body.code).toBe("FACE_NOT_REGISTERED");
+      expect(verifyBefore.body.userId).toBe(noFaceUser.id);
+
+      const registerRes = await request(app)
+        .post("/totem/face/register")
+        .set("Authorization", `Bearer ${totemToken}`)
+        .send({ userId: noFaceUser.id, descriptor: new Array(128).fill(0.5) });
+
+      expect(registerRes.status).toBe(200);
+      expect(registerRes.body.message).toBe("Face registrada com sucesso!");
+
+      const storedUser = await prisma.user.findUnique({
+        where: { id: noFaceUser.id },
+        select: { faceDescriptor: true },
+      });
+      expect(storedUser?.faceDescriptor).toBeTruthy();
+
+      const verifyAfter = await request(app)
+        .post("/totem/verify")
+        .set("Authorization", `Bearer ${totemToken}`)
+        .send({ email: noFaceUser.email, password: "TestPassword123!" });
+
+      expect(verifyAfter.status).toBe(200);
+      expect(verifyAfter.body).toHaveProperty("faceToken");
+
+      const faceVerify = await request(app)
+        .post("/totem/face/verify")
+        .set("Authorization", `Bearer ${totemToken}`)
+        .send({ token: verifyAfter.body.faceToken, descriptor: new Array(128).fill(0.5) });
+
+      expect(faceVerify.status).toBe(200);
+      expect(faceVerify.body.success).toBe(true);
     });
   });
 
@@ -404,13 +498,13 @@ describe("totemRoutes (integração)", () => {
       expect(res.status).toBe(403);
     });
 
-    it("deve retornar 401 com PIN incorreto", async () => {
+    it("deve retornar 403 com PIN incorreto", async () => {
       const res = await request(app)
         .post("/totem/companies/me/totem/deactivate")
         .set("Authorization", `Bearer ${ctx.adminToken}`)
         .send({ pin: "000000" });
 
-      expect(res.status).toBe(401);
+      expect(res.status).toBe(403);
     });
 
     it("deve desativar totem com PIN correto", async () => {
@@ -420,6 +514,73 @@ describe("totemRoutes (integração)", () => {
         .send({ pin: "123456" });
 
       expect(res.status).toBe(200);
+
+      const company = await prisma.company.findUnique({
+        where: { id: ctx.companyId },
+        select: { totemActive: true },
+      });
+      expect(company?.totemActive).toBe(false);
+    });
+  });
+
+  describe("POST /totem/recover", () => {
+    it("deve retornar 401 sem token totem", async () => {
+      const res = await request(app)
+        .post("/totem/recover")
+        .send({ email: ctx.adminEmail, password: "TestPassword123!" });
+
+      expect(res.status).toBe(401);
+    });
+
+    it("deve retornar 400 com dados inválidos", async () => {
+      const res = await request(app)
+        .post("/totem/recover")
+        .set("Authorization", `Bearer ${totemToken}`)
+        .send({ email: "email-invalido", password: "123" });
+
+      expect(res.status).toBe(400);
+    });
+
+    it("deve retornar 403 com senha incorreta", async () => {
+      const res = await request(app)
+        .post("/totem/recover")
+        .set("Authorization", `Bearer ${totemToken}`)
+        .send({ email: ctx.adminEmail, password: "SenhaErrada123!" });
+
+      expect(res.status).toBe(403);
+    });
+
+    it("deve retornar 403 para funcionário comum", async () => {
+      const res = await request(app)
+        .post("/totem/recover")
+        .set("Authorization", `Bearer ${totemToken}`)
+        .send({ email: ctx.employeeEmail, password: "TestPassword123!" });
+
+      expect(res.status).toBe(403);
+    });
+
+    it("deve retornar 403 para email inexistente", async () => {
+      const res = await request(app)
+        .post("/totem/recover")
+        .set("Authorization", `Bearer ${totemToken}`)
+        .send({ email: "nao-existe@test.com", password: "TestPassword123!" });
+
+      expect(res.status).toBe(403);
+    });
+
+    it("deve desativar totem com credenciais de admin", async () => {
+      await request(app)
+        .post("/totem/companies/me/totem/activate")
+        .set("Authorization", `Bearer ${ctx.adminToken}`)
+        .send({ pin: "123456" });
+
+      const res = await request(app)
+        .post("/totem/recover")
+        .set("Authorization", `Bearer ${totemToken}`)
+        .send({ email: ctx.adminEmail, password: "TestPassword123!" });
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBe("Modo totem desativado");
 
       const company = await prisma.company.findUnique({
         where: { id: ctx.companyId },

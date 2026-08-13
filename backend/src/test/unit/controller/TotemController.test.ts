@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 const mockExtendedPrisma = vi.hoisted(() => ({
-  user: { findUnique: vi.fn() },
+  user: { findUnique: vi.fn(), update: vi.fn() },
   company: { findUnique: vi.fn(), update: vi.fn() },
   checkIn: { findFirst: vi.fn() },
   $transaction: vi.fn(),
@@ -17,6 +17,7 @@ vi.mock("../../../utils/environment.js", () => ({
 
 vi.mock("../../../utils/faceEncryption.js", () => ({
   decryptFaceDescriptor: vi.fn().mockReturnValue(new Float32Array(128).fill(0.5)),
+  encryptFaceDescriptor: vi.fn().mockReturnValue("encrypted-descriptor"),
 }));
 
 vi.mock("../../../utils/cpfEncryption.js", () => ({
@@ -109,6 +110,7 @@ describe("TotemController", () => {
     vi.clearAllMocks();
     vi.spyOn(console, "error").mockImplementation(() => {});
     mockExtendedPrisma.user.findUnique = vi.fn();
+    mockExtendedPrisma.user.update = vi.fn();
     mockExtendedPrisma.company.findUnique = vi.fn();
     mockExtendedPrisma.company.update = vi.fn();
     mockExtendedPrisma.checkIn.findFirst = vi.fn();
@@ -202,7 +204,7 @@ describe("TotemController", () => {
       expect(res.json).toHaveBeenCalledWith({ message: "Modo totem desativado" });
     });
 
-    it("deve retornar 401 com PIN incorreto", async () => {
+    it("deve retornar 403 com PIN incorreto", async () => {
       mockExtendedPrisma.company.findUnique.mockResolvedValue({
         totemPinHash: "hashed-pin",
         totemActive: true,
@@ -212,7 +214,7 @@ describe("TotemController", () => {
 
       await controller.deactivate(req, res);
 
-      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.status).toHaveBeenCalledWith(403);
       expect(res.json).toHaveBeenCalledWith({ message: "PIN incorreto" });
       expect(mockExtendedPrisma.company.update).not.toHaveBeenCalled();
     });
@@ -239,6 +241,144 @@ describe("TotemController", () => {
       req = { user: { companyId: COMPANY_ID }, body: { pin: "12x4" } };
 
       await controller.deactivate(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
+  });
+
+  describe("recover", () => {
+    const mockAdmin = {
+      id: "admin-id",
+      email: "admin@test.com",
+      password: "hashed-admin-password",
+      role: "ENTERPRISE_ADMIN",
+      companyId: COMPANY_ID,
+      status: "ACTIVE",
+    };
+
+    const mockMaster = {
+      id: "master-id",
+      email: "master@test.com",
+      password: "hashed-master-password",
+      role: "MASTER",
+      companyId: null,
+      status: "ACTIVE",
+    };
+
+    const mockOtherCompanyAdmin = {
+      ...mockAdmin,
+      email: "admin-outro@test.com",
+      companyId: OTHER_COMPANY_ID,
+    };
+
+    const mockEmployeeAdmin = {
+      ...mockAdmin,
+      role: "EMPLOYEE",
+    };
+
+    it("deve desativar totem com credenciais de admin da mesma empresa", async () => {
+      mockExtendedPrisma.user.findUnique.mockResolvedValue(mockAdmin);
+      (bcrypt.compare as any).mockResolvedValue(true);
+      req = {
+        totemContext: { companyId: COMPANY_ID },
+        body: { email: "admin@test.com", password: "AdminPassword123!" },
+      };
+
+      await controller.recover(req, res);
+
+      expect(bcrypt.compare).toHaveBeenCalledWith("AdminPassword123!", "hashed-admin-password");
+      expect(mockExtendedPrisma.company.update).toHaveBeenCalledWith({
+        where: { id: COMPANY_ID },
+        data: { totemActive: false },
+      });
+      expect(res.status).not.toHaveBeenCalled();
+      expect(res.json).toHaveBeenCalledWith({ message: "Modo totem desativado" });
+    });
+
+    it("deve permitir MASTER recuperar totem", async () => {
+      mockExtendedPrisma.user.findUnique.mockResolvedValue(mockMaster);
+      (bcrypt.compare as any).mockResolvedValue(true);
+      req = {
+        totemContext: { companyId: COMPANY_ID },
+        body: { email: "master@test.com", password: "MasterPassword123!" },
+      };
+
+      await controller.recover(req, res);
+
+      expect(mockExtendedPrisma.company.update).toHaveBeenCalledWith({
+        where: { id: COMPANY_ID },
+        data: { totemActive: false },
+      });
+    });
+
+    it("deve retornar 403 para admin de outra empresa", async () => {
+      mockExtendedPrisma.user.findUnique.mockResolvedValue(mockOtherCompanyAdmin);
+      req = {
+        totemContext: { companyId: COMPANY_ID },
+        body: { email: "admin-outro@test.com", password: "AdminPassword123!" },
+      };
+
+      await controller.recover(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(mockExtendedPrisma.company.update).not.toHaveBeenCalled();
+    });
+
+    it("deve retornar 403 para funcionário comum", async () => {
+      mockExtendedPrisma.user.findUnique.mockResolvedValue(mockEmployeeAdmin);
+      req = {
+        totemContext: { companyId: COMPANY_ID },
+        body: { email: "func@test.com", password: "AdminPassword123!" },
+      };
+
+      await controller.recover(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(403);
+    });
+
+    it("deve retornar 403 com senha incorreta", async () => {
+      mockExtendedPrisma.user.findUnique.mockResolvedValue(mockAdmin);
+      (bcrypt.compare as any).mockResolvedValue(false);
+      req = {
+        totemContext: { companyId: COMPANY_ID },
+        body: { email: "admin@test.com", password: "senha-errada" },
+      };
+
+      await controller.recover(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(mockExtendedPrisma.company.update).not.toHaveBeenCalled();
+    });
+
+    it("deve retornar 403 quando usuário não existe", async () => {
+      mockExtendedPrisma.user.findUnique.mockResolvedValue(null);
+      req = {
+        totemContext: { companyId: COMPANY_ID },
+        body: { email: "naoexiste@test.com", password: "AdminPassword123!" },
+      };
+
+      await controller.recover(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(403);
+    });
+
+    it("deve retornar 403 sem contexto de totem", async () => {
+      req = {
+        body: { email: "admin@test.com", password: "AdminPassword123!" },
+      };
+
+      await controller.recover(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(403);
+    });
+
+    it("deve retornar 400 com dados inválidos", async () => {
+      req = {
+        totemContext: { companyId: COMPANY_ID },
+        body: { email: "email-invalido", password: "123" },
+      };
+
+      await controller.recover(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
     });
@@ -305,7 +445,7 @@ describe("TotemController", () => {
       expect(res.status).toHaveBeenCalledWith(403);
     });
 
-    it("deve retornar 401 com senha incorreta", async () => {
+    it("deve retornar 403 com senha incorreta", async () => {
       mockExtendedPrisma.user.findUnique.mockResolvedValue(mockEmployee);
       (bcrypt.compare as any).mockResolvedValue(false);
       req = {
@@ -315,7 +455,7 @@ describe("TotemController", () => {
 
       await controller.verify(req, res);
 
-      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.status).toHaveBeenCalledWith(403);
       expect(res.json).toHaveBeenCalledWith({ message: "Credenciais inválidas" });
     });
 
@@ -331,7 +471,7 @@ describe("TotemController", () => {
 
       expect(res.status).toHaveBeenCalledWith(403);
       expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({ code: "FACE_NOT_REGISTERED" })
+        expect.objectContaining({ code: "FACE_NOT_REGISTERED", userId: EMPLOYEE_ID })
       );
     });
 
@@ -626,6 +766,99 @@ describe("TotemController", () => {
       await controller.verifyFace(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
+    });
+  });
+
+  describe("registerFace", () => {
+    const descriptor = Array.from(new Float32Array(128).fill(0.5));
+
+    it("deve registrar descriptor facial com sucesso", async () => {
+      mockExtendedPrisma.user.findUnique.mockResolvedValue({
+        id: EMPLOYEE_ID,
+        companyId: COMPANY_ID,
+      });
+
+      req = {
+        totemContext: { companyId: COMPANY_ID },
+        body: { userId: EMPLOYEE_ID, descriptor },
+      };
+
+      await controller.registerFace(req, res);
+
+      expect(res.status).not.toHaveBeenCalled();
+      expect(res.json).toHaveBeenCalledWith({ message: "Face registrada com sucesso!" });
+      expect(mockExtendedPrisma.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: EMPLOYEE_ID },
+          data: expect.objectContaining({ faceDescriptor: "encrypted-descriptor" }),
+        })
+      );
+    });
+
+    it("deve retornar 404 quando usuário não pertence à empresa do totem", async () => {
+      mockExtendedPrisma.user.findUnique.mockResolvedValue({
+        id: OTHER_EMPLOYEE_ID,
+        companyId: OTHER_COMPANY_ID,
+      });
+
+      req = {
+        totemContext: { companyId: COMPANY_ID },
+        body: { userId: OTHER_EMPLOYEE_ID, descriptor },
+      };
+
+      await controller.registerFace(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith({ message: "Funcionário não encontrado nesta empresa" });
+      expect(mockExtendedPrisma.user.update).not.toHaveBeenCalled();
+    });
+
+    it("deve retornar 404 quando usuário não existe", async () => {
+      mockExtendedPrisma.user.findUnique.mockResolvedValue(null);
+
+      req = {
+        totemContext: { companyId: COMPANY_ID },
+        body: { userId: EMPLOYEE_ID, descriptor },
+      };
+
+      await controller.registerFace(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(mockExtendedPrisma.user.update).not.toHaveBeenCalled();
+    });
+
+    it("deve retornar 400 com descriptor de tamanho inválido", async () => {
+      req = {
+        totemContext: { companyId: COMPANY_ID },
+        body: { userId: EMPLOYEE_ID, descriptor: [1, 2, 3] },
+      };
+
+      await controller.registerFace(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(mockExtendedPrisma.user.update).not.toHaveBeenCalled();
+    });
+
+    it("deve retornar 400 com userId inválido", async () => {
+      req = {
+        totemContext: { companyId: COMPANY_ID },
+        body: { userId: "nao-e-uuid", descriptor },
+      };
+
+      await controller.registerFace(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
+
+    it("deve retornar 403 sem contexto de totem", async () => {
+      req = {
+        body: { userId: EMPLOYEE_ID, descriptor },
+      };
+
+      await controller.registerFace(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(mockExtendedPrisma.user.update).not.toHaveBeenCalled();
     });
   });
 });
