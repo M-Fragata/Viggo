@@ -28,7 +28,7 @@ export function CheckoutModal({ isOpen, onClose, onSuccess }: CheckoutModalProps
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-in fade-in">
       <dialog
-        className="w-full p-6 mx-auto max-w-2xl rounded-2xl border border-slate-200 bg-white shadow-xl animate-in zoom-in-95"
+        className="absolute z-10 w-full p-6 mx-auto max-w-2xl rounded-2xl border border-slate-200 bg-white shadow-xl animate-in zoom-in-95"
         open
       >
         <div className="flex justify-between items-center mb-6">

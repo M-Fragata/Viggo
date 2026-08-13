@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { useCompany, usePlanLimits } from "../../hooks/useCompany";
-import { UsageProgressBar } from "../../components/plan";
+import { useCompany } from "../../hooks/useCompany";
 import { EmployeeTabSkeleton } from "../../components/EmployeeTabSkeleton";
 import { EmployeeScheduleModal } from "../../components/company/EmployeeScheduleModal";
 import { DashboardPageHeader } from "../../components/admin/DashboardPageHeader";
@@ -9,10 +8,7 @@ import type { EmployeeListItem, WorkScheduleResponse } from "../../services/api"
 import { api } from "../../services/api";
 
 export function FuncionariosPage() {
-  const { company, isLoading } = useCompany();
-  const { getPlanLimit } = usePlanLimits();
-
-  const planLimit = company?.plan ? getPlanLimit(company.plan) : null;
+  const { isLoading } = useCompany();
 
   const [selectedDate, setSelectedDate] = useState<string>(() => {
     return new Date().toISOString().split("T")[0];
@@ -65,14 +61,6 @@ export function FuncionariosPage() {
         <div className="bg-white border border-slate-200 rounded-3xl shadow-sm p-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <h2 className="text-lg font-bold text-slate-800">Funcionários da Empresa</h2>
-            <div className="flex items-center gap-3">
-              <UsageProgressBar
-                current={company?.currentEmployees ?? 0}
-                limit={planLimit?.maxEmployees ?? null}
-                label="Total de funcionários"
-                size="md"
-              />
-            </div>
           </div>
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6">

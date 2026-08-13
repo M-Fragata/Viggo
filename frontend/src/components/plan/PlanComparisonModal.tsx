@@ -60,7 +60,7 @@ export function PlanComparisonModal({ isOpen, onClose, currentPlan }: PlanCompar
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-in fade-in">
       <dialog
-        className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-xl animate-in zoom-in-95"
+        className="absolute z-10 w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-xl animate-in zoom-in-95"
         open
       >
         <div className="flex justify-between items-start mb-6">

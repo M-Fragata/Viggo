@@ -1,4 +1,5 @@
 import type { CompanyResponse } from "../../services/api";
+import { useCompanyStatus } from "../../hooks/useAuth";
 import { formatPrice } from "../../../../shared/plans";
 import { CreditCard, Clock, AlertTriangle, XCircle, CheckCircle } from "lucide-react";
 
@@ -9,6 +10,10 @@ interface PaymentStatusProps {
 
 export function PaymentStatus({ company, onOpenCheckout }: PaymentStatusProps) {
   const { status, planExpiresAt, asaasPaymentMethod, pricing } = company;
+  const { isTrialExpired, getTrialDaysRemaining } = useCompanyStatus();
+
+  const trialDaysRemaining = getTrialDaysRemaining(planExpiresAt);
+  const trialExpired = isTrialExpired(planExpiresAt, status);
 
   const statusConfig = {
     TRIAL: {
@@ -16,7 +21,7 @@ export function PaymentStatus({ company, onOpenCheckout }: PaymentStatusProps) {
       color: "emerald",
       bgClass: "bg-emerald-50 border-emerald-200",
       iconClass: "text-emerald-500",
-      label: "Trial ativo",
+      label: "Trial de 30 dias ativo",
     },
     ACTIVE: {
       icon: CheckCircle,
@@ -59,7 +64,9 @@ export function PaymentStatus({ company, onOpenCheckout }: PaymentStatusProps) {
 
           {status === "TRIAL" && planExpiresAt && (
             <p className="text-sm text-slate-600">
-              Expira em {new Date(planExpiresAt).toLocaleDateString("pt-BR")}
+              {trialExpired
+                ? "Seu trial expirou. Ative seu plano para continuar usando."
+                : `${trialDaysRemaining} dia${trialDaysRemaining !== 1 ? "s" : ""} restante${trialDaysRemaining !== 1 ? "s" : ""} para decidir seu plano`}
             </p>
           )}
 
