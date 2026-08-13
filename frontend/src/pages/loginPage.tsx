@@ -27,10 +27,22 @@ export function LoginPage() {
       password: z.string().min(6, "A senha deve conter no mínimo 6 caracteres"),
     });
 
-    const payload = bodySchema.parse({
-      email: formData.get("email") as string,
-      password: formData.get("password") as string,
+    const rawEmail = formData.get("email") as string;
+    const rawPassword = formData.get("password") as string;
+
+    const parsed = bodySchema.safeParse({
+      email: rawEmail,
+      password: rawPassword,
     });
+
+    if (!parsed.success) {
+      return {
+        message: parsed.error.issues.map((issue) => issue.message).join("\n"),
+        payload: { email: rawEmail, password: rawPassword },
+      };
+    }
+
+    const payload = parsed.data;
 
     try {
       const user = await login(payload.email, payload.password);
@@ -89,7 +101,7 @@ export function LoginPage() {
               </div>
 
               {state?.message && (
-                <p className="text-red-500 text-sm text-center p-2 bg-red-50 rounded-lg">{state.message}</p>
+                <p className="text-red-500 text-sm text-left p-2 bg-red-50 rounded-lg whitespace-pre-line">{state.message}</p>
               )}
 
               <div className="pt-2 flex flex-col gap-2">
