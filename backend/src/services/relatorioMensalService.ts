@@ -1,4 +1,6 @@
 import { createHash } from "node:crypto";
+import { once } from "node:events";
+import PDFDocument from "pdfkit";
 import { extendedPrisma } from "../database/prisma-extensions.js";
 import { startOfMonth, endOfMonth, format, eachDayOfInterval, isSameDay } from "date-fns";
 import { decryptCpf } from "../utils/cpfEncryption.js";
@@ -7,6 +9,21 @@ interface RelatorioResult {
   csv: string;
   hash: string;
   filename: string;
+}
+
+interface RelatorioPdfResult {
+  pdf: Buffer;
+  hash: string;
+  filename: string;
+}
+
+interface RelatorioData {
+  lines: string[];
+  conteudoSemHash: string;
+  hash: string;
+  cnpjClean: string;
+  year: number;
+  month: number;
 }
 
 /**
@@ -23,12 +40,15 @@ interface RelatorioResult {
  *   ...
  *   ASSINATURA: <nome>
  *   HASH: <sha256>
+ *
+ * O PDF (gerarRelatorioMensalPdf) reproduz o mesmo conteúdo com o mesmo
+ * hash SHA-256, servindo como cópia legível do relatório oficial.
  */
-export async function gerarRelatorioMensal(
+async function buildRelatorio(
   companyId: string,
   year: number,
   month: number
-): Promise<RelatorioResult> {
+): Promise<RelatorioData> {
   const monthStart = startOfMonth(new Date(year, month - 1));
   const monthEnd = endOfMonth(new Date(year, month - 1));
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
@@ -109,10 +129,48 @@ export async function gerarRelatorioMensal(
   // Hash SHA-256
   const hash = createHash("sha256").update(conteudoSemHash).digest("hex");
 
-  // Adicionar hash no final
-  const csv = conteudoSemHash + `\nHASH: ${hash}`;
+  return { lines, conteudoSemHash, hash, cnpjClean, year, month };
+}
 
-  const filename = `RELATORIO_MENSAL_${cnpjClean}_${year}${String(month).padStart(2, "0")}.csv`;
+/** Gera o relatório mensal no layout oficial MTE em formato CSV. */
+export async function gerarRelatorioMensal(
+  companyId: string,
+  year: number,
+  month: number
+): Promise<RelatorioResult> {
+  const data = await buildRelatorio(companyId, year, month);
 
-  return { csv, hash, filename };
+  const csv = data.conteudoSemHash + `\nHASH: ${data.hash}`;
+  const filename = `RELATORIO_MENSAL_${data.cnpjClean}_${data.year}${String(data.month).padStart(2, "0")}.csv`;
+
+  return { csv, hash: data.hash, filename };
+}
+
+/** Gera o relatório mensal em PDF, com o mesmo hash SHA-256 do CSV. */
+export async function gerarRelatorioMensalPdf(
+  companyId: string,
+  year: number,
+  month: number
+): Promise<RelatorioPdfResult> {
+  const data = await buildRelatorio(companyId, year, month);
+
+  const doc = new PDFDocument({ size: "A4", margin: 40 });
+  doc.info.Title = "Relatorio Mensal de Ponto - Layout Oficial MTE";
+  doc.info.Subject = `Relatorio mensal ${year}-${String(month).padStart(2, "0")} (hash SHA-256: ${data.hash})`;
+  const chunks: Buffer[] = [];
+  doc.on("data", (chunk: Buffer) => chunks.push(chunk));
+
+  doc.font("Courier").fontSize(9);
+  for (const line of data.lines) {
+    doc.text(line, { lineGap: 2 });
+  }
+  doc.moveDown();
+  doc.text(`HASH: ${data.hash}`);
+
+  doc.end();
+  await once(doc, "end");
+
+  const filename = `RELATORIO_MENSAL_${data.cnpjClean}_${data.year}${String(data.month).padStart(2, "0")}.pdf`;
+
+  return { pdf: Buffer.concat(chunks), hash: data.hash, filename };
 }

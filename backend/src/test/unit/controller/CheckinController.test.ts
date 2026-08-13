@@ -43,12 +43,17 @@ vi.mock("../../../services/relatorioMensalService.js", () => ({
     hash: "hash123",
     filename: "relatorio.csv",
   }),
+  gerarRelatorioMensalPdf: vi.fn().mockResolvedValue({
+    pdf: Buffer.from("%PDF-1.7 mock"),
+    hash: "hash123",
+    filename: "relatorio.pdf",
+  }),
 }));
 
 import { CheckinController } from "../../../controller/CheckinController.js";
 import { getNextNSR, NsrLimitExceededError } from "../../../utils/nsrGenerator.js";
 import { gerarComprovante } from "../../../utils/comprovanteGenerator.js";
-import { gerarRelatorioMensal } from "../../../services/relatorioMensalService.js";
+import { gerarRelatorioMensal, gerarRelatorioMensalPdf } from "../../../services/relatorioMensalService.js";
 
 describe("CheckinController", () => {
   let controller: CheckinController;
@@ -349,6 +354,43 @@ describe("CheckinController", () => {
       await controller.exportRelatorioMensal(req, res);
 
       expect(res.status).toHaveBeenCalledWith(403);
+    });
+
+    it("deve exportar relatório em PDF quando format=pdf", async () => {
+      req = {
+        user: { companyId: "company-1" },
+        query: { year: "2026", month: "8", format: "pdf" },
+      };
+
+      await controller.exportRelatorioMensal(req, res);
+
+      expect(gerarRelatorioMensalPdf).toHaveBeenCalledWith("company-1", 2026, 8);
+      expect(res.setHeader).toHaveBeenCalledWith("Content-Type", "application/pdf");
+      expect(res.send).toHaveBeenCalledWith(expect.any(Buffer));
+    });
+
+    it("deve usar CSV por padrão quando format não informado", async () => {
+      req = {
+        user: { companyId: "company-1" },
+        query: { year: "2026", month: "8" },
+      };
+
+      await controller.exportRelatorioMensal(req, res);
+
+      expect(gerarRelatorioMensal).toHaveBeenCalledWith("company-1", 2026, 8);
+      expect(gerarRelatorioMensalPdf).not.toHaveBeenCalled();
+      expect(res.setHeader).toHaveBeenCalledWith("Content-Type", "text/csv; charset=utf-8");
+    });
+
+    it("deve retornar 400 com format inválido", async () => {
+      req = {
+        user: { companyId: "company-1" },
+        query: { year: "2026", month: "8", format: "xlsx" },
+      };
+
+      await controller.exportRelatorioMensal(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
     });
 
     it("deve retornar 400 com parâmetros inválidos", async () => {

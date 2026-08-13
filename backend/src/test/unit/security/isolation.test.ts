@@ -70,6 +70,7 @@ vi.mock("../../../utils/toleranceCalculator.js", () => ({
 }));
 vi.mock("../../../services/relatorioMensalService.js", () => ({
   gerarRelatorioMensal: vi.fn().mockResolvedValue({ csv: "h\nr", hash: "h", filename: "f.csv" }),
+  gerarRelatorioMensalPdf: vi.fn().mockResolvedValue({ pdf: Buffer.from("%PDF"), hash: "h", filename: "f.pdf" }),
 }));
 vi.mock("../../../services/asaasService.js", () => ({
   createCustomer: vi.fn().mockResolvedValue({ id: "asaas-1" }),

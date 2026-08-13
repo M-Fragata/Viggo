@@ -1242,12 +1242,15 @@ Retorno intervalo, Saída, Observação, Assinatura — com hash SHA-256 no roda
 
 **Solução implementada:**
 
-- `backend/src/services/relatorioMensalService.ts` — gera CSV com layout oficial MTE (Empregador, CNPJ, Período, Funcionário, CPF + colunas Dia|Sem|Entrada|Saída Intervalo|Retorno Intervalo|Saída|Observação + ASSINATURA + HASH SHA-256)
-- `CheckinController.exportRelatorioMensal` — endpoint `GET /checkins/export/relatorio-mensal?year=&month=`
-- `frontend/src/services/api.ts` — `checkins.exportRelatorioMensal()`
+- `backend/src/services/relatorioMensalService.ts` — gera CSV com layout oficial MTE (Empregador, CNPJ, Período, Funcionário, CPF + colunas Dia|Sem|Entrada|Saída Intervalo|Retorno Intervalo|Saída|Observação + ASSINATURA + HASH SHA-256) e versão PDF (`gerarRelatorioMensalPdf`) com o **mesmo hash SHA-256** — cópia legível do relatório oficial; o CSV permanece a fonte oficial para fiscalização
+- `CheckinController.exportRelatorioMensal` — endpoint `GET /checkins/export/relatorio-mensal?year=&month=&format=csv|pdf` (default `csv`)
+- `frontend/src/services/api.ts` — `checkins.exportRelatorioMensal()` com param `format`
 - `frontend/src/pages/DashboardPage.tsx` — botão "Exportar Relatório" no tab Folha Mensal (substitui impressão client-side)
+- `frontend/src/pages/admin/FolhaMensalPage.tsx` — botões "Exportar CSV" e "Exportar PDF"
 
-**Rota:** `GET /checkins/export/relatorio-mensal?year=&month=`
+> **Nota de conformidade:** O PDF não é exigido pela Portaria 671/2021 (o modelo oficial é o arquivo estruturado, AFD/CSV, conforme Art. 78, §5º-A, V). O PDF é um complemento de leitura que reproduz o layout oficial e mantém o hash SHA-256 de verificação de integridade.
+
+**Rota:** `GET /checkins/export/relatorio-mensal?year=&month=&format=`
 
 **Arquivos afetados:**
 - Novo: `backend/src/services/relatorioMensalService.ts`

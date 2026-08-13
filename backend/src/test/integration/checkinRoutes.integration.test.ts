@@ -153,5 +153,18 @@ describe("checkinRoutes (integração)", () => {
       expect(res.headers["content-type"]).toContain("text/csv");
       expect(res.text).toContain("HASH:");
     });
+
+    it("deve gerar relatório mensal em PDF quando format=pdf", async () => {
+      const now = new Date();
+      const res = await request(app)
+        .get("/checkins/export/relatorio-mensal")
+        .set("Authorization", `Bearer ${ctx.adminToken}`)
+        .query({ year: now.getFullYear(), month: now.getMonth() + 1, format: "pdf" });
+
+      expect(res.status).toBe(200);
+      expect(res.headers["content-type"]).toContain("application/pdf");
+      expect(res.body).toBeInstanceOf(Buffer);
+      expect(res.body.subarray(0, 4).toString()).toBe("%PDF");
+    });
   });
 });

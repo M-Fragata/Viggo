@@ -26,10 +26,10 @@ function FolhaMensalSection() {
 
   const years: string[] = ["2026"];
 
-  async function handleGenerate() {
+  async function handleGenerate(format: "csv" | "pdf") {
     setIsGenerating(true);
     try {
-      const blob = await api.checkins.exportRelatorioMensal(selectedYear, selectedMonth);
+      const blob = await api.checkins.exportRelatorioMensal(selectedYear, selectedMonth, format);
       if (!blob || blob.size === 0) {
         alert("Nenhum dado encontrado para este período.");
         return;
@@ -37,7 +37,7 @@ function FolhaMensalSection() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `RELATORIO_MENSAL_${selectedYear}${String(selectedMonth).padStart(2, "0")}.csv`;
+      a.download = `RELATORIO_MENSAL_${selectedYear}${String(selectedMonth).padStart(2, "0")}.${format}`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (error) {
@@ -85,7 +85,7 @@ function FolhaMensalSection() {
         </div>
 
         <button
-          onClick={handleGenerate}
+          onClick={() => handleGenerate("csv")}
           disabled={isGenerating}
           className="px-6 py-2.5 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors font-bold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-sm"
         >
@@ -94,14 +94,27 @@ function FolhaMensalSection() {
           ) : (
             <Download size={18} />
           )}
-          {isGenerating ? "Gerando..." : "Exportar Relatório"}
+          {isGenerating ? "Gerando..." : "Exportar CSV"}
+        </button>
+
+        <button
+          onClick={() => handleGenerate("pdf")}
+          disabled={isGenerating}
+          className="px-6 py-2.5 bg-white border-2 border-emerald-500 text-emerald-600 rounded-xl hover:bg-emerald-50 transition-colors font-bold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-sm"
+        >
+          {isGenerating ? (
+            <Loader2 size={18} className="animate-spin" />
+          ) : (
+            <Download size={18} />
+          )}
+          {isGenerating ? "Gerando..." : "Exportar PDF"}
         </button>
       </div>
 
       <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6">
         <FileText className="mx-auto text-slate-300 mb-3" size={40} />
         <p className="text-slate-500 text-sm text-center">
-          Selecione o mês e ano desejados e clique em <strong>"Exportar Relatório"</strong> para baixar o arquivo CSV com o relatório oficial de ponto.
+          Selecione o mês e ano desejados e clique em <strong>"Exportar CSV"</strong> (arquivo oficial) ou <strong>"Exportar PDF"</strong> (cópia legível) para baixar o relatório de ponto.
         </p>
         <p className="text-slate-400 text-xs text-center mt-2">
           O arquivo inclui hash SHA-256 no rodapé para verificação de integridade conforme Art. 78 §5º-A da CLT.

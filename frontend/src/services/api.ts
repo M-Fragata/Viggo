@@ -3,6 +3,7 @@ import { API_URL } from "../utils/api";
 interface FetchOptions extends RequestInit {
   requiresAuth?: boolean;
   totemToken?: boolean;
+  responseType?: "json" | "blob";
 }
 
 export class ApiError extends Error {
@@ -20,7 +21,7 @@ export class ApiError extends Error {
 }
 
 async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {
-  const { requiresAuth = true, totemToken = false, headers = {}, ...restOptions } = options;
+  const { requiresAuth = true, totemToken = false, responseType = "json", headers = {}, ...restOptions } = options;
 
   const token = totemToken
     ? localStorage.getItem("@viggo:totem")
@@ -64,6 +65,10 @@ async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promis
 
   if (response.status === 204) {
     return undefined as T;
+  }
+
+  if (responseType === "blob") {
+    return response.blob() as Promise<T>;
   }
 
   return response.json();
@@ -155,11 +160,11 @@ export const api = {
       fetchApi<CompanyCheckinEmployee[]>(`/checkins/company${date ? `?date=${date}` : ""}`),
     exportAfd: (startDate: string, endDate: string) =>
       fetchApi<Blob>(`/checkins/export/afd?startDate=${startDate}&endDate=${endDate}`, {
-        method: "GET",
+        responseType: "blob",
       }),
-    exportRelatorioMensal: (year: number, month: number) =>
-      fetchApi<Blob>(`/checkins/export/relatorio-mensal?year=${year}&month=${month}`, {
-        method: "GET",
+    exportRelatorioMensal: (year: number, month: number, format: "csv" | "pdf" = "csv") =>
+      fetchApi<Blob>(`/checkins/export/relatorio-mensal?year=${year}&month=${month}&format=${format}`, {
+        responseType: "blob",
       }),
   },
 

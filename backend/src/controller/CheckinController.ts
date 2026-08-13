@@ -4,7 +4,7 @@ import { extendedPrisma } from "../database/prisma-extensions.js";
 import { getNextNSR, currentYear, NsrLimitExceededError } from "../utils/nsrGenerator.js";
 import { decryptCpf, formatCpfDigits } from "../utils/cpfEncryption.js"
 import { gerarComprovante } from "../utils/comprovanteGenerator.js";
-import { gerarRelatorioMensal } from "../services/relatorioMensalService.js";
+import { gerarRelatorioMensal, gerarRelatorioMensalPdf } from "../services/relatorioMensalService.js";
 import { aplicarTolerancia, minutosParaDate, tipoParaHorarioPrevisto, tipoParaTolerancia, isDiaUtil } from "../utils/toleranceCalculator.js";
 
 import { parseISO, startOfDay, endOfDay, startOfMonth, endOfMonth } from "date-fns"
@@ -315,17 +315,26 @@ export class CheckinController {
         const paramsSchema = z.object({
             year: z.coerce.number().min(2020).max(2100),
             month: z.coerce.number().min(1).max(12),
+            format: z.enum(["csv", "pdf"]).default("csv"),
         });
 
         try {
-            const { year, month } = paramsSchema.parse(req.query);
+            const { year, month, format } = paramsSchema.parse(req.query);
 
             const companyId = req.user.companyId;
             if (!companyId) {
                 return res.status(403).json({ message: "Acesso negado" });
             }
 
-            const { csv, hash, filename } = await gerarRelatorioMensal(companyId, year, month);
+            if (format === "pdf") {
+                const { pdf, filename } = await gerarRelatorioMensalPdf(companyId, year, month);
+
+                res.setHeader("Content-Type", "application/pdf");
+                res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+                return res.send(pdf);
+            }
+
+            const { csv, filename } = await gerarRelatorioMensal(companyId, year, month);
 
             res.setHeader("Content-Type", "text/csv; charset=utf-8");
             res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);

@@ -12,7 +12,7 @@ vi.mock("../../../utils/cpfEncryption.js", () => ({
   decryptCpf: vi.fn().mockReturnValue("52998224725"),
 }));
 
-import { gerarRelatorioMensal } from "../../../services/relatorioMensalService.js";
+import { gerarRelatorioMensal, gerarRelatorioMensalPdf } from "../../../services/relatorioMensalService.js";
 import { extendedPrisma } from "../../../database/prisma-extensions.js";
 
 describe("relatorioMensalService", () => {
@@ -172,5 +172,41 @@ describe("relatorioMensalService", () => {
 
     expect(result.csv).toContain("CNPJ: 11222333000181");
     expect(result.csv).not.toContain("CNPJ: 11.222.333/0001-81");
+  });
+
+  describe("gerarRelatorioMensalPdf", () => {
+    beforeEach(() => {
+      (extendedPrisma.company.findUnique as any).mockResolvedValue(mockCompany);
+      (extendedPrisma.user.findMany as any).mockResolvedValue(mockEmployees);
+      (extendedPrisma.checkIn.findMany as any).mockResolvedValue([]);
+    });
+
+    it("deve gerar um buffer PDF válido", async () => {
+      const result = await gerarRelatorioMensalPdf("company-1", 2026, 8);
+
+      expect(result.pdf.length).toBeGreaterThan(0);
+      expect(result.pdf.subarray(0, 4).toString()).toBe("%PDF");
+    });
+
+    it("deve usar o mesmo hash SHA-256 do CSV", async () => {
+      const csv = await gerarRelatorioMensal("company-1", 2026, 8);
+      const pdf = await gerarRelatorioMensalPdf("company-1", 2026, 8);
+
+      expect(pdf.hash).toBe(csv.hash);
+    });
+
+    it("deve gerar nome de arquivo com extensão .pdf", async () => {
+      const result = await gerarRelatorioMensalPdf("company-1", 2026, 8);
+
+      expect(result.filename).toBe("RELATORIO_MENSAL_11222333000181_202608.pdf");
+    });
+
+    it("deve incluir título e hash no metadata do PDF", async () => {
+      const result = await gerarRelatorioMensalPdf("company-1", 2026, 8);
+
+      const raw = result.pdf.toString("latin1");
+      expect(raw).toContain("Relatorio Mensal de Ponto");
+      expect(raw).toContain(result.hash);
+    });
   });
 });
