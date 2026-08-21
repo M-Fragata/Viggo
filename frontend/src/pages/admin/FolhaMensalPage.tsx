@@ -14,6 +14,7 @@ export function FolhaMensalPage() {
       <DashboardPageHeader />
       <FolhaMensalSection />
       <AfdExportSection />
+      <AejExportSection />
     </div>
   );
 }
@@ -211,6 +212,99 @@ function AfdExportSection() {
         </p>
         <p className="text-slate-400 text-xs text-center mt-2">
           O arquivo contém Header (Tipo 1), registros de detalhe (Tipo 2) e Trailer (Tipo 9), separados por pipe (|).
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function AejExportSection() {
+  const today = new Date().toISOString().split("T")[0];
+  const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0];
+  const [startDate, setStartDate] = useState(firstDayOfMonth);
+  const [endDate, setEndDate] = useState(today);
+  const [isExporting, setIsExporting] = useState(false);
+
+  async function handleExportAej() {
+    if (startDate > endDate) {
+      alert("A data inicial não pode ser maior que a data final.");
+      return;
+    }
+    setIsExporting(true);
+    try {
+      const blob = await api.checkins.exportAej(startDate, endDate);
+      if (!blob || blob.size === 0) {
+        alert("Nenhum registro encontrado para o período solicitado.");
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `AEJ_${startDate}_${endDate}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Erro ao exportar AEJ:", error);
+      alert(error instanceof Error ? error.message : "Erro ao exportar AEJ. Tente novamente.");
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-3xl shadow-sm p-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div>
+          <h2 className="text-lg font-bold text-slate-800">Exportar AEJ — Arquivo Eletrônico de Jornada (Art. 78 §5º-B)</h2>
+          <p className="text-slate-500 text-sm">Gera o AEJ no leiaute Anexo V da Portaria 671/2021 (horários contratuais + marcações)</p>
+        </div>
+      </div>
+
+      <div className="flex flex-row flex-wrap items-end gap-4 mb-6">
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Data Inicial</label>
+          <input
+            type="date"
+            value={startDate}
+            max={endDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-sm font-medium"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Data Final</label>
+          <input
+            type="date"
+            value={endDate}
+            min={startDate}
+            max={today}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-sm font-medium"
+          />
+        </div>
+
+        <button
+          onClick={handleExportAej}
+          disabled={isExporting}
+          className="px-6 py-2.5 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors font-bold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-sm"
+        >
+          {isExporting ? (
+            <Loader2 size={18} className="animate-spin" />
+          ) : (
+            <Download size={18} />
+          )}
+          {isExporting ? "Gerando..." : "Exportar AEJ"}
+        </button>
+      </div>
+
+      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6">
+        <FileText className="mx-auto text-slate-300 mb-3" size={40} />
+        <p className="text-slate-500 text-sm text-center">
+          Selecione o período e clique em <strong>"Exportar AEJ"</strong> para baixar o Anexo V (Tipo 1 header, Tipo 2 horários, Tipo 3 marcações, Tipo 9 trailer).
+        </p>
+        <p className="text-slate-400 text-xs text-center mt-2">
+          Inclui hash SHA-256 + assinatura A1 quando CERT_A1_PATH preenchido no .env.
         </p>
       </div>
     </div>

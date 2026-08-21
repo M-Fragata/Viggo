@@ -162,6 +162,10 @@ export const api = {
       fetchApi<Blob>(`/checkins/export/afd?startDate=${startDate}&endDate=${endDate}`, {
         responseType: "blob",
       }),
+    exportAej: (startDate: string, endDate: string) =>
+      fetchApi<Blob>(`/checkins/export/aej?startDate=${startDate}&endDate=${endDate}`, {
+        responseType: "blob",
+      }),
     exportRelatorioMensal: (year: number, month: number, format: "csv" | "pdf" = "csv") =>
       fetchApi<Blob>(`/checkins/export/relatorio-mensal?year=${year}&month=${month}&format=${format}`, {
         responseType: "blob",

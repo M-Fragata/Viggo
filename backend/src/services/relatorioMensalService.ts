@@ -42,11 +42,16 @@ interface RelatorioData {
  *   EMPREGADOR: <razao> | CNPJ: <cnpj>
  *   PERIODO: <inicio> a <fim>
  *   FUNCIONARIO: <nome> | CPF: <cpf>
- *   Dia|Entrada|S.Intervalo|R.Intervalo|Saída|Observação
- *   01|Dom|08:00|12:00|13:00|17:00|
+ *   Dia|Entrada|S.Intervalo|R.Intervalo|Saída|Horas|Extras|Observação
+ *   01|Dom|08:00|12:00|13:00|17:00|08:00|00:00|
  *   ...
  *   ASSINATURA: <nome>
  *   HASH: <sha256>
+ *
+ * Colunas Horas/Extras:
+ *   - Horas: sempre quando houver ENTRY+EXIT (cru com tolerância aplicada), senão "-"
+ *   - Extras: só quando houver WorkSchedule e dia útil, senão "-" (traço). Mostra 00:00 quando sem extra.
+ *   - Observação: *T tolerância, *E extra, *I intervalo <60min
  *
  * O PDF (gerarRelatorioMensalPdf) reproduz o mesmo conteúdo com o mesmo
  * hash SHA-256, servindo como cópia legível do relatório oficial.
@@ -111,13 +116,20 @@ async function buildRelatorio(
   lines.push("");
 
   // Cabeçalho das colunas
-  lines.push("Dia|Sem|Entrada|Saida Intervalo|Retorno Intervalo|Saida|Observacao");
+  lines.push("Dia|Sem|Entrada|Saida Intervalo|Retorno Intervalo|Saida|Horas|Extras|Observacao");
+
+  // Helper para duração em HH:mm
+  const formatDuracao = (minutos: number): string => {
+    const h = Math.floor(minutos / 60);
+    const m = Math.round(minutos % 60);
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  };
 
   // Uma página por funcionário
   for (const emp of employees) {
     const empCpf = decryptCpf(emp.cpf ?? "").replace(/\D/g, "");
     lines.push(`FUNCIONARIO: ${emp.name} | CPF: ${empCpf}`);
-    lines.push("Dia|Sem|Entrada|Saida Intervalo|Retorno Intervalo|Saida|Observacao");
+    lines.push("Dia|Sem|Entrada|Saida Intervalo|Retorno Intervalo|Saida|Horas|Extras|Observacao");
 
     for (const day of days) {
       const dayCheckins = checkins
@@ -162,13 +174,24 @@ async function buildRelatorio(
           effectiveByType.set(c.type, raw);
           continue;
         }
-        const restante = TOLERANCIA_DIARIA_MAX - toleranciaConsumida;
-        if (diffMin > 0 && diffMin <= tolerancia && diffMin <= restante) {
-          toleranciaConsumida += diffMin;
-          effectiveByType.set(c.type, horarioPrevisto);
-          obsByType.set(c.type, "*T");
+        const isEntryExit = c.type === "ENTRY" || c.type === "EXIT";
+        if (isEntryExit) {
+          const restante = TOLERANCIA_DIARIA_MAX - toleranciaConsumida;
+          if (diffMin > 0 && diffMin <= tolerancia && diffMin <= restante) {
+            toleranciaConsumida += diffMin;
+            effectiveByType.set(c.type, horarioPrevisto);
+            obsByType.set(c.type, "*T");
+          } else {
+            effectiveByType.set(c.type, raw);
+          }
         } else {
-          effectiveByType.set(c.type, raw);
+          // Almoço: 15 min por batida, não consome teto diário de 10
+          if (diffMin > 0 && diffMin <= tolerancia) {
+            effectiveByType.set(c.type, horarioPrevisto);
+            obsByType.set(c.type, "*T");
+          } else {
+            effectiveByType.set(c.type, raw);
+          }
         }
       }
 
@@ -178,10 +201,49 @@ async function buildRelatorio(
       const lunchStartT = effectiveByType.has("LUNCH_START") ? format(effectiveByType.get("LUNCH_START")!, "HH:mm") : "";
       const lunchEndT = effectiveByType.has("LUNCH_END") ? format(effectiveByType.get("LUNCH_END")!, "HH:mm") : "";
       const exitTime = effectiveByType.has("EXIT") ? format(effectiveByType.get("EXIT")!, "HH:mm") : "";
-      const observacao = Array.from(obsByType.values()).join(" ");
+
+      // P0-2 A-leve: Horas sempre (se houver ENTRY+EXIT), Extras só com escala (senão "-")
+      let horasStr = "-";
+      let extrasStr = "-";
+      const observacoesExtras: string[] = [...Array.from(obsByType.values())];
+
+      const hasEntryExit = effectiveByType.has("ENTRY") && effectiveByType.has("EXIT");
+      if (hasEntryExit) {
+        const entryEff = effectiveByType.get("ENTRY")!;
+        const exitEff = effectiveByType.get("EXIT")!;
+        let minutosTrabalhados = (exitEff.getTime() - entryEff.getTime()) / (1000 * 60);
+        // desconta intervalo se houver ambos
+        if (effectiveByType.has("LUNCH_START") && effectiveByType.has("LUNCH_END")) {
+          const ls = effectiveByType.get("LUNCH_START")!;
+          const le = effectiveByType.get("LUNCH_END")!;
+          const intervaloMin = (le.getTime() - ls.getTime()) / (1000 * 60);
+          minutosTrabalhados -= intervaloMin;
+          // flag intervalo <60min quando jornada >6h
+          if (intervaloMin < 60 && minutosTrabalhados > 360) {
+            observacoesExtras.push("*I");
+          }
+        }
+        if (minutosTrabalhados < 0) minutosTrabalhados = 0;
+        horasStr = formatDuracao(minutosTrabalhados);
+
+        // Extras só quando há escala e é dia útil
+        if (schedule && isDiaUtil(schedule.daysOfWeek, entryEff)) {
+          const extrasMin = Math.max(0, minutosTrabalhados - 480); // 8h = 480min
+          extrasStr = extrasMin > 0 ? formatDuracao(extrasMin) : "00:00";
+          if (extrasMin > 0) observacoesExtras.push("*E");
+        } else {
+          extrasStr = "-";
+        }
+      } else {
+        // sem ENTRY+EXIT, sem horas
+        horasStr = "-";
+        extrasStr = "-";
+      }
+
+      const observacao = observacoesExtras.filter(Boolean).join(" ");
 
       lines.push(
-        [dayNum, daySem, entryTime, lunchStartT, lunchEndT, exitTime, observacao].join("|")
+        [dayNum, daySem, entryTime, lunchStartT, lunchEndT, exitTime, horasStr, extrasStr, observacao].join("|")
       );
     }
 

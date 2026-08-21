@@ -99,7 +99,7 @@ describe("relatorioMensalService", () => {
 
     const result = await gerarRelatorioMensal("company-1", 2026, 8);
 
-    expect(result.csv).toContain("Dia|Sem|Entrada|Saida Intervalo|Retorno Intervalo|Saida|Observacao");
+    expect(result.csv).toContain("Dia|Sem|Entrada|Saida Intervalo|Retorno Intervalo|Saida|Horas|Extras|Observacao");
   });
 
   it("deve incluir ASSINATURA no final de cada funcionário", async () => {

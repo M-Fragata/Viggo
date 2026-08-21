@@ -17,15 +17,15 @@
 | **CLT Art. 74, §2º** | Registro eletrônico de ponto com 4 batidas (ENTRY/LUNCH_START/LUNCH_END/EXIT) + marcação vinculada a identidade do trabalhador | **Conforme** | — | `backend/src/controller/CheckinController.ts:15` + `:61` |
 | **CLT Art. 74, §2º** | Espelho de ponto / relatório mensal disponibilizado ao empregado (12 meses, assinável) | **Parcial** | P1 | `backend/src/services/relatorioMensalService.ts:47` |
 | **CLT Art. 58, §1º** | Tolerância 5 min por batida, máx. 10 min/dia (variação não computada como hora extra) | **Conforme — CORRIGIDO 21/08/2026 (P0-1 + A2 mínimo)** | — | `backend/src/utils/toleranceCalculator.ts:20` + `relatorioMensalService.ts:100` (acúmulo diário + cru preservado) |
-| **CLT Art. 59 / 71 / 66** | Cálculo/travas de horas extras, adicional noturno (22h-05h), intervalo intra (≥1h se >6h) e interjornada (11h) | **Inconforme** | **P0** | `backend/src/services/relatorioMensalService.ts:100` (ausência total) |
+| **CLT Art. 59 / 71 / 66** | Cálculo/travas de horas extras, adicional noturno (22h-05h), intervalo intra (≥1h se >6h) e interjornada (11h) | **Parcial — A-leve CORRIGIDO 21/08/2026** | — | `relatorioMensalService.ts:100` (Horas sempre, Extras com escala, *T/*E/*I) — A-leve PME |
 | **Port. 671 Art. 78** | REP-P: programa que registra ponto sem capacidade de adulteração | **Parcial** | P1 | `backend/src/routes/index.ts:20` |
 | **Port. 671 Art. 78 §5º III/§5º-C** | NSR unívoco, sequencial, crescente por empregador, reinício em 01/01, limite 999.999 | **Conforme — CORRIGIDO 21/08/2026 (P0-5)** | — | `backend/src/utils/nsrGenerator.ts:21` + `schema.prisma:77` |
 | **Port. 671 Art. 80** | Inviolabilidade: ausência de UPDATE/DELETE no registro original | **Conforme** | — | `backend/src/routes/checkinRoutes.ts:12` (sem PUT/DELETE) |
-| **Port. 671 Art. 80 § único** | Retenção 5 anos + inviolabilidade após 5 anos | **Inconforme** | **P0** | `backend/src/scripts/retentionCleanup.ts:47` |
+| **Port. 671 Art. 80 § único** | Retenção 5 anos + inviolabilidade após 5 anos | **Conforme — CORRIGIDO 21/08/2026 (P0-4 mínimo)** | — | `backend/src/scripts/retentionCleanup.ts:47` (hash+AuditLog ARCHIVE por empresa antes de delete, inviolabilidade) |
 | **Port. 671 Anexo III** | Comprovante do Trabalhador com hash SHA-256 | **Conforme** | — | `backend/src/utils/comprovanteGenerator.ts:78` |
 | **Port. 671 Anexo III** | Comprovante com assinatura digital ICP-Brasil (certificado A1) | **Pendente** | P1 | `backend/src/utils/comprovanteGenerator.ts:82` (sem assinatura) |
 | **Port. 671 Anexo II** | Exportação AFD (Registro Tipo 1/2/9, ordenado por NSR) | **Conforme** | — | `backend/src/controller/AfdController.ts:47` |
-| **Port. 671 Anexo V** | Exportação AEJ (Arquivo Eletrônico de Jornada) | **Inconforme** | **P0** | *não implementado* |
+| **Port. 671 Anexo V** | Exportação AEJ (Arquivo Eletrônico de Jornada) | **Conforme — CORRIGIDO 21/08/2026 (P0-3)** | — | `backend/src/controller/AejController.ts` + `afSignature.ts` + `CERT_A1_*` (Anexo V Tipo1/2/3/9 + hash SHA-256 + A1 plugável via .env) |
 | **Port. 671 Art. 81** | Backup criptografado e exportável à fiscalização | **Inconforme** | P1 | *não implementado* |
 | **Port. 671 Art. 78 §4º** | Geolocalização vinculada ao REP-P (se coletada, auditável) | **Parcial** | P1 | `frontend/src/pages/pontoPage.tsx:47` |
 | **LGPD Art. 5º II + Art. 11** | Biometria = dado sensível, armazenamento em repositório seguro + criptografia + sem imagem | **Conforme** | — | `backend/src/utils/faceEncryption.ts:39` + `schema.prisma:43` |

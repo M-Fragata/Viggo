@@ -18,6 +18,9 @@ const environmentSchema = z.object({
     ASAAS_API_KEY: z.string().optional(),
     ASAAS_ENVIRONMENT: z.enum(["sandbox", "production"]).default("sandbox"),
     ASAAS_WEBHOOK_TOKEN: z.string().optional(),
+    CERT_A1_PATH: z.string().optional(),
+    CERT_A1_PASSWORD: z.string().optional(),
+    CERT_A1_BASE64: z.string().optional(),
 })
 
 const EnvRaw = environmentSchema.safeParse(process.env)
