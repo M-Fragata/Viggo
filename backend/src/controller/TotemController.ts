@@ -9,7 +9,6 @@ import { decryptFaceDescriptor, encryptFaceDescriptor } from "../utils/faceEncry
 import { decryptCpf, formatCpfDigits } from "../utils/cpfEncryption.js";
 import { gerarComprovante } from "../utils/comprovanteGenerator.js";
 import { getNextNSR, currentYear, NsrLimitExceededError } from "../utils/nsrGenerator.js";
-import { aplicarTolerancia, minutosParaDate, tipoParaHorarioPrevisto, tipoParaTolerancia, isDiaUtil } from "../utils/toleranceCalculator.js";
 import { parseISO, startOfDay, endOfDay } from "date-fns";
 
 interface FaceToken {
@@ -314,26 +313,11 @@ export class TotemController {
                 return res.status(404).json({ message: "Empresa não encontrada" });
             }
 
-            let effectiveCreatedAt = new Date();
-            const userWithSchedule = await extendedPrisma.user.findUnique({
-                where: { id: userId },
-                include: { workSchedule: true },
-            });
-
-            if (userWithSchedule?.workSchedule && isDiaUtil(userWithSchedule.workSchedule.daysOfWeek, today)) {
-                const schedule = userWithSchedule.workSchedule;
-                const minutosPrevistos = tipoParaHorarioPrevisto(type, schedule);
-
-                if (minutosPrevistos !== null) {
-                    const horarioPrevisto = minutosParaDate(minutosPrevistos, today);
-                    const tolerancia = tipoParaTolerancia(type, schedule);
-                    const resultado = aplicarTolerancia(today, horarioPrevisto, tolerancia);
-                    effectiveCreatedAt = resultado.horarioEfetivo;
-                }
-            }
+            // A2 mínimo: preservar cru (ver CheckinController)
+            const rawCreatedAt = new Date();
 
             const checkin = await extendedPrisma.$transaction(async (tx) => {
-                const nsr = await getNextNSR(companyId, ano);
+                const nsr = await getNextNSR(tx as unknown as Parameters<typeof getNextNSR>[0], companyId, ano);
 
                 return tx.checkIn.create({
                     data: {
@@ -345,7 +329,7 @@ export class TotemController {
                         userId,
                         companyId,
                         employerCnpj: company.cnpj,
-                        createdAt: effectiveCreatedAt,
+                        createdAt: rawCreatedAt,
                     },
                 });
             });

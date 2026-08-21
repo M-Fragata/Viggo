@@ -4,6 +4,13 @@ import PDFDocument from "pdfkit";
 import { extendedPrisma } from "../database/prisma-extensions.js";
 import { startOfMonth, endOfMonth, format, eachDayOfInterval, isSameDay } from "date-fns";
 import { decryptCpf } from "../utils/cpfEncryption.js";
+import {
+  aplicarTolerancia,
+  minutosParaDate,
+  tipoParaHorarioPrevisto,
+  tipoParaTolerancia,
+  isDiaUtil,
+} from "../utils/toleranceCalculator.js";
 
 interface RelatorioResult {
   csv: string;
@@ -66,7 +73,22 @@ async function buildRelatorio(
 
   const employees = await extendedPrisma.user.findMany({
     where: { companyId },
-    select: { id: true, name: true, cpf: true },
+    select: {
+      id: true,
+      name: true,
+      cpf: true,
+      workSchedule: {
+        select: {
+          entryTime: true,
+          lunchStart: true,
+          lunchEnd: true,
+          exitTime: true,
+          daysOfWeek: true,
+          checkinToleranceMinutes: true,
+          lunchToleranceMinutes: true,
+        },
+      },
+    },
   });
 
   const checkins = await extendedPrisma.checkIn.findMany({
@@ -98,24 +120,68 @@ async function buildRelatorio(
     lines.push("Dia|Sem|Entrada|Saida Intervalo|Retorno Intervalo|Saida|Observacao");
 
     for (const day of days) {
-      const dayCheckins = checkins.filter(
-        (c) => c.userId === emp.id && isSameDay(c.createdAt, day)
-      );
+      const dayCheckins = checkins
+        .filter((c) => c.userId === emp.id && isSameDay(c.createdAt, day))
+        .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
 
-      const entry = dayCheckins.find((c) => c.type === "ENTRY");
-      const lunchStart = dayCheckins.find((c) => c.type === "LUNCH_START");
-      const lunchEnd = dayCheckins.find((c) => c.type === "LUNCH_END");
-      const exit = dayCheckins.find((c) => c.type === "EXIT");
+      // P0-1 + A2: tolerância CLT Art.58 §1º — 5 min/batida, máx 10 min/dia.
+      // Aplicada apenas no relatório (cru preservado no DB), e só se houver WorkSchedule.
+      // Ordem cronológica respeita acúmulo diário (consumo sequencial).
+      const TOLERANCIA_DIARIA_MAX = 10;
+      let toleranciaConsumida = 0;
+      const schedule = (emp as unknown as { workSchedule: unknown }).workSchedule as
+        | {
+            entryTime: number;
+            lunchStart: number;
+            lunchEnd: number;
+            exitTime: number;
+            daysOfWeek: number;
+            checkinToleranceMinutes: number;
+            lunchToleranceMinutes: number;
+          }
+        | null;
+
+      const effectiveByType = new Map<string, Date>();
+      const obsByType = new Map<string, string>();
+
+      for (const c of dayCheckins) {
+        const raw = c.createdAt;
+        if (!schedule || !isDiaUtil(schedule.daysOfWeek, raw)) {
+          effectiveByType.set(c.type, raw);
+          continue;
+        }
+        const minutosPrevistos = tipoParaHorarioPrevisto(c.type, schedule);
+        if (minutosPrevistos === null) {
+          effectiveByType.set(c.type, raw);
+          continue;
+        }
+        const horarioPrevisto = minutosParaDate(minutosPrevistos, raw);
+        const tolerancia = tipoParaTolerancia(c.type, schedule);
+        const diffMin = (raw.getTime() - horarioPrevisto.getTime()) / (1000 * 60);
+        if (diffMin < 0) {
+          effectiveByType.set(c.type, raw);
+          continue;
+        }
+        const restante = TOLERANCIA_DIARIA_MAX - toleranciaConsumida;
+        if (diffMin > 0 && diffMin <= tolerancia && diffMin <= restante) {
+          toleranciaConsumida += diffMin;
+          effectiveByType.set(c.type, horarioPrevisto);
+          obsByType.set(c.type, "*T");
+        } else {
+          effectiveByType.set(c.type, raw);
+        }
+      }
 
       const dayNum = format(day, "dd");
       const daySem = WEEKDAYS[day.getDay()];
-      const entryTime = entry ? format(entry.createdAt, "HH:mm") : "";
-      const lunchStartT = lunchStart ? format(lunchStart.createdAt, "HH:mm") : "";
-      const lunchEndT = lunchEnd ? format(lunchEnd.createdAt, "HH:mm") : "";
-      const exitTime = exit ? format(exit.createdAt, "HH:mm") : "";
+      const entryTime = effectiveByType.has("ENTRY") ? format(effectiveByType.get("ENTRY")!, "HH:mm") : "";
+      const lunchStartT = effectiveByType.has("LUNCH_START") ? format(effectiveByType.get("LUNCH_START")!, "HH:mm") : "";
+      const lunchEndT = effectiveByType.has("LUNCH_END") ? format(effectiveByType.get("LUNCH_END")!, "HH:mm") : "";
+      const exitTime = effectiveByType.has("EXIT") ? format(effectiveByType.get("EXIT")!, "HH:mm") : "";
+      const observacao = Array.from(obsByType.values()).join(" ");
 
       lines.push(
-        [dayNum, daySem, entryTime, lunchStartT, lunchEndT, exitTime, ""].join("|")
+        [dayNum, daySem, entryTime, lunchStartT, lunchEndT, exitTime, observacao].join("|")
       );
     }
 

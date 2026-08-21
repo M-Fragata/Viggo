@@ -75,6 +75,7 @@ export class AfdController {
 
             const checkins = await extendedPrisma.checkIn.findMany({
                 where: {
+                    companyId,
                     createdAt: {
                         gte: new Date(`${startDate}T00:00:00`),
                         lte: new Date(`${endDate}T23:59:59`),

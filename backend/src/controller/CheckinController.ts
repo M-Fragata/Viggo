@@ -5,7 +5,6 @@ import { getNextNSR, currentYear, NsrLimitExceededError } from "../utils/nsrGene
 import { decryptCpf, formatCpfDigits } from "../utils/cpfEncryption.js"
 import { gerarComprovante } from "../utils/comprovanteGenerator.js";
 import { gerarRelatorioMensal, gerarRelatorioMensalPdf } from "../services/relatorioMensalService.js";
-import { aplicarTolerancia, minutosParaDate, tipoParaHorarioPrevisto, tipoParaTolerancia, isDiaUtil } from "../utils/toleranceCalculator.js";
 
 import { parseISO, startOfDay, endOfDay, startOfMonth, endOfMonth } from "date-fns"
 
@@ -62,26 +61,10 @@ export class CheckinController {
                 return res.status(404).json({ message: "Empresa não encontrada" });
             }
 
-            // F8/F16/T22: Aplicar tolerância CLT Art. 74 §2º
-            // Se o funcionário possui horário atribuído e hoje é dia útil,
-            // compara o horário real com o previsto e ajusta se dentro da tolerância.
-            let effectiveCreatedAt = new Date();
-            const userWithSchedule = await extendedPrisma.user.findUnique({
-                where: { id: userId },
-                include: { workSchedule: true },
-            });
-
-            if (userWithSchedule?.workSchedule && isDiaUtil(userWithSchedule.workSchedule.daysOfWeek, today)) {
-                const schedule = userWithSchedule.workSchedule;
-                const minutosPrevistos = tipoParaHorarioPrevisto(type, schedule);
-
-                if (minutosPrevistos !== null) {
-                    const horarioPrevisto = minutosParaDate(minutosPrevistos, today);
-                    const tolerancia = tipoParaTolerancia(type, schedule);
-                    const resultado = aplicarTolerancia(today, horarioPrevisto, tolerancia);
-                    effectiveCreatedAt = resultado.horarioEfetivo;
-                }
-            }
+            // A2 mínimo: preservar horário cru (inviolabilidade Port.671 Art.80).
+            // Tolerância CLT Art.58 §1º (5 min/batida, 10 min/dia) é aplicada
+            // apenas no cálculo do relatório (relatorioMensalService), não na gravação.
+            const rawCreatedAt = new Date();
 
             // Gerar NSR e criar CheckIn em transacao para garantir atomicidade.
             // Usamos extendedPrisma.$transaction para que o `tx` herde a extensao
@@ -89,7 +72,7 @@ export class CheckinController {
             // Em race condition rara, a constraint unique [companyId, nsr, ano]
             // falha e o erro e lancado para retratativa pelo chamador.
             const checkin = await extendedPrisma.$transaction(async (tx) => {
-                const nsr = await getNextNSR(companyId, ano);
+                const nsr = await getNextNSR(tx as unknown as Parameters<typeof getNextNSR>[0], companyId, ano);
 
                 return tx.checkIn.create({
                     data: {
@@ -101,7 +84,7 @@ export class CheckinController {
                         userId,
                         companyId,
                         employerCnpj: company.cnpj,
-                        createdAt: effectiveCreatedAt,
+                        createdAt: rawCreatedAt,
                     }
                 });
             });
