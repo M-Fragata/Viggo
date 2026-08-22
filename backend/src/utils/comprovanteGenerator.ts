@@ -8,8 +8,8 @@ interface ComprovanteData {
   employeeCpf: string;
   checkinType: string;
   checkinDate: Date;
-  latitude: number;
-  longitude: number;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 const TIPO_MAP: Record<string, string> = {
@@ -70,7 +70,7 @@ export function gerarComprovante(data: ComprovanteData): {
     `Tipo: ${TIPO_MAP[data.checkinType] ?? data.checkinType}`,
     `NSR:  ${nsrFormatted}`,
     "",
-    `Localizacao: ${data.latitude.toFixed(6)}, ${data.longitude.toFixed(6)}`,
+    `Localizacao: ${data.latitude != null && data.longitude != null ? `${data.latitude.toFixed(6)}, ${data.longitude.toFixed(6)}` : "Não informada (GPS negado)"}`,
   ];
 
   const textoSemHash = linhas.join("\n");

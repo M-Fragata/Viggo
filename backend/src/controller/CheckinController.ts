@@ -5,16 +5,25 @@ import { getNextNSR, currentYear, NsrLimitExceededError } from "../utils/nsrGene
 import { decryptCpf, formatCpfDigits } from "../utils/cpfEncryption.js"
 import { gerarComprovante } from "../utils/comprovanteGenerator.js";
 import { gerarRelatorioMensal, gerarRelatorioMensalPdf } from "../services/relatorioMensalService.js";
+import { signContent } from "../utils/afSignature.js";
 
-import { parseISO, startOfDay, endOfDay, startOfMonth, endOfMonth } from "date-fns"
+import { parseISO, startOfDay, endOfDay, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from "date-fns"
 
 
 export class CheckinController {
     async createCheckin(req: Request, res: Response) {
         const bodySchema = z.object({
             type: z.enum(["ENTRY", "LUNCH_START", "LUNCH_END", "EXIT"]),
-            latitude: z.number(),
-            longitude: z.number()
+            latitude: z.number().finite().min(-90).max(90).nullable().optional(),
+            longitude: z.number().finite().min(-180).max(180).nullable().optional(),
+            accuracy: z.number().finite().min(0).max(100000).nullable().optional(),
+            geolocationDenied: z.boolean().optional().default(false),
+            geolocationConsent: z.boolean().nullable().optional(),
+            address: z.string().max(500).nullable().optional(),
+        }).superRefine((data, ctx) => {
+            if (!data.geolocationDenied && (data.latitude == null || data.longitude == null)) {
+                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "latitude/longitude obrigatórios quando GPS permitido", path: ["latitude"] });
+            }
         })
 
         try {
@@ -29,21 +38,62 @@ export class CheckinController {
 
             if (!user) return res.status(404).json({ message: "Usuário não encontrado" })
 
-            const { type, latitude, longitude } = bodySchema.parse(req.body);
+            const { type, latitude, longitude, accuracy, geolocationDenied, geolocationConsent, address } = bodySchema.parse(req.body);
 
             const today = new Date()
-            const checkinExists = await extendedPrisma.checkIn.findFirst({
+            const checkinsHoje = await extendedPrisma.checkIn.findMany({
                 where: {
                     userId,
-                    type,
                     createdAt: {
                         gte: startOfDay(today),
                         lte: endOfDay(today)
                     }
-                }
-            })
-            if (checkinExists) {
+                },
+                select: { type: true }
+            });
+
+            const tiposHoje = new Set(checkinsHoje.map(c => c.type));
+
+            if (tiposHoje.has(type as any)) {
                 return res.status(400).json({ message: `Ponto de ${type} já registrado hoje.` })
+            }
+
+            // Máquina de estados — A4: EXIT só exige ENTRY (flexível com almoço)
+            if (type === "LUNCH_START" && !tiposHoje.has("ENTRY")) {
+                return res.status(409).json({ message: "É necessário bater ENTRY antes de LUNCH_START.", code: "INVALID_SEQUENCE", expected: ["ENTRY"] });
+            }
+            if (type === "LUNCH_END" && !tiposHoje.has("LUNCH_START")) {
+                return res.status(409).json({ message: "É necessário bater LUNCH_START antes de LUNCH_END.", code: "INVALID_SEQUENCE", expected: ["LUNCH_START"] });
+            }
+            if (type === "EXIT" && !tiposHoje.has("ENTRY")) {
+                return res.status(409).json({ message: "É necessário bater ENTRY antes de EXIT.", code: "INVALID_SEQUENCE", expected: ["ENTRY"] });
+            }
+
+            // B3 — Escala Seg-Dom: conta ENTRY na semana; se excede limite → justificativa (não bloqueia, CLT 74)
+            let foraDaEscala = false;
+            let escalaMotivo: string | null = null;
+            if (user.workScheduleId) {
+                const schedule = await extendedPrisma.workSchedule.findUnique({
+                    where: { id: user.workScheduleId },
+                    select: { jornadaTipo: true, name: true },
+                });
+                if (schedule?.jornadaTipo && type === "ENTRY") {
+                    const inicioSemana = startOfWeek(today, { weekStartsOn: 1 });
+                    const fimSemana = endOfWeek(today, { weekStartsOn: 1 });
+                    const entriesSemana = await extendedPrisma.checkIn.count({
+                        where: {
+                            userId,
+                            type: "ENTRY",
+                            createdAt: { gte: inicioSemana, lte: fimSemana },
+                        },
+                    });
+                    const limites: Record<string, number> = { "5x2": 5, "6x1": 6, "12x36": 4 };
+                    const limite = limites[schedule.jornadaTipo] ?? 6;
+                    if (entriesSemana >= limite) {
+                        foraDaEscala = true;
+                        escalaMotivo = `Escala ${schedule.jornadaTipo} (${schedule.name}): ${entriesSemana + 1}º ENTRY na semana Seg-Dom (limite ${limite}). Encaminhado para justificativa.`;
+                    }
+                }
             }
 
             const companyId = user.companyId;
@@ -71,14 +121,24 @@ export class CheckinController {
             // multi-tenant (injecao automatica de companyId via AsyncLocalStorage).
             // Em race condition rara, a constraint unique [companyId, nsr, ano]
             // falha e o erro e lancado para retratativa pelo chamador.
+            const finalLatitude = geolocationDenied ? null : (latitude ?? null);
+            const finalLongitude = geolocationDenied ? null : (longitude ?? null);
+            const finalAccuracy = geolocationDenied ? null : (accuracy ?? null);
+            // address ignorado por enquanto — reverse-geocode pendente (ver PENDENCIAS-CONFORMIDADE.md A4)
+            const finalAddress = address ?? null;
+
             const checkin = await extendedPrisma.$transaction(async (tx) => {
                 const nsr = await getNextNSR(tx as unknown as Parameters<typeof getNextNSR>[0], companyId, ano);
 
-                return tx.checkIn.create({
+                const created = await tx.checkIn.create({
                     data: {
                         type,
-                        latitude,
-                        longitude,
+                        latitude: finalLatitude,
+                        longitude: finalLongitude,
+                        geolocationAccuracy: finalAccuracy,
+                        geolocationDenied: !!geolocationDenied,
+                        geolocationConsent: geolocationConsent ?? !geolocationDenied,
+                        address: finalAddress,
                         nsr,
                         ano,
                         userId,
@@ -87,6 +147,38 @@ export class CheckinController {
                         createdAt: rawCreatedAt,
                     }
                 });
+
+                // A4: se GPS negado, gera justificativa pendente automaticamente para admin aprovar
+                if (geolocationDenied) {
+                    await tx.justificativa.create({
+                        data: {
+                            tipo: "JUSTIFICATIVA_GERAL",
+                            descricao: `Ponto ${type} sem localização — GPS negado pelo colaborador. CheckIn ${created.id} em ${rawCreatedAt.toISOString()}. Pendente de análise.`,
+                            dataInicio: rawCreatedAt,
+                            userId,
+                            companyId,
+                            checkinId: created.id,
+                            aprovado: null,
+                        }
+                    });
+                }
+
+                // B3: escala Seg-Dom excedida → justificativa para admin aprovar (não bloqueia, CLT 74)
+                if (foraDaEscala && escalaMotivo) {
+                    await tx.justificativa.create({
+                        data: {
+                            tipo: "JUSTIFICATIVA_GERAL",
+                            descricao: `${escalaMotivo} CheckIn ${created.id} em ${rawCreatedAt.toISOString()}.`,
+                            dataInicio: rawCreatedAt,
+                            userId,
+                            companyId,
+                            checkinId: created.id,
+                            aprovado: null,
+                        }
+                    });
+                }
+
+                return created;
             });
 
             const comprovante = gerarComprovante({
@@ -97,14 +189,30 @@ export class CheckinController {
                 employeeCpf: formatCpfDigits(decryptCpf(user.cpf ?? "")),
                 checkinType: type,
                 checkinDate: checkin.createdAt,
-                latitude,
-                longitude,
+                latitude: checkin.latitude ?? null,
+                longitude: checkin.longitude ?? null,
             });
+
+            // Assinatura plug-and-play do comprovante (Anexo III) — sem cert → só hash, com cert → PKCS#7
+            const sig = signContent(comprovante.texto);
+
+            // Headers para clientes que validam via header (espelha AEJ/AFD)
+            res.setHeader("X-Hash-SHA256", sig.hash);
+            if (sig.assinado && sig.assinatura) res.setHeader("X-Signature", sig.assinatura);
+            if (sig.erro) res.setHeader("X-Signature-Error", sig.erro);
+
+            if (foraDaEscala && escalaMotivo) {
+                res.setHeader("X-Fora-Da-Escala", "true");
+            }
 
             return res.status(201).json({
                 checkin: { checkin },
                 comprovante: comprovante.texto,
                 hashVerificacao: comprovante.hashVerificacao,
+                assinatura: sig.assinado ? sig.assinatura : undefined,
+                assinado: sig.assinado,
+                ...(sig.erro ? { assinaturaErro: sig.erro } : {}),
+                ...(foraDaEscala ? { foraDaEscala: true, escalaMotivo } : {}),
             })
 
         } catch (error) {
@@ -310,17 +418,25 @@ export class CheckinController {
             }
 
             if (format === "pdf") {
-                const { pdf, filename } = await gerarRelatorioMensalPdf(companyId, year, month);
+                const { pdf, filename, hash } = await gerarRelatorioMensalPdf(companyId, year, month);
+                const sig = signContent(hash); // assina o hash do relatório
 
                 res.setHeader("Content-Type", "application/pdf");
                 res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+                res.setHeader("X-Hash-SHA256", hash);
+                if (sig.assinado && sig.assinatura) res.setHeader("X-Signature", sig.assinatura);
+                if (sig.erro) res.setHeader("X-Signature-Error", sig.erro);
                 return res.send(pdf);
             }
 
-            const { csv, filename } = await gerarRelatorioMensal(companyId, year, month);
+            const { csv, filename, hash } = await gerarRelatorioMensal(companyId, year, month);
+            const sig = signContent(hash);
 
             res.setHeader("Content-Type", "text/csv; charset=utf-8");
             res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+            res.setHeader("X-Hash-SHA256", hash);
+            if (sig.assinado && sig.assinatura) res.setHeader("X-Signature", sig.assinatura);
+            if (sig.erro) res.setHeader("X-Signature-Error", sig.erro);
             return res.send(csv);
 
         } catch (error) {

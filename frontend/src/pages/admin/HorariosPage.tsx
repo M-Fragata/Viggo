@@ -27,6 +27,7 @@ function WorkScheduleManager() {
     lunchEnd: 780,
     exitTime: 1020,
     daysOfWeek: 31,
+    jornadaTipo: "5x2" as "5x2" | "6x1" | "12x36",
     checkinToleranceMinutes: 5,
     lunchToleranceMinutes: 15,
   });
@@ -62,7 +63,15 @@ function WorkScheduleManager() {
   }
 
   function resetForm() {
-    setForm({ name: "", entryTime: 480, lunchStart: 720, lunchEnd: 780, exitTime: 1020, daysOfWeek: 31, checkinToleranceMinutes: 5, lunchToleranceMinutes: 15 });
+    setForm({ name: "", entryTime: 480, lunchStart: 720, lunchEnd: 780, exitTime: 1020, daysOfWeek: 31, jornadaTipo: "5x2" as "5x2" | "6x1" | "12x36", checkinToleranceMinutes: 5, lunchToleranceMinutes: 15 });
+  }
+
+  function handleJornadaChange(value: "5x2" | "6x1" | "12x36") {
+    setForm((prev) => ({
+      ...prev,
+      jornadaTipo: value,
+      daysOfWeek: value === "5x2" ? 31 : value === "6x1" ? 63 : prev.daysOfWeek,
+    }));
   }
 
   function handleEdit(s: WorkScheduleResponse) {
@@ -73,6 +82,7 @@ function WorkScheduleManager() {
       lunchEnd: s.lunchEnd,
       exitTime: s.exitTime,
       daysOfWeek: s.daysOfWeek,
+      jornadaTipo: s.jornadaTipo,
       checkinToleranceMinutes: s.checkinToleranceMinutes,
       lunchToleranceMinutes: s.lunchToleranceMinutes,
     });
@@ -148,6 +158,20 @@ function WorkScheduleManager() {
                   onChange={(e) => setForm({ ...form, lunchEnd: parseTimeToMinutes(e.target.value) })}
                   className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-sm" />
               </div>
+              <div className="sm:col-span-2">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Escala *</label>
+                <select value={form.jornadaTipo} onChange={(e) => handleJornadaChange(e.target.value as "5x2" | "6x1" | "12x36")}
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-sm">
+                  <option value="5x2">5x2 — Seg a Sex (44h/sem)</option>
+                  <option value="6x1">6x1 — Seg a Sáb (44h/sem, DSR rotativo)</option>
+                  <option value="12x36">12x36 — 12h trabalha / 36h folga</option>
+                </select>
+                <p className="text-xs text-slate-400 mt-1">
+                  {form.jornadaTipo === "5x2" && "Folga fixa: Sáb e Dom"}
+                  {form.jornadaTipo === "6x1" && "Máx 6 dias na semana Seg-Dom (7º vai p/ justificativa)"}
+                  {form.jornadaTipo === "12x36" && "Máx 3-4 plantões por semana Seg-Dom"}
+                </p>
+              </div>
               <div>
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Tolerância Ponto (min)</label>
                 <input type="number" min={0} max={60} value={form.checkinToleranceMinutes}
@@ -174,6 +198,7 @@ function WorkScheduleManager() {
                   </button>
                 ))}
               </div>
+              {form.jornadaTipo !== "12x36" && <p className="text-xs text-slate-400 mt-1">Auto-preenchido pela escala, mas editável</p>}
             </div>
 
             <button onClick={handleSave}

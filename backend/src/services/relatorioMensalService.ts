@@ -10,6 +10,8 @@ import {
   tipoParaHorarioPrevisto,
   tipoParaTolerancia,
   isDiaUtil,
+  aplicarToleranciaComTeto,
+  TOLERANCIA_DIARIA_MAX,
 } from "../utils/toleranceCalculator.js";
 
 interface RelatorioResult {
@@ -136,10 +138,9 @@ async function buildRelatorio(
         .filter((c) => c.userId === emp.id && isSameDay(c.createdAt, day))
         .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
 
-      // P0-1 + A2: tolerância CLT Art.58 §1º — 5 min/batida, máx 10 min/dia.
-      // Aplicada apenas no relatório (cru preservado no DB), e só se houver WorkSchedule.
-      // Ordem cronológica respeita acúmulo diário (consumo sequencial).
-      const TOLERANCIA_DIARIA_MAX = 10;
+      // A6 CLT Art.58 §1º segunda parte + Súmula 366 TST — 5 min/batida, máx 10 min/dia (*T).
+      // Cru preservado no DB (Port.671 Art.80); ajuste só no effective.
+      // Lunch 15 min não consome teto diário.
       let toleranciaConsumida = 0;
       const schedule = (emp as unknown as { workSchedule: unknown }).workSchedule as
         | {
@@ -177,8 +178,9 @@ async function buildRelatorio(
         const isEntryExit = c.type === "ENTRY" || c.type === "EXIT";
         if (isEntryExit) {
           const restante = TOLERANCIA_DIARIA_MAX - toleranciaConsumida;
-          if (diffMin > 0 && diffMin <= tolerancia && diffMin <= restante) {
-            toleranciaConsumida += diffMin;
+          const { dentroDoTeto, novoRestante } = aplicarToleranciaComTeto(diffMin, tolerancia, restante);
+          if (dentroDoTeto) {
+            toleranciaConsumida = TOLERANCIA_DIARIA_MAX - novoRestante;
             effectiveByType.set(c.type, horarioPrevisto);
             obsByType.set(c.type, "*T");
           } else {

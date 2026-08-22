@@ -59,20 +59,23 @@ model User {
 }
 
 model CheckIn {
-  id            String      @id @default(uuid())
-  nsr           Int
-  ano           Int
-  createdAt     DateTime    @default(now())
-  type          CheckInType
-  latitude      Float
-  longitude     Float
-  address       String?
-  employerCnpj  String
-  userId        String
-  companyId     String
-  company       Company     @relation(fields: [companyId], references: [id])
-  user          User        @relation(fields: [userId], references: [id])
-  justificativas Justificativa[]
+  id                  String      @id @default(uuid())
+  nsr                 Int
+  ano                 Int
+  createdAt           DateTime    @default(now())
+  type                CheckInType
+  latitude            Float?
+  longitude           Float?
+  geolocationAccuracy Float?
+  geolocationDenied   Boolean     @default(false)
+  geolocationConsent  Boolean?
+  address             String?
+  employerCnpj        String
+  userId              String
+  companyId           String
+  company             Company     @relation(fields: [companyId], references: [id])
+  user                User        @relation(fields: [userId], references: [id])
+  justificativas      Justificativa[]
 
   @@unique([companyId, nsr, ano])
   @@index([userId, createdAt])
@@ -220,6 +223,8 @@ model WorkSchedule {
   exitTime    Int      // 1020 = 17:00
 
   daysOfWeek  Int      @default(31) // bitmask: Seg=1, Ter=2, Qua=4, Qui=8, Sex=16, Sab=32, Dom=64
+
+  jornadaTipo String   // "5x2" | "6x1" | "12x36" — escala informada pela empresa (obrigatório)
 
   checkinToleranceMinutes Int @default(5)
   lunchToleranceMinutes   Int @default(15)

@@ -153,7 +153,7 @@ export function CheckinTable({ data, isLoading = false }: CheckinTableProps) {
   );
 }
 
-function CheckinField({ label, entry }: { label: string; entry?: { timestamp: string; lat: number; lng: number } }) {
+function CheckinField({ label, entry }: { label: string; entry?: { timestamp: string; lat: number | null; lng: number | null } }) {
   return (
     <div className="flex items-center justify-between py-1">
       <span className="text-xs font-bold text-slate-400 uppercase tracking-wider w-20">{label}</span>

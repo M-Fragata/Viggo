@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   aplicarTolerancia,
+  aplicarToleranciaComTeto,
+  TOLERANCIA_DIARIA_MAX,
   minutosParaDate,
   tipoParaHorarioPrevisto,
   tipoParaTolerancia,
@@ -229,6 +231,68 @@ describe("toleranceCalculator", () => {
       expect(isDiaUtil(31, new Date("2026-08-10T12:00:00"))).toBe(true);  // Seg
       expect(isDiaUtil(31, new Date("2026-08-14T12:00:00"))).toBe(true);  // Sex
       expect(isDiaUtil(31, new Date("2026-08-15T12:00:00"))).toBe(false); // Sáb
+    });
+  });
+
+  // A6 — CLT Art.58 §1º segunda parte + Súmula 366 TST: teto 10 min/dia
+  describe("teto diário 10 min (ENTRY/EXIT) — aplicarToleranciaComTeto", () => {
+    it("TOLERANCIA_DIARIA_MAX deve ser 10", () => {
+      expect(TOLERANCIA_DIARIA_MAX).toBe(10);
+    });
+
+    it("5+5=10: ambos dentro do teto (2 *T)", () => {
+      let restante = 10;
+      const r1 = aplicarToleranciaComTeto(5, 5, restante);
+      expect(r1.dentroDoTeto).toBe(true);
+      restante = r1.novoRestante; // 5
+      const r2 = aplicarToleranciaComTeto(5, 5, restante);
+      expect(r2.dentroDoTeto).toBe(true);
+      expect(r2.novoRestante).toBe(0);
+    });
+
+    it("5+6=11: segundo estoura teto (Súmula 366) — só 1 *T", () => {
+      let restante = 10;
+      const r1 = aplicarToleranciaComTeto(5, 5, restante);
+      expect(r1.dentroDoTeto).toBe(true);
+      restante = r1.novoRestante; // 5
+      const r2 = aplicarToleranciaComTeto(6, 5, restante);
+      // 6 > tolerancia 5 → já fora, mas mesmo com tolerância 6, 6 > restante 5 → fora
+      expect(r2.dentroDoTeto).toBe(false);
+      expect(r2.novoRestante).toBe(5);
+      // mesmo cenário com tolerância folgada (ex 15) ainda barra pelo teto
+      const r3 = aplicarToleranciaComTeto(6, 15, 5);
+      expect(r3.dentroDoTeto).toBe(false);
+    });
+
+    it("3+3+4=10: três batidas cabem no teto", () => {
+      let restante = 10;
+      for (const diff of [3, 3, 4]) {
+        const r = aplicarToleranciaComTeto(diff, 5, restante);
+        expect(r.dentroDoTeto).toBe(true);
+        restante = r.novoRestante;
+      }
+      expect(restante).toBe(0);
+      const extra = aplicarToleranciaComTeto(1, 5, restante);
+      expect(extra.dentroDoTeto).toBe(false);
+    });
+
+    it("adiantamento nunca consome teto", () => {
+      const r = aplicarToleranciaComTeto(-5, 5, 10);
+      expect(r.dentroDoTeto).toBe(false);
+      expect(r.novoRestante).toBe(10);
+    });
+
+    it("0 min não consome", () => {
+      const r = aplicarToleranciaComTeto(0, 5, 10);
+      expect(r.dentroDoTeto).toBe(false);
+      expect(r.novoRestante).toBe(10);
+    });
+
+    it("lunch 15 min não deve usar este helper (não consome teto) — sanity", () => {
+      // service trata lunch à parte; helper aqui só para ENTRY/EXIT
+      const r = aplicarToleranciaComTeto(10, 15, 10);
+      expect(r.dentroDoTeto).toBe(true); // 10 <=15 e <=10 restante
+      expect(r.novoRestante).toBe(0);
     });
   });
 });

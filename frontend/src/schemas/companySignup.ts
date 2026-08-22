@@ -8,12 +8,10 @@ export const companySignupSchema = z.object({
   companyName: z.string().min(2, "Nome da empresa inválido"),
   password: z.string().min(8, "Senha deve ter no mínimo 8 caracteres"),
   confirmPassword: z.string(),
-  aceiteTermos: z.boolean().refine((v) => v === true, {
-    message: "Você precisa aceitar os Termos de Uso",
+  aceiteContratos: z.boolean().refine((v) => v === true, {
+    message: "Você precisa aceitar os Termos, Política e DPA",
   }),
-  aceiteDpa: z.boolean().refine((v) => v === true, {
-    message: "Você precisa aceitar o Contrato de Tratamento de Dados",
-  }),
+  aceiteBiometria: z.boolean().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Senhas não conferem",
   path: ["confirmPassword"],

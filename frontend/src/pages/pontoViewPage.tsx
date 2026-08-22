@@ -12,8 +12,8 @@ type Checkin = {
     id: string;
     createdAt: string;
     type: string;
-    latitude: number;
-    longitude: number;
+    latitude: number | null;
+    longitude: number | null;
 };
 
 export function PontoViewPage() {
@@ -95,7 +95,7 @@ export function PontoViewPage() {
             <tr>
                 <td>${escapeHtml(formatTime(ponto.createdAt))}</td>
                 <td>${escapeHtml(formatType(ponto.type))}</td>
-                <td style="font-size: 10px;">${escapeHtml(ponto.latitude.toFixed(4))}, ${escapeHtml(ponto.longitude.toFixed(4))}</td>
+                <td style="font-size: 10px;">${ponto.latitude != null && ponto.longitude != null ? escapeHtml(ponto.latitude.toFixed(4)) + ", " + escapeHtml(ponto.longitude.toFixed(4)) : "Não informada (GPS negado)"}</td>
             </tr>
         `).join("")
 
@@ -238,14 +238,18 @@ export function PontoViewPage() {
                                                     </p>
                                                 </div>
                                                 <div>
-                                                    <a className="flex items-center gap-1 text-gray-400 text-xs"
-                                                        href={`https://www.google.com/maps/search/?api=1&query=${ponto.latitude},${ponto.longitude}`} target="_blank" rel="noopener noreferrer">
-                                                        <MapPin size={12} />
-                                                        <Button
-                                                            title="Ver no mapa"
-                                                            className="hover:text-emerald-600 cursor-pointer"
-                                                        />
-                                                    </a>
+                                                    {ponto.latitude != null && ponto.longitude != null ? (
+                                                        <a className="flex items-center gap-1 text-gray-400 text-xs"
+                                                            href={`https://www.google.com/maps/search/?api=1&query=${ponto.latitude},${ponto.longitude}`} target="_blank" rel="noopener noreferrer">
+                                                            <MapPin size={12} />
+                                                            <Button
+                                                                title="Ver no mapa"
+                                                                className="hover:text-emerald-600 cursor-pointer"
+                                                            />
+                                                        </a>
+                                                    ) : (
+                                                        <span className="text-xs text-amber-600">Sem GPS</span>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>

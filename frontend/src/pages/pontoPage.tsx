@@ -14,8 +14,8 @@ type ChekinProps = {
     id: string,
     createdAt: string,
     type: "ENTRY" | "LUNCH_START" | "LUNCH_END" | "EXIT",
-    latitude: number,
-    longitude: number,
+    latitude: number | null,
+    longitude: number | null,
 }
 
 export function PontoPage() {
@@ -38,25 +38,29 @@ export function PontoPage() {
     const [comprovanteText, setComprovanteText] = useState<string | null>(null);
     const [pendingCheckin, setPendingCheckin] = useState<{
         type: string;
-        latitude: number;
-        longitude: number;
+        latitude: number | null;
+        longitude: number | null;
+        accuracy?: number | null;
+        geolocationDenied?: boolean;
+        geolocationConsent?: boolean | null;
     } | null>(null);
 
     async function handlePostCheckin(type: string) {
         setIsPreparingCheckin(true);
         navigator.geolocation.getCurrentPosition(async (position) => {
-            const { latitude, longitude } = position.coords;
+            const { latitude, longitude, accuracy } = position.coords;
 
             const bodySchema = z.object({
                 type: z.enum(["ENTRY", "LUNCH_START", "LUNCH_END", "EXIT"]),
-                latitude: z.number(),
-                longitude: z.number()
+                latitude: z.number().finite().min(-90).max(90),
+                longitude: z.number().finite().min(-180).max(180),
+                accuracy: z.number().finite().min(0).max(100000).optional(),
             })
 
             try {
-                bodySchema.parse({ type, latitude, longitude })
+                bodySchema.parse({ type, latitude, longitude, accuracy })
 
-                setPendingCheckin({ type, latitude, longitude });
+                setPendingCheckin({ type, latitude, longitude, accuracy, geolocationDenied: false, geolocationConsent: true });
 
                 const verifyFacial = await handleGetEmployee()
                 if (verifyFacial?.success !== true) {
@@ -75,10 +79,33 @@ export function PontoPage() {
                 setPendingCheckin(null);
                 setIsPreparingCheckin(false);
             }
-        }, (error) => {
+        }, async (error) => {
             console.error("Erro ao obter localização:", error);
-            alert("Erro ao obter localização. Permita o acesso à localização e tente novamente.");
-            setIsPreparingCheckin(false);
+            // A4: CLT não permite negar registro — flag para admin analisar depois
+            const isDenied = error.code === 1; // PERMISSION_DENIED
+            setPendingCheckin({
+                type,
+                latitude: null,
+                longitude: null,
+                accuracy: null,
+                geolocationDenied: true,
+                geolocationConsent: false,
+            });
+            // prossegue para validação facial mesmo sem GPS
+            try {
+                const verifyFacial = await handleGetEmployee()
+                if (verifyFacial?.success !== true) {
+                    setPendingCheckin(null);
+                }
+            } catch (e) {
+                console.error("Erro após GPS negado:", e);
+                setPendingCheckin(null);
+            } finally {
+                setIsPreparingCheckin(false);
+            }
+            if (isDenied) {
+                console.warn("Ponto será registrado sem localização e ficará pendente de justificativa para o admin.");
+            }
         }, {
             enableHighAccuracy: true,
             timeout: 10000,

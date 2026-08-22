@@ -98,7 +98,7 @@ describe("CheckinController", () => {
       mockExtendedPrisma.user.findUnique
         .mockResolvedValueOnce(mockUser)
         .mockResolvedValueOnce({ ...mockUser, workSchedule: null });
-      mockExtendedPrisma.checkIn.findFirst.mockResolvedValue(null);
+      mockExtendedPrisma.checkIn.findMany.mockResolvedValue([]);
       mockExtendedPrisma.company.findUnique.mockResolvedValue(mockCompany);
       mockExtendedPrisma.$transaction.mockImplementation(async (fn: any) => {
         return fn({
@@ -129,7 +129,7 @@ describe("CheckinController", () => {
       mockExtendedPrisma.user.findUnique
         .mockResolvedValueOnce(mockUser)
         .mockResolvedValueOnce({ ...mockUser, workSchedule: null });
-      mockExtendedPrisma.checkIn.findFirst.mockResolvedValue({ id: "existing", type: "ENTRY" });
+      mockExtendedPrisma.checkIn.findMany.mockResolvedValue([{ type: "ENTRY" }]);
 
       req = {
         user: { id: "user-1", companyId: "company-1" },
@@ -161,7 +161,7 @@ describe("CheckinController", () => {
       mockExtendedPrisma.user.findUnique
         .mockResolvedValueOnce(mockUser)
         .mockResolvedValueOnce({ ...mockUser, workSchedule: null });
-      mockExtendedPrisma.checkIn.findFirst.mockResolvedValue(null);
+      mockExtendedPrisma.checkIn.findMany.mockResolvedValue([]);
       mockExtendedPrisma.company.findUnique.mockResolvedValue(null);
 
       req = {
@@ -196,7 +196,7 @@ describe("CheckinController", () => {
       mockExtendedPrisma.user.findUnique
         .mockResolvedValueOnce(mockUser)
         .mockResolvedValueOnce({ ...mockUser, workSchedule: null });
-      mockExtendedPrisma.checkIn.findFirst.mockResolvedValue(null);
+      mockExtendedPrisma.checkIn.findMany.mockResolvedValue([]);
       mockExtendedPrisma.company.findUnique.mockResolvedValue(mockCompany);
       (getNextNSR as any).mockRejectedValue(new (NsrLimitExceededError as any)("limit"));
       mockExtendedPrisma.$transaction.mockImplementation(async (fn: any) => fn({

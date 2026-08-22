@@ -9,6 +9,7 @@ const createSchema = z.object({
   lunchEnd: z.number().min(0).max(1439),
   exitTime: z.number().min(0).max(1439),
   daysOfWeek: z.number().min(1).max(127).default(31),
+  jornadaTipo: z.enum(["5x2", "6x1", "12x36"]),
   checkinToleranceMinutes: z.number().min(0).max(60).default(5),
   lunchToleranceMinutes: z.number().min(0).max(120).default(15),
 });
@@ -89,6 +90,7 @@ export class WorkScheduleController {
           ...(data.lunchEnd !== undefined && { lunchEnd: data.lunchEnd }),
           ...(data.exitTime !== undefined && { exitTime: data.exitTime }),
           ...(data.daysOfWeek !== undefined && { daysOfWeek: data.daysOfWeek }),
+          ...(data.jornadaTipo !== undefined && { jornadaTipo: data.jornadaTipo }),
           ...(data.checkinToleranceMinutes !== undefined && { checkinToleranceMinutes: data.checkinToleranceMinutes }),
           ...(data.lunchToleranceMinutes !== undefined && { lunchToleranceMinutes: data.lunchToleranceMinutes }),
         },

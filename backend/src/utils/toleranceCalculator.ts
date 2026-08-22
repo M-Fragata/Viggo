@@ -102,3 +102,26 @@ export function isDiaUtil(daysOfWeek: number, data: Date): boolean {
   const bit = day === 0 ? 64 : 1 << (day - 1);
   return (daysOfWeek & bit) !== 0;
 }
+
+/**
+ * Teto diário CLT Art.58 §1º segunda parte + Súmula 366 TST.
+ * Máximo 10 min/dia tolerados (5 min por batida ENTRY/EXIT).
+ * Lunch (15 min) NÃO consome teto diário — tratado à parte no service.
+ * Cru preservado no DB (Port.671 Art.80); ajuste só no effective.
+ */
+export const TOLERANCIA_DIARIA_MAX = 10;
+
+/**
+ * Decide se um atraso de ENTRY/EXIT cabe no teto diário restante.
+ * Retorna se deve aplicar tolerância e o novo restante.
+ */
+export function aplicarToleranciaComTeto(
+  diffMin: number,
+  tolerancia: number,
+  restante: number
+): { dentroDoTeto: boolean; novoRestante: number } {
+  if (diffMin <= 0) return { dentroDoTeto: false, novoRestante: restante };
+  if (diffMin > tolerancia) return { dentroDoTeto: false, novoRestante: restante };
+  if (diffMin > restante) return { dentroDoTeto: false, novoRestante: restante };
+  return { dentroDoTeto: true, novoRestante: restante - diffMin };
+}

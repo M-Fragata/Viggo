@@ -103,7 +103,7 @@ export function PricingCard({ plan, onCtaClick }: PricingCardProps) {
         {plan.features.map((feature: PlanFeature, index: number) => (
           <li key={index} className="flex items-start gap-3">
             <span
-              className={`flex-shrink-0 w-5 h-5 mt-0.5 rounded-full ${
+              className={`shrink-0 w-5 h-5 mt-0.5 rounded-full ${
                 feature.included
                   ? "bg-brand-green/15 text-brand-green"
                   : "bg-ink/5 text-muted"

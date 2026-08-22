@@ -65,6 +65,7 @@ describe("WorkScheduleController", () => {
           lunchStart: 720,
           lunchEnd: 840,
           exitTime: 1020,
+          jornadaTipo: "5x2",
         },
       };
 
@@ -83,6 +84,7 @@ describe("WorkScheduleController", () => {
           lunchStart: 720,
           lunchEnd: 840,
           exitTime: 1020,
+          jornadaTipo: "5x2",
         },
       };
 

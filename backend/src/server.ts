@@ -24,4 +24,16 @@ cron.schedule("0 2 * * *", async () => {
   }
 });
 
+// B2: Backup AFD mensal Modelo A — dia 01 às 03:00 (mês anterior), local criptografado
+cron.schedule("0 3 1 * *", async () => {
+  console.log("[Cron] Iniciando backup AFD mensal (Modelo A)...");
+  try {
+    const { runAfdBackup } = await import("./scripts/afdBackup.js");
+    await runAfdBackup();
+    console.log("[Cron] Backup AFD mensal concluído.");
+  } catch (error) {
+    console.error("[Cron] Erro no backup AFD mensal:", error);
+  }
+});
+
 app.listen(PORT);

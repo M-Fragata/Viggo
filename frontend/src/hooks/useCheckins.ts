@@ -7,23 +7,23 @@ export type FormattedCheckin = {
   employeeName: string;
   entrada?: {
     timestamp: string;
-    lat: number;
-    lng: number;
+    lat: number | null;
+    lng: number | null;
   };
   almoco?: {
     timestamp: string;
-    lat: number;
-    lng: number;
+    lat: number | null;
+    lng: number | null;
   };
   retorno?: {
     timestamp: string;
-    lat: number;
-    lng: number;
+    lat: number | null;
+    lng: number | null;
   };
   saida?: {
     timestamp: string;
-    lat: number;
-    lng: number;
+    lat: number | null;
+    lng: number | null;
   };
 };
 

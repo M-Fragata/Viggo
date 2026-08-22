@@ -390,9 +390,10 @@ export interface SignupCompanyDto {
   companyName: string;
   password: string;
   confirmPassword: string;
-  aceiteTermos: boolean;
-  aceiteBiometria: boolean;
-  aceiteDpa: boolean;
+  aceiteContratos?: boolean;
+  aceiteTermos?: boolean;
+  aceiteBiometria?: boolean;
+  aceiteDpa?: boolean;
 }
 
 export interface SignupCompanyResponse {
@@ -524,8 +525,10 @@ export interface AcceptInviteDto {
   name: string;
   password: string;
   confirmPassword: string;
-  aceiteTermos: boolean;
+  aceiteContratos?: boolean;
+  aceiteTermos?: boolean;
   aceiteBiometria: boolean;
+  aceiteDpa?: boolean;
 }
 
 export interface MasterListParams {
@@ -642,16 +645,24 @@ export interface VerifyFaceResponse {
 
 export interface CheckinCreateDto {
   type: "ENTRY" | "LUNCH_START" | "LUNCH_END" | "EXIT";
-  latitude: number;
-  longitude: number;
+  latitude: number | null;
+  longitude: number | null;
+  accuracy?: number | null;
+  geolocationDenied?: boolean;
+  geolocationConsent?: boolean | null;
+  address?: string | null;
 }
 
 export interface CheckinResponse {
   id: string;
   createdAt: string;
   type: "ENTRY" | "LUNCH_START" | "LUNCH_END" | "EXIT";
-  latitude: number;
-  longitude: number;
+  latitude: number | null;
+  longitude: number | null;
+  geolocationAccuracy?: number | null;
+  geolocationDenied?: boolean;
+  geolocationConsent?: boolean | null;
+  address?: string | null;
   userId: string;
   companyId: string;
 }
@@ -671,8 +682,8 @@ export interface CompanyCheckinEmployee {
     id: string;
     createdAt: string;
     type: "ENTRY" | "LUNCH_START" | "LUNCH_END" | "EXIT";
-    latitude: number;
-    longitude: number;
+    latitude: number | null;
+    longitude: number | null;
   }[];
 }
 
@@ -769,6 +780,8 @@ export interface JustificativaResponse {
   updatedAt: string;
 }
 
+export type JornadaTipo = "5x2" | "6x1" | "12x36";
+
 export interface WorkScheduleCreateBody {
   name: string;
   entryTime: number;
@@ -776,6 +789,7 @@ export interface WorkScheduleCreateBody {
   lunchEnd: number;
   exitTime: number;
   daysOfWeek?: number;
+  jornadaTipo: JornadaTipo;
   checkinToleranceMinutes?: number;
   lunchToleranceMinutes?: number;
 }
@@ -789,6 +803,7 @@ export interface WorkScheduleResponse {
   lunchEnd: number;
   exitTime: number;
   daysOfWeek: number;
+  jornadaTipo: JornadaTipo;
   checkinToleranceMinutes: number;
   lunchToleranceMinutes: number;
   _count: { users: number };

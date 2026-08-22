@@ -58,10 +58,14 @@ export function PoliticaPrivacidade() {
           <section>
             <h2 className="text-xl font-bold text-slate-800 mb-2">4. Base Legal</h2>
             <ul className="list-disc pl-6 space-y-1">
-              <li><strong>Consentimento do titular</strong> (Art. 11, I da LGPD) — para dados biométricos;</li>
-              <li><strong>Obrigação legal</strong> (Art. 11, II, "a" da LGPD) — cumprimento de obrigação trabalhista (CLT Art. 74);</li>
+              <li><strong>Consentimento específico e destacado</strong> (Art. 11, I da LGPD) — cadastro do vetor facial (dado sensível) e autenticação a cada marcação;</li>
+              <li><strong>Prevenção à fraude e garantia da segurança</strong> (Art. 11, II, "g" da LGPD) — verificação de identidade no ato do ponto para impedir marcação por terceiro (LIA documentada no RIPD);</li>
+              <li><strong>Obrigação legal</strong> (Art. 11, II, "a" da LGPD) — cumprimento de obrigação trabalhista (CLT Art. 74, registro de jornada);</li>
               <li><strong>Execução de contrato</strong> (Art. 7º, V da LGPD) — relação de trabalho.</li>
             </ul>
+            <p className="text-sm text-slate-500 mt-2">
+              O tratamento do vetor facial para <em>validação diária</em> apoia-se no consentimento (Art. 11, I) cumulado com legítimo interesse de prevenção à fraude (Art. 11, II, "g"), conforme Relatório de Impacto (RIPD) — nunca em tutela da saúde (Art. 11, II, "f"), inaplicável ao ponto.
+            </p>
           </section>
 
           <section>
@@ -114,8 +118,8 @@ export function PoliticaPrivacidade() {
             <p>
               A biometria facial é classificada como <strong>dado pessoal sensível</strong> pela
               LGPD (Art. 5º, II). O tratamento ocorre com <strong>consentimento específico e
-              destacado</strong> do titular (Art. 11, I). O vetor matemático (128 floats) é
-              irreversível — não é possível reconstruir a imagem facial a partir dele.
+              destacado</strong> do titular (Art. 11, I) cumulado com <strong>prevenção à fraude e garantia da segurança</strong> (Art. 11, II, "g" — LIA no RIPD). O vetor matemático (128 floats) é
+              irreversível — não é possível reconstruir a imagem facial a partir dele. A base de <em>tutela da saúde</em> (Art. 11, II, "f") não se aplica ao registro de ponto.
             </p>
           </section>
 

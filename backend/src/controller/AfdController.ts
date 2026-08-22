@@ -2,6 +2,7 @@ import { type Request, type Response } from "express";
 import { z } from "zod";
 import { extendedPrisma } from "../database/prisma-extensions.js";
 import { decryptCpf } from "../utils/cpfEncryption.js";
+import { signContent } from "../utils/afSignature.js";
 
 /**
  * AFD - Arquivo Fonte de Dados
@@ -139,14 +140,17 @@ export class AfdController {
             );
 
             const content = lines.join("\n");
+            const { hash, assinado, assinatura, erro } = signContent(content);
             const filename = `AFD_${cnpjClean}_${startDate}_${endDate}.txt`;
 
             res.setHeader("Content-Type", "text/plain; charset=utf-8");
-            res.setHeader(
-                "Content-Disposition",
-                `attachment; filename="${filename}"`
-            );
-            return res.send(content);
+            res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+            res.setHeader("X-Hash-SHA256", hash);
+            if (assinado && assinatura) res.setHeader("X-Signature", assinatura);
+            if (erro) res.setHeader("X-Signature-Error", erro);
+
+            // Conteúdo + HASH no rodapé (padrão AEJ). Assinatura vai no header para não quebrar leiaute Anexo II.
+            return res.send(content + `\nHASH: ${hash}`);
         } catch (error) {
             if (error instanceof z.ZodError) {
                 return res

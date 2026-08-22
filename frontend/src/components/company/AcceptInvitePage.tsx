@@ -14,8 +14,8 @@ const acceptInviteSchema = z.object({
   name: z.string().min(3, "O nome deve conter no mínimo 3 caracteres"),
   password: z.string().min(8, "A senha deve conter no mínimo 8 caracteres"),
   confirmPassword: z.string(),
-  aceiteTermos: z.boolean().refine((v) => v === true, {
-    message: "Você precisa aceitar os Termos de Uso",
+  aceiteContratos: z.boolean().refine((v) => v === true, {
+    message: "Você precisa aceitar os Termos, Política e DPA",
   }),
   aceiteBiometria: z.boolean().refine((v) => v === true, {
     message: "Você precisa autorizar o uso da biometria facial",
@@ -67,9 +67,12 @@ export function AcceptInvitePage() {
         name: data.name,
         password: data.password,
         confirmPassword: data.confirmPassword,
-        aceiteTermos: data.aceiteTermos,
+        aceiteContratos: data.aceiteContratos,
         aceiteBiometria: data.aceiteBiometria,
-      });
+        // compat: envia também aceiteTermos/Dpa para backend legado
+        aceiteTermos: data.aceiteContratos,
+        aceiteDpa: data.aceiteContratos,
+      } as any);
       setSession(result.user, result.token, result.company.name);
       toast.success("Conta criada com sucesso!");
       navigate("/");
@@ -229,26 +232,29 @@ export function AcceptInvitePage() {
                 <div className="flex items-start gap-3">
                   <input
                     type="checkbox"
-                    id="aceiteTermos"
-                    {...register("aceiteTermos")}
+                    id="aceiteContratos"
+                    {...register("aceiteContratos")}
                     required
                     className="mt-1 h-4 w-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500"
                   />
-                  <label htmlFor="aceiteTermos" className="text-sm text-slate-600 leading-relaxed">
+                  <label htmlFor="aceiteContratos" className="text-sm text-slate-600 leading-relaxed">
                     Li e aceito os{" "}
                     <a href="/termos-de-uso" target="_blank" rel="noopener noreferrer" className="text-emerald-600 underline hover:text-emerald-700">
                       Termos de Uso
-                    </a>{" "}
-                    e a{" "}
+                    </a>
+                    , a{" "}
                     <a href="/politica-privacidade" target="_blank" rel="noopener noreferrer" className="text-emerald-600 underline hover:text-emerald-700">
                       Política de Privacidade
+                    </a>{" "}
+                    e o{" "}
+                    <a href="/contrato-tratamento-dados" target="_blank" rel="noopener noreferrer" className="text-emerald-600 underline hover:text-emerald-700">
+                      Contrato de Tratamento de Dados (DPA)
                     </a>
-                    , autorizando o tratamento dos meus dados pessoais para fins de
-                    controle de ponto eletrônico.
+                    , autorizando o tratamento dos meus dados para controle de ponto (Art. 7º e 39 LGPD).
                   </label>
                 </div>
-                {errors.aceiteTermos && (
-                  <p className="text-sm text-red-500 ml-7">{errors.aceiteTermos.message}</p>
+                {errors.aceiteContratos && (
+                  <p className="text-sm text-red-500 ml-7">{errors.aceiteContratos.message}</p>
                 )}
 
                 <div className="flex items-start gap-3">

@@ -13,7 +13,8 @@
     "test:all": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "backup:afd": "tsx --env-file .env src/scripts/afdBackup.ts"
   },
   "keywords": [],
   "author": "",
@@ -30,6 +31,7 @@
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
     "node-cron": "^4.6.0",
+    "node-forge": "^1.4.0",
     "pdfkit": "^0.19.1",
     "pg": "^8.20.0",
     "pino": "^9.3.2",
@@ -46,6 +48,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.6.0",
     "@types/node-cron": "^3.0.11",
+    "@types/node-forge": "^1.3.14",
     "@types/pdfkit": "^0.17.6",
     "@types/pg": "^8.20.0",
     "@types/supertest": "^7.2.1",

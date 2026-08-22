@@ -21,9 +21,7 @@ export function CompanySignupPage() {
       companyName: "",
       password: "",
       confirmPassword: "",
-      aceiteTermos: false,
-      aceiteBiometria: false,
-      aceiteDpa: false,
+      aceiteContratos: false,
     },
   });
 
@@ -36,9 +34,7 @@ export function CompanySignupPage() {
       companyName: formData.get("companyName") as string,
       password: formData.get("password") as string,
       confirmPassword: formData.get("confirmPassword") as string,
-      aceiteTermos: formData.get("aceiteTermos") === "on",
-      aceiteBiometria: formData.get("aceiteBiometria") === "on",
-      aceiteDpa: formData.get("aceiteDpa") === "on",
+      aceiteContratos: formData.get("aceiteContratos") === "on",
     };
 
     const parsed = companySignupSchema.safeParse(rawData);
@@ -74,9 +70,7 @@ export function CompanySignupPage() {
         companyName: rawData.companyName,
         password: rawData.password,
         confirmPassword: rawData.confirmPassword,
-        aceiteTermos: rawData.aceiteTermos,
-        aceiteBiometria: rawData.aceiteBiometria,
-        aceiteDpa: rawData.aceiteDpa,
+        aceiteContratos: rawData.aceiteContratos,
       });
 
       setSession(response.user, response.token, response.company.name);
@@ -273,47 +267,30 @@ export function CompanySignupPage() {
                 <div className="flex items-start gap-3">
                   <input
                     type="checkbox"
-                    id="aceiteTermos"
-                    name="aceiteTermos"
+                    id="aceiteContratos"
+                    name="aceiteContratos"
                     required
                     className="mt-1 h-4 w-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500"
                   />
-                  <label htmlFor="aceiteTermos" className="text-sm text-slate-600 leading-relaxed">
+                  <label htmlFor="aceiteContratos" className="text-sm text-slate-600 leading-relaxed">
                     Li e aceito os{" "}
                     <a href="/termos-de-uso" target="_blank" rel="noopener noreferrer" className="text-emerald-600 underline hover:text-emerald-700">
                       Termos de Uso
-                    </a>{" "}
-                    e a{" "}
+                    </a>
+                    , a{" "}
                     <a href="/politica-privacidade" target="_blank" rel="noopener noreferrer" className="text-emerald-600 underline hover:text-emerald-700">
                       Política de Privacidade
+                    </a>{" "}
+                    e o{" "}
+                    <a href="/contrato-tratamento-dados" target="_blank" rel="noopener noreferrer" className="text-emerald-600 underline hover:text-emerald-700">
+                      Contrato de Tratamento de Dados (DPA)
                     </a>
-                    , autorizando o tratamento dos meus dados pessoais para fins de
-                    controle de ponto eletrônico.
+                    , autorizando o tratamento dos meus dados e dos meus funcionários para
+                    registro de ponto eletrônico (Art. 7º e 39 LGPD).
                   </label>
                 </div>
-                {state.fieldErrors.aceiteTermos && (
-                  <p className="text-sm text-red-500 ml-7">{state.fieldErrors.aceiteTermos}</p>
-                )}
-
-                <div className="flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    id="aceiteDpa"
-                    name="aceiteDpa"
-                    required
-                    className="mt-1 h-4 w-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500"
-                  />
-                  <label htmlFor="aceiteDpa" className="text-sm text-slate-600 leading-relaxed">
-                    Li e aceito o{" "}
-                    <a href="/contrato-de-tratamento-de-dados" target="_blank" rel="noopener noreferrer" className="text-emerald-600 underline hover:text-emerald-700">
-                      Contrato de Tratamento de Dados Pessoais (DPA)
-                    </a>
-                    , autorizando o Viggo a tratar os dados dos meus funcionários exclusivamente
-                    para fins de registro de ponto eletrônico, conforme Art. 39 da LGPD.
-                  </label>
-                </div>
-                {state.fieldErrors.aceiteDpa && (
-                  <p className="text-sm text-red-500 ml-7">{state.fieldErrors.aceiteDpa}</p>
+                {state.fieldErrors.aceiteContratos && (
+                  <p className="text-sm text-red-500 ml-7">{state.fieldErrors.aceiteContratos}</p>
                 )}
               </div>
 

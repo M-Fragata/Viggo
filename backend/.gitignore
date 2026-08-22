@@ -4,3 +4,6 @@ node_modules
 postgres_data/
 /dist
 coverage/
+certs/*.p12
+certs/*.pfx
+backups/

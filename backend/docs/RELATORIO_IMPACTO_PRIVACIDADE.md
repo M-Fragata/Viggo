@@ -24,7 +24,8 @@ O Viggo realiza o tratamento de dados pessoais para fins de:
 | Categoria | Dados | Classificação | Base Legal |
 |-----------|-------|---------------|------------|
 | **Cadastrais** | Nome, e-mail, CPF | Dado pessoal | Art. 7º, V (contrato) + Art. 11, II, "a" (obrigação legal) |
-| **Biométricos** | Vetor facial (128 floats) | Dado pessoal sensível | Art. 11, I (consentimento específico) |
+| **Biométricos (cadastro)** | Vetor facial (128 floats) — cadastro | Dado pessoal sensível | Art. 11, I (consentimento específico e destacado) |
+| **Biométricos (validação diária)** | Vetor facial — comparação no ato do ponto | Dado pessoal sensível | Art. 11, I (consentimento) + Art. 11, II, "g" (prevenção à fraude) — LIA §2.3 |
 | **Geolocalização** | Latitude, longitude | Dado pessoal | Art. 7º, V (contrato) |
 | **Jornada** | Entrada, saída, intervalos, NSR | Dado pessoal | Art. 11, II, "a" (obrigação legal) |
 | **Consentimentos** | Tipo, versão, data, IP | Dado pessoal | Art. 7º, I (consentimento) |
@@ -72,6 +73,18 @@ O Viggo realiza o tratamento de dados pessoais para fins de:
 - Criptografia do descriptor em repouso (AES-256)
 - Monitoramento de acesso à tabela `User.faceDescriptor`
 
+#### R5-Bis — Base Legal da Validação Diária (A3 — DPIA/LIA)
+
+**Cenário:** Auditoria ANPD questiona base `Art. 11, II, f (tutela saúde)` registrada no `AuditMiddleware FACE_VALIDATION`.
+
+**Avaliação LIA (Art. 11, II, g):**
+- **Finalidade legítima:** impedir fraude (ponto por terceiro), obrigação Portaria 671 Art.80/81.
+- **Necessidade:** biometria é o único meio confiável para REP-P sem hardware (REP-C) — alternativa senha é fraudável.
+- **Balanceamento:** dado minimizado (vetor 128 floats, não imagem), irreversível, retenção limitada ao vínculo + 30d (`PoliticaPrivacidade §7`), consentimento específico prévio (Art.11 I) mantido; `AuditMiddleware` registra `legalBasis = Art.11 I + II g` e `purpose = prevenção à fraude`.
+- **Salvaguardas:** opt-in com revogação (`DELETE /privacy/my-face`), transparência em `PoliticaPrivacidade §4/§9`, RIPD anual.
+
+**Ação A3 (22/08/2026):** `AuditMiddleware.ts:87` corrigido de `II f` para `I + II g`; RIPD §1.2 e `PoliticaPrivacidade §4/§9` alinhados; `tutela saúde` documentada como inaplicável.
+
 #### R3 — Perda de Registros de Ponto
 
 **Cenário:** Falha no banco de dados resulta em perda de CheckIns.
@@ -111,7 +124,7 @@ O Viggo realiza o tratamento de dados pessoais para fins de:
 | M4 | Rate limiting diferenciado (API geral, checkin, face) | — | ✅ Implementado |
 | M5 | AuditLog completo com IP, User-Agent, legalBasis | F24 | ✅ Implementado |
 | M6 | Políticas de retenção e eliminação automática | F19 | ✅ Implementado |
-| M7 | Consentimento específico para biometria | F10 | ✅ Implementado |
+| M7 | Consentimento específico para biometria + LIA prevenção fraude (Art.11 I + II g) | F10 / A3 | ✅ Implementado (AuditMiddleware §1.2 corrigido 22/08) |
 | M8 | Criptografia de CPF em repouso | F12 (T23) | ❌ Pendente |
 | M9 | Backup AFD criptografado off-site | F21 | ❌ Pendente |
 

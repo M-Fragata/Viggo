@@ -84,8 +84,8 @@ const LGPD_MAPPINGS: Record<string, { legalBasis: string; purpose: string; perso
     personalDataCategories: ['IDENTIFICACAO', 'GEOLOCALIZACAO', 'PONTO', 'BIOMETRIA'],
   },
   'FACE_VALIDATION': {
-    legalBasis: 'Art. 11, II, f — Tutela da saúde / Art. 7º, V — Execução de contrato',
-    purpose: 'Verificação de identidade do trabalhador no momento da marcação de ponto',
+    legalBasis: 'Art. 11, I — Consentimento específico e destacado + Art. 11, II, g — Prevenção à fraude e garantia da segurança do titular',
+    purpose: 'Verificação de identidade do trabalhador no momento da marcação de ponto para prevenção de fraude (ponto por terceiro)',
     personalDataCategories: ['IDENTIFICACAO', 'BIOMETRIA'],
   },
   'FACE_REGISTER': {
@@ -249,10 +249,8 @@ export async function auditMiddleware(req: Request, res: Response, next: NextFun
     return next();
   }
 
-  // Capture old state for UPDATE/DELETE before handler modifies it.
-  // Only fetch if the user is already authenticated at mount time (rare: most auth is per-route,
-  // done after this global middleware). Otherwise oldData will be fetched lazily below.
-  const oldData = (req.method === 'PUT' || req.method === 'DELETE') && req.user
+  // M1: oldData eager só quando req.user já existe; caso contrário lazy dentro do override
+  const eagerOldData = (req.method === 'PUT' || req.method === 'DELETE') && req.user
     ? await fetchOldData(req)
     : null;
 
@@ -264,32 +262,44 @@ export async function auditMiddleware(req: Request, res: Response, next: NextFun
       const config = getEntityConfig(req);
       const entityId = getEntityIdFromRequest(req, body) ?? null;
 
-      // For UPDATE, capture the response body as newData
-      let newData: Record<string, unknown> | null = null;
-      if (req.method === 'PUT' && body && typeof body === 'object') {
-        // If body contains the entity directly, use it; otherwise use the `user`/`data` field if present
-        const candidate = body.user ?? body.data ?? body;
-        if (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) {
-          newData = redactSensitive(candidate, config?.sensitiveFields ?? []);
+      // M1: lazy fetch quando req.user só apareceu após authMiddleware per-route
+      const doAudit = async () => {
+        let oldData: Record<string, unknown> | null = eagerOldData;
+        if (!oldData && (req.method === 'PUT' || req.method === 'DELETE')) {
+          oldData = await fetchOldData(req);
         }
-      }
 
-      const auditData: AuditLogData = {
-        userId: req.user.id,
-        companyId: req.user.companyId || '',
-        action,
-        entity: getEntityFromRequest(req),
-        entityId,
-        oldData,
-        newData,
-        ip: toNullableStringRequired(req.ip),
-        userAgent: toNullableStringRequired(req.get('user-agent')),
-        legalBasis: lgpdMapping?.legalBasis ?? null,
-        purpose: lgpdMapping?.purpose ?? null,
-        personalDataCategories: lgpdMapping?.personalDataCategories ?? null,
+        // M1: newData também em POST (create) além de PUT, com redactSensitive
+        let newData: Record<string, unknown> | null = null;
+        if ((req.method === 'PUT' || req.method === 'POST') && body && typeof body === 'object') {
+          const candidate = body.user ?? body.data ?? body;
+          if (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) {
+            newData = redactSensitive(candidate as Record<string, unknown>, config?.sensitiveFields ?? []);
+          } else if (Array.isArray(body) && body.length > 0) {
+            // createMany retorna array — pega primeiro para trilha
+            const first = body[0] as Record<string, unknown>;
+            newData = redactSensitive(first, config?.sensitiveFields ?? []);
+          }
+        }
+
+        const auditData: AuditLogData = {
+          userId: req.user.id,
+          companyId: req.user.companyId || '',
+          action,
+          entity: getEntityFromRequest(req),
+          entityId,
+          oldData,
+          newData,
+          ip: toNullableStringRequired(req.ip),
+          userAgent: toNullableStringRequired(req.get('user-agent')),
+          legalBasis: lgpdMapping?.legalBasis ?? null,
+          purpose: lgpdMapping?.purpose ?? null,
+          personalDataCategories: lgpdMapping?.personalDataCategories ?? null,
+        };
+
+        createAuditLog(auditData).catch(console.error);
       };
-
-      createAuditLog(auditData).catch(console.error);
+      doAudit().catch(console.error);
     }
     return originalJson(body);
   };

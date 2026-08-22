@@ -14,12 +14,20 @@ function getEncryptionKey(): Buffer {
   return key;
 }
 
+function getHashPepper(): string {
+  // A5: pepper distinto — se não setado, fallback p/ retrocompat (DB vazio ou migração pendente) com WARN
+  const pepper = (Env as any).CPF_HASH_PEPPER as string | undefined;
+  if (pepper && /^[0-9a-fA-F]{64}$/.test(pepper)) return pepper;
+  if (pepper) console.warn("⚠️ CPF_HASH_PEPPER inválido, usando CPF_ENCRYPTION_KEY como fallback");
+  return Env.CPF_ENCRYPTION_KEY;
+}
+
 /**
  * Hash SHA-256(CPF + pepper) para lookup @unique.
- * Pepper = CPF_ENCRYPTION_KEY (mesma chave, separação de responsabilidades).
+ * A5: pepper = CPF_HASH_PEPPER (distinto do AES). Se não setado, fallback p/ CPF_ENCRYPTION_KEY.
  */
 export function hashCpf(cpfDigits: string): string {
-  const pepper = Env.CPF_ENCRYPTION_KEY;
+  const pepper = getHashPepper();
   return crypto.createHash("sha256").update(cpfDigits + pepper).digest("hex");
 }
 

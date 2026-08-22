@@ -73,8 +73,11 @@ describe("AfdController", () => {
       const lines = content.split("\n");
 
       expect(lines[0]).toMatch(/^1\|11222333000181\|/);
-      expect(lines.length).toBe(4);
+      // header + 2 detalhes + trailer + HASH (B1: signContent)
+      expect(lines.length).toBe(5);
       expect(lines[3]).toMatch(/^9\|11222333000181\|000002$/);
+      expect(lines[4]).toMatch(/^HASH: [a-f0-9]{64}$/);
+      expect(res.setHeader).toHaveBeenCalledWith("X-Hash-SHA256", expect.stringMatching(/^[a-f0-9]{64}$/));
     });
 
     it("deve retornar 403 quando não há companyId", async () => {
@@ -145,8 +148,10 @@ describe("AfdController", () => {
 
       const content = res.send.mock.calls[0][0];
       const lines = content.split("\n");
-      expect(lines.length).toBe(2);
+      // header + trailer + HASH (B1)
+      expect(lines.length).toBe(3);
       expect(lines[1]).toMatch(/^9\|11222333000181\|000000$/);
+      expect(lines[2]).toMatch(/^HASH: [a-f0-9]{64}$/);
     });
   });
 });

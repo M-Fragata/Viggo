@@ -47,6 +47,7 @@ export function EmployeeScheduleModal({
     lunchEnd: 780,
     exitTime: 1020,
     daysOfWeek: 31,
+    jornadaTipo: "5x2" as "5x2" | "6x1" | "12x36",
     checkinToleranceMinutes: 5,
     lunchToleranceMinutes: 15,
   });
@@ -74,9 +75,18 @@ export function EmployeeScheduleModal({
       lunchEnd: 780,
       exitTime: 1020,
       daysOfWeek: 31,
+      jornadaTipo: "5x2" as "5x2" | "6x1" | "12x36",
       checkinToleranceMinutes: 5,
       lunchToleranceMinutes: 15,
     });
+  }
+
+  function handleJornadaChange(value: "5x2" | "6x1" | "12x36") {
+    setForm((prev) => ({
+      ...prev,
+      jornadaTipo: value,
+      daysOfWeek: value === "5x2" ? 31 : value === "6x1" ? 63 : prev.daysOfWeek,
+    }));
   }
 
   function toggleDay(bit: number) {
@@ -260,6 +270,24 @@ export function EmployeeScheduleModal({
               </div>
 
               <div>
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Escala *</label>
+                <select
+                  value={form.jornadaTipo}
+                  onChange={(e) => handleJornadaChange(e.target.value as "5x2" | "6x1" | "12x36")}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-sm"
+                >
+                  <option value="5x2">5x2 — Seg a Sex (44h/sem)</option>
+                  <option value="6x1">6x1 — Seg a Sáb (44h/sem, DSR rotativo)</option>
+                  <option value="12x36">12x36 — 12h trabalha / 36h folga</option>
+                </select>
+                <p className="text-xs text-slate-400 mt-1">
+                  {form.jornadaTipo === "5x2" && "Folga fixa: Sáb e Dom"}
+                  {form.jornadaTipo === "6x1" && "Folga rotativa: 1 dia por semana (máx 6 dias seguidos)"}
+                  {form.jornadaTipo === "12x36" && "Máx 3-4 plantões por semana (Seg-Dom)"}
+                </p>
+              </div>
+
+              <div>
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Tolerância Ponto (min)</label>
                 <input
                   type="number"
@@ -299,6 +327,9 @@ export function EmployeeScheduleModal({
                     </button>
                   ))}
                 </div>
+                {form.jornadaTipo !== "12x36" && (
+                  <p className="text-xs text-slate-400 mt-1">Auto-preenchido pela escala, mas editável</p>
+                )}
               </div>
 
               <button

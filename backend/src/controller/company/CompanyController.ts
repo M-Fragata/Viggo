@@ -25,16 +25,22 @@ export class CompanyController {
       companyName: z.string().min(2, 'Nome da empresa inválido'),
       password: z.string().min(8, 'Senha deve ter no mínimo 8 caracteres'),
       confirmPassword: z.string(),
-      aceiteTermos: z.boolean().refine((v) => v === true, {
-        message: 'Você precisa aceitar os Termos de Uso',
-      }),
-      aceiteDpa: z.boolean().refine((v) => v === true, {
-        message: 'Você precisa aceitar o Contrato de Tratamento de Dados',
-      }),
+      aceiteContratos: z.boolean().refine((v) => v === true, {
+        message: 'Você precisa aceitar os Termos, Política e DPA',
+      }).optional(),
+      aceiteTermos: z.boolean().optional(),
+      aceiteDpa: z.boolean().optional(),
+      aceiteBiometria: z.boolean().optional(),
+    }).superRefine((data, ctx) => {
+      const ok = data.aceiteContratos === true || (data.aceiteTermos === true && data.aceiteDpa === true);
+      if (!ok) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Você precisa aceitar os Termos, Política e DPA', path: ['aceiteContratos'] });
+      }
     });
 
     try {
-      const { name, email, cpf, cnpj, companyName, password, confirmPassword, aceiteTermos, aceiteDpa } = bodySchema.parse(req.body);
+      const { name, email, cpf, cnpj, companyName, password, confirmPassword, aceiteContratos, aceiteTermos, aceiteDpa } = bodySchema.parse(req.body);
+      const aceiteContratosOk = aceiteContratos === true || (aceiteTermos === true && aceiteDpa === true);
 
       if (password !== confirmPassword) {
         return res.status(400).json({ message: 'Senhas não conferem' });
@@ -130,12 +136,12 @@ export class CompanyController {
         },
       });
 
-      // F9/F13: Registrar consentimentos (Termos de Uso, Política de Privacidade, DPA)
+      // A-Opção A: 1 checkbox contratos → 3 consentimentos
       const ip = req.ip ?? req.socket.remoteAddress ?? null;
       const consentimentos = [
-        { userId: user.id, tipo: "TERMOS_DE_USO", versao: "1.0", aceite: aceiteTermos, ip },
-        { userId: user.id, tipo: "POLITICA_PRIVACIDADE", versao: "1.0", aceite: aceiteTermos, ip },
-        { userId: user.id, tipo: "DPA", versao: "1.0", aceite: aceiteDpa, ip },
+        { userId: user.id, tipo: "TERMOS_DE_USO", versao: "1.0", aceite: aceiteContratosOk, ip },
+        { userId: user.id, tipo: "POLITICA_PRIVACIDADE", versao: "1.0", aceite: aceiteContratosOk, ip },
+        { userId: user.id, tipo: "DPA", versao: "1.0", aceite: aceiteContratosOk, ip },
       ];
 
       await prisma.consentimento.createMany({ data: consentimentos });
@@ -555,16 +561,24 @@ export class CompanyController {
       name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
       password: z.string().min(8, 'Senha deve ter no mínimo 8 caracteres'),
       confirmPassword: z.string(),
-      aceiteTermos: z.boolean().refine((v) => v === true, {
-        message: 'Você precisa aceitar os Termos de Uso',
-      }),
+      aceiteContratos: z.boolean().refine((v) => v === true, {
+        message: 'Você precisa aceitar os Termos, Política e DPA',
+      }).optional(),
+      aceiteTermos: z.boolean().optional(),
       aceiteBiometria: z.boolean().refine((v) => v === true, {
         message: 'Você precisa autorizar o uso da biometria facial',
       }),
+      aceiteDpa: z.boolean().optional(),
+    }).superRefine((data, ctx) => {
+      const contratosOk = data.aceiteContratos === true || (data.aceiteTermos === true && data.aceiteDpa === true);
+      if (!contratosOk) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Você precisa aceitar os Termos, Política e DPA', path: ['aceiteContratos'] });
+      }
     });
 
     try {
-      const { token, email, name, password, confirmPassword, aceiteTermos, aceiteBiometria } = bodySchema.parse(req.body);
+      const { token, email, name, password, confirmPassword, aceiteContratos, aceiteTermos, aceiteBiometria, aceiteDpa } = bodySchema.parse(req.body);
+      const aceiteContratosOk = aceiteContratos === true || (aceiteTermos === true && aceiteDpa === true);
 
       if (password !== confirmPassword) {
         return res.status(400).json({ message: 'Senhas não conferem' });
@@ -612,12 +626,13 @@ export class CompanyController {
           },
         });
 
-        // F9/F10/G3: Registrar consentimentos (Termos de Uso, Política de Privacidade, Biometria)
+        // Opção A: 2 checkboxes — contratos (Termos+Política+DPA) + biometria
         const ip = req.ip ?? req.socket.remoteAddress ?? null;
         const consentimentos = [
-          { userId: user.id, tipo: "TERMOS_DE_USO", versao: "1.0", aceite: aceiteTermos, ip },
-          { userId: user.id, tipo: "POLITICA_PRIVACIDADE", versao: "1.0", aceite: aceiteTermos, ip },
+          { userId: user.id, tipo: "TERMOS_DE_USO", versao: "1.0", aceite: aceiteContratosOk, ip },
+          { userId: user.id, tipo: "POLITICA_PRIVACIDADE", versao: "1.0", aceite: aceiteContratosOk, ip },
           { userId: user.id, tipo: "BIOMETRIA", versao: "1.0", aceite: aceiteBiometria, ip },
+          { userId: user.id, tipo: "DPA", versao: "1.0", aceite: aceiteContratosOk, ip },
         ];
 
         await tx.consentimento.createMany({ data: consentimentos });
