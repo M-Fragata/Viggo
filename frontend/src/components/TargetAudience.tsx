@@ -8,7 +8,6 @@ import {
   Laptop,
   Factory,
   Check,
-  Sparkles,
   Users2
 } from "lucide-react";
 

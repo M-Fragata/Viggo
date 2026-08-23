@@ -522,7 +522,6 @@ const useMobileDetection = () => {
 
 export const MagicBento: React.FC<BentoProps> = ({
   cards = defaultCardData,
-  textAutoHide = false,
   enableStars = false, // Set to false per request
   enableSpotlight = true,
   enableBorderGlow = true,

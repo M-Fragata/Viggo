@@ -142,7 +142,7 @@ export function BentoGrid() {
             }
 
             // Cards entrance
-            const cards = sectionRef.current.querySelectorAll(".bento-section .card");
+            const cards = sectionRef.current!.querySelectorAll(".bento-section .card");
             if (cards.length > 0) {
               tl.fromTo(
                 cards,
