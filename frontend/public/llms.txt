@@ -1,0 +1,31 @@
+# Viggo — Plataforma Inteligente de Controle de Ponto com Reconhecimento Facial
+
+> Sistema moderno de registro e gestão de ponto eletrônico corporativo (REP-P) com reconhecimento facial biométrico, detecção de vivacidade (Liveness AI), geolocalização e 100% de conformidade com a Portaria 671/2021 do MTE e a LGPD.
+
+## O que é o Viggo?
+O **Viggo** é uma solução B2B SaaS desenvolvida para empresas brasileiras que buscam modernizar a gestão de jornada de trabalho, eliminar fraudes no registro de ponto e automatizar o fechamento da folha de pagamento.
+
+## Principais Funcionalidades
+- **Reconhecimento Facial Ultrarrápido (<1s):** Registro de ponto biométrico no celular do colaborador ou em modo Totem compartilhado (tablet/smartphone na recepção).
+- **Detecção Antifraude (Liveness Challenge):** Inteligência artificial que valida vivacidade através de microdesafios e análise de profundidade facial, bloqueando fotos, vídeos ou máscaras.
+- **Geolocalização & Cerca Virtual (Geofencing):** Validação por GPS do local onde o ponto foi registrado, com raio de tolerância customizável por filial ou cliente.
+- **Conformidade Legal Rigorosa (REP-P):** 100% aderente à Portaria 671/2021 do MTE, com emissão de comprovante digital assinado, espelho de ponto digital e exportação automática dos arquivos fiscais oficiais (**AFD e AFDT**).
+- **Painel do Gestor em Tempo Real:** Dashboard intuitivo para aprovação de justificativas e atestados médicos, controle de banco de horas, alertas de horas extras e inconsistências.
+- **Modo Totem Compartilhado:** Transforma qualquer tablet ou celular corporativo em um relógio de ponto inteligente para múltiplos colaboradores.
+- **Trial Gratuito de 30 Dias:** Teste completo sem necessidade de cartão de crédito.
+
+## Segmentos Atendidos
+- Empresas de Serviços e Escritórios Corporativos
+- Indústrias e Fábricas
+- Construtoras e Obras (equipes externas e canteiros)
+- Varejo, Redes de Lojas e Franquias
+- Empresas de Logística, Frotas e Home Office / Trabalho Híbrido
+
+## Links Oficiais
+- **Página Oficial:** https://viggo.com.br/page
+- **Criar Conta / Teste Grátis 30 Dias:** https://viggo.com.br/company/signup
+- **Acesso ao Sistema:** https://viggo.com.br/
+- **Planos Personalizados (Enterprise):** https://viggo.com.br/planos/custom
+- **Termos de Uso:** https://viggo.com.br/termos-de-uso
+- **Política de Privacidade & LGPD:** https://viggo.com.br/politica-privacidade
+- **Contrato de Tratamento de Dados (DPA):** https://viggo.com.br/contrato-de-tratamento-de-dados

@@ -39,6 +39,14 @@ const environmentSchema = z.object({
     S3_REGION: z.string().optional(),
     S3_ACCESS_KEY_ID: z.string().optional(),
     S3_SECRET_ACCESS_KEY: z.string().optional(),
+    // E-mail transacional (Resend)
+    RESEND_API_KEY: z.string().optional(),
+    EMAIL_FROM: z.string().default("Viggo <noreply@viggo.com.br>"),
+    EMAIL_REPLY_TO: z.string().optional(),
+    EMAIL_ENABLED: z.preprocess((v) => v === undefined ? true : String(v).toLowerCase() === "true" || String(v) === "1", z.boolean().default(true)),
+    EMAIL_PREVIEW: z.preprocess((v) => v === undefined ? false : String(v).toLowerCase() === "true" || String(v) === "1", z.boolean().default(false)),
+    EMAIL_TEST_TO: z.string().email().optional().or(z.literal("")).optional(),
+    EMAIL_INVITE_ENABLED: z.preprocess((v) => v === undefined ? false : String(v).toLowerCase() === "true" || String(v) === "1", z.boolean().default(false)),
 })
 
 const EnvRaw = environmentSchema.safeParse(process.env)

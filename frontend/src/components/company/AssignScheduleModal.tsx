@@ -70,24 +70,24 @@ export function AssignScheduleModal({ schedule, onClose, onAssigned }: AssignSch
   const noneSelected = selectedIds.size === 0;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-3xl shadow-xl w-full max-w-7xl max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between p-6 pb-4 border-b border-slate-100">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-3xl shadow-xl w-full max-w-7xl max-h-[90vh] overflow-hidden flex flex-col transition-colors">
+        <div className="flex items-center justify-between p-6 pb-4 border-b border-slate-100 dark:border-white/10">
           <div>
-            <h2 className="text-lg font-bold text-slate-800">Atribuir: {schedule.name}</h2>
-            <p className="text-sm text-slate-500">
+            <h2 className="text-lg font-bold text-slate-800 dark:text-white">Atribuir: {schedule.name}</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               {schedule._count.users} funcionário(s) vinculado(s)
             </p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer">
-            <X size={20} className="text-slate-400" />
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl transition-colors cursor-pointer">
+            <X size={20} className="text-slate-400 dark:text-slate-500" />
           </button>
         </div>
 
         <div className="px-6 pt-4 space-y-2">
           <button
             onClick={toggleAll}
-            className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-800 cursor-pointer"
+            className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white cursor-pointer"
           >
             {allSelected ? <CheckSquare size={18} className="text-emerald-500" /> : <Square size={18} />}
             {allSelected ? "Desmarcar todos" : "Selecionar todos"}
@@ -95,7 +95,7 @@ export function AssignScheduleModal({ schedule, onClose, onAssigned }: AssignSch
           <button
             onClick={() => setSelectedIds(new Set())}
             disabled={noneSelected}
-            className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-800 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <X size={18} />
             Limpar tudo
@@ -108,7 +108,7 @@ export function AssignScheduleModal({ schedule, onClose, onAssigned }: AssignSch
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500" />
             </div>
           ) : employees.length === 0 ? (
-            <div className="p-8 text-center text-slate-400">Nenhum funcionário cadastrado</div>
+            <div className="p-8 text-center text-slate-400 dark:text-slate-500">Nenhum funcionário cadastrado</div>
           ) : (
             <div className="space-y-2">
               {employees.map((emp) => {
@@ -118,28 +118,28 @@ export function AssignScheduleModal({ schedule, onClose, onAssigned }: AssignSch
                   <button
                     key={emp.id}
                     onClick={() => toggle(emp.id)}
-                    className={`flex items-center gap-3 w-full p-3 rounded-xl border text-left transition-colors ${
+                    className={`flex items-center gap-3 w-full p-3 rounded-xl border text-left transition-colors cursor-pointer ${
                       isSelected
-                        ? "border-emerald-500 bg-emerald-50"
-                        : "border-slate-200 hover:bg-slate-50"
+                        ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30"
+                        : "border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5"
                     }`}
                   >
                     {isSelected ? (
                       <CheckSquare size={18} className="text-emerald-500 shrink-0" />
                     ) : (
-                      <Square size={18} className="text-slate-300 shrink-0" />
+                      <Square size={18} className="text-slate-300 dark:text-slate-600 shrink-0" />
                     )}
                     <div className="flex-1 min-w-0">
-                      <span className="font-semibold text-slate-800 block truncate">{emp.name}</span>
-                      <span className="text-xs text-slate-500">
+                      <span className="font-semibold text-slate-800 dark:text-white block truncate">{emp.name}</span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
                         {emp.workScheduleId ? (
                           isAlreadyAssigned ? (
-                            <span className="text-emerald-600">Este horário</span>
+                            <span className="text-emerald-600 dark:text-emerald-400">Este horário</span>
                           ) : (
                             <span>Horário atribuído</span>
                           )
                         ) : (
-                          <span className="text-slate-400">Sem horário</span>
+                          <span className="text-slate-400 dark:text-slate-500">Sem horário</span>
                         )}
                       </span>
                     </div>
@@ -153,10 +153,10 @@ export function AssignScheduleModal({ schedule, onClose, onAssigned }: AssignSch
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-3 p-6 pt-4 border-t border-slate-100">
+        <div className="flex items-center justify-end gap-3 p-6 pt-4 border-t border-slate-100 dark:border-white/10">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+            className="px-4 py-2 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl transition-colors cursor-pointer"
           >
             Cancelar
           </button>

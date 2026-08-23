@@ -1,8 +1,8 @@
 import { useState, useRef } from "react";
 import { Users, CreditCard, Calculator } from "lucide-react";
 import { useCompany, usePlanLimits } from "../../hooks/useCompany";
-import { PlanBadge, UsageProgressBar, PaymentStatus, PaymentHistory, CheckoutModal } from "../../components/plan";
-import { DashboardPageHeader } from "../../components/admin/DashboardPageHeader";
+import { PlanBadge, UsageProgressBar, PaymentStatus, PaymentHistory, CheckoutModal, PlanoSkeleton } from "../../components/plan";
+import { PageHeader } from "../../components/common/PageHeader";
 import { PricingCalculator } from "../../components/PricingCalculator";
 
 export function PlanoPage() {
@@ -28,27 +28,27 @@ export function PlanoPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500" />
-      </div>
-    );
+    return <PlanoSkeleton />;
   }
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
-      <DashboardPageHeader />
+      <PageHeader
+        title="Assinatura & Plano"
+        subtitle="Gerenciamento de limites de colaboradores e faturamento"
+        helpText="Gerencie a assinatura do Viggo, visualize limites de colaboradores ativos e consulte o status do seu plano."
+      />
 
       {company && (
         <PaymentStatus company={company} onOpenCheckout={() => setShowCheckout(true)} />
       )}
 
       {/* Detalhes do Plano */}
-      <div className="bg-white border border-slate-200 rounded-3xl shadow-sm p-6">
+      <div className="bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-3xl shadow-sm p-6 transition-colors">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div>
-            <h2 className="text-lg font-bold text-slate-800">Detalhes do Plano</h2>
-            <p className="text-slate-500 text-sm">
+            <h2 className="text-lg font-bold text-slate-800 dark:text-white">Detalhes do Plano</h2>
+            <p className="text-slate-500 dark:text-slate-400 text-sm">
               {plan ? getPlanLabel(plan) : "-"}
               {company?.pricing && company.plan === "DYNAMIC" && (
                 <>
@@ -64,8 +64,8 @@ export function PlanoPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div className="bg-slate-50 rounded-2xl p-5">
-            <div className="flex items-center gap-2 text-slate-500 text-sm mb-1">
+          <div className="bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 rounded-2xl p-5">
+            <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm mb-1">
               <Users className={`w-4 h-4 text-${planColor}-500`} />
               <span className="font-medium">Funcionários</span>
             </div>
@@ -78,36 +78,36 @@ export function PlanoPage() {
           </div>
 
           {company?.pricing && company.plan === "DYNAMIC" && (
-            <div className="bg-slate-50 rounded-2xl p-5">
-              <div className="flex items-center gap-2 text-slate-500 text-sm mb-1">
+            <div className="bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 rounded-2xl p-5">
+              <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm mb-1">
                 <CreditCard className={`w-4 h-4 text-${planColor}-500`} />
                 <span className="font-medium">Cálculo do Preço</span>
               </div>
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between text-slate-600">
+                <div className="flex justify-between text-slate-600 dark:text-slate-300">
                   <span>Base (até {company.pricing.baseMaxEmployees})</span>
-                  <span className="font-mono font-bold">R$ {company.pricing.basePrice.toFixed(2)}</span>
+                  <span className="font-mono font-bold text-slate-800 dark:text-white">R$ {company.pricing.basePrice.toFixed(2)}</span>
                 </div>
                 {company.pricing.extraEmployees > 0 && (
-                  <div className="flex justify-between text-slate-600">
+                  <div className="flex justify-between text-slate-600 dark:text-slate-300">
                     <span>{company.pricing.extraEmployees} extra{company.pricing.extraEmployees > 1 ? "s" : ""}</span>
-                    <span className="font-mono font-bold">R$ {company.pricing.extraTotal.toFixed(2)}</span>
+                    <span className="font-mono font-bold text-slate-800 dark:text-white">R$ {company.pricing.extraTotal.toFixed(2)}</span>
                   </div>
                 )}
-                <div className="border-t border-slate-200 pt-2 flex justify-between font-bold text-slate-800">
+                <div className="border-t border-slate-200 dark:border-white/10 pt-2 flex justify-between font-bold text-slate-800 dark:text-white">
                   <span>Total</span>
-                  <span className="text-emerald-600">R$ {company.pricing.total.toFixed(2)}/mês</span>
+                  <span className="text-emerald-600 dark:text-emerald-400">R$ {company.pricing.total.toFixed(2)}/mês</span>
                 </div>
               </div>
             </div>
           )}
         </div>
 
-        <div className="border-t border-slate-200 pt-6 flex flex-wrap gap-3">
+        <div className="border-t border-slate-200 dark:border-white/10 pt-6 flex flex-wrap gap-3">
           {(company?.status === "TRIAL" || company?.status === "SUSPENDED" || company?.status === "CANCELLED") && (
             <button
               onClick={() => setShowCheckout(true)}
-              className="w-full px-6 py-3 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors font-bold flex items-center justify-center gap-2"
+              className="w-full px-6 py-3 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors font-bold flex items-center justify-center gap-2 cursor-pointer"
             >
               <CreditCard size={18} />
               {company.status === "TRIAL" ? "Ativar plano" : "Reativar plano"}
@@ -115,7 +115,7 @@ export function PlanoPage() {
           )}
           <button
             onClick={handleShowCalculator}
-            className="w-full px-6 py-3 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-colors font-bold flex items-center justify-center gap-2"
+            className="w-full px-6 py-3 bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/10 rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 transition-colors font-bold flex items-center justify-center gap-2 cursor-pointer"
           >
             <Calculator size={18} />
             {showCalculator ? "Ocultar calculadora" : "Calculadora de preços"}
@@ -132,8 +132,8 @@ export function PlanoPage() {
       </div>
 
       {/* Histórico de Pagamentos */}
-      <div className="bg-white border border-slate-200 rounded-3xl shadow-sm p-6">
-        <h2 className="text-lg font-bold text-slate-800 mb-4">Histórico de Pagamentos</h2>
+      <div className="bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-3xl shadow-sm p-6 transition-colors">
+        <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Histórico de Pagamentos</h2>
         <PaymentHistory />
       </div>
 

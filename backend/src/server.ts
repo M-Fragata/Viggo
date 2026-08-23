@@ -36,4 +36,40 @@ cron.schedule("0 3 1 * *", async () => {
   }
 });
 
+// E-mail: Trial acabando D-3 / D-1 — diariamente às 09:00
+cron.schedule("0 9 * * *", async () => {
+  console.log("[Cron] Iniciando trial ending job...");
+  try {
+    const { runTrialEndingJob } = await import("./jobs/trialEndingJob.js");
+    const result = await runTrialEndingJob();
+    console.log("[Cron] Trial ending concluído:", result);
+  } catch (error) {
+    console.error("[Cron] Erro no trial ending:", error);
+  }
+});
+
+// E-mail: Biometria expirando (30d antes) — diariamente às 09:30
+cron.schedule("30 9 * * *", async () => {
+  console.log("[Cron] Iniciando biometric expiring job...");
+  try {
+    const { runBiometricExpiringJob } = await import("./jobs/biometricExpiringJob.js");
+    const result = await runBiometricExpiringJob();
+    console.log("[Cron] Biometric expiring concluído:", result);
+  } catch (error) {
+    console.error("[Cron] Erro no biometric expiring:", error);
+  }
+});
+
+// E-mail: Pagamento próximo vencimento D-3 / D-1 — diariamente às 08:00
+cron.schedule("0 8 * * *", async () => {
+  console.log("[Cron] Iniciando payment upcoming job...");
+  try {
+    const { runPaymentUpcomingJob } = await import("./jobs/paymentUpcomingJob.js");
+    const result = await runPaymentUpcomingJob();
+    console.log("[Cron] Payment upcoming concluído:", result);
+  } catch (error) {
+    console.error("[Cron] Erro no payment upcoming:", error);
+  }
+});
+
 app.listen(PORT);

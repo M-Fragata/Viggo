@@ -23,6 +23,7 @@ const HorariosPage = lazy(() => import("../pages/admin/HorariosPage").then((m) =
 const PlanoPage = lazy(() => import("../pages/admin/PlanoPage").then((m) => ({ default: m.PlanoPage })));
 const ConvitesPage = lazy(() => import("../pages/admin/ConvitesPage").then((m) => ({ default: m.ConvitesPage })));
 const JustificativasAdminPage = lazy(() => import("../pages/admin/JustificativasAdminPage").then((m) => ({ default: m.JustificativasAdminPage })));
+const TotemManagePage = lazy(() => import("../pages/admin/TotemManagePage").then((m) => ({ default: m.TotemManagePage })));
 const TotemPage = lazy(() => import("../pages/admin/TotemPage").then((m) => ({ default: m.TotemPage })));
 
 export function AdminRoutes() {
@@ -47,12 +48,13 @@ export function AdminRoutes() {
         <Route path="plano" element={<Suspense fallback={<Loading />}><PlanoPage /></Suspense>} />
         <Route path="convites" element={<Suspense fallback={<Loading />}><ConvitesPage /></Suspense>} />
         <Route path="justificativas" element={<Suspense fallback={<Loading />}><JustificativasAdminPage /></Suspense>} />
+        <Route path="totem" element={<Suspense fallback={<Loading />}><TotemManagePage /></Suspense>} />
         <Route path="ponto" element={<PontoPage />} />
         <Route path="pontos" element={<PontoViewPage />} />
         <Route path="register" element={<RegisterFace />} />
         <Route path="meus-dados" element={<MeusDadosPage />} />
       </Route>
-      <Route path="totem" element={<Suspense fallback={<Loading />}><TotemPage /></Suspense>} />
+      <Route path="totem-app" element={<Suspense fallback={<Loading />}><TotemPage /></Suspense>} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );

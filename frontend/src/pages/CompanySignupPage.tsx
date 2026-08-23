@@ -1,317 +1,491 @@
-import { useActionState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  User,
+  Mail,
+  FileText,
+  Building,
+  Building2,
+  Lock,
+  ArrowLeft,
+  CheckCircle2,
+  Loader2,
+  Search,
+} from "lucide-react";
+import { toast } from "sonner";
+
 import { api } from "../services/api";
 import { useAuth } from "../hooks/useAuth";
-import { Input } from "../components/Input";
-import { Button } from "../components/Button";
-import { companySignupSchema, formatCpf, formatCnpj, validateCpf, validateCnpj } from "../schemas/companySignup";
+import { AuthLayout } from "../components/auth/AuthLayout";
+import { AuthInput } from "../components/auth/AuthInput";
+import { StepIndicator, type StepItem } from "../components/auth/StepIndicator";
+import { PasswordStrengthIndicator } from "../components/auth/PasswordStrengthIndicator";
+import { lookupCnpj } from "../utils/cnpjLookup";
+import {
+  formatCpf,
+  formatCnpj,
+  validateCpf,
+  validateCnpj,
+  companySignupSchema,
+} from "../schemas/companySignup";
+import { trackEvent } from "../utils/metrics";
+
+const STEPS: StepItem[] = [
+  { id: 1, title: "Responsável", shortTitle: "Responsável" },
+  { id: 2, title: "Empresa", shortTitle: "Empresa" },
+  { id: 3, title: "Segurança", shortTitle: "Segurança" },
+];
 
 export function CompanySignupPage() {
   const navigate = useNavigate();
   const { setSession } = useAuth();
 
-  const [state, formAction, isPending] = useActionState(handleSubmit, {
-    message: "",
-    fieldErrors: {},
-    payload: {
-      name: "",
-      email: "",
-      cpf: "",
-      cnpj: "",
-      companyName: "",
-      password: "",
-      confirmPassword: "",
-      aceiteContratos: false,
-    },
+  useEffect(() => {
+    trackEvent("signup_view", { path: "/company/signup" });
+  }, []);
+
+  const [currentStep, setCurrentStep] = useState(1);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    cpf: "",
+    cnpj: "",
+    companyName: "",
+    password: "",
+    confirmPassword: "",
+    aceiteContratos: false,
   });
 
-  async function handleSubmit(_prevState: unknown, formData: FormData) {
-    const rawData = {
-      name: formData.get("name") as string,
-      email: formData.get("email") as string,
-      cpf: formData.get("cpf") as string,
-      cnpj: formData.get("cnpj") as string,
-      companyName: formData.get("companyName") as string,
-      password: formData.get("password") as string,
-      confirmPassword: formData.get("confirmPassword") as string,
-      aceiteContratos: formData.get("aceiteContratos") === "on",
-    };
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSearchingCnpj, setIsSearchingCnpj] = useState(false);
+  const [cnpjSuccessMessage, setCnpjSuccessMessage] = useState("");
 
-    const parsed = companySignupSchema.safeParse(rawData);
-    if (!parsed.success) {
-      const fieldErrors: Record<string, string> = {};
-      parsed.error.issues.forEach((issue) => {
-        const path = issue.path[0] as string;
-        fieldErrors[path] = issue.message;
+  const updateField = (field: keyof typeof formData, value: string | boolean) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
       });
-      return { message: "", fieldErrors, payload: rawData };
     }
-
-    const cpfDigits = rawData.cpf.replace(/\D/g, "");
-    if (!validateCpf(cpfDigits)) {
-      return { message: "", fieldErrors: { cpf: "CPF inválido" }, payload: rawData };
-    }
-
-    if (rawData.cnpj) {
-      const cnpjDigits = rawData.cnpj.replace(/\D/g, "");
-      if (!validateCnpj(cnpjDigits)) {
-        return { message: "", fieldErrors: { cnpj: "CNPJ inválido" }, payload: rawData };
-      }
-    } else {
-      return { message: "", fieldErrors: { cnpj: "CNPJ é obrigatório" }, payload: rawData };
-    }
-
-    try {
-      const response = await api.auth.signup({
-        name: rawData.name,
-        email: rawData.email,
-        cpf: cpfDigits,
-        cnpj: rawData.cnpj.replace(/\D/g, ""),
-        companyName: rawData.companyName,
-        password: rawData.password,
-        confirmPassword: rawData.confirmPassword,
-        aceiteContratos: rawData.aceiteContratos,
-      });
-
-      setSession(response.user, response.token, response.company.name);
-      navigate("/");
-    } catch (error) {
-      const err = error as Error;
-      if (err.message.includes("Dados inválidos")) {
-        try {
-          const parsedError = JSON.parse(err.message.replace("Dados inválidos: ", ""));
-          const fieldErrors: Record<string, string> = {};
-          parsedError.errors?.forEach((e: { path: string[]; message: string }) => {
-            fieldErrors[e.path[0]] = e.message;
-          });
-          return { message: "", fieldErrors, payload: rawData };
-        } catch {
-          return { message: "Dados inválidos. Verifique os campos.", fieldErrors: {}, payload: rawData };
-        }
-      }
-      return { message: err.message || "Erro ao criar empresa. Tente novamente.", fieldErrors: {}, payload: rawData };
-    }
-
-    return { message: "", fieldErrors: {}, payload: rawData };
-  }
+  };
 
   const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatCpf(e.target.value);
-    e.target.value = formatted;
+    updateField("cpf", formatted);
   };
 
   const handleCnpjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatCnpj(e.target.value);
-    e.target.value = formatted;
+    updateField("cnpj", formatted);
+    setCnpjSuccessMessage("");
+
+    const cleanCnpj = formatted.replace(/\D/g, "");
+    if (cleanCnpj.length === 14 && validateCnpj(cleanCnpj)) {
+      fetchCnpjData(cleanCnpj);
+    }
+  };
+
+  const fetchCnpjData = async (cleanCnpj: string) => {
+    try {
+      setIsSearchingCnpj(true);
+      const result = await lookupCnpj(cleanCnpj);
+
+      if (result) {
+        const nameToUse = result.nomeFantasia || result.razaoSocial;
+        setFormData((prev) => ({ ...prev, companyName: nameToUse }));
+        setCnpjSuccessMessage(result.razaoSocial || nameToUse);
+        toast.success("Dados da empresa encontrados!");
+      } else {
+        toast.info(
+          "CNPJ recente ou não localizado na base pública. Preencha o nome da empresa manualmente.",
+          { duration: 4000 }
+        );
+      }
+    } catch {
+      // Ignora erro silenciosamente, permitindo preenchimento manual
+    } finally {
+      setIsSearchingCnpj(false);
+    }
+  };
+
+  const validateStep = (step: number): boolean => {
+    const stepErrors: Record<string, string> = {};
+
+    if (step === 1) {
+      if (!formData.name.trim() || formData.name.trim().length < 3) {
+        stepErrors.name = "Nome deve ter no mínimo 3 caracteres";
+      }
+      if (!formData.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+        stepErrors.email = "Informe um e-mail válido";
+      }
+      const cleanCpf = formData.cpf.replace(/\D/g, "");
+      if (!cleanCpf || cleanCpf.length !== 11 || !validateCpf(cleanCpf)) {
+        stepErrors.cpf = "CPF inválido";
+      }
+    } else if (step === 2) {
+      const cleanCnpj = formData.cnpj.replace(/\D/g, "");
+      if (!cleanCnpj || cleanCnpj.length !== 14 || !validateCnpj(cleanCnpj)) {
+        stepErrors.cnpj = "CNPJ inválido";
+      }
+      if (!formData.companyName.trim() || formData.companyName.trim().length < 2) {
+        stepErrors.companyName = "Nome da empresa inválido";
+      }
+    } else if (step === 3) {
+      if (!formData.password || formData.password.length < 8) {
+        stepErrors.password = "Senha deve ter no mínimo 8 caracteres";
+      }
+      if (formData.password !== formData.confirmPassword) {
+        stepErrors.confirmPassword = "As senhas não conferem";
+      }
+      if (!formData.aceiteContratos) {
+        stepErrors.aceiteContratos = "Você precisa aceitar os Termos e Política para continuar";
+      }
+    }
+
+    setErrors(stepErrors);
+    return Object.keys(stepErrors).length === 0;
+  };
+
+  const handleNext = () => {
+    if (validateStep(currentStep)) {
+      setCurrentStep((prev) => Math.min(prev + 1, STEPS.length));
+    }
+  };
+
+  const handleBack = () => {
+    setCurrentStep((prev) => Math.max(prev - 1, 1));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateStep(3)) return;
+
+    const parsed = companySignupSchema.safeParse({
+      name: formData.name,
+      email: formData.email,
+      cpf: formData.cpf,
+      cnpj: formData.cnpj,
+      companyName: formData.companyName,
+      password: formData.password,
+      confirmPassword: formData.confirmPassword,
+      aceiteContratos: formData.aceiteContratos,
+    });
+
+    if (!parsed.success) {
+      const fieldErrors: Record<string, string> = {};
+      parsed.error.issues.forEach((issue) => {
+        fieldErrors[issue.path[0] as string] = issue.message;
+      });
+      setErrors(fieldErrors);
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const response = await api.auth.signup({
+        name: formData.name,
+        email: formData.email,
+        cpf: formData.cpf.replace(/\D/g, ""),
+        cnpj: formData.cnpj.replace(/\D/g, ""),
+        companyName: formData.companyName,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+        aceiteContratos: formData.aceiteContratos,
+      });
+
+      toast.success("Empresa cadastrada com sucesso! Bem-vindo ao Viggo.");
+      trackEvent("signup_success", { path: "/company/signup", companyId: response.company.id });
+      setSession(response.user, response.token, response.company.name);
+      navigate("/");
+    } catch (error: unknown) {
+      const err = error as Error;
+      const msg = err?.message || "Erro ao criar empresa. Tente novamente.";
+      if (msg.includes("Dados inválidos")) {
+        try {
+          const parsedErr = JSON.parse(msg.replace("Dados inválidos: ", ""));
+          const fieldErrors: Record<string, string> = {};
+          parsedErr.errors?.forEach((e: { path: string[]; message: string }) => {
+            fieldErrors[e.path[0]] = e.message;
+          });
+          setErrors(fieldErrors);
+        } catch {
+          toast.error("Dados inválidos. Verifique os campos.");
+        }
+      } else {
+        toast.error(msg);
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <div className="flex items-center justify-center w-dvw h-dvh px-2 py-2 my-4 md:my-0">
-      <div className="flex flex-col md:flex-row w-full max-w-5xl rounded-l-2xl shadow-2xl h-full md:h-[700px]">
-        <section className="flex flex-col items-center justify-center bg-emerald-400 w-full md:w-1/2 h-24 md:h-full p-4 md:p-8 transition-all duration-500 md:rounded-l-2xl md:rounded-t-none rounded-t-2xl">
-          <div className="flex flex-col items-center gap-4 animate-in fade-in slide-in-from-left duration-700 rounded-2xl">
-            <span className="text-4xl font-bold text-white">Viggo</span>
-            <p className="text-white/90 text-center">
-              Crie sua empresa e comece a controlar ponto com reconhecimento facial em minutos.
-            </p>
-          </div>
-        </section>
+    <AuthLayout
+      side="left"
+      showHeader={true}
+      panelTitle="Bem-vindo de volta!"
+      panelDescription="Já possui uma conta da empresa? Acesse o painel agora mesmo com suas credenciais."
+      panelButton={{
+        text: "ENTRAR",
+        to: "/",
+      }}
+      formTitle="Criar Conta"
+      formSubtitle="Trial de 30 dias grátis sem necessidade de cartão"
+    >
+      <StepIndicator
+        steps={STEPS}
+        currentStep={currentStep}
+        onStepClick={(step) => {
+          if (step < currentStep) setCurrentStep(step);
+        }}
+      />
 
-        <main className="flex-1 min-h-0 flex flex-col items-center p-6 md:p-16 border-emerald-400 border-2 md:rounded-r-2xl md:rounded-b-none rounded-b-2xl overflow-y-auto">
-          <div className="w-full space-y-8 animate-in fade-in slide-in-from-right duration-700">
-            <header className="text-center md:text-left">
-              <h1 className="text-3xl font-black text-slate-800 tracking-tight">
-                Criar conta da <span className="text-emerald-500">empresa</span>
-              </h1>
-              <p className="mt-2 text-slate-600">Preencha os dados para iniciar seu trial de 30 dias</p>
-            </header>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <AnimatePresence mode="wait">
+          {/* STEP 1: DADOS DO RESPONSÁVEL */}
+          {currentStep === 1 && (
+            <motion.div
+              key="step-1"
+              initial={{ opacity: 0, x: 15 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -15 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-3.5"
+            >
+              <AuthInput
+                name="name"
+                type="text"
+                placeholder="Seu nome completo"
+                icon={User}
+                value={formData.name}
+                onChange={(e) => updateField("name", e.target.value)}
+                error={errors.name}
+                autoComplete="name"
+                autoFocus
+              />
 
-            <form action={formAction} className="space-y-5">
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-1">
-                    Seu nome completo
-                  </label>
-                  <Input
-                    id="name"
-                    name="name"
-                    type="text"
-                    placeholder="João da Silva"
-                    defaultValue={state.payload.name}
-                    className="w-full pl-4 pr-4 py-3 border-2 border-slate-100 focus:border-emerald-400 rounded-2xl outline-none transition-all"
-                    aria-invalid={!!state.fieldErrors.name}
-                  />
-                  {state.fieldErrors.name && (
-                    <p className="mt-1 text-sm text-red-500">{state.fieldErrors.name}</p>
-                  )}
-                </div>
+              <AuthInput
+                name="email"
+                type="email"
+                placeholder="E-mail corporativo"
+                icon={Mail}
+                value={formData.email}
+                onChange={(e) => updateField("email", e.target.value)}
+                error={errors.email}
+                autoComplete="email"
+              />
 
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb- mb-1">
-                    E-mail
-                  </label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="joao@empresa.com"
-                    defaultValue={state.payload.email}
-                    className="w-full pl-4 pr-4 py-3 border-2 border-slate-100 focus:border-emerald-400 rounded-2xl outline-none transition-all"
-                    aria-invalid={!!state.fieldErrors.email}
-                  />
-                  {state.fieldErrors.email && (
-                    <p className="mt-1 text-sm text-red-500">{state.fieldErrors.email}</p>
-                  )}
-                </div>
+              <AuthInput
+                name="cpf"
+                type="text"
+                placeholder="CPF (000.000.000-00)"
+                icon={FileText}
+                maxLength={14}
+                value={formData.cpf}
+                onChange={handleCpfChange}
+                error={errors.cpf}
+              />
 
-                <div>
-                  <label htmlFor="cpf" className="block text-sm font-medium text-slate-700 mb-1">
-                    CPF
-                  </label>
-                  <Input
-                    id="cpf"
-                    name="cpf"
-                    type="text"
-                    placeholder="000.000.000-00"
-                    defaultValue={state.payload.cpf}
-                    onChange={handleCpfChange}
-                    maxLength={14}
-                    className="w-full pl-4 pr-4 py-3 border-2 border-slate-100 focus:border-emerald-400 rounded-2xl outline-none transition-all"
-                    aria-invalid={!!state.fieldErrors.cpf}
-                  />
-                  {state.fieldErrors.cpf && (
-                    <p className="mt-1 text-sm text-red-500">{state.fieldErrors.cpf}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label htmlFor="cnpj" className="block text-sm font-medium text-slate-700 mb-1">
-                    CNPJ
-                  </label>
-                  <Input
-                    id="cnpj"
-                    name="cnpj"
-                    type="text"
-                    placeholder="00.000.000/0000-00"
-                    defaultValue={state.payload.cnpj}
-                    onChange={handleCnpjChange}
-                    maxLength={18}
-                    className="w-full pl-4 pr-4 py-3 border-2 border-slate-100 focus:border-emerald-400 rounded-2xl outline-none transition-all"
-                    aria-invalid={!!state.fieldErrors.cnpj}
-                  />
-                  {state.fieldErrors.cnpj && (
-                    <p className="mt-1 text-sm text-red-500">{state.fieldErrors.cnpj}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label htmlFor="companyName" className="block text-sm font-medium text-slate-700 mb-1">
-                    Nome da empresa
-                  </label>
-                  <Input
-                    id="companyName"
-                    name="companyName"
-                    type="text"
-                    placeholder="Minha Empresa Ltda"
-                    defaultValue={state.payload.companyName}
-                    className="w-full pl-4 pr-4 py-3 border-2 border-slate-100 focus:border-emerald-400 rounded-2xl outline-none transition-all"
-                    aria-invalid={!!state.fieldErrors.companyName}
-                  />
-                  {state.fieldErrors.companyName && (
-                    <p className="mt-1 text-sm text-red-500">{state.fieldErrors.companyName}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">
-                    Senha
-                  </label>
-                  <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    placeholder="Mínimo 8 caracteres"
-                    defaultValue={state.payload.password}
-                    className="w-full pl-4 pr-4 py-3 border-2 border-slate-100 focus:border-emerald-400 rounded-2xl outline-none transition-all"
-                    aria-invalid={!!state.fieldErrors.password}
-                  />
-                  {state.fieldErrors.password && (
-                    <p className="mt-1 text-sm text-red-500">{state.fieldErrors.password}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 mb-1">
-                    Confirmar senha
-                  </label>
-                  <Input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type="password"
-                    placeholder="Repita a senha"
-                    defaultValue={state.payload.confirmPassword}
-                    className="w-full pl-4 pr-4 py-3 border-2 border-slate-100 focus:border-emerald-400 rounded-2xl outline-none transition-all"
-                    aria-invalid={!!state.fieldErrors.confirmPassword}
-                  />
-                  {state.fieldErrors.confirmPassword && (
-                    <p className="mt-1 text-sm text-red-500">{state.fieldErrors.confirmPassword}</p>
-                  )}
-                </div>
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  className="w-full flex items-center justify-center gap-2 bg-brand-green hover:bg-brand-green-deep text-black font-bold py-3.5 px-6 rounded-full transition-all duration-200 shadow-lg shadow-brand-green/20 active:scale-[0.99] cursor-pointer uppercase tracking-wider text-xs"
+                >
+                  <span>Continuar</span>
+                </button>
               </div>
+            </motion.div>
+          )}
 
-              {state.message && (
-                <p className="text-red-500 text-sm text-center p-2 bg-red-50 rounded-lg">{state.message}</p>
-              )}
-
-              <div className="space-y-3 pt-2">
-                <div className="flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    id="aceiteContratos"
-                    name="aceiteContratos"
-                    required
-                    className="mt-1 h-4 w-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500"
-                  />
-                  <label htmlFor="aceiteContratos" className="text-sm text-slate-600 leading-relaxed">
-                    Li e aceito os{" "}
-                    <a href="/termos-de-uso" target="_blank" rel="noopener noreferrer" className="text-emerald-600 underline hover:text-emerald-700">
-                      Termos de Uso
-                    </a>
-                    , a{" "}
-                    <a href="/politica-privacidade" target="_blank" rel="noopener noreferrer" className="text-emerald-600 underline hover:text-emerald-700">
-                      Política de Privacidade
-                    </a>{" "}
-                    e o{" "}
-                    <a href="/contrato-tratamento-dados" target="_blank" rel="noopener noreferrer" className="text-emerald-600 underline hover:text-emerald-700">
-                      Contrato de Tratamento de Dados (DPA)
-                    </a>
-                    , autorizando o tratamento dos meus dados e dos meus funcionários para
-                    registro de ponto eletrônico (Art. 7º e 39 LGPD).
-                  </label>
-                </div>
-                {state.fieldErrors.aceiteContratos && (
-                  <p className="text-sm text-red-500 ml-7">{state.fieldErrors.aceiteContratos}</p>
+          {/* STEP 2: DADOS DA EMPRESA */}
+          {currentStep === 2 && (
+            <motion.div
+              key="step-2"
+              initial={{ opacity: 0, x: 15 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -15 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-3.5"
+            >
+              <div>
+                <AuthInput
+                  name="cnpj"
+                  type="text"
+                  placeholder="CNPJ (00.000.000/0000-00)"
+                  icon={Building}
+                  maxLength={18}
+                  value={formData.cnpj}
+                  onChange={handleCnpjChange}
+                  error={errors.cnpj}
+                  rightElement={
+                    isSearchingCnpj ? (
+                      <Loader2 className="w-4 h-4 text-brand-green animate-spin" />
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const clean = formData.cnpj.replace(/\D/g, "");
+                          if (clean.length === 14) fetchCnpjData(clean);
+                        }}
+                        title="Buscar dados do CNPJ"
+                        className="p-1 hover:text-brand-green transition-colors"
+                      >
+                        <Search className="w-4 h-4 text-stone" />
+                      </button>
+                    )
+                  }
+                  autoFocus
+                />
+                {cnpjSuccessMessage && (
+                  <p className="mt-1 text-[11px] text-brand-green flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                    <span>Razão Social: {cnpjSuccessMessage}</span>
+                  </p>
                 )}
               </div>
 
-              <div className="pt-2 flex flex-col gap-2">
-                <Button
-                  title={isPending ? "Criando conta..." : "Criar conta grátis"}
-                  type="submit"
-                  disabled={isPending}
-                  className="w-full bg-emerald-400 hover:bg-emerald-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-emerald-200 transition-all active:scale-[0.98] disabled:bg-slate-200 disabled:shadow-none uppercase tracking-widest text-xs cursor-pointer"
-                />
-                <Link
-                  to="/"
-                  className="text-center text-slate-600 hover:text-emerald-500 text-sm transition-colors"
+              <AuthInput
+                name="companyName"
+                type="text"
+                placeholder="Nome da empresa / Razão Social"
+                icon={Building2}
+                value={formData.companyName}
+                onChange={(e) => updateField("companyName", e.target.value)}
+                error={errors.companyName}
+              />
+
+              <div className="pt-2 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  className="flex items-center justify-center gap-1.5 bg-white/[0.05] hover:bg-white/[0.1] text-on-dark font-medium py-3.5 px-5 rounded-full border border-white/10 transition-colors cursor-pointer text-xs uppercase tracking-wider"
                 >
-                  Já tem conta? Fazer login
-                </Link>
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Voltar</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  className="flex-1 flex items-center justify-center gap-2 bg-brand-green hover:bg-brand-green-deep text-black font-bold py-3.5 px-6 rounded-full transition-all duration-200 shadow-lg shadow-brand-green/20 active:scale-[0.99] cursor-pointer uppercase tracking-wider text-xs"
+                >
+                  <span>Continuar</span>
+                  
+                </button>
               </div>
-            </form>
-          </div>
-        </main>
-      </div>
-    </div>
+            </motion.div>
+          )}
+
+          {/* STEP 3: SEGURANÇA & TERMOS */}
+          {currentStep === 3 && (
+            <motion.div
+              key="step-3"
+              initial={{ opacity: 0, x: 15 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -15 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-3.5"
+            >
+              <AuthInput
+                name="password"
+                isPassword
+                placeholder="Criar senha (mínimo 8 caracteres)"
+                icon={Lock}
+                value={formData.password}
+                onChange={(e) => updateField("password", e.target.value)}
+                error={errors.password}
+                autoComplete="new-password"
+                autoFocus
+              />
+
+              <AuthInput
+                name="confirmPassword"
+                isPassword
+                placeholder="Confirmar senha"
+                icon={Lock}
+                value={formData.confirmPassword}
+                onChange={(e) => updateField("confirmPassword", e.target.value)}
+                error={errors.confirmPassword}
+                autoComplete="new-password"
+              />
+
+              <PasswordStrengthIndicator
+                password={formData.password}
+                confirmPassword={formData.confirmPassword}
+                showCriteria={false}
+              />
+
+              {/* Checkbox Termos */}
+              <div className="pt-1">
+                <label className="flex items-start gap-2.5 cursor-pointer group select-none">
+                  <input
+                    type="checkbox"
+                    name="aceiteContratos"
+                    checked={formData.aceiteContratos}
+                    onChange={(e) => updateField("aceiteContratos", e.target.checked)}
+                    className="mt-0.5 h-3.5 w-3.5 rounded bg-white/[0.05] border-white/20 text-brand-green focus:ring-brand-green focus:ring-offset-black accent-brand-green cursor-pointer"
+                  />
+                  <span className="text-[11px] text-on-dark-muted leading-tight group-hover:text-on-dark transition-colors">
+                    Li e concordo com os{" "}
+                    <Link
+                      to="/termos-de-uso"
+                      target="_blank"
+                      className="text-brand-green underline hover:text-brand-green-soft"
+                    >
+                      Termos de Uso
+                    </Link>{" "}
+                    e{" "}
+                    <Link
+                      to="/politica-privacidade"
+                      target="_blank"
+                      className="text-brand-green underline hover:text-brand-green-soft"
+                    >
+                      Privacidade (LGPD)
+                    </Link>
+                    .
+                  </span>
+                </label>
+                {errors.aceiteContratos && (
+                  <p className="mt-1 text-[11px] text-red-400 pl-6">{errors.aceiteContratos}</p>
+                )}
+              </div>
+
+              <div className="pt-2 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  disabled={isSubmitting}
+                  className="flex items-center justify-center gap-1.5 bg-white/[0.05] hover:bg-white/[0.1] text-on-dark font-medium py-3.5 px-5 rounded-full border border-white/10 transition-colors cursor-pointer text-xs uppercase tracking-wider disabled:opacity-50"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Voltar</span>
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 flex items-center justify-center gap-2 bg-brand-green hover:bg-brand-green-deep text-black font-bold py-3.5 px-6 rounded-full transition-all duration-200 shadow-lg shadow-brand-green/20 active:scale-[0.99] cursor-pointer uppercase tracking-wider text-xs disabled:opacity-50"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Criando conta...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Criar conta</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </form>
+    </AuthLayout>
   );
 }

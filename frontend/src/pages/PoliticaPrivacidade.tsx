@@ -41,7 +41,8 @@ export function PoliticaPrivacidade() {
               <li><strong>Dados cadastrais:</strong> nome, e-mail, CPF, CNPJ da empresa;</li>
               <li><strong>Dados biométricos:</strong> vetor matemático facial (128 floats) — nenhuma imagem é armazenada;</li>
               <li><strong>Geolocalização:</strong> latitude e longitude no exato momento da marcação de ponto;</li>
-              <li><strong>Registros de jornada:</strong> entrada, saída, intervalos, com data/hora e NSR.</li>
+              <li><strong>Registros de jornada:</strong> entrada, saída, intervalos, com data/hora e NSR;</li>
+              <li><strong>Métricas anônimas da landing (painel master):</strong> visualizações de página (<code>/page</code>), cliques em CTAs e views de cadastro — identificadas apenas por <code>visitorId</code> anônimo (cookie <code>vid</code> first-party, <code>SameSite=Lax</code>, 1 ano, ou hash <code>sha256(ip + salt + user-agent)</code> sem armazenamento de IP cru), <code>utm_source/medium/campaign</code> e <code>referrer</code>. Não há fingerprint cross-site. Após a criação da empresa, o evento <code>signup_success</code> linka <code>visitorId → companyId</code> apenas para cálculo de tempo até conversão.</li>
             </ul>
           </section>
 
@@ -85,7 +86,8 @@ export function PoliticaPrivacidade() {
               <li>Vetor biométrico armazenado como JSON, irreversível para imagem;</li>
               <li>Acesso restrito por multi-tenancy (isolamento por empresa);</li>
               <li>Registros de auditoria (AuditLog) para todas as operações sensíveis;</li>
-              <li>Rate limiting para prevenção de abuso.</li>
+              <li>Rate limiting para prevenção de abuso (incluindo <code>/metrics/track</code> 60/min por IP, bypass em TEST);</li>
+              <li>Métricas anônimas: cookie <code>vid</code> first-party, sem IP cru persistido; hash com <code>salt</code> derivado de chave de criptografia e <code>user-agent</code>.</li>
             </ul>
           </section>
 
@@ -95,7 +97,8 @@ export function PoliticaPrivacidade() {
               <li><strong>Registros de ponto:</strong> 5 anos (CLT Art. 74, §4º);</li>
               <li><strong>Descriptor facial:</strong> enquanto vínculo empregatício ativo + 30 dias após desligamento;</li>
               <li><strong>Logs de auditoria:</strong> 5 anos;</li>
-              <li><strong>Dados cadastrais:</strong> enquanto conta estiver ativa.</li>
+              <li><strong>Dados cadastrais:</strong> enquanto conta estiver ativa;</li>
+              <li><strong>Métricas anônimas da landing (PageView / AnalyticsEvent):</strong> 90 dias — limpeza diária automática às 02:00 via <code>runRetentionCleanup</code> (cron <code>0 2 * * *</code>), sem dados pessoais identificáveis.</li>
             </ul>
           </section>
 

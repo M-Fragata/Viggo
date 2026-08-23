@@ -185,7 +185,13 @@ export const api = {
       );
     },
     getCompany: (id: string) => fetchApi<MasterCompanyDetail>(`/master/companies/${id}`),
-    getMetrics: () => fetchApi<MasterMetricsResponse>("/master/metrics"),
+    getMetrics: (params?: { from?: string; to?: string }) => {
+      const qs = new URLSearchParams();
+      if (params?.from) qs.set("from", params.from);
+      if (params?.to) qs.set("to", params.to);
+      const suffix = qs.toString() ? `?${qs.toString()}` : "";
+      return fetchApi<MasterMetricsResponse>(`/master/metrics${suffix}`);
+    },
     updatePlan: (id: string, plan: PlanTier) =>
       fetchApi<{ company: Company }>(`/master/companies/${id}/plan`, {
         method: "PUT",
@@ -626,6 +632,19 @@ export interface MasterMetricsResponse {
     rate: number;
     cancelled: number;
   };
+  acquisition?: {
+    views: number;
+    uniques: number;
+    byDay: { date: string; views: number; uniques: number }[];
+    bySource: { utmSource: string; views: number; uniques: number }[];
+  };
+  conversion?: {
+    companiesCreated: number;
+    rate: number;
+    byDay: { date: string; count: number }[];
+  };
+  funnel?: { step: string; label: string; count: number }[];
+  range?: { from: string; to: string };
 }
 
 export interface FaceDescriptorResponse {

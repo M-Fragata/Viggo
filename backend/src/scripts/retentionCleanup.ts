@@ -9,6 +9,8 @@ interface RetentionResult {
   tokensDeletados: number;
   duracaoMs: number;
   arquivosArquivados?: number;
+  pageViewsDeletados?: number;
+  analyticsEventsDeletados?: number;
 }
 
 function formatDateAfd(date: Date): string {
@@ -193,6 +195,27 @@ export async function runRetentionCleanup(): Promise<RetentionResult> {
     },
   });
 
+  // 4. Retenção LGPD — PageView / AnalyticsEvent anônimos 90 dias
+  // Cookies vid são first-party, sem IP cru; retenção 90d conforme PLANO_PAINEL_MASTER.md
+  let pageViewsDeletados = 0;
+  let analyticsEventsDeletados = 0;
+  try {
+    const pvDel = await prisma.pageView.deleteMany({
+      where: { createdAt: { lt: ninetyDaysAgo } },
+    });
+    pageViewsDeletados = pvDel.count;
+  } catch (e) {
+    console.warn("[RETENTION] Falha ao limpar PageView 90d:", e);
+  }
+  try {
+    const evDel = await prisma.analyticsEvent.deleteMany({
+      where: { createdAt: { lt: ninetyDaysAgo } },
+    });
+    analyticsEventsDeletados = evDel.count;
+  } catch (e) {
+    console.warn("[RETENTION] Falha ao limpar AnalyticsEvent 90d:", e);
+  }
+
   const duracaoMs = Date.now() - inicio;
 
   console.log(
@@ -202,6 +225,8 @@ export async function runRetentionCleanup(): Promise<RetentionResult> {
       descriptorsRemovidos,
       checkinsDeletados: deletedCheckins.count,
       tokensDeletados: deletedTokens.count,
+      pageViewsDeletados,
+      analyticsEventsDeletados,
       duracaoMs,
     })
   );
@@ -210,6 +235,8 @@ export async function runRetentionCleanup(): Promise<RetentionResult> {
     descriptorsRemovidos,
     checkinsDeletados: deletedCheckins.count,
     tokensDeletados: deletedTokens.count,
+    pageViewsDeletados,
+    analyticsEventsDeletados,
     duracaoMs,
   };
 }

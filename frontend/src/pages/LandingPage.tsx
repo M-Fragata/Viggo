@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import { PricingSection } from "../components/PricingSection";
 import { CTASection } from "../components/CTASection";
@@ -15,6 +15,7 @@ import { ManagerShowcase } from "../components/ManagerShowcase";
 import { AppShowcase } from "../components/AppShowcase";
 import { FAQ } from "../components/FAQ";
 import { FloatingWhatsApp } from "../components/FloatingWhatsApp";
+import { trackPageView, trackEvent } from "../utils/metrics";
 
 import logo from "../assets/logo.png";
 import "../scroll-animations.css";
@@ -23,6 +24,10 @@ export function LandingPage() {
   useScrollReveal();
   const [showPreloader, setShowPreloader] = useState(true);
   const [startHeroAnimation, setStartHeroAnimation] = useState(false);
+
+  useEffect(() => {
+    trackPageView("/page");
+  }, []);
 
   const handlePreloaderComplete = () => {
     setShowPreloader(false);
@@ -67,11 +72,12 @@ export function LandingPage() {
             <div className="flex items-center gap-4">
               <Link 
                 to="/" 
+                state={{ fromLanding: true }}
                 className="text-sm font-semibold text-on-dark hover:text-brand-green transition-colors px-3 py-2"
               >
                 Entrar
               </Link>
-              <Link to="/company/signup">
+              <Link to="/company/signup" onClick={() => trackEvent("cta_click", { ctaId: "header-criar-conta", path: "/page" })}>
                 <SpecularButton
                   size="md"
                   radius={24}
@@ -196,6 +202,7 @@ export function LandingPage() {
               </p>
               <Link
                 to="/company/signup"
+                onClick={() => trackEvent("cta_click", { ctaId: "footer-cadastrar-empresa", path: "/page" })}
                 className="inline-block w-full text-center py-2.5 px-4 rounded-xl bg-white/10 hover:bg-brand-green hover:text-black text-on-dark text-xs font-semibold transition-all border border-white/10"
               >
                 Cadastrar Empresa

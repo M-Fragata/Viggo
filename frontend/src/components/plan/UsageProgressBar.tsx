@@ -41,26 +41,26 @@ export function UsageProgressBar({ current, limit, label, showPercentage = true,
     <div className="w-full space-y-1.5">
       {label && (
         <div className="flex gap-2 items-center">
-          <span className={`font-medium ${textSizeClasses[size]} text-slate-700`}>{label}</span>
-          <span className={`font-mono font-semibold ${textSizeClasses[size]} text-slate-600`}>
+          <span className={`font-medium ${textSizeClasses[size]} text-slate-700 dark:text-slate-200`}>{label}</span>
+          <span className={`font-mono font-semibold ${textSizeClasses[size]} text-slate-600 dark:text-slate-300`}>
             {isUnlimited ? `∞` : `${current}/${limit}`}
             {showPercentage && !isUnlimited && ` (${percentage}%)`}
           </span>
         </div>
       )}
-      <div className={`w-full bg-slate-100 rounded-full overflow-hidden ${sizeClasses[size]}`}>
+      <div className={`w-full bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden ${sizeClasses[size]}`}>
         <div
           className={`${colorClasses[color]} h-full rounded-full transition-all duration-500 ease-out`}
           style={{ width: isUnlimited ? "100%" : `${percentage}%` }}
         />
       </div>
       {!isUnlimited && remaining !== null && remaining <= limit! * 0.1 && remaining > 0 && (
-        <p className={`text-xs text-amber-600 font-medium ${textSizeClasses[size]}`}>
+        <p className={`text-xs text-amber-600 dark:text-amber-400 font-medium ${textSizeClasses[size]}`}>
           Atenção: apenas {remaining} vaga{remaining > 1 ? "s" : ""} restante{remaining > 1 ? "s" : ""}
         </p>
       )}
       {isUnlimited && (
-        <p className={`text-xs text-emerald-600 font-medium ${textSizeClasses[size]}`}>
+        <p className={`text-xs text-emerald-600 dark:text-emerald-400 font-medium ${textSizeClasses[size]}`}>
           Plano ilimitado
         </p>
       )}

@@ -97,24 +97,68 @@ export class MasterController {
 
   async getMetrics(req: Request, res: Response) {
     try {
+      const querySchema = z.object({
+        from: z.coerce.date().optional(),
+        to: z.coerce.date().optional(),
+        granularity: z.enum(["day"]).optional().default("day"),
+      });
+      const { from: fromRaw, to: toRaw } = querySchema.parse((req.query as unknown) ?? {});
       const now = new Date();
+      const from = fromRaw ?? new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const to = toRaw ?? now;
+
+      // Normalize to start/end of day for inclusive range
+      const fromStart = new Date(from);
+      fromStart.setHours(0, 0, 0, 0);
+      const toEnd = new Date(to);
+      toEnd.setHours(23, 59, 59, 999);
+
       const startOfThisMonth = startOfMonth(now);
       const startOfLastMonth = startOfMonth(subMonths(now, 1));
       const endOfLastMonth = endOfMonth(subMonths(now, 1));
-      const [totalCompanies, activeCompanies, trialCompanies, suspendedCompanies, cancelledCompanies, planDistribution, totalUsers, checkinsThisMonth, checkinsLastMonth, activeSubscriptions] = await Promise.all([
+      const [
+        totalCompanies,
+        activeCompanies,
+        trialCompanies,
+        suspendedCompanies,
+        cancelledCompanies,
+        planDistribution,
+        totalUsers,
+        checkinsThisMonth,
+        checkinsLastMonth,
+        activeSubscriptions,
+        // Acquisition / conversion
+        totalViews,
+        uniquesResult,
+        byDayRaw,
+        bySourceRaw,
+        companiesInRangeRaw,
+        funnelVisit,
+        funnelCta,
+        funnelSignupView,
+      ] = await Promise.all([
         prisma.company.count(),
         prisma.company.count({ where: { status: CompanyStatus.ACTIVE } }),
         prisma.company.count({ where: { status: CompanyStatus.TRIAL } }),
         prisma.company.count({ where: { status: CompanyStatus.SUSPENDED } }),
         prisma.company.count({ where: { status: CompanyStatus.CANCELLED } }),
-        prisma.company.groupBy({ by: ['plan'], _count: { plan: true } }),
+        prisma.company.groupBy({ by: ["plan"], _count: { plan: true } }),
         prisma.user.count(),
         prisma.checkIn.count({ where: { createdAt: { gte: startOfThisMonth } } }),
         prisma.checkIn.count({ where: { createdAt: { gte: startOfLastMonth, lte: endOfLastMonth } } }),
         prisma.subscription.findMany({
-          where: { status: 'ACTIVE' },
+          where: { status: "ACTIVE" },
           select: { calculatedTotal: true, price: true, planTier: true, companyId: true },
         }),
+        // Acquisition — total views in range
+        prisma.pageView.count({ where: { createdAt: { gte: fromStart, lte: toEnd } } }).catch(() => 0),
+        prisma.$queryRaw<{ count: bigint }[]>`SELECT COUNT(DISTINCT "visitorId")::int as count FROM "PageView" WHERE "createdAt" >= ${fromStart} AND "createdAt" <= ${toEnd}`.catch(() => [{ count: BigInt(0) }]),
+        prisma.$queryRaw<{ date: string; views: bigint; uniques: bigint }[]>`SELECT DATE("createdAt")::text as date, COUNT(*)::int as views, COUNT(DISTINCT "visitorId")::int as uniques FROM "PageView" WHERE "createdAt" >= ${fromStart} AND "createdAt" <= ${toEnd} GROUP BY DATE("createdAt") ORDER BY date`.catch(() => []),
+        prisma.$queryRaw<{ source: string; views: bigint; uniques: bigint }[]>`SELECT COALESCE(NULLIF("utmSource", ''), '(direct)') as source, COUNT(*)::int as views, COUNT(DISTINCT "visitorId")::int as uniques FROM "PageView" WHERE "createdAt" >= ${fromStart} AND "createdAt" <= ${toEnd} GROUP BY source ORDER BY views DESC LIMIT 10`.catch(() => []),
+        prisma.$queryRaw<{ date: string; count: bigint }[]>`SELECT DATE("createdAt")::text as date, COUNT(*)::int as count FROM "Company" WHERE "createdAt" >= ${fromStart} AND "createdAt" <= ${toEnd} GROUP BY DATE("createdAt") ORDER BY date`.catch(() => []),
+        prisma.pageView.count({ where: { path: "/page", createdAt: { gte: fromStart, lte: toEnd } } }).catch(() => 0),
+        prisma.analyticsEvent.count({ where: { name: "cta_click", createdAt: { gte: fromStart, lte: toEnd } } }).catch(() => 0),
+        prisma.analyticsEvent.count({ where: { name: "signup_view", createdAt: { gte: fromStart, lte: toEnd } } }).catch(() => 0),
       ]);
       const planDist = planDistribution.reduce((acc, p) => { acc[p.plan] = p._count.plan; return acc; }, {} as Record<string, number>);
 
@@ -126,16 +170,41 @@ export class MasterController {
 
       const churnRate = totalCompanies > 0 ? Math.round((cancelledCompanies / totalCompanies) * 100) : 0;
       const growthRate = checkinsLastMonth > 0 ? Math.round(((checkinsThisMonth - checkinsLastMonth) / checkinsLastMonth) * 100) : 0;
+
+      // Acquisition aggregation
+      const uniques = Number((uniquesResult as any)?.[0]?.count ?? 0);
+      const byDay = (byDayRaw as any[]).map((r) => ({ date: r.date, views: Number(r.views), uniques: Number(r.uniques) }));
+      const bySource = (bySourceRaw as any[]).map((r) => ({ utmSource: r.source, views: Number(r.views), uniques: Number(r.uniques) }));
+      const companiesByDay = (companiesInRangeRaw as any[]).map((r) => ({ date: r.date, count: Number(r.count) }));
+      const companiesInRange = companiesByDay.reduce((s, d) => s + d.count, 0);
+      const conversionRate = uniques > 0 ? Number(((companiesInRange / uniques) * 100).toFixed(2)) : 0;
+      const funnel = [
+        { step: "visit", label: "Visita /page", count: funnelVisit },
+        { step: "cta_click", label: "CTA click", count: funnelCta },
+        { step: "signup_view", label: "View /company/signup", count: funnelSignupView },
+        { step: "company_created", label: "Empresa criada", count: companiesInRange },
+      ];
+
+      // Cache 60s — dados diários
+      res.setHeader("Cache-Control", "private, max-age=60");
+
       return res.json({
         companies: { total: totalCompanies, active: activeCompanies, trial: trialCompanies, suspended: suspendedCompanies, cancelled: cancelledCompanies },
         users: { total: totalUsers },
         checkins: { thisMonth: checkinsThisMonth, lastMonth: checkinsLastMonth, growthRate },
         revenue: { mrr, planDistribution: planDist },
         churn: { rate: churnRate, cancelled: cancelledCompanies },
+        acquisition: { views: totalViews, uniques, byDay, bySource },
+        conversion: { companiesCreated: companiesInRange, rate: conversionRate, byDay: companiesByDay },
+        funnel,
+        range: { from: fromStart.toISOString(), to: toEnd.toISOString() },
       });
     } catch (error) {
-      console.error('Erro ao buscar métricas:', error);
-      return res.status(500).json({ message: 'Erro ao buscar métricas' });
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Parâmetros inválidos", errors: error.issues });
+      }
+      console.error("Erro ao buscar métricas:", error);
+      return res.status(500).json({ message: "Erro ao buscar métricas" });
     }
   }
 

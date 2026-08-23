@@ -9,6 +9,7 @@ import { healthCheck, readinessCheck, setReady } from './middleware/HealthCheckM
 import { auditMiddleware } from './middleware/AuditMiddleware.js';
 
 import { Env } from "./utils/environment.js"
+import { devRoutes } from "./routes/devRoutes.js";
 
 const app = express();
 
@@ -48,6 +49,10 @@ app.get('/ready', readinessCheck);
 // req.user is populated per-route by authMiddleware; the audit log is only written
 // when req.user is present at response time (checked inside res.json override).
 app.use(auditMiddleware);
+
+if (Env.NODE_ENV !== "PROD") {
+  app.use("/dev", devRoutes);
+}
 
 app.use(routes);
 

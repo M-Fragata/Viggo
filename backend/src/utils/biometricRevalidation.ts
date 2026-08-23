@@ -63,6 +63,14 @@ export async function purgeExpiredBiometricDescriptors(): Promise<{
 
         purged++;
       });
+
+      // E-mail purged (fire-and-forget)
+      try {
+        const { sendBiometricPurged } = await import("../services/email/emailService.js");
+        await sendBiometricPurged({ to: user.email, userName: user.name });
+      } catch (e) {
+        console.error(`[Email] biometric-purged failed for ${user.id}:`, e);
+      }
     } catch (error) {
       errors.push(`User ${user.id}: ${error instanceof Error ? error.message : "Unknown error"}`);
     }

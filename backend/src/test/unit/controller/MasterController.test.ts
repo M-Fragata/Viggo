@@ -5,6 +5,9 @@ const mockPrisma = vi.hoisted(() => ({
   user: { count: vi.fn(), findFirst: vi.fn() },
   checkIn: { count: vi.fn() },
   subscription: { findMany: vi.fn(), updateMany: vi.fn(), create: vi.fn() },
+  pageView: { count: vi.fn().mockResolvedValue(0) },
+  analyticsEvent: { count: vi.fn().mockResolvedValue(0) },
+  $queryRaw: vi.fn().mockResolvedValue([]),
 }));
 
 vi.mock("../../../database/prisma.js", () => ({
@@ -28,6 +31,7 @@ describe("MasterController", () => {
     res = {
       status: vi.fn().mockReturnThis(),
       json: vi.fn(),
+      setHeader: vi.fn(),
     };
   });
 

@@ -46,33 +46,33 @@ export function TotemActivateModal({ isOpen, onClose, onActivated }: TotemActiva
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-in fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
       <dialog
-        className="absolute z-10 w-full max-w-2xl m-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-xl animate-in zoom-in-95"
+        className="relative z-10 w-full max-w-2xl m-auto rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111113] p-6 shadow-2xl animate-in zoom-in-95 transition-colors"
         open
       >
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-            <MonitorSmartphone className="text-emerald-600" size={22} />
+          <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+            <MonitorSmartphone className="text-emerald-600 dark:text-emerald-400" size={22} />
             Ativar Modo Totem
           </h2>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+            className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
           >
             <X size={20} />
           </button>
         </div>
 
         <div className="space-y-4">
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             Defina um PIN de segurança para proteger a saída do modo totem. O modo permite que
             funcionários registrem ponto com email, senha e reconhecimento facial neste dispositivo.
           </p>
 
           <div className="space-y-3">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">PIN (4 a 6 dígitos)</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">PIN (4 a 6 dígitos)</label>
               <input
                 type="password"
                 inputMode="numeric"
@@ -80,11 +80,11 @@ export function TotemActivateModal({ isOpen, onClose, onActivated }: TotemActiva
                 value={pin}
                 onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
                 placeholder="••••"
-                className="w-full px-4 py-3 rounded-xl border border-slate-300 text-center text-2xl tracking-[0.5em] font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/5 text-slate-800 dark:text-white text-center text-2xl tracking-[0.5em] font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Confirmar PIN</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Confirmar PIN</label>
               <input
                 type="password"
                 inputMode="numeric"
@@ -92,13 +92,13 @@ export function TotemActivateModal({ isOpen, onClose, onActivated }: TotemActiva
                 value={confirmPin}
                 onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ""))}
                 placeholder="••••"
-                className="w-full px-4 py-3 rounded-xl border border-slate-300 text-center text-2xl tracking-[0.5em] font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/5 text-slate-800 dark:text-white text-center text-2xl tracking-[0.5em] font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </div>
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3">
+            <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/60 text-red-600 dark:text-red-300 text-sm rounded-xl p-3">
               {error}
             </div>
           )}
@@ -106,7 +106,7 @@ export function TotemActivateModal({ isOpen, onClose, onActivated }: TotemActiva
           <button
             onClick={handleActivate}
             disabled={isLoading}
-            className="w-full py-3 bg-emerald-500 text-white rounded-xl font-bold hover:bg-emerald-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full py-3 bg-emerald-500 text-white rounded-xl font-bold hover:bg-emerald-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
           >
             {isLoading ? (
               <>
@@ -120,7 +120,7 @@ export function TotemActivateModal({ isOpen, onClose, onActivated }: TotemActiva
 
           <button
             onClick={onClose}
-            className="w-full py-2.5 text-slate-500 text-sm font-medium hover:text-slate-700 transition-colors"
+            className="w-full py-2.5 text-slate-500 dark:text-slate-400 text-sm font-medium hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
           >
             Cancelar
           </button>

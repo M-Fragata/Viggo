@@ -2,14 +2,15 @@ import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router";
 import {
   Users, CheckCircle, FileText, Clock, CreditCard, Mail, ClipboardList,
-  ArrowRight, TrendingUp, AlertTriangle, UserCheck, Calendar,
+  ArrowRight, AlertTriangle, UserCheck, Calendar,
 } from "lucide-react";
 import { useCompany, usePlanLimits } from "../../hooks/useCompany";
 import { useCompanyStatus } from "../../hooks/useAuth";
 import { useCheckins } from "../../hooks/useCheckins";
 import { api } from "../../services/api";
-import type { WorkScheduleResponse, JustificativaResponse, InviteTokenResponse } from "../../services/api";
+import type { JustificativaResponse, InviteTokenResponse } from "../../services/api";
 import { DashboardPageHeader } from "../../components/admin/DashboardPageHeader";
+import { DashboardSkeleton } from "../../components/admin/DashboardSkeleton";
 import { UsageProgressBar } from "../../components/plan";
 
 export function DashboardOverviewPage() {
@@ -20,7 +21,6 @@ export function DashboardOverviewPage() {
   const today = new Date().toISOString().split("T")[0];
   const { checkins } = useCheckins(today);
 
-  const [schedules, setSchedules] = useState<WorkScheduleResponse[]>([]);
   const [justificativas, setJustificativas] = useState<(JustificativaResponse & { user?: { id: string; name: string; email: string } })[]>([]);
   const [invites, setInvites] = useState<InviteTokenResponse[]>([]);
 
@@ -32,18 +32,16 @@ export function DashboardOverviewPage() {
 
   const fetchOverviewData = useCallback(async () => {
     try {
-      const [schedulesData, justificativasData, invitesData] = await Promise.all([
-        api.workSchedules.list().catch(() => []),
+      const [justificativasData, invitesData] = await Promise.all([
         api.justificativa.list().catch(() => []),
         api.company.inviteTokens.list().catch(() => []),
       ]);
-      setSchedules(schedulesData as WorkScheduleResponse[]);
       setJustificativas(justificativasData as (JustificativaResponse & { user?: { id: string; name: string; email: string } })[]);
       setInvites(invitesData as InviteTokenResponse[]);
     } catch {
       // silent
     }
-  }, [today]);
+  }, []);
 
   useEffect(() => {
     fetchOverviewData();
@@ -56,11 +54,7 @@ export function DashboardOverviewPage() {
   const percentPresente = totalFuncionarios > 0 ? Math.round((presentesHoje / totalFuncionarios) * 100) : 0;
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500" />
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   return (
@@ -69,24 +63,24 @@ export function DashboardOverviewPage() {
 
       {/* Alertas de trial */}
       {company?.status === "TRIAL" && !trialExpired && (
-        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center gap-3">
-          <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center shrink-0">
-            <Calendar className="w-5 h-5 text-emerald-600" />
+        <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 rounded-2xl p-4 flex items-center gap-3">
+          <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/60 rounded-xl flex items-center justify-center shrink-0">
+            <Calendar className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div>
-            <h3 className="font-bold text-emerald-800 text-sm">Trial ativo</h3>
-            <p className="text-emerald-600 text-xs">{trialDays} dias restantes para decidir seu plano</p>
+            <h3 className="font-bold text-emerald-800 dark:text-emerald-200 text-sm">Trial ativo</h3>
+            <p className="text-emerald-600 dark:text-emerald-400 text-xs">{trialDays} dias restantes para decidir seu plano</p>
           </div>
         </div>
       )}
       {trialExpired && (
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center gap-3">
-          <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center shrink-0">
-            <AlertTriangle className="w-5 h-5 text-red-600" />
+        <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/60 rounded-2xl p-4 flex items-center gap-3">
+          <div className="w-10 h-10 bg-red-100 dark:bg-red-900/60 rounded-xl flex items-center justify-center shrink-0">
+            <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
           </div>
           <div>
-            <h3 className="font-bold text-red-800 text-sm">Trial expirado</h3>
-            <p className="text-red-600 text-xs">Ative seu plano para continuar usando o Viggo</p>
+            <h3 className="font-bold text-red-800 dark:text-red-200 text-sm">Trial expirado</h3>
+            <p className="text-red-600 dark:text-red-400 text-xs">Ative seu plano para continuar usando o Viggo</p>
           </div>
           <Link to="/plano" className="ml-auto px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors font-bold text-xs cursor-pointer">
             Ativar plano
@@ -129,14 +123,14 @@ export function DashboardOverviewPage() {
 
       {/* Plano + Uso */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white border border-slate-200 rounded-3xl shadow-sm p-6">
+        <div className="bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-3xl shadow-sm p-6 transition-colors">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-lg font-bold text-slate-800">Seu Plano</h2>
-              <p className="text-slate-500 text-sm">{plan ? getPlanLabel(plan) : "-"}</p>
+              <h2 className="text-lg font-bold text-slate-800 dark:text-white">Seu Plano</h2>
+              <p className="text-slate-500 dark:text-slate-400 text-sm">{plan ? getPlanLabel(plan) : "-"}</p>
             </div>
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center bg-${planColor}-100`}>
-              <CreditCard className={`w-6 h-6 text-${planColor}-600`} />
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center bg-${planColor}-100 dark:bg-white/5`}>
+              <CreditCard className={`w-6 h-6 text-${planColor}-600 dark:text-${planColor}-400`} />
             </div>
           </div>
           <UsageProgressBar
@@ -147,51 +141,22 @@ export function DashboardOverviewPage() {
           />
           <Link
             to="/plano"
-            className="mt-4 flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-colors font-bold text-sm cursor-pointer"
+            className="mt-4 flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-200 border border-transparent dark:border-white/10 rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 transition-colors font-bold text-sm cursor-pointer"
           >
-            Gerenciar plano
+            Gerenciar Assinatura
             <ArrowRight size={16} />
           </Link>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-3xl shadow-sm p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-bold text-slate-800">Hoje</h2>
-              <p className="text-slate-500 text-sm">{new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}</p>
-            </div>
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-emerald-100">
-              <TrendingUp className="w-6 h-6 text-emerald-600" />
-            </div>
+        {/* Links rápidos */}
+        <div className="bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-3xl shadow-sm p-6 transition-colors">
+          <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Acesso Rápido</h2>
+          <div className="grid grid-cols-2 gap-3">
+            <QuickLink to="/folha-mensal" icon={<FileText size={18} />} label="Folha Mensal" />
+            <QuickLink to="/horarios" icon={<Clock size={18} />} label="Escalas" />
+            <QuickLink to="/convites" icon={<Mail size={18} />} label="Convites" />
+            <QuickLink to="/presentes" icon={<CheckCircle size={18} />} label="Presentes" />
           </div>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-slate-500">Presentes</span>
-              <span className="font-bold text-emerald-600">{presentesHoje}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-slate-500">Ausentes</span>
-              <span className="font-bold text-slate-700">{Math.max(0, totalFuncionarios - presentesHoje)}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-slate-500">Horários cadastrados</span>
-              <span className="font-bold text-slate-700">{schedules.length}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Acesso rápido */}
-      <div>
-        <h2 className="text-lg font-bold text-slate-800 mb-3">Acesso rápido</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          <QuickLink to="/funcionarios" icon={<Users size={18} />} label="Funcionários" />
-          <QuickLink to="/presentes" icon={<CheckCircle size={18} />} label="Presentes" />
-          <QuickLink to="/folha-mensal" icon={<FileText size={18} />} label="Folha Mensal" />
-          <QuickLink to="/horarios" icon={<Clock size={18} />} label="Horários" />
-          <QuickLink to="/convites" icon={<Mail size={18} />} label="Convites" />
-          <QuickLink to="/justificativas" icon={<ClipboardList size={18} />} label="Justificativas" />
-          <QuickLink to="/plano" icon={<CreditCard size={18} />} label="Plano" />
         </div>
       </div>
     </div>
@@ -214,24 +179,24 @@ function MetricCard({
   to: string;
 }) {
   const colorClasses = {
-    emerald: "bg-emerald-100 text-emerald-600",
-    amber: "bg-amber-100 text-amber-600",
-    slate: "bg-slate-100 text-slate-600",
+    emerald: "bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+    amber: "bg-amber-100 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400",
+    slate: "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400",
   };
   return (
     <Link
       to={to}
-      className="bg-white border border-slate-200 rounded-3xl shadow-sm p-5 hover:shadow-md transition-shadow cursor-pointer group"
+      className="bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-3xl shadow-sm p-5 hover:shadow-md dark:hover:border-emerald-500/30 transition-all cursor-pointer group"
     >
       <div className="flex items-center justify-between mb-3">
         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${colorClasses[color]}`}>
           {icon}
         </div>
-        <ArrowRight size={16} className="text-slate-300 group-hover:text-emerald-500 transition-colors" />
+        <ArrowRight size={16} className="text-slate-300 dark:text-slate-600 group-hover:text-emerald-500 transition-colors" />
       </div>
-      <p className="text-2xl font-bold text-slate-800">{value}</p>
-      <p className="text-xs text-slate-400 font-medium">{label}</p>
-      {subtitle && <p className="text-xs text-slate-400 mt-1">{subtitle}</p>}
+      <p className="text-2xl font-bold text-slate-800 dark:text-white">{value}</p>
+      <p className="text-xs text-slate-400 dark:text-slate-400 font-medium">{label}</p>
+      {subtitle && <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{subtitle}</p>}
     </Link>
   );
 }
@@ -240,10 +205,10 @@ function QuickLink({ to, icon, label }: { to: string; icon: React.ReactNode; lab
   return (
     <Link
       to={to}
-      className="flex items-center gap-3 bg-white border border-slate-200 rounded-2xl p-4 hover:border-emerald-300 hover:bg-emerald-50/30 transition-all cursor-pointer group"
+      className="flex items-center gap-3 bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 rounded-2xl p-4 hover:border-emerald-300 dark:hover:border-emerald-500/40 hover:bg-emerald-50/30 dark:hover:bg-emerald-500/10 transition-all cursor-pointer group"
     >
-      <span className="text-slate-500 group-hover:text-emerald-600 transition-colors">{icon}</span>
-      <span className="text-sm font-semibold text-slate-700 group-hover:text-emerald-700 transition-colors">{label}</span>
+      <span className="text-slate-500 dark:text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">{icon}</span>
+      <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors">{label}</span>
     </Link>
   );
 }

@@ -1,24 +1,26 @@
 export function InviteTokenTableSkeleton() {
   return (
-    <div>
+    <div className="space-y-4">
+      {/* Mobile view skeleton */}
       <div className="sm:hidden space-y-3">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="border border-slate-200 rounded-2xl overflow-hidden bg-white p-4">
+          <div key={i} className="border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden bg-white dark:bg-[#111113] p-4 shadow-sm">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="h-7 w-28 bg-slate-200 rounded shimmer" />
-                <div className="h-6 w-16 bg-slate-200 rounded-full shimmer" />
+                <div className="h-7 w-28 bg-slate-200 dark:bg-white/10 rounded shimmer" />
+                <div className="h-6 w-16 bg-slate-200 dark:bg-white/10 rounded-full shimmer" />
               </div>
-              <div className="h-5 w-5 bg-slate-200 rounded shimmer" />
+              <div className="h-5 w-5 bg-slate-200 dark:bg-white/10 rounded shimmer" />
             </div>
           </div>
         ))}
       </div>
 
+      {/* Desktop view skeleton */}
       <div className="hidden sm:block overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-sm font-medium text-slate-500">
+            <tr className="border-b border-slate-200 dark:border-white/10 text-left text-sm font-medium text-slate-500 dark:text-slate-400">
               <th className="pb-3 px-2">Token</th>
               <th className="pb-3 px-2">Criado em</th>
               <th className="pb-3 px-2">Expira em</th>
@@ -27,28 +29,28 @@ export function InviteTokenTableSkeleton() {
               <th className="pb-3 px-2 text-right">Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-white/10">
             {Array.from({ length: 3 }).map((_, i) => (
               <tr key={i}>
                 <td className="py-4 px-2">
-                  <div className="h-7 w-28 bg-slate-200 rounded shimmer" />
+                  <div className="h-7 w-28 bg-slate-200 dark:bg-white/10 rounded shimmer" />
                 </td>
                 <td className="py-4 px-2">
-                  <div className="h-4 w-16 bg-slate-200 rounded shimmer" />
+                  <div className="h-4 w-16 bg-slate-200 dark:bg-white/10 rounded shimmer" />
                 </td>
                 <td className="py-4 px-2">
-                  <div className="h-4 w-16 bg-slate-200 rounded shimmer" />
+                  <div className="h-4 w-16 bg-slate-200 dark:bg-white/10 rounded shimmer" />
                 </td>
                 <td className="py-4 px-2">
-                  <div className="h-4 w-12 bg-slate-200 rounded shimmer" />
+                  <div className="h-4 w-12 bg-slate-200 dark:bg-white/10 rounded shimmer" />
                 </td>
                 <td className="py-4 px-2">
-                  <div className="h-6 w-16 bg-slate-200 rounded-full shimmer" />
+                  <div className="h-6 w-16 bg-slate-200 dark:bg-white/10 rounded-full shimmer" />
                 </td>
                 <td className="py-4 px-2 text-right">
                   <div className="flex items-center justify-end gap-1">
-                    <div className="h-8 w-8 bg-slate-200 rounded-lg shimmer" />
-                    <div className="h-8 w-8 bg-slate-200 rounded-lg shimmer" />
+                    <div className="h-8 w-8 bg-slate-200 dark:bg-white/10 rounded-lg shimmer" />
+                    <div className="h-8 w-8 bg-slate-200 dark:bg-white/10 rounded-lg shimmer" />
                   </div>
                 </td>
               </tr>

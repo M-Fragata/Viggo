@@ -47,48 +47,62 @@ export function InvitesTab() {
 
   if (companyLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+      <div className="space-y-6">
+        <div className="bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-3xl shadow-sm p-6 space-y-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="space-y-2">
+              <div className="h-6 w-48 bg-slate-200 dark:bg-white/10 rounded shimmer" />
+              <div className="h-4 w-72 bg-slate-200 dark:bg-white/10 rounded shimmer" />
+            </div>
+            <div className="h-10 w-36 bg-slate-200 dark:bg-white/10 rounded-xl shimmer" />
+          </div>
+          <InviteTokenTableSkeleton />
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 className="text-lg font-bold text-slate-800">Links de Convite</h2>
-        <button
-          onClick={handleGenerateToken}
-          disabled={isGenerating || employeeLimitReached || !canCreateEmployee}
-          className="cursor-pointer px-4 py-2.5 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed flex items-center gap-2"
-        >
-          <Plus size={18} />
-          {isGenerating ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Gerando...
-            </>
-          ) : (
-            "Gerar Link de Convite"
-          )}
-        </button>
-      </div>
-
-      {!canCreateEmployee && !employeeLimitReached && (
-        <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-700">
-          Seu plano não permite adicionar mais funcionários. Faça upgrade para gerar links de convite.
+      <div className="bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-3xl shadow-sm p-6 space-y-6 transition-colors">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h2 className="text-lg font-bold text-slate-800 dark:text-white">Links de Convite</h2>
+            <p className="text-slate-500 dark:text-slate-400 text-sm">Gere tokens e links de acesso para novos colaboradores</p>
+          </div>
+          <button
+            onClick={handleGenerateToken}
+            disabled={isGenerating || employeeLimitReached || !canCreateEmployee}
+            className="cursor-pointer px-4 py-2.5 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors disabled:bg-slate-300 dark:disabled:bg-slate-800 disabled:cursor-not-allowed flex items-center gap-2 font-bold text-sm"
+          >
+            <Plus size={18} />
+            {isGenerating ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Gerando...
+              </>
+            ) : (
+              "Gerar Link de Convite"
+            )}
+          </button>
         </div>
-      )}
 
-      {tokensLoading ? (
-        <InviteTokenTableSkeleton />
-      ) : (
-        <InviteTokenTable
-          tokens={tokens}
-          onRevoke={handleRevoke}
-          onCopy={handleCopy}
-        />
-      )}
+        {!canCreateEmployee && !employeeLimitReached && (
+          <div className="p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-xl text-amber-700 dark:text-amber-300 text-sm">
+            Seu plano não permite adicionar mais funcionários. Faça upgrade para gerar links de convite.
+          </div>
+        )}
+
+        {tokensLoading ? (
+          <InviteTokenTableSkeleton />
+        ) : (
+          <InviteTokenTable
+            tokens={tokens}
+            onRevoke={handleRevoke}
+            onCopy={handleCopy}
+          />
+        )}
+      </div>
     </div>
   );
 }

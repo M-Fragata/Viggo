@@ -4,6 +4,7 @@ import { z } from 'zod';
 import * as asaasService from '../../services/asaasService.js';
 import { calculateDynamicPrice } from '../../utils/pricingCalculator.js';
 import { addDays, format } from 'date-fns';
+import * as emailService from '../../services/email/emailService.js';
 
 export class PaymentController {
 
@@ -198,10 +199,26 @@ export class PaymentController {
         data: { status: 'CANCELLED', cancelledAt: new Date() },
       });
 
+      const company = await prisma.company.findUnique({ where: { id: companyId }, select: { name: true } });
+
       await prisma.company.update({
         where: { id: companyId },
         data: { status: 'CANCELLED' },
       });
+
+      void (async () => {
+        try {
+          const admins = await prisma.user.findMany({ where: { companyId, role: "ENTERPRISE_ADMIN" }, select: { email: true } });
+          if (admins.length > 0) {
+            await emailService.sendSubscriptionCancelled({
+              to: admins.map((a) => a.email),
+              companyName: company?.name ?? "Sua empresa",
+            });
+          }
+        } catch (err) {
+          console.error("[Email] subscription-cancelled failed:", err);
+        }
+      })();
 
       return res.json({ message: 'Assinatura cancelada com sucesso' });
 
@@ -256,6 +273,31 @@ export class PaymentController {
                 where: { id: subscription.companyId },
                 data: { planExpiresAt: addDays(new Date(), 30) },
               });
+
+              // E-mail pagamento confirmado
+              void (async () => {
+                try {
+                  const company = await prisma.company.findUnique({
+                    where: { id: subscription.companyId },
+                    select: { name: true },
+                  });
+                  const admins = await prisma.user.findMany({
+                    where: { companyId: subscription.companyId, role: "ENTERPRISE_ADMIN" },
+                    select: { email: true },
+                  });
+                  if (admins.length > 0) {
+                    await emailService.sendPaymentConfirmed({
+                      to: admins.map((a) => a.email),
+                      companyName: company?.name ?? "Sua empresa",
+                      amount: payment.value,
+                      billingType: payment.billingType,
+                      paidAt: payment.paymentDate ? new Date(payment.paymentDate) : new Date(),
+                    });
+                  }
+                } catch (err) {
+                  console.error("[Email] payment-confirmed failed:", err);
+                }
+              })();
             }
           }
           break;
@@ -266,7 +308,7 @@ export class PaymentController {
           if (payment.externalReference) {
             const company = await prisma.company.findUnique({
               where: { id: payment.externalReference },
-              select: { status: true },
+              select: { status: true, name: true },
             });
             if (company?.status === 'ACTIVE') {
               await prisma.company.update({
@@ -274,6 +316,25 @@ export class PaymentController {
                 data: { status: 'SUSPENDED' },
               });
             }
+            // E-mail pagamento em atraso (mesmo se já estava suspensa, notifica)
+            void (async () => {
+              try {
+                const admins = await prisma.user.findMany({
+                  where: { companyId: payment.externalReference!, role: "ENTERPRISE_ADMIN" },
+                  select: { email: true },
+                });
+                if (admins.length > 0) {
+                  await emailService.sendPaymentOverdue({
+                    to: admins.map((a) => a.email),
+                    companyName: company?.name ?? "Sua empresa",
+                    amount: payment.value,
+                    dueDate: new Date(payment.dueDate),
+                  });
+                }
+              } catch (err) {
+                console.error("[Email] payment-overdue failed:", err);
+              }
+            })();
           }
           break;
         }
@@ -293,6 +354,20 @@ export class PaymentController {
                 where: { id: subscription.companyId },
                 data: { status: 'CANCELLED' },
               });
+              void (async () => {
+                try {
+                  const company = await prisma.company.findUnique({ where: { id: subscription.companyId }, select: { name: true } });
+                  const admins = await prisma.user.findMany({ where: { companyId: subscription.companyId, role: "ENTERPRISE_ADMIN" }, select: { email: true } });
+                  if (admins.length > 0) {
+                    await emailService.sendSubscriptionCancelled({
+                      to: admins.map((a) => a.email),
+                      companyName: company?.name ?? "Sua empresa",
+                    });
+                  }
+                } catch (err) {
+                  console.error("[Email] subscription-cancelled (webhook) failed:", err);
+                }
+              })();
             }
           }
           break;

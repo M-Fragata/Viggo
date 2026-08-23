@@ -53,10 +53,10 @@ export function InviteTokenTable({ tokens, onRevoke, onCopy }: InviteTokenTableP
   const getStatus = (token: InviteTokenResponse) => {
     const now = new Date();
     const expires = new Date(token.expiresAt);
-    if (token.revokedAt) return { label: "Revogado", class: "bg-slate-100 text-slate-600", icon: XCircle };
-    if (expires < now) return { label: "Expirado", class: "bg-amber-100 text-amber-700", icon: AlertCircle };
-    if (!token.isActive) return { label: "Inativo", class: "bg-slate-100 text-slate-600", icon: XCircle };
-    return { label: "Ativo", class: "bg-emerald-100 text-emerald-700", icon: CheckCircle };
+    if (token.revokedAt) return { label: "Revogado", class: "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400", icon: XCircle };
+    if (expires < now) return { label: "Expirado", class: "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300", icon: AlertCircle };
+    if (!token.isActive) return { label: "Inativo", class: "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400", icon: XCircle };
+    return { label: "Ativo", class: "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300", icon: CheckCircle };
   };
 
   const getUsesDisplay = (token: InviteTokenResponse) => {
@@ -67,11 +67,11 @@ export function InviteTokenTable({ tokens, onRevoke, onCopy }: InviteTokenTableP
   if (tokens.length === 0) {
     return (
       <div className="text-center py-12">
-        <div className="w-16 h-16 mx-auto mb-4 bg-slate-100 rounded-full flex items-center justify-center">
-          <User className="w-8 h-8 text-slate-400" />
+        <div className="w-16 h-16 mx-auto mb-4 bg-slate-100 dark:bg-white/5 rounded-full flex items-center justify-center">
+          <User className="w-8 h-8 text-slate-400 dark:text-slate-500" />
         </div>
-        <h3 className="text-lg font-medium text-slate-700">Nenhum token de convite</h3>
-        <p className="text-slate-500 mt-1">Clique em "Gerar Link de Convite" para criar o primeiro</p>
+        <h3 className="text-lg font-medium text-slate-700 dark:text-slate-200">Nenhum token de convite</h3>
+        <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">Clique em "Gerar Link de Convite" para criar o primeiro</p>
       </div>
     );
   }
@@ -86,15 +86,15 @@ export function InviteTokenTable({ tokens, onRevoke, onCopy }: InviteTokenTableP
           const isExpanded = expandedId === token.id;
 
           return (
-            <div key={token.id} className="border border-slate-200 rounded-2xl overflow-hidden bg-white">
-              {/* Header do Card - Área Clicável Inteira */}
+            <div key={token.id} className="border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden bg-slate-50/50 dark:bg-white/[0.02]">
+              {/* Header do Card */}
               <div
                 onClick={() => toggleExpand(token.id)}
-                className="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50 transition-colors"
+                className="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
                 aria-expanded={isExpanded}
               >
                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <code className="px-2 py-1 bg-slate-100 rounded font-mono text-sm text-slate-700 truncate">
+                  <code className="px-2 py-1 bg-slate-100 dark:bg-white/5 rounded font-mono text-sm text-slate-700 dark:text-slate-200 truncate">
                     {token.tokenMasked}
                   </code>
                   <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${status.class} whitespace-nowrap shrink-0`}>
@@ -105,25 +105,25 @@ export function InviteTokenTable({ tokens, onRevoke, onCopy }: InviteTokenTableP
                 {isExpanded ? <ChevronUp className="w-5 h-5 text-slate-400 shrink-0" /> : <ChevronDown className="w-5 h-5 text-slate-400 shrink-0" />}
               </div>
 
-              {/* Conteúdo Expandido - Com Animação */}
+              {/* Conteúdo Expandido */}
               {isExpanded && (
-                <div className="px-4 pb-4 border-t border-slate-100 pt-3 animate-in slide-in-from-top duration-200 space-y-4">
+                <div className="px-4 pb-4 border-t border-slate-100 dark:border-white/10 pt-3 animate-in slide-in-from-top duration-200 space-y-4">
                   {/* Info Grid */}
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
-                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Criado em</span>
-                      <span className="text-slate-600">{formatDate(token.createdAt)}</span>
+                      <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Criado em</span>
+                      <span className="text-slate-600 dark:text-slate-300">{formatDate(token.createdAt)}</span>
                     </div>
                     <div>
-                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Expira em</span>
-                      <span className="text-slate-600">{formatDate(token.expiresAt)}</span>
+                      <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Expira em</span>
+                      <span className="text-slate-600 dark:text-slate-300">{formatDate(token.expiresAt)}</span>
                     </div>
                     <div>
-                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Usos</span>
-                      <span className="font-mono text-slate-600">{getUsesDisplay(token)}</span>
+                      <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Usos</span>
+                      <span className="font-mono text-slate-600 dark:text-slate-300">{getUsesDisplay(token)}</span>
                     </div>
                     <div>
-                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Status</span>
+                      <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Status</span>
                       <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${status.class}`}>
                         <StatusIcon className="w-3 h-3" />
                         {status.label}
@@ -132,11 +132,11 @@ export function InviteTokenTable({ tokens, onRevoke, onCopy }: InviteTokenTableP
                   </div>
 
                   {/* Botões de Ação */}
-                  <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
+                  <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100 dark:border-white/10">
                     <button
                       onClick={(e) => { e.stopPropagation(); handleCopy(token.inviteUrl, token.id); }}
                       disabled={copyingId === token.id}
-                      className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50"
+                      className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
                     >
                       {copyingId === token.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Copy className="w-4 h-4" />}
                       Copiar link
@@ -145,7 +145,7 @@ export function InviteTokenTable({ tokens, onRevoke, onCopy }: InviteTokenTableP
                       <button
                         onClick={(e) => { e.stopPropagation(); handleRevoke(token.id); }}
                         disabled={revokingId === token.id}
-                        className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50"
+                        className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
                       >
                         {revokingId === token.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
                         Revogar
@@ -153,29 +153,29 @@ export function InviteTokenTable({ tokens, onRevoke, onCopy }: InviteTokenTableP
                     )}
                   </div>
 
-                  {/* Usuários que usaram (reutilizar lógica existente) */}
+                  {/* Usuários que usaram */}
                   {token.usedByUsers.length > 0 && (
-                    <div className="pt-2 border-t border-slate-100">
-                      <h4 className="font-medium text-slate-700 mb-3 flex items-center gap-2">
+                    <div className="pt-2 border-t border-slate-100 dark:border-white/10">
+                      <h4 className="font-medium text-slate-700 dark:text-slate-200 mb-3 flex items-center gap-2 text-sm">
                         <User className="w-4 h-4 text-emerald-500" />
                         Funcionários que usaram este token ({token.usedByUsers.length})
                       </h4>
                       <div className="space-y-2 max-h-60 overflow-y-auto">
                         {token.usedByUsers.map((user) => (
-                          <div key={user.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200">
+                          <div key={user.id} className="flex items-center justify-between p-3 bg-white dark:bg-white/5 rounded-lg border border-slate-200 dark:border-white/10">
                             <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
-                                <User className="w-4 h-4 text-emerald-600" />
+                              <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
+                                <User className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                               </div>
                               <div>
-                                <p className="font-medium text-slate-800">{user.name}</p>
-                                <p className="text-sm text-slate-500 flex items-center gap-1">
+                                <p className="font-medium text-slate-800 dark:text-white text-sm">{user.name}</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
                                   <Mail className="w-3 h-3" />
                                   {user.email}
                                 </p>
                               </div>
                             </div>
-                            <span className="text-sm text-slate-500">{formatDate(user.createdAt)}</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400">{formatDate(user.createdAt)}</span>
                           </div>
                         ))}
                       </div>
@@ -183,9 +183,9 @@ export function InviteTokenTable({ tokens, onRevoke, onCopy }: InviteTokenTableP
                   )}
 
                   {token.usedByUsers.length === 0 && (
-                    <div className="text-center py-6 text-slate-500 border-t border-slate-100 pt-4">
-                      <User className="w-10 h-10 mx-auto mb-2 text-slate-300" />
-                      <p>Nenhum funcionário usou este token ainda</p>
+                    <div className="text-center py-6 text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-white/10 pt-4">
+                      <User className="w-10 h-10 mx-auto mb-2 text-slate-300 dark:text-slate-600" />
+                      <p className="text-sm">Nenhum funcionário usou este token ainda</p>
                     </div>
                   )}
                 </div>
@@ -198,35 +198,34 @@ export function InviteTokenTable({ tokens, onRevoke, onCopy }: InviteTokenTableP
       {/* Desktop Table */}
       <div className="hidden sm:block overflow-x-auto">
         <table className="w-full">
-        <thead>
-          <tr className="border-b border-slate-200 text-left text-sm font-medium text-slate-500">
-            <th className="pb-3 px-2">Token</th>
-            <th className="pb-3 px-2">Criado em</th>
-            <th className="pb-3 px-2">Expira em</th>
-            <th className="pb-3 px-2">Usos</th>
-            <th className="pb-3 px-2">Status</th>
-            <th className="pb-3 px-2 text-right">Ações</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100">
-          {tokens.map((token) => {
-            const status = getStatus(token);
-            const StatusIcon = status.icon;
-            const isExpanded = expandedId === token.id;
+          <thead>
+            <tr className="border-b border-slate-200 dark:border-white/10 text-left text-sm font-medium text-slate-500 dark:text-slate-400">
+              <th className="pb-3 px-2">Token</th>
+              <th className="pb-3 px-2">Criado em</th>
+              <th className="pb-3 px-2">Expira em</th>
+              <th className="pb-3 px-2">Usos</th>
+              <th className="pb-3 px-2">Status</th>
+              <th className="pb-3 px-2 text-right">Ações</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-white/10">
+            {tokens.map((token) => {
+              const status = getStatus(token);
+              const StatusIcon = status.icon;
+              const isExpanded = expandedId === token.id;
 
-            return (
-              <>
-                <tr className="hover:bg-slate-50 transition-colors">
+              return (
+                <tr key={token.id} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors">
                   <td className="py-4 px-2">
                     <div className="flex items-center gap-2">
-                      <code className="px-2 py-1 bg-slate-100 rounded font-mono text-sm text-slate-700">
+                      <code className="px-2 py-1 bg-slate-100 dark:bg-white/5 rounded font-mono text-sm text-slate-700 dark:text-slate-200">
                         {token.tokenMasked}
                       </code>
                     </div>
                   </td>
-                  <td className="py-4 px-2 text-slate-600 text-sm">{formatDateShort(token.createdAt)}</td>
-                  <td className="py-4 px-2 text-slate-600 text-sm">{formatDateShort(token.expiresAt)}</td>
-                  <td className="py-4 px-2 text-slate-600 text-sm font-mono">{getUsesDisplay(token)}</td>
+                  <td className="py-4 px-2 text-slate-600 dark:text-slate-300 text-sm">{formatDateShort(token.createdAt)}</td>
+                  <td className="py-4 px-2 text-slate-600 dark:text-slate-300 text-sm">{formatDateShort(token.expiresAt)}</td>
+                  <td className="py-4 px-2 text-slate-600 dark:text-slate-300 text-sm font-mono">{getUsesDisplay(token)}</td>
                   <td className="py-4 px-2">
                     <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${status.class}`}>
                       <StatusIcon className="w-3 h-3" />
@@ -238,7 +237,7 @@ export function InviteTokenTable({ tokens, onRevoke, onCopy }: InviteTokenTableP
                       <button
                         onClick={() => handleCopy(token.inviteUrl, token.id)}
                         disabled={copyingId === token.id}
-                        className="cursor-pointer p-2 text-slate-500 hover:text-emerald-500 hover:bg-emerald-50 rounded-lg transition-colors disabled:opacity-50"
+                        className="cursor-pointer p-2 text-slate-500 dark:text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-lg transition-colors disabled:opacity-50"
                         title="Copiar link"
                       >
                         {copyingId === token.id ? (
@@ -249,7 +248,7 @@ export function InviteTokenTable({ tokens, onRevoke, onCopy }: InviteTokenTableP
                       </button>
                       <button
                         onClick={() => toggleExpand(token.id)}
-                        className="cursor-pointer p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors ml-1"
+                        className="cursor-pointer p-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg transition-colors ml-1"
                         aria-label={isExpanded ? "Recolher detalhes" : "Expandir detalhes"}
                       >
                         {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -258,7 +257,7 @@ export function InviteTokenTable({ tokens, onRevoke, onCopy }: InviteTokenTableP
                         <button
                           onClick={() => handleRevoke(token.id)}
                           disabled={revokingId === token.id}
-                          className="cursor-pointer p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 ml-1"
+                          className="cursor-pointer p-2 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-50 ml-1"
                           title="Revogar token"
                         >
                           {revokingId === token.id ? (
@@ -271,58 +270,11 @@ export function InviteTokenTable({ tokens, onRevoke, onCopy }: InviteTokenTableP
                     </div>
                   </td>
                 </tr>
-                {isExpanded && (
-                  <tr className="bg-slate-50">
-                    <td colSpan={6} className="p-0">
-                      <div className="p-6 border-t border-slate-200 animate-in slide-in-from-top duration-200">
-
-                        {token.usedByUsers.length > 0 && (
-                          <div>
-                            <h4 className="font-medium text-slate-700 mb-3 flex items-center gap-2">
-                              <User className="w-4 h-4 text-emerald-500" />
-                              Funcionários que usaram este token ({token.usedByUsers.length})
-                            </h4>
-                            <div className="space-y-2 max-h-60 overflow-y-auto">
-                              {token.usedByUsers.map((user) => (
-                                <div
-                                  key={user.id}
-                                  className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200"
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
-                                      <User className="w-4 h-4 text-emerald-600" />
-                                    </div>
-                                    <div>
-                                      <p className="font-medium text-slate-800">{user.name}</p>
-                                      <p className="text-sm text-slate-500 flex items-center gap-1">
-                                        <Mail className="w-3 h-3" />
-                                        {user.email}
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <span className="text-sm text-slate-500">{formatDate(user.createdAt)}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {token.usedByUsers.length === 0 && (
-                          <div className="text-center py-6 text-slate-500">
-                            <User className="w-10 h-10 mx-auto mb-2 text-slate-300" />
-                            <p>Nenhum funcionário usou este token ainda</p>
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </>
-            );
-          })}
-</tbody>
-      </table>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
-  </div>
-);
+  );
 }

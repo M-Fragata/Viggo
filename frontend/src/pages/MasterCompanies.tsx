@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Search, Building2, ChevronDown, ChevronUp, Settings } from "lucide-react";
 import { useMasterCompanies } from "../hooks/useMaster";
 import { PlanBadge, TrialCountdown } from "../components/plan";
+import { MasterCompaniesSkeleton } from "../components/master/MasterCompaniesSkeleton";
 import type { CompanyStatus, PlanTier } from "../services/api";
 import { useNavigate } from "react-router";
 
@@ -35,11 +36,7 @@ export function MasterCompanies() {
   }, [page, statusFilter, planFilter, search, fetchCompanies]);
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500" />
-      </div>
-    );
+    return <MasterCompaniesSkeleton />;
   }
 
   if (error) {

@@ -8,6 +8,7 @@ import { LogIn, Utensils, Coffee, LogOut, ScanFace } from "lucide-react"
 import { PontoPageSkeleton } from "../components/PontoPageSkeleton"
 import { z } from "zod"
 import { Button } from "../components/Button"
+import { PageHeader } from "../components/common/PageHeader"
 import type { CheckinCreateDto } from "../services/api"
 
 type ChekinProps = {
@@ -259,7 +260,7 @@ export function PontoPage() {
     }, [videoOpen]);
 
     return (
-        <div className=" bg-slate-50 font-sans antialiased text-slate-900">
+        <div className="w-full font-sans antialiased text-slate-900 dark:text-slate-100">
             {videoOpen && (
                 <div className="fixed inset-0 z-[999] flex flex-col items-center justify-center bg-black/95 backdrop-blur-md animate-in fade-in duration-300">
                     {/* CORREÇÃO 1: h-auto removido no mobile e flex col items-center para garantir alinhamento */}
@@ -325,23 +326,23 @@ export function PontoPage() {
                         )}
 
                         {isSuccess && (
-                            <div className="absolute inset-0 z-[110] bg-emerald-500 flex flex-col items-center justify-center animate-in zoom-in duration-300 p-6">
-                                <div className="bg-white rounded-2xl p-5 mb-4 shadow-xl max-w-sm w-full">
+                            <div className="absolute inset-0 z-[110] bg-emerald-500/95 flex flex-col items-center justify-center animate-in zoom-in duration-300 p-6">
+                                <div className="bg-white dark:bg-[#111113] rounded-2xl p-5 mb-4 shadow-xl max-w-sm w-full border border-transparent dark:border-white/10">
                                     <div className="flex items-center justify-center gap-2 mb-3">
                                         <span className="text-3xl">✅</span>
-                                        <h2 className="text-emerald-700 text-lg font-bold">Ponto Registrado!</h2>
+                                        <h2 className="text-emerald-700 dark:text-emerald-400 text-lg font-bold">Ponto Registrado!</h2>
                                     </div>
                                     {comprovanteText && (
-                                        <pre className="text-[10px] sm:text-xs text-slate-700 bg-slate-50 rounded-lg p-3 whitespace-pre-wrap font-mono leading-relaxed border border-slate-200 max-h-[280px] overflow-y-auto">
+                                        <pre className="text-[10px] sm:text-xs text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-white/5 rounded-lg p-3 whitespace-pre-wrap font-mono leading-relaxed border border-slate-200 dark:border-white/10 max-h-[280px] overflow-y-auto">
                                             {comprovanteText}
                                         </pre>
                                     )}
                                 </div>
                                 <button
                                     onClick={() => { setVideoOpen(false); setIsSuccess(false); setComprovanteText(null); }}
-                                    className="mt-4 bg-white/20 hover:bg-white/30 p-2 rounded-full text-white transition-all"
+                                    className="mt-4 bg-white/20 hover:bg-white/30 p-2 rounded-full text-white transition-all cursor-pointer"
                                 >
-                                    <span className="text-sm px-4">FECHAR</span>
+                                    <span className="text-sm px-4 font-bold">FECHAR</span>
                                 </button>
                             </div>
                         )}
@@ -361,15 +362,12 @@ export function PontoPage() {
             )}
 
             {/* CONTEÚDO PRINCIPAL */}
-            <main className="max-w-6xl mx-auto p-4 md:p-8">
-                <div className="mb-8">
-                    <h2 className="text-lg font-semibold text-slate-500 uppercase tracking-wider">
-                        Registros Disponíveis
-                    </h2>
-                    <p className="text-slate-400 text-sm">
-                        Selecione o tipo de marcação desejada abaixo.
-                    </p>
-                </div>
+            <div className="w-full space-y-6">
+                <PageHeader
+                    title="Bater Ponto"
+                    subtitle="Registro biométrico facial com validação de vivacidade e GPS"
+                    helpText="Posicione seu rosto dentro da moldura oval para registrar entrada, saída ou intervalo com biometria facial e geolocalização."
+                />
 
                 {isLoadingCheckins ? (
                     <PontoPageSkeleton />
@@ -392,12 +390,12 @@ export function PontoPage() {
                             return (
                                 <section
                                     key={item.type}
-                                    className={`group relative bg-white border border-slate-200 rounded-3xl p-6 md:p-8 flex flex-col items-center gap-6 transition-all hover:shadow-xl hover:shadow-emerald-900/5 shadow-sm ${hasRegistered ? "hover:border-gray-400" : "hover:border-emerald-400 "}`}
+                                    className={`group relative bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-3xl p-6 md:p-8 flex flex-col items-center gap-6 transition-all hover:shadow-xl hover:shadow-emerald-900/5 shadow-sm ${hasRegistered ? "hover:border-gray-400 dark:hover:border-slate-600" : "hover:border-emerald-400 dark:hover:border-emerald-500/40"}`}
                                 >
                                     <div className="text-4xl">{item.icon}</div>
                                     <div className="text-center">
-                                        <h3 className="text-xl font-bold text-slate-800">{item.label}</h3>
-                                        <p className="text-emerald-400 text-xs mt-1">
+                                        <h3 className="text-xl font-bold text-slate-800 dark:text-white">{item.label}</h3>
+                                        <p className="text-emerald-600 dark:text-emerald-400 text-xs mt-1 font-medium">
                                             {hasRegistered ? `Registrado às ${checkinTime}` : "Requer validação facial"}
                                         </p>
                                     </div>
@@ -406,20 +404,19 @@ export function PontoPage() {
                                         title={hasRegistered ? "Ponto Registrado" : isPreparingCheckin ? "Preparando..." : "Registrar Ponto"}
                                         disabled={hasRegistered || isPreparingCheckin}
                                         onClick={() => handlePostCheckin(item.type)}
-                                        className={`w-full bg-emerald-600  text-white font-bold py-4 rounded-2xl shadow-lg shadow-emerald-100 transition-all active:scale-95 disabled:grayscale  ${hasRegistered ? "opacity-70 cursor-not-allowed " : isPreparingCheckin ? "opacity-70 cursor-wait" : "cursor-pointer hover:bg-emerald-700"}`}
+                                        className={`w-full bg-emerald-600 dark:bg-emerald-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-emerald-100 dark:shadow-none transition-all active:scale-95 disabled:grayscale ${hasRegistered ? "opacity-70 cursor-not-allowed" : isPreparingCheckin ? "opacity-70 cursor-wait" : "cursor-pointer hover:bg-emerald-700 dark:hover:bg-emerald-600"}`}
                                     />
-
                                 </section>
                             );
                         })}
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 md:gap-6">
-                        <section className="group relative bg-white border border-slate-200 rounded-3xl p-6 md:p-8 flex flex-col items-center gap-6 transition-all hover:shadow-xl hover:shadow-emerald-900/5 shadow-sm hover:border-emerald-400">
-                            <ScanFace className="text-emerald-600" size={48} />
+                        <section className="group relative bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-3xl p-6 md:p-8 flex flex-col items-center gap-6 transition-all hover:shadow-xl hover:shadow-emerald-900/5 shadow-sm hover:border-emerald-400 dark:hover:border-emerald-500/40">
+                            <ScanFace className="text-emerald-600 dark:text-emerald-400" size={48} />
                             <div className="text-center">
-                                <h3 className="text-xl font-bold text-slate-800">Registro Facial Pendente</h3>
-                                <p className="text-emerald-600 text-xs mt-1">
+                                <h3 className="text-xl font-bold text-slate-800 dark:text-white">Registro Facial Pendente</h3>
+                                <p className="text-emerald-600 dark:text-emerald-400 text-xs mt-1 font-medium">
                                     Cadastre sua facial para registrar pontos
                                 </p>
                             </div>
@@ -427,12 +424,12 @@ export function PontoPage() {
                             <Button
                                 title="Cadastrar Facial"
                                 onClick={() => window.location.href = "/register"}
-                                className="w-full bg-emerald-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-emerald-100 transition-all active:scale-95 cursor-pointer hover:bg-emerald-600"
+                                className="w-full bg-emerald-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-emerald-100 transition-all active:scale-95 cursor-pointer hover:bg-emerald-700"
                             />
                         </section>
                     </div>
                 )}
-            </main>
+            </div>
         </div>
     );
 }

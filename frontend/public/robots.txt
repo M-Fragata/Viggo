@@ -1,0 +1,62 @@
+# ==============================================================================
+# Viggo - Robots.txt
+# Permissões de indexação para motores de busca e crawlers de IA (SEO & GEO)
+# ==============================================================================
+
+User-agent: *
+Allow: /
+Allow: /page
+Allow: /company/signup
+Allow: /planos/custom
+Allow: /termos-de-uso
+Allow: /politica-privacidade
+Allow: /contrato-de-tratamento-de-dados
+Allow: /consentimento-biometria
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+# Proteger rotas autenticadas e privadas de funcionários/administradores
+Disallow: /master/
+Disallow: /admin/
+Disallow: /accept-invite/
+Disallow: /totem/
+Disallow: /ponto/
+Disallow: /dashboard/
+Disallow: /api/
+
+# Configurações específicas para Crawlers de IA (ChatGPT, Perplexity, Claude, Gemini, Applebot)
+User-agent: GPTBot
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+Disallow: /master/
+Disallow: /admin/
+
+User-agent: ChatGPT-User
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+Disallow: /master/
+Disallow: /admin/
+
+User-agent: PerplexityBot
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+Disallow: /master/
+Disallow: /admin/
+
+User-agent: ClaudeBot
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+Disallow: /master/
+Disallow: /admin/
+
+User-agent: Google-Extended
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+# Mapa do site oficial
+Sitemap: https://viggo.com.br/sitemap.xml

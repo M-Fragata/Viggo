@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { gsap } from "gsap";
 import { TextSplitter } from "../utils/textSplitter";
 import { TRIAL_DAYS } from "../../../shared/plans";
+import { trackEvent } from "../utils/metrics";
 
 export function CTASection() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -118,6 +119,7 @@ export function CTASection() {
         <div ref={buttonRef} className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 opacity-0">
           <Link
             to="/company/signup"
+            onClick={() => trackEvent("cta_click", { ctaId: "cta-criar-empresa-gratis", path: "/page" })}
             className="w-full sm:w-auto inline-flex items-center justify-center rounded-full bg-brand-green px-8 py-3.5 text-sm font-semibold text-black hover:bg-brand-green-deep transition-all shadow-lg shadow-brand-green/20"
           >
             Criar minha empresa grátis

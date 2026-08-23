@@ -58,10 +58,10 @@ export function useMasterMetrics() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchMetrics = useCallback(async () => {
+  const fetchMetrics = useCallback(async (params?: { from?: string; to?: string }) => {
     try {
       setIsLoading(true);
-      const data = await api.master.getMetrics();
+      const data = await api.master.getMetrics(params);
       setMetrics(data);
       setError(null);
     } catch (err) {

@@ -13,6 +13,7 @@ import { FormattName } from "../../utils/formattName.js"
 
 import { Env } from "../../utils/environment.js"
 import { encryptCpf, decryptCpf, formatCpfDigits, hashCpf } from "../../utils/cpfEncryption.js"
+import * as emailService from "../../services/email/emailService.js"
 
 export class CompanyController {
 
@@ -160,6 +161,14 @@ export class CompanyController {
         Env.JWT_SECRET!,
         { expiresIn: '7d' }
       );
+
+      // E-mail de boas-vindas (fire-and-forget)
+      void emailService.sendWelcomeCompany({
+        to: email,
+        adminName: nameUser,
+        companyName: company.name,
+        trialExpiresAt,
+      }).catch((err) => console.error("[Email] welcome-company failed:", err));
 
       return res.status(201).json({
         user: {
@@ -653,6 +662,13 @@ export class CompanyController {
       });
 
       const { user, inviteToken: updatedToken } = result;
+
+      // E-mail boas-vindas funcionário (fire-and-forget)
+      void emailService.sendEmployeeWelcome({
+        to: user.email,
+        employeeName: user.name,
+        companyName: inviteToken.company.name,
+      }).catch((err) => console.error("[Email] employee-welcome failed:", err));
 
       const authToken = jwt.sign(
         {

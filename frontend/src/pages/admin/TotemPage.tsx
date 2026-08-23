@@ -51,14 +51,14 @@ export function TotemPage() {
     const expiresAt = localStorage.getItem("@viggo:totem:expiresAt");
 
     if (!token) {
-      window.location.href = "/";
+      window.location.href = "/totem";
       return;
     }
 
     if (expiresAt && Number(expiresAt) < Date.now()) {
       localStorage.removeItem("@viggo:totem");
       localStorage.removeItem("@viggo:totem:expiresAt");
-      window.location.href = "/";
+      window.location.href = "/totem";
       return;
     }
   }, []);
@@ -234,7 +234,7 @@ export function TotemPage() {
       await api.totem.deactivate(exitPin);
       localStorage.removeItem("@viggo:totem");
       localStorage.removeItem("@viggo:totem:expiresAt");
-      window.location.href = "/";
+      window.location.href = "/totem";
     } catch (err) {
       setError(err instanceof Error ? err.message : "PIN incorreto.");
       setIsExiting(false);
@@ -262,7 +262,7 @@ export function TotemPage() {
       await api.totem.recover(recoverEmail.trim(), recoverPassword);
       localStorage.removeItem("@viggo:totem");
       localStorage.removeItem("@viggo:totem:expiresAt");
-      window.location.href = "/";
+      window.location.href = "/totem";
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível recuperar o acesso.");
       setIsRecovering(false);

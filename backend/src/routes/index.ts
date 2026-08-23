@@ -12,6 +12,7 @@ import { justificativaRoutes } from "./justificativaRoutes.js";
 import { workScheduleRoutes } from "./workScheduleRoutes.js";
 import { biometricRevalidationRoutes } from "./biometricRevalidationRoutes.js";
 import { totemRoutes } from "./totemRoutes.js";
+import { metricsRoutes } from "./metricsRoutes.js";
 
 const routes = Router();
 
@@ -27,5 +28,6 @@ routes.use("/justificativas", justificativaRoutes);
 routes.use("/work-schedules", workScheduleRoutes);
 routes.use("/biometric-revalidation", biometricRevalidationRoutes);
 routes.use("/totem", totemRoutes);
+routes.use("/metrics", metricsRoutes);
 
 export { routes }

@@ -74,3 +74,12 @@ export const totemPinLimiter = createLimiter({
   legacyHeaders: false,
   keyGenerator: (req: Request) => req.totemContext?.companyId ?? req.user?.companyId ?? req.ip ?? 'unknown',
 });
+
+export const metricsLimiter = createLimiter({
+  windowMs: 60 * 1000,
+  max: 60,
+  message: { message: 'Muitas requisições de métricas. Tente novamente em 1 minuto.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req: Request) => req.ip ?? 'unknown',
+});

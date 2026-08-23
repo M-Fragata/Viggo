@@ -4,6 +4,7 @@ import { gsap } from 'gsap';
 import { TextSplitter } from '../utils/textSplitter';
 import { TRIAL_DAYS } from '../../../shared/plans';
 import TextType from './TextType';
+import { trackEvent } from '../utils/metrics';
 
 const HERO_WORDS = [
   "reconhecimento facial",
@@ -141,6 +142,7 @@ export function HeroContent({ startAnimation = true }: HeroContentProps) {
       <div ref={buttonsRef} className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3.5 sm:gap-4 opacity-0 w-full sm:w-auto">
         <Link
           to="/company/signup"
+          onClick={() => trackEvent("cta_click", { ctaId: "hero-comecar-trial", path: "/page" })}
           className="w-full sm:w-auto rounded-full bg-brand-green px-6 sm:px-8 py-3.5 text-sm font-semibold text-black hover:bg-brand-green-deep transition-all shadow-lg shadow-brand-green/20 text-center"
         >
           Começar trial de {TRIAL_DAYS} dias

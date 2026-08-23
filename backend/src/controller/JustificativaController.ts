@@ -1,6 +1,8 @@
 import { type Request, type Response } from "express";
 import { extendedPrisma } from "../database/prisma-extensions.js";
+import { prisma } from "../database/prisma.js";
 import { z } from "zod";
+import * as emailService from "../services/email/emailService.js";
 
 export class JustificativaController {
   /**
@@ -47,6 +49,29 @@ export class JustificativaController {
           aprovado: null,
         },
       });
+
+      // Notifica admins (fire-and-forget)
+      void (async () => {
+        try {
+          const admins = await prisma.user.findMany({
+            where: { companyId, role: "ENTERPRISE_ADMIN" },
+            select: { email: true },
+          });
+          if (admins.length > 0) {
+            const employee = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+            await emailService.sendJustificativaCreated({
+              to: admins.map((a) => a.email),
+              employeeName: employee?.name ?? "Colaborador",
+              tipo,
+              descricao,
+              dataInicio: new Date(dataInicio),
+              dataFim: dataFim ? new Date(dataFim) : null,
+            });
+          }
+        } catch (err) {
+          console.error("[Email] justificativa-created failed:", err);
+        }
+      })();
 
       return res.status(201).json(justificativa);
     } catch (error) {
@@ -135,6 +160,24 @@ export class JustificativaController {
           aprovadoPor: req.user.id,
         },
       });
+
+      // Notifica colaborador (fire-and-forget)
+      void (async () => {
+        try {
+          const owner = await prisma.user.findUnique({ where: { id: justificativa.userId }, select: { name: true, email: true } });
+          if (owner) {
+            await emailService.sendJustificativaDecided({
+              to: owner.email,
+              employeeName: owner.name,
+              tipo: justificativa.tipo,
+              aprovado,
+              dataInicio: justificativa.dataInicio,
+            });
+          }
+        } catch (err) {
+          console.error("[Email] justificativa-decided failed:", err);
+        }
+      })();
 
       return res.json(updated);
     } catch (error) {

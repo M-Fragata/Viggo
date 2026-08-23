@@ -4,6 +4,7 @@ import { useMasterCompany, useMasterActions } from "../hooks/useMaster";
 import { useAuth } from "../hooks/useAuth";
 import { useToast } from "../hooks/useToast";
 import { PlanBadge, TrialCountdown } from "../components/plan";
+import { CompanyManageSkeleton } from "../components/master/CompanyManageSkeleton";
 import { UserCheck, ArrowLeft, Users, Building2, Calendar, CreditCard, DollarSign, CheckCircle, Clock, XCircle, Loader2 } from "lucide-react";
 import type { CompanyStatus, PlanTier } from "../services/api";
 
@@ -107,16 +108,12 @@ export function CompanyManagePage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500" />
-      </div>
-    );
+    return <CompanyManageSkeleton />;
   }
 
   if (error || !company) {
     return (
-      <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6">
+      <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors">
           <ArrowLeft size={20} />
           <span>Voltar</span>
@@ -129,7 +126,7 @@ export function CompanyManagePage() {
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
       <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors">
         <ArrowLeft size={20} />
         <span>Voltar</span>
