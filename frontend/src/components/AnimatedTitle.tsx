@@ -23,15 +23,16 @@ export function AnimatedTitle({ text, className = '' }: AnimatedTitleProps) {
             setIsVisible(true);
 
             const splitter = new TextSplitter(titleRef.current!, {
-              type: 'words',
-              wordsClass: 'word'
+              type: 'chars',
+              charsClass: 'char'
             });
-            const words = splitter.getElements();
+            const chars = splitter.getElements();
 
-            gsap.from(words, {
+            gsap.from(chars, {
               opacity: 0,
               y: 20,
-              stagger: 0.08,
+              rotateX: -30,
+              stagger: 0.018,
               duration: 0.5,
               ease: 'power3.out'
             });

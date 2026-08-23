@@ -47,7 +47,7 @@ export function PricingSection() {
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            // Title split words
+            // Title split chars
             if (titleRef.current) {
               gsap.fromTo(titleRef.current,
                 { opacity: 0 },
@@ -55,14 +55,15 @@ export function PricingSection() {
               );
 
               const titleSplitter = new TextSplitter(titleRef.current, {
-                type: "words",
-                wordsClass: "word",
+                type: "chars",
+                charsClass: "char",
               });
-              const titleWords = titleSplitter.getElements();
-              gsap.from(titleWords, {
+              const titleChars = titleSplitter.getElements();
+              gsap.from(titleChars, {
                 opacity: 0,
                 y: 20,
-                stagger: 0.06,
+                rotateX: -30,
+                stagger: 0.015,
                 duration: 0.5,
                 ease: "power3.out",
               });
@@ -135,6 +136,7 @@ export function PricingSection() {
   return (
     <section
       ref={sectionRef}
+      id="precos"
       className="py-10 lg:py-24 bg-canvas-dark"
       aria-labelledby="pricing-heading"
     >
