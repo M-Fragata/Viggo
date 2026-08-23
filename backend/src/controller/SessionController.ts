@@ -43,6 +43,8 @@ export class SessionController {
 
             if (!companyUser) return res.status(400).json({ message: "Trabalhador sem empresa" })
 
+            const mustChangePassword = password.toLowerCase().endsWith("@viggo") || password.toLowerCase().endsWith("viggo");
+
             const data = {
                 id: user.id,
                 name: user.name,
@@ -50,7 +52,8 @@ export class SessionController {
                 role: user.role,
                 companyId: user.companyId,
                 hasFaceDescriptor: hasFaceDescriptor(user.faceDescriptor as string | null),
-            }
+                mustChangePassword,
+            };
 
             const token = jwt.sign({
                 id: user.id,
@@ -60,13 +63,15 @@ export class SessionController {
                 companyName: companyUser.name,
                 companyId: user.companyId,
                 planTier: user.company?.plan || "TIER_I",
-                isMaster: user.role === "MASTER"
+                isMaster: user.role === "MASTER",
+                mustChangePassword,
             }, Env.JWT_SECRET!, { expiresIn: "7d" });
 
             return res.status(200).json({
                 user: data,
                 company: companyUser.name,
-                token
+                token,
+                mustChangePassword,
             });
 
         } catch (error) {

@@ -12,6 +12,7 @@ interface AuthContextType {
   setSession: (user: User, token: string, company?: string) => void;
   logout: () => void;
   refreshUser: () => void;
+  clearMustChangePassword: () => void;
   isMaster: boolean;
   isEnterpriseAdmin: boolean;
   isEmployee: boolean;
@@ -32,6 +33,7 @@ function userFromJWT(decoded: JWTPayload): User {
     role: decoded.role,
     companyId: decoded.companyId,
     createdAt: "",
+    mustChangePassword: decoded.mustChangePassword,
   };
 }
 
@@ -112,16 +114,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (email: string, password: string) => {
-      const { user: apiUser, token: newToken } = await api.auth.login(email, password);
+      const { user: apiUser, token: newToken, mustChangePassword } = await api.auth.login(email, password);
       localStorage.setItem("@viggo:token", newToken);
 
       const decoded = decodeJWT(newToken);
       const jwtUser = decoded ? userFromJWT(decoded) : apiUser;
-      setUser({ ...jwtUser, hasFaceDescriptor: apiUser.hasFaceDescriptor });
+      const finalUser = {
+        ...jwtUser,
+        hasFaceDescriptor: apiUser.hasFaceDescriptor,
+        mustChangePassword: mustChangePassword ?? decoded?.mustChangePassword,
+      };
+      setUser(finalUser);
       setToken(newToken);
       setCompany(decoded?.companyName || null);
       setName(formatName(jwtUser.name));
-      return { ...jwtUser, hasFaceDescriptor: apiUser.hasFaceDescriptor };
+      return finalUser;
     },
     []
   );
@@ -158,6 +165,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const clearMustChangePassword = useCallback(() => {
+    setUser(prev => prev ? { ...prev, mustChangePassword: false } : null);
+  }, []);
+
   const startImpersonation = useCallback((newToken: string, _newUser: User, companyName: string) => {
     const currentToken = localStorage.getItem("@viggo:token");
     if (currentToken) {
@@ -179,22 +190,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const stopImpersonation = useCallback(() => {
     const masterToken = localStorage.getItem("@viggo:masterToken");
     if (masterToken) {
-      localStorage.setItem("@viggo:token", masterToken);
-      localStorage.removeItem("@viggo:masterToken");
-
       const decoded = decodeJWT(masterToken);
-      const jwtUser = decoded ? userFromJWT(decoded) : null;
-      if (jwtUser) {
-        setUser(jwtUser);
+      if (decoded) {
+        localStorage.setItem("@viggo:token", masterToken);
+        localStorage.removeItem("@viggo:masterToken");
+        setUser(userFromJWT(decoded));
         setToken(masterToken);
-        setCompany(decoded!.companyName || null);
-        setName(formatName(jwtUser.name));
+        setCompany(decoded.companyName || null);
+        setName(formatName(decoded.name));
+        setIsImpersonated(false);
+        setImpersonatedCompanyName(null);
+        return;
       }
     }
-    setIsImpersonated(false);
-    setImpersonatedCompanyName(null);
-    window.location.href = "/master/companies";
-  }, []);
+    clearSession();
+  }, [clearSession]);
 
   const isMaster = user?.role === "MASTER";
   const isEnterpriseAdmin = user?.role === "ENTERPRISE_ADMIN";
@@ -213,6 +223,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession,
         logout,
         refreshUser,
+        clearMustChangePassword,
         isMaster,
         isEnterpriseAdmin,
         isEmployee,
@@ -228,10 +239,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useAuth() {
+export function useAuthContext(): AuthContextType {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    throw new Error("useAuthContext must be used within an AuthProvider");
   }
   return context;
 }
+
+export const useAuth = useAuthContext;

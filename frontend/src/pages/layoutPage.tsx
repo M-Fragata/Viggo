@@ -7,6 +7,7 @@ import { useAuth } from "../hooks/useAuth";
 import { ImpersonationBanner } from "../components/master/ImpersonationBanner";
 import { MobileNav } from "../components/MobileNav";
 import { NavDrawer } from "../components/navigation/NavDrawer";
+import { ForceChangePasswordModal } from "../components/auth/ForceChangePasswordModal";
 
 export function LayoutPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -73,6 +74,9 @@ export function LayoutPage() {
         isOpen={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}
       />
+
+      {/* MODAL DE TROCA OBRIGATÓRIA DE SENHA TEMPORÁRIA */}
+      <ForceChangePasswordModal />
     </div>
   );
 }

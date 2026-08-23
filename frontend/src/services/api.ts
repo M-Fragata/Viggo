@@ -77,13 +77,19 @@ async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promis
 export const api = {
   auth: {
     login: (email: string, password: string) =>
-      fetchApi<{ user: User; token: string; company: string }>("/sessions/login", {
+      fetchApi<{ user: User; token: string; company: string; mustChangePassword?: boolean }>("/sessions/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
         requiresAuth: false,
       }),
 
     me: () => fetchApi<{ user: User }>("/auth/me"),
+
+    changePassword: (newPassword: string) =>
+      fetchApi<{ message: string }>("/auth/change-password", {
+        method: "POST",
+        body: JSON.stringify({ newPassword }),
+      }),
 
     signup: (data: SignupCompanyDto) =>
       fetchApi<SignupCompanyResponse>("/companies/signup", {
@@ -135,6 +141,34 @@ export const api = {
   employees: {
     list: (date?: string) =>
       fetchApi<EmployeeListItem[]>(`/employees${date ? `?date=${date}` : ""}`),
+    create: (data: {
+      name: string;
+      email: string;
+      role?: "EMPLOYEE" | "ENTERPRISE_ADMIN";
+      workScheduleId?: string | null;
+      customPassword?: string;
+    }) =>
+      fetchApi<{ user: EmployeeListItem; temporaryPassword: string; message: string }>("/employees", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    bulkImport: (employees: {
+      name: string;
+      email: string;
+      role?: "EMPLOYEE" | "ENTERPRISE_ADMIN";
+      workScheduleId?: string | null;
+    }[]) =>
+      fetchApi<{
+        totalProcessed: number;
+        createdCount: number;
+        errorCount: number;
+        createdEmployees: { id: string; name: string; email: string; role: string; temporaryPassword: string }[];
+        errors: { name: string; email: string; reason: string }[];
+        message: string;
+      }>("/employees/bulk-import", {
+        method: "POST",
+        body: JSON.stringify({ employees }),
+      }),
     issueFaceToken: () => fetchApi<FaceTokenResponse>("/employees/face/token"),
     updateFaceDescriptor: (userId: string, descriptor: number[]) =>
       fetchApi<User>(`/sessions/${userId}`, {
@@ -363,6 +397,7 @@ export interface User {
   cpf?: string;
   createdAt: string;
   hasFaceDescriptor?: boolean;
+  mustChangePassword?: boolean;
 }
 
 export interface Company {

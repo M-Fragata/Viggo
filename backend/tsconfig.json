@@ -8,12 +8,15 @@
     // See also https://aka.ms/tsconfig/module
     "module": "nodenext",
     "target": "es2023",
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "moduleResolution": "nodenext",
     "esModuleInterop": true,
-    "ignoreDeprecations": "6.0",
     // For nodejs:
-    "lib": ["esnext"],
+    "lib": [
+      "esnext"
+    ],
     // "types": ["node"],
     // and npm install -D @types/node
     // Other Outputs
@@ -39,7 +42,9 @@
     "moduleDetection": "force",
     "skipLibCheck": true,
   },
-  "include": ["src/**/*"],
+  "include": [
+    "src/**/*"
+  ],
   "exclude": [
     "node_modules",
     "dist",

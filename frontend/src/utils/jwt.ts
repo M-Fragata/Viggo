@@ -9,6 +9,7 @@ export interface JWTPayload {
   isMaster: boolean;
   isImpersonated?: boolean;
   impersonatedBy?: string;
+  mustChangePassword?: boolean;
   exp: number;
 }
 
