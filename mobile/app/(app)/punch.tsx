@@ -7,13 +7,15 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  ScrollView,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
 import { useAuth } from '../../context/AuthContext';
-import { api } from '../../services/api';
+import { api, ApiError } from '../../services/api';
+import { enqueueOfflineCheckIn, getOfflineQueue, syncOfflineQueue } from '../../services/offlineQueue';
 import { Colors, Spacing, BorderRadius } from '../../constants/theme';
-import { LogOut, MapPin, CheckCircle2, AlertCircle } from 'lucide-react-native';
+import { LogOut, MapPin, CheckCircle2, AlertCircle, CloudOff, RefreshCw } from 'lucide-react-native';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -23,11 +25,12 @@ export default function PunchScreen() {
   const { user, logout } = useAuth();
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const [locationPermission, setLocationPermission] = useState<boolean | null>(null);
-  const [currentLocation, setCurrentLocation] = useState<Location.LocationObject | null>(null);
   
   const [currentTime, setCurrentTime] = useState(new Date());
   const [submitting, setSubmitting] = useState(false);
   const [successInfo, setSuccessInfo] = useState<string | null>(null);
+  const [offlinePendingCount, setOfflinePendingCount] = useState(0);
+  const [syncingOffline, setSyncingOffline] = useState(false);
 
   const cameraRef = useRef<any>(null);
 
@@ -37,27 +40,46 @@ export default function PunchScreen() {
     return () => clearInterval(timer);
   }, []);
 
+  // Verificar itens na fila offline
+  async function checkOfflineQueue() {
+    const queue = await getOfflineQueue();
+    setOfflinePendingCount(queue.length);
+  }
+
+  useEffect(() => {
+    checkOfflineQueue();
+  }, []);
+
   // Solicitar permissões de localização
   useEffect(() => {
     async function requestLocation() {
       const { status } = await Location.requestForegroundPermissionsAsync();
       const granted = status === 'granted';
       setLocationPermission(granted);
-
-      if (granted) {
-        try {
-          const loc = await Location.getCurrentPositionAsync({
-            accuracy: Location.Accuracy.High,
-          });
-          setCurrentLocation(loc);
-        } catch (err) {
-          console.warn('Erro ao obter coordenadas iniciais', err);
-        }
-      }
     }
 
     requestLocation();
   }, []);
+
+  async function handleSyncOffline() {
+    setSyncingOffline(true);
+    try {
+      const res = await syncOfflineQueue();
+      if (res.synced.length > 0) {
+        Alert.alert(
+          'Sincronização Concluída',
+          `${res.synced.length} ponto(s) offline foram sincronizados com sucesso!`
+        );
+      } else if (res.failed > 0) {
+        Alert.alert('Atenção', 'Não foi possível sincronizar todos os pontos. Verifique sua conexão.');
+      }
+      await checkOfflineQueue();
+    } catch (err: any) {
+      Alert.alert('Erro ao sincronizar', err.message || 'Tente novamente mais tarde.');
+    } finally {
+      setSyncingOffline(false);
+    }
+  }
 
   async function handlePunch() {
     if (!cameraPermission?.granted) {
@@ -75,7 +97,7 @@ export default function PunchScreen() {
       let coords: { latitude?: number; longitude?: number; accuracy?: number } = {};
       try {
         const loc = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Highest,
+          accuracy: Location.Accuracy.High,
         });
         coords = {
           latitude: loc.coords.latitude,
@@ -83,7 +105,7 @@ export default function PunchScreen() {
           accuracy: loc.coords.accuracy ?? undefined,
         };
       } catch {
-        console.warn('Não foi possível obter GPS em tempo real, enviando sem GPS');
+        console.warn('Não foi possível obter GPS em tempo real');
       }
 
       // Captura da foto
@@ -91,7 +113,7 @@ export default function PunchScreen() {
       if (cameraRef.current) {
         try {
           const photo = await cameraRef.current.takePictureAsync({
-            quality: 0.5,
+            quality: 0.4,
             base64: true,
           });
           photoBase64 = photo.base64;
@@ -100,17 +122,39 @@ export default function PunchScreen() {
         }
       }
 
-      // Chamada à API
-      const result = await api.registerCheckIn({
-        ...coords,
-        photoBase64,
-      });
+      // Chamada à API com fallback para fila offline
+      try {
+        await api.registerCheckIn({
+          ...coords,
+          photoBase64,
+        });
 
-      setSuccessInfo(`Ponto registrado com sucesso às ${format(new Date(), 'HH:mm:ss')}!`);
-      setTimeout(() => setSuccessInfo(null), 5000);
+        setSuccessInfo(`Ponto registrado com sucesso às ${format(new Date(), 'HH:mm:ss')}!`);
+        setTimeout(() => setSuccessInfo(null), 5000);
 
+        // Se tínhamos itens offline, tentar sincronizar em background
+        if (offlinePendingCount > 0) {
+          syncOfflineQueue().then(checkOfflineQueue).catch(() => {});
+        }
+      } catch (apiErr: any) {
+        // Se for erro de rede / offline, enfileirar localmente
+        if (apiErr instanceof ApiError && apiErr.code === 'NETWORK_ERROR') {
+          await enqueueOfflineCheckIn({
+            ...coords,
+            photoBase64,
+          });
+          await checkOfflineQueue();
+          setSuccessInfo('Sem conexão! Ponto salvo offline e será sincronizado em breve.');
+          setTimeout(() => setSuccessInfo(null), 6000);
+        } else {
+          throw apiErr;
+        }
+      }
     } catch (err: any) {
-      Alert.alert('Erro no Registro', err.message || 'Não foi possível registrar o ponto. Tente novamente.');
+      Alert.alert(
+        'Erro no Registro',
+        err.message || 'Não foi possível registrar o ponto. Tente novamente.'
+      );
     } finally {
       setSubmitting(false);
     }
@@ -130,6 +174,32 @@ export default function PunchScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Offline Pending Banner */}
+      {offlinePendingCount > 0 && (
+        <View style={styles.offlineBanner}>
+          <View style={styles.offlineBannerLeft}>
+            <CloudOff size={16} color={Colors.warn} />
+            <Text style={styles.offlineBannerText}>
+              {offlinePendingCount} ponto(s) offline pendente(s)
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={styles.syncButton}
+            onPress={handleSyncOffline}
+            disabled={syncingOffline}
+          >
+            {syncingOffline ? (
+              <ActivityIndicator size="small" color={Colors.warn} />
+            ) : (
+              <>
+                <RefreshCw size={12} color={Colors.warn} />
+                <Text style={styles.syncButtonText}>Sincronizar</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* Relógio Digital */}
       <View style={styles.clockCard}>
         <Text style={styles.dateText}>
@@ -139,8 +209,13 @@ export default function PunchScreen() {
 
         <View style={styles.gpsStatus}>
           <MapPin size={14} color={locationPermission ? Colors.primary : Colors.warn} />
-          <Text style={[styles.gpsText, { color: locationPermission ? Colors.primary : Colors.warn }]}>
-            {locationPermission ? 'GPS Ativo e Validado' : 'Aguardando permissão de GPS'}
+          <Text
+            style={[
+              styles.gpsText,
+              { color: locationPermission ? Colors.primary : Colors.warn },
+            ]}
+          >
+            {locationPermission ? 'GPS Ativo e Pronto' : 'Aguardando permissão de GPS'}
           </Text>
         </View>
       </View>
@@ -148,11 +223,7 @@ export default function PunchScreen() {
       {/* Camera Facial Frame */}
       <View style={styles.cameraContainer}>
         {cameraPermission?.granted ? (
-          <CameraView
-            ref={cameraRef}
-            style={styles.camera}
-            facing="front"
-          >
+          <CameraView ref={cameraRef} style={styles.camera} facing="front">
             <View style={styles.faceTarget}>
               <View style={[styles.corner, styles.cornerTL]} />
               <View style={[styles.corner, styles.cornerTR]} />
@@ -164,7 +235,10 @@ export default function PunchScreen() {
           <View style={styles.cameraPlaceholder}>
             <AlertCircle size={36} color={Colors.textMuted} />
             <Text style={styles.placeholderText}>Câmera não autorizada</Text>
-            <TouchableOpacity style={styles.permissionButton} onPress={requestCameraPermission}>
+            <TouchableOpacity
+              style={styles.permissionButton}
+              onPress={requestCameraPermission}
+            >
               <Text style={styles.permissionButtonText}>Permitir Acesso</Text>
             </TouchableOpacity>
           </View>
@@ -209,7 +283,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.sm,
   },
   greeting: {
     fontSize: 20,
@@ -228,14 +302,50 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
   },
+  offlineBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.warnBg,
+    borderWidth: 1,
+    borderColor: Colors.warn,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    marginBottom: Spacing.sm,
+  },
+  offlineBannerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  offlineBannerText: {
+    color: Colors.warn,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  syncButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(195, 125, 13, 0.2)',
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 4,
+    borderRadius: BorderRadius.sm,
+  },
+  syncButtonText: {
+    color: Colors.warn,
+    fontSize: 11,
+    fontWeight: '700',
+  },
   clockCard: {
     backgroundColor: Colors.surfaceCard,
     borderRadius: BorderRadius.lg,
-    padding: Spacing.lg,
+    padding: Spacing.md,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: Colors.border,
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.sm,
   },
   dateText: {
     fontSize: 13,
@@ -243,17 +353,17 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
   },
   timeText: {
-    fontSize: 42,
+    fontSize: 38,
     fontWeight: '800',
     color: Colors.text,
     letterSpacing: 1,
-    marginVertical: 4,
+    marginVertical: 2,
   },
   gpsStatus: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginTop: 4,
+    marginTop: 2,
   },
   gpsText: {
     fontSize: 12,
@@ -265,7 +375,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: Colors.border,
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.sm,
     backgroundColor: Colors.surface,
     position: 'relative',
   },
@@ -275,8 +385,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   faceTarget: {
-    width: width * 0.55,
-    height: width * 0.7,
+    width: width * 0.52,
+    height: width * 0.65,
     borderRadius: 140,
     borderWidth: 2,
     borderColor: 'rgba(0, 212, 164, 0.4)',
@@ -321,15 +431,16 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.successBg,
     borderWidth: 1,
     borderColor: Colors.primary,
-    padding: Spacing.md,
+    padding: Spacing.sm,
     borderRadius: BorderRadius.md,
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.sm,
     gap: 8,
   },
   successBannerText: {
     color: Colors.primary,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
+    flex: 1,
   },
   bottomSection: {
     paddingBottom: Spacing.md,
@@ -337,7 +448,7 @@ const styles = StyleSheet.create({
   punchButton: {
     backgroundColor: Colors.primary,
     borderRadius: BorderRadius.lg,
-    paddingVertical: 18,
+    paddingVertical: 16,
     alignItems: 'center',
     shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 4 },
