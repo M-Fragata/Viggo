@@ -23,6 +23,11 @@ const environmentSchema = z.object({
     ASAAS_API_KEY: z.string().optional(),
     ASAAS_ENVIRONMENT: z.enum(["sandbox", "production"]).default("sandbox"),
     ASAAS_WEBHOOK_TOKEN: z.string().optional(),
+    // Isenção Asaas para empresa master — por CNPJ
+    MASTER_CNPJ: z.string().optional().refine(
+        (v) => !v || /^\d{14}$/.test(v.replace(/\D/g, "")),
+        "MASTER_CNPJ deve conter 14 dígitos (ex: 00000000000000)"
+    ).optional(),
     CERT_A1_PATH: z.string().optional(),
     CERT_A1_PASSWORD: z.string().optional(),
     CERT_A1_BASE64: z.string().optional(),

@@ -1,5 +1,6 @@
 import { prisma } from "../database/prisma.js";
 import * as emailService from "../services/email/emailService.js";
+import { Env } from "../utils/environment.js";
 
 function startOfDay(d: Date): Date {
   const x = new Date(d);
@@ -23,12 +24,14 @@ export async function runTrialEndingJob(): Promise<{ sent3d: number; sent1d: num
   const target3d = addDays(todayStart, 3);
   const target1d = addDays(todayStart, 1);
 
+  const masterCnpj = Env.MASTER_CNPJ?.replace(/\D/g, "");
   const companies = await prisma.company.findMany({
     where: {
       status: "TRIAL",
       planExpiresAt: { not: null },
+      ...(masterCnpj ? { cnpj: { not: masterCnpj } } : {}),
     },
-    select: { id: true, name: true, planExpiresAt: true },
+    select: { id: true, name: true, cnpj: true, planExpiresAt: true },
   });
 
   let sent3d = 0;
@@ -36,6 +39,7 @@ export async function runTrialEndingJob(): Promise<{ sent3d: number; sent1d: num
   const errors: string[] = [];
 
   for (const company of companies) {
+    if (masterCnpj && company.cnpj?.replace(/\D/g, "") === masterCnpj) continue;
     if (!company.planExpiresAt) continue;
     const expiresDay = startOfDay(company.planExpiresAt);
     let daysRemaining: 3 | 1 | null = null;

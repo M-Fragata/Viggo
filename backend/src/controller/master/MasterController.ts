@@ -162,8 +162,17 @@ export class MasterController {
       ]);
       const planDist = planDistribution.reduce((acc, p) => { acc[p.plan] = p._count.plan; return acc; }, {} as Record<string, number>);
 
-      // MRR: soma dos calculatedTotal de assinaturas ativas (ou fallback para preço do plano)
-      const mrr = activeSubscriptions.reduce((sum, sub) => {
+      // MRR: soma dos calculatedTotal de assinaturas ativas — exclui master
+      const masterCnpj = Env.MASTER_CNPJ?.replace(/\D/g, "");
+      let filteredSubscriptions = activeSubscriptions as typeof activeSubscriptions;
+      if (masterCnpj) {
+        const masterCompanyIds = await prisma.company.findMany({
+          where: { cnpj: masterCnpj },
+          select: { id: true },
+        }).then(rows => new Set(rows.map(r => r.id))).catch(() => new Set<string>());
+        filteredSubscriptions = activeSubscriptions.filter(s => !masterCompanyIds.has(s.companyId));
+      }
+      const mrr = filteredSubscriptions.reduce((sum, sub) => {
         const value = sub.calculatedTotal ? Number(sub.calculatedTotal) : Number(sub.price ?? 0);
         return sum + value;
       }, 0);

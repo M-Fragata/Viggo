@@ -3,6 +3,14 @@ import { prisma } from '../database/prisma.js';
 import { getPlanLimits, isTrialExpired } from '../utils/planLimits.js';
 import { calculateDynamicPrice } from '../utils/pricingCalculator.js';
 import { PlanTier, CompanyStatus } from '../utils/planLimits.js';
+import { Env } from '../utils/environment.js';
+
+function isMasterCompanyByCnpj(cnpj: string | null | undefined): boolean {
+  const master = Env.MASTER_CNPJ?.replace(/\D/g, '');
+  if (!master) return false;
+  if (!cnpj) return false;
+  return cnpj.replace(/\D/g, '') === master;
+}
 
 export interface PlanInfo {
   plan: PlanTier;
@@ -20,6 +28,7 @@ export async function getCompanyPlanInfo(companyId: string): Promise<PlanInfo | 
   const company = await prisma.company.findUnique({
     where: { id: companyId },
     select: {
+      cnpj: true,
       plan: true,
       status: true,
       maxEmployees: true,
@@ -32,6 +41,23 @@ export async function getCompanyPlanInfo(companyId: string): Promise<PlanInfo | 
   });
 
   if (!company) return null;
+
+  // Master company isenta — nunca expira trial, sempre ACTIVE
+  if (isMasterCompanyByCnpj(company.cnpj)) {
+    const currentEmployees = company._count.users;
+    const pricing = calculateDynamicPrice(currentEmployees);
+    return {
+      plan: PlanTier.ENTERPRISE_CUSTOM as PlanTier,
+      status: CompanyStatus.ACTIVE as CompanyStatus,
+      maxEmployees: company.maxEmployees,
+      currentEmployees,
+      planExpiresAt: null,
+      isTrial: false,
+      trialDaysRemaining: 999,
+      willIncreasePrice: false,
+      nextCyclePrice: 0,
+    };
+  }
 
   const currentEmployees = company._count.users;
   const isTrial = company.status === CompanyStatus.TRIAL;
@@ -119,6 +145,10 @@ export async function planMiddleware(req: Request, res: Response, next: NextFunc
 
   (req as any).planInfo = planInfo;
   next();
+}
+
+export function isMasterCompany(cnpj: string | null | undefined): boolean {
+  return isMasterCompanyByCnpj(cnpj);
 }
 
 export function createDynamicRateLimiter(plan: PlanTier) {

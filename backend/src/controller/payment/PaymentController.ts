@@ -5,6 +5,13 @@ import * as asaasService from '../../services/asaasService.js';
 import { calculateDynamicPrice } from '../../utils/pricingCalculator.js';
 import { addDays, format } from 'date-fns';
 import * as emailService from '../../services/email/emailService.js';
+import { Env } from '../../utils/environment.js';
+
+function isMasterCnpj(cnpj: string | null | undefined): boolean {
+  const master = Env.MASTER_CNPJ?.replace(/\D/g, '');
+  if (!master || !cnpj) return false;
+  return cnpj.replace(/\D/g, '') === master;
+}
 
 export class PaymentController {
 
@@ -31,6 +38,10 @@ export class PaymentController {
 
       if (!company) {
         return res.status(404).json({ message: 'Empresa não encontrada' });
+      }
+
+      if (isMasterCnpj(company.cnpj)) {
+        return res.status(200).json({ free: true, message: 'Empresa master isenta de cobrança' });
       }
 
       let customerId = company.asaasCustomerId;
@@ -112,12 +123,14 @@ export class PaymentController {
       where: { id: companyId },
       select: {
         id: true,
+        cnpj: true,
         asaasCustomerId: true,
         _count: { select: { users: true } },
       },
     });
 
     if (!company) return;
+    if (isMasterCnpj(company.cnpj)) return;
 
     const activeSubscription = await prisma.subscription.findFirst({
       where: { companyId, status: 'ACTIVE', billingType: 'RECURRENT' },
@@ -243,6 +256,13 @@ export class PaymentController {
           const payment = event.payment;
 
           if (payment.externalReference) {
+            const masterCheck = await prisma.company.findUnique({
+              where: { id: payment.externalReference },
+              select: { cnpj: true },
+            });
+            if (isMasterCnpj(masterCheck?.cnpj)) {
+              break;
+            }
             await prisma.company.update({
               where: { id: payment.externalReference },
               data: { status: 'ACTIVE' },
@@ -308,8 +328,11 @@ export class PaymentController {
           if (payment.externalReference) {
             const company = await prisma.company.findUnique({
               where: { id: payment.externalReference },
-              select: { status: true, name: true },
+              select: { cnpj: true, status: true, name: true },
             });
+            if (isMasterCnpj(company?.cnpj)) {
+              break;
+            }
             if (company?.status === 'ACTIVE') {
               await prisma.company.update({
                 where: { id: payment.externalReference },
@@ -346,6 +369,10 @@ export class PaymentController {
               where: { asaasSubscriptionId: event.payment.subscription },
             });
             if (subscription) {
+              const comp = await prisma.company.findUnique({ where: { id: subscription.companyId }, select: { cnpj: true } });
+              if (isMasterCnpj(comp?.cnpj)) {
+                break;
+              }
               await prisma.subscription.update({
                 where: { id: subscription.id },
                 data: { status: 'CANCELLED', cancelledAt: new Date() },

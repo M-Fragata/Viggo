@@ -17,6 +17,7 @@ app.use(cors({
   origin: Env.FRONTEND_URL,
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
   maxAge: 86400,
 }))
 

@@ -1,5 +1,6 @@
 import { prisma } from "../database/prisma.js";
 import * as emailService from "../services/email/emailService.js";
+import { Env } from "../utils/environment.js";
 
 function startOfDay(d: Date): Date {
   const x = new Date(d);
@@ -20,11 +21,12 @@ export async function runPaymentUpcomingJob(): Promise<{ sent3d: number; sent1d:
   const target3d = addDays(todayStart, 3);
   const target1d = addDays(todayStart, 1);
 
-  // Buscar payments pendentes com dueDate em D+3 ou D+1
+  // Buscar payments pendentes com dueDate em D+3 ou D+1 (exclui master)
   const payments = await prisma.payment.findMany({
     where: {
       status: "PENDING",
       dueDate: { gte: todayStart },
+      ...(Env.MASTER_CNPJ?.replace(/\D/g, "") ? { company: { cnpj: { not: Env.MASTER_CNPJ!.replace(/\D/g, "") } } } : {}),
     },
     select: { id: true, companyId: true, amount: true, dueDate: true },
   });
@@ -41,7 +43,9 @@ export async function runPaymentUpcomingJob(): Promise<{ sent3d: number; sent1d:
     else continue;
 
     try {
-      const company = await prisma.company.findUnique({ where: { id: payment.companyId }, select: { name: true } });
+      const company = await prisma.company.findUnique({ where: { id: payment.companyId }, select: { cnpj: true, name: true } });
+      const masterCnpj = Env.MASTER_CNPJ?.replace(/\D/g, "");
+      if (masterCnpj && company?.cnpj?.replace(/\D/g, "") === masterCnpj) continue;
       const admins = await prisma.user.findMany({ where: { companyId: payment.companyId, role: "ENTERPRISE_ADMIN" }, select: { email: true } });
       if (admins.length === 0) continue;
       await emailService.sendPaymentUpcoming({
