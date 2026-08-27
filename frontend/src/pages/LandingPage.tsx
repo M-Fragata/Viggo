@@ -11,7 +11,7 @@ import { Marquee } from "../components/Marquee";
 import { BentoGrid } from "../components/BentoGrid";
 import { HowItWorks } from "../components/HowItWorks";
 import { TargetAudience } from "../components/TargetAudience";
-import { ManagerShowcase } from "../components/ManagerShowcase";
+
 import { AppShowcase } from "../components/AppShowcase";
 import { FAQ } from "../components/FAQ";
 import { FloatingWhatsApp } from "../components/FloatingWhatsApp";
@@ -151,10 +151,7 @@ export function LandingPage() {
         {/* Target Audience / Industry Segments */}
         <TargetAudience />
 
-        {/* Manager Showcase & ROI */}
-        <div id="painel-gestor">
-          <ManagerShowcase />
-        </div>
+
 
         {/* Interactive App & Admin Showcase (Coded Mockup) */}
         <AppShowcase />

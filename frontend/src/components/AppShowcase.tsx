@@ -119,7 +119,8 @@ export function AppShowcase() {
   const badgeRef = useRef<HTMLSpanElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const paragraphRef = useRef<HTMLParagraphElement>(null);
-  const tabsRef = useRef<HTMLDivElement>(null);
+  const tabsRef = useRef<HTMLDivElement>(null);       // mobile chips nav
+  const desktopTabsRef = useRef<HTMLDivElement>(null); // desktop sidebar
   const windowRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -197,16 +198,32 @@ export function AppShowcase() {
             if (tabsRef.current) {
               tl.fromTo(
                 tabsRef.current.children,
-                { opacity: 0, x: -30 },
+                { opacity: 0, y: 20 },
                 {
                   opacity: 1,
-                  x: 0,
+                  y: 0,
                   stagger: 0.06,
-                  duration: 0.45,
+                  duration: 0.4,
                   ease: "power3.out",
                   clearProps: "transform",
                 },
                 "-=0.2"
+              );
+            }
+
+            if (desktopTabsRef.current) {
+              tl.fromTo(
+                desktopTabsRef.current.children,
+                { opacity: 0, x: -20 },
+                {
+                  opacity: 1,
+                  x: 0,
+                  stagger: 0.06,
+                  duration: 0.4,
+                  ease: "power3.out",
+                  clearProps: "transform",
+                },
+                "-=0.4"
               );
             }
 
@@ -238,14 +255,24 @@ export function AppShowcase() {
     return () => observer.disconnect();
   }, []);
 
-  const handleTabSelect = (tabId: string) => {
+  const handleTabSelect = (tabId: string, event?: React.MouseEvent<HTMLButtonElement>) => {
     setActiveTab(tabId);
     if (tabId === "justificativas") {
       setJustificativaStatus("pending");
     }
 
+    // 1. Centraliza horizontalmente o chip clicado no container de navegação mobile
+    if (event?.currentTarget) {
+      event.currentTarget.scrollIntoView({
+        behavior: "smooth",
+        inline: "center",
+        block: "nearest",
+      });
+    }
+
+    // 2. Centraliza verticalmente o mockup do showcase na tela em dispositivos mobile/tablet
     if (typeof window !== "undefined" && window.innerWidth < 1024 && windowRef.current) {
-      const headerOffset = 85;
+      const headerOffset = 90;
       const elementPosition = windowRef.current.getBoundingClientRect().top;
       const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
 
@@ -294,10 +321,44 @@ export function AppShowcase() {
         </div>
 
         {/* Interactive Showcase Container */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
-          {/* Tab Selector List (Order 2 on Mobile, Order 1 on Desktop) */}
-          <div ref={tabsRef} className="order-2 lg:order-1 lg:col-span-4 flex flex-col gap-2.5 max-h-[640px] overflow-y-auto pr-1">
+        <div className="flex flex-col gap-4 lg:grid lg:grid-cols-12 lg:gap-8 lg:items-start">
+
+          {/* ── MOBILE: horizontal chip nav (top) ── */}
+          <div
+            ref={tabsRef}
+            className="
+              lg:hidden
+              flex gap-2.5 overflow-x-auto pb-2 pt-1 px-1 snap-x snap-mandatory scroll-smooth
+              [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
+            "
+          >
+            {TABS.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+
+              return (
+                <button
+                  key={tab.id}
+                  onClick={(e) => handleTabSelect(tab.id, e)}
+                  className={`
+                    snap-center shrink-0 flex items-center gap-2
+                    px-4 py-2.5 rounded-full border transition-all duration-300 cursor-pointer opacity-0
+                    ${
+                      isActive
+                        ? "bg-brand-green text-black border-brand-green shadow-lg shadow-brand-green/25 font-bold scale-[1.02]"
+                        : "bg-white dark:bg-white/[0.04] border-slate-200 dark:border-white/10 text-slate-600 dark:text-on-dark-muted hover:border-brand-green/40 hover:bg-slate-50 dark:hover:bg-white/[0.08]"
+                    }
+                  `}
+                >
+                  <Icon size={14} />
+                  <span className="text-xs font-semibold whitespace-nowrap">{tab.title}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* ── DESKTOP: vertical sidebar list (left column) ── */}
+          <div ref={desktopTabsRef} className="hidden lg:flex lg:order-1 lg:col-span-4 flex-col gap-2.5 max-h-[640px] overflow-y-auto pr-1">
             {TABS.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -306,7 +367,7 @@ export function AppShowcase() {
                 <button
                   key={tab.id}
                   onClick={() => handleTabSelect(tab.id)}
-                  className={`text-left p-3.5 sm:p-4 rounded-2xl transition-all duration-300 relative border cursor-pointer opacity-0 ${
+                  className={`text-left p-3.5 rounded-2xl transition-all duration-300 relative border cursor-pointer opacity-0 ${
                     isActive
                       ? "bg-white dark:bg-white/[0.07] border-brand-green/50 shadow-md shadow-brand-green/5"
                       : "bg-white/60 dark:bg-white/[0.015] border-slate-200 dark:border-white/5 hover:bg-white dark:hover:bg-white/[0.03] hover:border-slate-300 dark:hover:border-white/15"
@@ -314,22 +375,20 @@ export function AppShowcase() {
                 >
                   {isActive && (
                     <motion.div
-                      layoutId="activeIndicator"
+                      layoutId="activeIndicatorDesktop"
                       className="absolute left-0 top-3 bottom-3 w-1 bg-brand-green rounded-r-full"
                     />
                   )}
-
                   <div className="flex items-start gap-3">
                     <div
                       className={`p-2 rounded-xl shrink-0 transition-colors ${
                         isActive
-                          ? "bg-brand-green text-black font-bold"
+                          ? "bg-brand-green text-black"
                           : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-on-dark-muted"
                       }`}
                     >
                       <Icon size={18} />
                     </div>
-
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
                         <span
@@ -342,7 +401,7 @@ export function AppShowcase() {
                           {tab.badge}
                         </span>
                       </div>
-                      <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-on-dark truncate">
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-on-dark truncate">
                         {tab.title}
                       </h3>
                       <p className="text-[11px] text-slate-500 dark:text-on-dark-muted line-clamp-1 mt-0.5 leading-relaxed">
@@ -355,8 +414,8 @@ export function AppShowcase() {
             })}
           </div>
 
-          {/* Realistic App Window Mockup (Order 1 on Mobile, Order 2 on Desktop) */}
-          <div ref={windowRef} className="order-1 lg:order-2 lg:col-span-8 opacity-0">
+          {/* Realistic App Window Mockup */}
+          <div ref={windowRef} className="lg:order-2 lg:col-span-8 opacity-0">
             <div className={`rounded-3xl border transition-colors duration-300 shadow-2xl overflow-hidden relative ${
               isDark 
                 ? "bg-[#0b0c0e] border-white/15 text-slate-100" 

@@ -7,7 +7,6 @@ import {
   Stethoscope,
   Laptop,
   Factory,
-  Check,
   Users2
 } from "lucide-react";
 
@@ -15,70 +14,39 @@ const AUDIENCES = [
   {
     icon: Briefcase,
     category: "Terceirizações & Facilities",
-    headline: "Controle equipes externas em tempo real",
-    description: "Ideal para empresas de limpeza, segurança, manutenção e logística. Garanta que o colaborador está no posto com geolocalização e foto biométrica.",
     badge: "Geolocalização + Cerca Virtual",
-    points: [
-      "Auditoria de localização precisa",
-      "Foto do colaborador no local",
-      "Zero fraude de marcação por terceiros"
-    ]
+    points: ["Auditoria de localização precisa", "Zero fraude de marcação"],
   },
   {
     icon: Store,
     category: "Comércio & Varejo",
-    headline: "Trocas de turno rápidas e sem filas",
-    description: "Perfeito para lojas, restaurantes e redes comerciais. Elimine relógios com bobinas de papel que quebram e geram custos contínuos.",
     badge: "Fim das Bobinas de Papel",
-    points: [
-      "Marcação em 2 segundos",
-      "Escalas 6x1 e folgas automáticas",
-      "Sem custo de manutenção mecânica"
-    ]
+    points: ["Marcação em 2 segundos", "Escalas 6x1 automáticas"],
   },
   {
     icon: Stethoscope,
-    category: "Clínicas, Consultórios & Saúde",
-    headline: "Escalas 12x36 e biometria sem toque",
-    description: "Atenda hospitais, clínicas e laboratórios com higiene total através do reconhecimento facial contactless e gestão de plantões.",
-    badge: "100% Contactless & Higiênico",
-    points: [
-      "Escalas complexas e plantões",
-      "Sem contato físico com equipamentos",
-      "Conformidade rigorosa para o setor"
-    ]
+    category: "Clínicas & Saúde",
+    badge: "100% Contactless",
+    points: ["Escalas complexas e plantões", "Sem contato físico"],
   },
   {
     icon: Laptop,
-    category: "Escritórios, Agências & TI",
-    headline: "Flexibilidade para Home Office e Híbrido",
-    description: "Para equipes que trabalham no escritório ou em regime remoto. Controle de jornada transparente, banco de horas automático e solicitações de ajuste sem papel.",
+    category: "Escritórios & TI",
     badge: "Home Office & Híbrido",
-    points: [
-      "Acesso web e smartphone",
-      "Banco de horas em tempo real",
-      "Atestados e abonos com 1 clique"
-    ]
+    points: ["Banco de horas em tempo real", "Atestados com 1 clique"],
   },
   {
     icon: Factory,
-    category: "Indústria & Construção Civil",
-    headline: "Totem Kiosk robusto que funciona offline",
-    description: "Canteiros de obras e fábricas utilizam tablets compartilhados como Totem de ponto. Se a internet cair, o Viggo grava local e sincroniza sozinho.",
+    category: "Indústria & Construção",
     badge: "Operação 100% Offline",
-    points: [
-      "Modo Totem em qualquer tablet",
-      "Armazenamento local criptografado",
-      "Sincronização automática na nuvem"
-    ]
-  }
+    points: ["Modo Totem em qualquer tablet", "Sincronização automática"],
+  },
 ];
 
 export function TargetAudience() {
   const sectionRef = useRef<HTMLElement>(null);
   const badgeRef = useRef<HTMLSpanElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
-  const paragraphRef = useRef<HTMLParagraphElement>(null);
   const cardsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -107,7 +75,7 @@ export function TargetAudience() {
 
               const titleSplitter = new TextSplitter(titleRef.current, {
                 type: "chars",
-                charsClass: "char"
+                charsClass: "char",
               });
               const titleChars = titleSplitter.getElements();
 
@@ -120,34 +88,7 @@ export function TargetAudience() {
                   rotateX: 0,
                   stagger: 0.015,
                   duration: 0.5,
-                  clearProps: "transform"
-                },
-                "-=0.2"
-              );
-            }
-
-            if (paragraphRef.current) {
-              tl.fromTo(
-                paragraphRef.current,
-                { opacity: 0 },
-                { opacity: 1, duration: 0.01 }
-              );
-
-              const paraSplitter = new TextSplitter(paragraphRef.current, {
-                type: "words",
-                wordsClass: "word"
-              });
-              const paraWords = paraSplitter.getElements();
-
-              tl.fromTo(
-                paraWords,
-                { opacity: 0, y: 15 },
-                {
-                  opacity: 1,
-                  y: 0,
-                  stagger: 0.02,
-                  duration: 0.4,
-                  clearProps: "transform"
+                  clearProps: "transform",
                 },
                 "-=0.2"
               );
@@ -155,16 +96,16 @@ export function TargetAudience() {
 
             if (cardsRef.current) {
               tl.fromTo(
-                cardsRef.current.children,
-                { opacity: 0, y: 35, scale: 0.96 },
+                Array.from(cardsRef.current.children),
+                { opacity: 0, y: 25, scale: 0.96 },
                 {
                   opacity: 1,
                   y: 0,
                   scale: 1,
-                  stagger: 0.1,
-                  duration: 0.55,
+                  stagger: 0.08,
+                  duration: 0.45,
                   ease: "power3.out",
-                  clearProps: "transform"
+                  clearProps: "transform",
                 },
                 "-=0.15"
               );
@@ -174,7 +115,7 @@ export function TargetAudience() {
           }
         });
       },
-      { threshold: 0.15 }
+      { threshold: 0.1 }
     );
 
     observer.observe(sectionRef.current);
@@ -186,14 +127,14 @@ export function TargetAudience() {
     <section
       ref={sectionRef}
       id="para-quem-e"
-      className="py-20 lg:py-28 bg-slate-50 dark:bg-canvas-dark relative overflow-hidden border-t border-slate-200 dark:border-white/5 transition-colors duration-200"
+      className="py-16 lg:py-20 bg-slate-50 dark:bg-canvas-dark relative overflow-hidden border-t border-slate-200 dark:border-white/5 transition-colors duration-200"
     >
       {/* Ambient background glows */}
-      <div className="absolute top-1/3 left-1/4 -translate-y-1/2 w-[500px] h-[500px] bg-brand-green/5 blur-[140px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-1/3 right-1/4 w-[450px] h-[450px] bg-emerald-500/5 blur-[140px] rounded-full pointer-events-none" />
+      <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-[400px] h-[400px] bg-brand-green/5 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-0 right-1/4 w-[350px] h-[350px] bg-emerald-500/5 blur-[120px] rounded-full pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 lg:px-8 relative z-10">
-        <div className="text-center max-w-3xl mx-auto mb-16">
+        <div className="text-center max-w-2xl mx-auto mb-10">
           <span
             ref={badgeRef}
             className="inline-flex items-center gap-1.5 rounded-full bg-brand-green/10 border border-brand-green/20 px-3.5 py-1 text-xs font-semibold uppercase tracking-wider text-brand-green mb-4 opacity-0"
@@ -203,63 +144,70 @@ export function TargetAudience() {
           </span>
           <h2
             ref={titleRef}
-            className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-slate-900 dark:text-on-dark leading-tight opacity-0"
+            className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-on-dark leading-tight opacity-0"
           >
-            O controle de ponto perfeito para <span className="text-brand-green">o seu modelo de negócio</span>
+            O controle de ponto perfeito para{" "}
+            <span className="text-brand-green">o seu modelo de negócio</span>
           </h2>
-          <p
-            ref={paragraphRef}
-            className="mt-4 text-base sm:text-lg text-slate-600 dark:text-on-dark-muted leading-relaxed opacity-0"
-          >
-            De pequenas equipes locais a grandes operações externas com centenas de colaboradores, o Viggo se adapta à rotina da sua empresa.
-          </p>
         </div>
 
-        {/* Audience Cards Grid */}
-        <div ref={cardsRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/*
+          Mobile:  flex + overflow-x-auto (horizontal scroll, snap)
+          sm:      2-column grid
+          lg:      5-column grid (one card per segment)
+        */}
+        <div
+          ref={cardsRef}
+          className="
+            flex gap-3 overflow-x-auto pb-3 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
+            sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0
+            lg:grid-cols-5
+          "
+        >
           {AUDIENCES.map((item, index) => {
             const Icon = item.icon;
 
             return (
               <div
                 key={index}
-                className={`rounded-3xl bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 p-7 flex flex-col justify-between hover:border-brand-green/30 hover:bg-slate-100/80 dark:hover:bg-white/[0.035] transition-all duration-300 group opacity-0 shadow-sm dark:shadow-lg ${
-                  index === 4 ? "md:col-span-2 lg:col-span-1" : ""
-                }`}
+                className="
+                  snap-start shrink-0 w-[220px]
+                  sm:w-auto
+                  rounded-2xl bg-white dark:bg-white/[0.025]
+                  border border-slate-200 dark:border-white/10
+                  p-5 flex flex-col gap-3
+                  hover:border-brand-green/40 hover:shadow-lg hover:shadow-brand-green/5
+                  dark:hover:bg-white/[0.04]
+                  transition-all duration-300 group opacity-0
+                "
               >
-                <div>
-                  {/* Category Header */}
-                  <div className="flex items-center justify-between mb-5">
-                    <div className="p-3 rounded-2xl bg-brand-green/10 text-brand-green group-hover:bg-brand-green group-hover:text-black transition-colors">
-                      <Icon className="w-5 h-5" />
-                    </div>
-                    <span className="text-[11px] font-semibold text-brand-green bg-brand-green/10 border border-brand-green/20 px-2.5 py-0.5 rounded-full">
-                      {item.badge}
-                    </span>
+                {/* Icon + Category */}
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-brand-green/10 text-brand-green group-hover:bg-brand-green group-hover:text-black transition-colors shrink-0">
+                    <Icon className="w-4 h-4" />
                   </div>
-
-                  <h3 className="text-sm font-semibold text-brand-green uppercase tracking-wider mb-1">
+                  <h3 className="text-xs font-bold text-slate-800 dark:text-on-dark leading-snug">
                     {item.category}
                   </h3>
-                  <h4 className="text-lg font-bold text-slate-900 dark:text-on-dark mb-2.5 leading-snug">
-                    {item.headline}
-                  </h4>
-                  <p className="text-xs text-slate-600 dark:text-on-dark-muted leading-relaxed mb-6">
-                    {item.description}
-                  </p>
                 </div>
 
-                {/* Key Benefits List */}
-                <div className="pt-4 border-t border-slate-200 dark:border-white/5 space-y-2">
+                {/* Badge */}
+                <span className="self-start text-[10px] font-semibold text-brand-green bg-brand-green/10 border border-brand-green/20 px-2.5 py-0.5 rounded-full whitespace-nowrap">
+                  {item.badge}
+                </span>
+
+                {/* Points */}
+                <ul className="space-y-1.5 mt-auto">
                   {item.points.map((pt, i) => (
-                    <div key={i} className="flex items-center gap-2 text-xs text-slate-700 dark:text-on-dark/80">
-                      <div className="w-4 h-4 rounded-full bg-brand-green/15 text-brand-green flex items-center justify-center shrink-0">
-                        <Check className="w-2.5 h-2.5" />
-                      </div>
-                      <span>{pt}</span>
-                    </div>
+                    <li
+                      key={i}
+                      className="flex items-start gap-1.5 text-[11px] text-slate-600 dark:text-on-dark-muted leading-tight"
+                    >
+                      <span className="text-brand-green mt-0.5 shrink-0">✓</span>
+                      {pt}
+                    </li>
                   ))}
-                </div>
+                </ul>
               </div>
             );
           })}
