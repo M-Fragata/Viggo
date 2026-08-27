@@ -153,49 +153,49 @@ export function AcceptInvitePage() {
         <main className="flex-1 min-h-0 flex flex-col items-center p-6 md:p-16 border-emerald-400 border-2 md:rounded-r-2xl md:rounded-b-none rounded-b-2xl overflow-y-auto">
           <div className="w-full space-y-8 animate-in fade-in slide-in-from-right duration-700">
             <header className="text-center md:text-left">
-              <h1 className="text-3xl font-black text-slate-800 tracking-tight">
+              <h1 className="text-3xl font-black text-white tracking-tight">
                 Complete seu cadastro
               </h1>
-              <p className="text-slate-500 mt-1">Sua conta será vinculada à empresa <strong className="text-emerald-600">{company.name}</strong></p>
+              <p className="text-white mt-1">Sua conta será vinculada à empresa <strong className="text-emerald-400">{company.name}</strong></p>
             </header>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div className="space-y-4">
-                <div className="relative group">
+                <div className="relative group rounded-2xl border-2 border-slate-500 focus-within:border-emerald-400 transition-colors">
                   <label htmlFor="email" className="sr-only">Email</label>
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none" />
                   <input
                     {...register("email")}
                     id="email"
                     type="email"
                     placeholder="Seu email"
-                    className="w-full pl-12 pr-4 py-3 border-2 border-slate-100 focus:border-emerald-400 rounded-2xl outline-none transition-all"
+                    className="w-full pl-12 pr-4 py-3 bg-transparent rounded-2xl outline-none"
                   />
                   {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
                 </div>
 
-                <div className="relative group">
+                <div className="relative group rounded-2xl border-2 border-slate-500 focus-within:border-emerald-400 transition-colors">
                   <label htmlFor="name" className="sr-only">Seu nome</label>
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none" />
                   <input
                     {...register("name")}
                     id="name"
                     type="text"
                     placeholder="Seu nome completo"
-                    className="w-full pl-12 pr-4 py-3 border-2 border-slate-100 focus:border-emerald-400 rounded-2xl outline-none transition-all"
+                    className="w-full pl-12 pr-4 py-3 bg-transparent rounded-2xl outline-none"
                   />
                   {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
                 </div>
 
-                <div className="relative group">
+                <div className="relative group rounded-2xl border-2 border-slate-500 focus-within:border-emerald-400 transition-colors">
                   <label htmlFor="password" className="sr-only">Senha</label>
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none" />
                   <input
                     {...register("password")}
                     id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="Crie uma senha (mín. 8 caracteres)"
-                    className="w-full pl-12 pr-12 py-3 border-2 border-slate-100 focus:border-emerald-400 rounded-2xl outline-none transition-all"
+                    className="w-full pl-12 pr-12 py-3 bg-transparent rounded-2xl outline-none"
                   />
                   <button
                     type="button"
@@ -207,15 +207,15 @@ export function AcceptInvitePage() {
                   {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
                 </div>
 
-                <div className="relative group">
+                <div className="relative group rounded-2xl border-2 border-slate-500 focus-within:border-emerald-400 transition-colors">
                   <label htmlFor="confirmPassword" className="sr-only">Confirmar senha</label>
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none" />
                   <input
                     {...register("confirmPassword")}
                     id="confirmPassword"
                     type={showPassword ? "text" : "password"}
                     placeholder="Confirme sua senha"
-                    className="w-full pl-12 pr-12 py-3 border-2 border-slate-100 focus:border-emerald-400 rounded-2xl outline-none transition-all"
+                    className="w-full pl-12 pr-12 py-3 bg-transparent rounded-2xl outline-none"
                   />
                   <button
                     type="button"
@@ -237,7 +237,7 @@ export function AcceptInvitePage() {
                     required
                     className="mt-1 h-4 w-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500"
                   />
-                  <label htmlFor="aceiteContratos" className="text-sm text-slate-600 leading-relaxed">
+                  <label htmlFor="aceiteContratos" className="text-sm text-white leading-relaxed">
                     Li e aceito os{" "}
                     <a href="/termos-de-uso" target="_blank" rel="noopener noreferrer" className="text-emerald-600 underline hover:text-emerald-700">
                       Termos de Uso
@@ -265,7 +265,7 @@ export function AcceptInvitePage() {
                     required
                     className="mt-1 h-4 w-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500"
                   />
-                  <label htmlFor="aceiteBiometria" className="text-sm text-slate-600 leading-relaxed">
+                  <label htmlFor="aceiteBiometria" className="text-sm text-white leading-relaxed">
                     Autorizo expressamente o uso da minha{" "}
                     <a href="/consentimento-biometria" target="_blank" rel="noopener noreferrer" className="text-emerald-600 underline hover:text-emerald-700">
                       biometria facial
@@ -284,11 +284,11 @@ export function AcceptInvitePage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-emerald-400 hover:bg-emerald-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-emerald-200 transition-all active:scale-[0.98] disabled:bg-slate-200 disabled:shadow-none uppercase tracking-widest text-xs cursor-pointer"
+                  className="w-full bg-emerald-400 hover:bg-emerald-500 text-white font-bold py-4 rounded-2xl transition-all active:scale-[0.98] disabled:bg-slate-200 uppercase tracking-widest text-xs cursor-pointer"
                 >
                   {isSubmitting ? "Criando conta..." : "Criar conta e entrar"}
                 </button>
-                <Link to="/" className="text-center text-slate-600 hover:text-emerald-500 text-sm transition-colors">
+                <Link to="/" className="text-center text-white hover:text-emerald-400 text-sm transition-colors">
                   Já tem conta? Faça login
                 </Link>
               </div>
