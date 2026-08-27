@@ -437,6 +437,33 @@ export interface SignupCompanyDto {
   aceiteDpa?: boolean;
 }
 
+export const FacialValidationMode = {
+  FRONTAL_ONLY: "FRONTAL_ONLY",
+  FULL_LIVENESS: "FULL_LIVENESS",
+} as const;
+export type FacialValidationMode = typeof FacialValidationMode[keyof typeof FacialValidationMode];
+
+export const TotemAuthMode = {
+  CREDENTIALS_ONLY: "CREDENTIALS_ONLY",
+  FRONTAL_ONLY: "FRONTAL_ONLY",
+  FULL_LIVENESS: "FULL_LIVENESS",
+} as const;
+export type TotemAuthMode = typeof TotemAuthMode[keyof typeof TotemAuthMode];
+
+export interface CompanySettings {
+  ponto?: {
+    facialMode?: FacialValidationMode;
+    requirePhoto?: boolean;
+    requireBiometry?: boolean;
+    checkinToleranceMinutes?: number;
+    lunchToleranceMinutes?: number;
+  };
+  totem?: {
+    authMode?: TotemAuthMode;
+  };
+  [key: string]: any;
+}
+
 export interface SignupCompanyResponse {
   user: User;
   company: Company;
@@ -870,6 +897,7 @@ export interface TotemVerifyResponse {
   expiresIn: number;
   userId: string;
   userName: string;
+  totemAuthMode?: TotemAuthMode;
 }
 
 export interface TotemCheckinDto {

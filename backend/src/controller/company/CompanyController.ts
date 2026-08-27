@@ -252,6 +252,16 @@ export class CompanyController {
     const bodySchema = z.object({
       name: z.string().min(2).optional(),
       settings: z.object({
+        ponto: z.object({
+          facialMode: z.enum(['FRONTAL_ONLY', 'FULL_LIVENESS']).optional(),
+          requirePhoto: z.boolean().optional(),
+          requireBiometry: z.boolean().optional(),
+          checkinToleranceMinutes: z.number().min(0).max(60).optional(),
+          lunchToleranceMinutes: z.number().min(0).max(120).optional(),
+        }).optional(),
+        totem: z.object({
+          authMode: z.enum(['CREDENTIALS_ONLY', 'FRONTAL_ONLY', 'FULL_LIVENESS']).optional(),
+        }).optional(),
         logo: z.string().url().optional().nullable(),
         primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
         timezone: z.string().optional(),
@@ -270,11 +280,32 @@ export class CompanyController {
 
       const { name, settings } = bodySchema.parse(req.body);
 
+      let mergedSettings = undefined;
+      if (settings) {
+        const currentCompany = await prisma.company.findUnique({
+          where: { id: companyId },
+          select: { settings: true },
+        });
+        const currentSettings = (currentCompany?.settings as Record<string, any>) || {};
+        mergedSettings = {
+          ...currentSettings,
+          ...settings,
+          ponto: {
+            ...(currentSettings.ponto || {}),
+            ...(settings.ponto || {}),
+          },
+          totem: {
+            ...(currentSettings.totem || {}),
+            ...(settings.totem || {}),
+          },
+        };
+      }
+
       const company = await prisma.company.update({
         where: { id: companyId },
         data: {
           ...(name && { name }),
-          ...(settings && { settings: { ...(settings as object) } }),
+          ...(mergedSettings !== undefined && { settings: mergedSettings }),
         },
         select: {
           id: true,

@@ -214,7 +214,14 @@ export class TotemController {
                 return res.status(403).json({ message: "Credenciais inválidas" });
             }
 
-            if (!user.faceDescriptor) {
+            const company = await extendedPrisma.company.findUnique({
+                where: { id: companyId },
+                select: { settings: true },
+            });
+            const settings = (company?.settings as Record<string, any>) || {};
+            const totemAuthMode = settings.totem?.authMode || "FRONTAL_ONLY";
+
+            if (totemAuthMode !== "CREDENTIALS_ONLY" && !user.faceDescriptor) {
                 return res.status(403).json({
                     code: "FACE_NOT_REGISTERED",
                     message: "Registro facial pendente. Procure o administrador para cadastrar sua biometria.",
@@ -222,7 +229,7 @@ export class TotemController {
                 });
             }
 
-            const descriptor = decryptFaceDescriptor(user.faceDescriptor as string);
+            const descriptor = user.faceDescriptor ? decryptFaceDescriptor(user.faceDescriptor as string) : new Float32Array(128);
             const token = crypto.randomUUID();
             const expiresAt = new Date(Date.now() + 30_000);
 
@@ -234,6 +241,7 @@ export class TotemController {
                 expiresIn: 30,
                 userId: user.id,
                 userName: user.name,
+                totemAuthMode,
             });
         } catch (error) {
             if (error instanceof z.ZodError) {

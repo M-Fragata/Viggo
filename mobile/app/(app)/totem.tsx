@@ -163,6 +163,36 @@ export default function TotemScreen() {
     setLoadingAuth(true);
     try {
       const data: TotemVerifyResponse = await api.totem.verify(emailOrCpf, password);
+
+      if (data.totemAuthMode === 'CREDENTIALS_ONLY') {
+        let coords = { latitude: 0, longitude: 0 };
+        try {
+          const loc = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.High,
+          });
+          coords = {
+            latitude: loc.coords.latitude,
+            longitude: loc.coords.longitude,
+          };
+        } catch {
+          console.warn('GPS não disponível no Totem');
+        }
+
+        const response = await api.totem.checkin({
+          userId: data.userId,
+          type,
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          faceToken: data.faceToken,
+        });
+
+        setScreenState({
+          name: 'success',
+          comprovante: response.comprovante,
+          userName: data.userName,
+        });
+        return;
+      }
       
       // Solicitar permissão de câmera se não concedida
       if (!cameraPermission?.granted) {

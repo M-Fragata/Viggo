@@ -37,6 +37,7 @@ export function TotemPage() {
   const [pendingCoords, setPendingCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [pendingUserId, setPendingUserId] = useState<string | null>(null);
   const [needsFaceRegistration, setNeedsFaceRegistration] = useState(false);
+  const [totemAuthMode, setTotemAuthMode] = useState<string>("FRONTAL_ONLY");
   const [exitPin, setExitPin] = useState("");
   const [isExiting, setIsExiting] = useState(false);
   const [showRecover, setShowRecover] = useState(false);
@@ -136,7 +137,35 @@ export function TotemPage() {
       setFaceToken(data.faceToken);
       setUserId(data.userId);
       setUserName(data.userName);
+      if (data.totemAuthMode) {
+        setTotemAuthMode(data.totemAuthMode);
+      }
       setIsVerifying(false);
+
+      if (data.totemAuthMode === "CREDENTIALS_ONLY") {
+        setIsRegistering(true);
+        setMessage("Registrando ponto...");
+        let coords = pendingCoords;
+        if (!coords) {
+          try {
+            coords = await getLocation();
+            setPendingCoords(coords);
+          } catch {
+            coords = { latitude: 0, longitude: 0 };
+          }
+        }
+        const response = await api.totem.checkin({
+          userId: data.userId,
+          type: pendingType ?? "ENTRY",
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          faceToken: data.faceToken,
+        });
+        setScreen({ name: "success", comprovante: response.comprovante });
+        setIsRegistering(false);
+        return;
+      }
+
       await startCamera();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao verificar credenciais.");
@@ -468,6 +497,7 @@ export function TotemPage() {
               <LivenessChallenge
                 videoRef={videoRef}
                 faceToken={faceToken}
+                facialMode={totemAuthMode === "FULL_LIVENESS" ? "FULL_LIVENESS" : "FRONTAL_ONLY"}
                 verifyOverride={async (descriptor) => {
                   return api.totem.verifyFace(faceToken, Array.from(descriptor));
                 }}

@@ -14,6 +14,7 @@ import {
   CreditCard,
   Mail,
   TabletSmartphone,
+  Sliders,
   LogOut,
   Building2,
 } from "lucide-react";
@@ -78,6 +79,7 @@ export function NavDrawer({ isOpen, onClose }: NavDrawerProps) {
 
   const adminSystemItems = [
     { to: "/totem", label: "Modo Totem", icon: TabletSmartphone },
+    { to: "/configuracoes", label: "Configurações", icon: Sliders },
     { to: "/convites", label: "Convites de Acesso", icon: Mail },
     { to: "/plano", label: "Assinatura & Plano", icon: CreditCard },
   ];

@@ -25,6 +25,7 @@ const ConvitesPage = lazy(() => import("../pages/admin/ConvitesPage").then((m) =
 const JustificativasAdminPage = lazy(() => import("../pages/admin/JustificativasAdminPage").then((m) => ({ default: m.JustificativasAdminPage })));
 const TotemManagePage = lazy(() => import("../pages/admin/TotemManagePage").then((m) => ({ default: m.TotemManagePage })));
 const TotemPage = lazy(() => import("../pages/admin/TotemPage").then((m) => ({ default: m.TotemPage })));
+const ConfiguracoesPage = lazy(() => import("../pages/admin/ConfiguracoesPage").then((m) => ({ default: m.ConfiguracoesPage })));
 
 export function AdminRoutes() {
   const { user } = useAuth();
@@ -49,6 +50,7 @@ export function AdminRoutes() {
         <Route path="convites" element={<Suspense fallback={<Loading />}><ConvitesPage /></Suspense>} />
         <Route path="justificativas" element={<Suspense fallback={<Loading />}><JustificativasAdminPage /></Suspense>} />
         <Route path="totem" element={<Suspense fallback={<Loading />}><TotemManagePage /></Suspense>} />
+        <Route path="configuracoes" element={<Suspense fallback={<Loading />}><ConfiguracoesPage /></Suspense>} />
         <Route path="ponto" element={<PontoPage />} />
         <Route path="pontos" element={<PontoViewPage />} />
         <Route path="register" element={<RegisterFace />} />

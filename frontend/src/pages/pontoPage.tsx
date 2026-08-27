@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react"
 import { api } from "../services/api"
 import { LivenessChallenge } from "../components/LivenessChallenge"
 import { useAuth } from "../hooks/useAuth"
+import { useCompany } from "../hooks/useCompany"
 
 import { LogIn, Utensils, Coffee, LogOut, ScanFace } from "lucide-react"
 import { PontoPageSkeleton } from "../components/PontoPageSkeleton"
@@ -21,6 +22,7 @@ type ChekinProps = {
 
 export function PontoPage() {
     const { token, user } = useAuth();
+    const { company } = useCompany();
 
     const [videoOpen, setVideoOpen] = useState<boolean>(false)
     const [message, setMessage] = useState<string>("Iniciando validação...")
@@ -295,6 +297,7 @@ export function PontoPage() {
                             <LivenessChallenge
                                 videoRef={videoRef}
                                 faceToken={faceToken}
+                                facialMode={company?.settings?.ponto?.facialMode || 'FRONTAL_ONLY'}
                                 onComplete={handleLivenessComplete}
                                 onCancel={handleLivenessCancel}
                                 onModelsLoaded={() => setMessage("Centralize seu rosto")}

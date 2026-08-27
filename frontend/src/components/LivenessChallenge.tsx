@@ -12,6 +12,7 @@ interface LivenessChallengeProps {
   onComplete: (bestFrameDescriptor: Float32Array) => void;
   onCancel: () => void;
   faceToken?: string;
+  facialMode?: 'FRONTAL_ONLY' | 'FULL_LIVENESS';
   verifyOverride?: (descriptor: Float32Array) => Promise<{ success: boolean; distance: number }>;
   onModelsLoaded?: () => void;
   onStepChange?: (message: string) => void;
@@ -229,14 +230,20 @@ export function LivenessChallenge({
   onComplete,
   onCancel,
   faceToken,
+  facialMode,
   verifyOverride,
   onModelsLoaded,
   onStepChange
 }: LivenessChallengeProps) {
-  const steps: LivenessStep[] = useMemo(() => faceToken
-    ? ['front', 'left', 'right']
-    : ['front'],
-  [faceToken]);
+  const steps: LivenessStep[] = useMemo(() => {
+    if (facialMode === 'FRONTAL_ONLY') {
+      return ['front'];
+    }
+    if (facialMode === 'FULL_LIVENESS') {
+      return ['front', 'left', 'right'];
+    }
+    return faceToken ? ['front', 'left', 'right'] : ['front'];
+  }, [faceToken, facialMode]);
 
   const animationRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);

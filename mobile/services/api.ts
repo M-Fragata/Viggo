@@ -33,6 +33,7 @@ export interface TotemVerifyResponse {
   expiresIn: number;
   userId: string;
   userName: string;
+  totemAuthMode?: 'CREDENTIALS_ONLY' | 'FRONTAL_ONLY' | 'FULL_LIVENESS';
 }
 
 export interface TotemCheckinDto {
