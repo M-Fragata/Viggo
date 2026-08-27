@@ -14,6 +14,7 @@ export function Preloader({ onComplete }: PreloaderProps) {
   onCompleteRef.current = onComplete;
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     if (!containerRef.current || !titleRef.current) return;
 
     const tl = gsap.timeline({
@@ -67,7 +68,7 @@ export function Preloader({ onComplete }: PreloaderProps) {
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 z-[9999] bg-black flex items-center justify-center"
+      className="fixed inset-0 z-[9999] bg-black flex items-center justify-center touch-none select-none"
     >
       <h1
         ref={titleRef}

@@ -6,6 +6,7 @@ import GradientWaves from "../components/GradientWaves";
 import SpecularButton from "../components/SpecularButton";
 import { HeroContent } from "../components/HeroContent";
 import { useScrollReveal } from "../hooks/useScrollReveal";
+import { useSmoothScroll } from "../hooks/useSmoothScroll";
 import { Preloader } from "../components/Preloader";
 import { Marquee } from "../components/Marquee";
 import { BentoGrid } from "../components/BentoGrid";
@@ -23,14 +24,33 @@ import "../scroll-animations.css";
 
 export function LandingPage() {
   useScrollReveal();
+  const [showPreloader, setShowPreloader] = useState(true);
+  useSmoothScroll({ damping: 0.065, speed: 0.85, enabled: !showPreloader });
+
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
-  const [showPreloader, setShowPreloader] = useState(true);
   const [startHeroAnimation, setStartHeroAnimation] = useState(false);
 
   useEffect(() => {
     trackPageView("/page");
   }, []);
+
+  // Bloqueia o scroll e força o topo durante o preloader
+  useEffect(() => {
+    if (showPreloader) {
+      window.scrollTo(0, 0);
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+    };
+  }, [showPreloader]);
 
   const handlePreloaderComplete = () => {
     setShowPreloader(false);
@@ -38,7 +58,7 @@ export function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black text-slate-900 dark:text-on-dark selection:bg-brand-green selection:text-black transition-colors duration-200">
+    <div className="min-h-screen overflow-x-hidden bg-white dark:bg-black text-slate-900 dark:text-on-dark selection:bg-brand-green selection:text-black transition-colors duration-200">
       {showPreloader && <Preloader onComplete={handlePreloaderComplete} />}
 
       {/* Sticky Navigation Header */}
