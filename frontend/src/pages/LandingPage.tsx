@@ -84,9 +84,9 @@ export function LandingPage() {
                 <SpecularButton
                   size="md"
                   radius={24}
-                  tint="#000000"
+                  tint="#ffffff0c"
                   tintOpacity={0.9}
-                  textColor="#ffffff"
+                  textColor={isDark ? "#ffffff" : "#000000"}
                   lineColor="#00d4a4"
                   baseColor="#00d4a4"
                   intensity={1.5}

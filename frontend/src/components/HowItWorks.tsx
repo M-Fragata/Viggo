@@ -4,6 +4,8 @@ import { gsap } from "gsap";
 import { TextSplitter } from "../utils/textSplitter";
 import { UserPlus, Settings2, Smartphone, ArrowRight, Sparkles, CheckCircle2 } from "lucide-react";
 import { TRIAL_DAYS } from "../../../shared/plans";
+import SpecularButton from "./SpecularButton";
+import { useTheme } from "../contexts/ThemeContext";
 
 const STEPS = [
   {
@@ -30,6 +32,8 @@ const STEPS = [
 ];
 
 export function HowItWorks() {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
   const sectionRef = useRef<HTMLElement>(null);
   const badgeRef = useRef<HTMLSpanElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
@@ -226,10 +230,30 @@ export function HowItWorks() {
         <div ref={ctaRef} className="mt-12 text-center opacity-0 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
             to="/company/signup"
-            className="inline-flex items-center gap-2 rounded-full bg-brand-green px-7 py-3.5 text-sm font-semibold text-black hover:bg-brand-green-deep transition-all shadow-lg shadow-brand-green/20"
+            className="inline-flex items-center justify-center"
           >
-            <span>Iniciar teste grátis de {TRIAL_DAYS} dias</span>
-            <ArrowRight className="w-4 h-4" />
+            <SpecularButton
+              size="md"
+              radius={24}
+              tint="#ffffff0c"
+              tintOpacity={0.9}
+              textColor={isDark ? "#ffffff" : "#000000"}
+              lineColor="#00d4a4"
+              baseColor="#00d4a4"
+              intensity={1.5}
+              shineSize={14}
+              shineFade={35}
+              thickness={1.5}
+              speed={0.4}
+              followMouse={true}
+              proximity={200}
+              className="font-bold text-sm shadow-lg shadow-brand-green/15 cursor-pointer inline-flex items-center gap-2"
+            >
+              <span className="inline-flex items-center gap-2">
+                Iniciar teste grátis de {TRIAL_DAYS} dias
+                <ArrowRight className="w-4 h-4" />
+              </span>
+            </SpecularButton>
           </Link>
           <span className="text-xs text-on-dark-muted">
             Configuração assistida gratuita inclusa

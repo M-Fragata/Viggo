@@ -1,6 +1,8 @@
 import { useRef, useEffect } from "react";
 import { type PlanData, type PlanFeature, formatPrice, formatMaxEmployees } from "../../../shared/plans";
 import { gsap } from "gsap";
+import SpecularButton from "./SpecularButton";
+import { useTheme } from "../contexts/ThemeContext";
 
 interface PricingCardProps {
   plan: PlanData;
@@ -38,6 +40,8 @@ function CrossIcon() {
 }
 
 export function PricingCard({ plan, onCtaClick }: PricingCardProps) {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
   const isHighlighted = plan.highlighted;
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -123,21 +127,37 @@ export function PricingCard({ plan, onCtaClick }: PricingCardProps) {
         ))}
       </ul>
 
-      <button
-        type="button"
-        onClick={onCtaClick ?? (() => {})}
-        className={`cursor-pointer w-full rounded-full px-6 py-3.5 text-sm font-semibold
-          transition-all duration-200 active:scale-[0.98]
-          
-          ${plan.ctaVariant === "primary"
-            ? "bg-brand-green text-black hover:bg-brand-green-deep border border-brand-green shadow-md shadow-brand-green/20"
-            : plan.ctaVariant === "secondary"
-            ? "bg-slate-100 dark:bg-white/[0.05] text-slate-800 dark:text-white hover:bg-slate-200 dark:hover:bg-white/[0.1] border border-slate-200 dark:border-white/10"
-            : "border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/[0.05] text-slate-800 dark:text-white hover:bg-slate-200 dark:hover:bg-white/[0.1]"
-          }`}
-      >
-        {plan.ctaText}
-      </button>
+      {plan.ctaVariant === "primary" ? (
+        <SpecularButton
+          type="button"
+          onClick={onCtaClick ?? (() => {})}
+          size="md"
+          radius={24}
+          tint="#ffffff0c"
+          tintOpacity={0.9}
+          textColor={isDark ? "#ffffff" : "#000000"}
+          lineColor="#00d4a4"
+          baseColor="#00d4a4"
+          intensity={1.5}
+          shineSize={14}
+          shineFade={35}
+          thickness={1.5}
+          speed={0.4}
+          followMouse={true}
+          proximity={200}
+          className="w-full font-bold text-sm shadow-lg shadow-brand-green/15 cursor-pointer"
+        >
+          {plan.ctaText}
+        </SpecularButton>
+      ) : (
+        <button
+          type="button"
+          onClick={onCtaClick ?? (() => {})}
+          className="cursor-pointer w-full rounded-full px-6 py-3.5 text-sm font-semibold transition-all duration-200 active:scale-[0.98] bg-slate-100 dark:bg-white/[0.05] text-slate-800 dark:text-white hover:bg-slate-200 dark:hover:bg-white/[0.1] border border-slate-200 dark:border-white/10"
+        >
+          {plan.ctaText}
+        </button>
+      )}
     </div>
   );
 }

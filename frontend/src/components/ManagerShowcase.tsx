@@ -8,8 +8,12 @@ import {
 import { Link } from "react-router";
 import { gsap } from "gsap";
 import { TextSplitter } from "../utils/textSplitter";
+import SpecularButton from "./SpecularButton";
+import { useTheme } from "../contexts/ThemeContext";
 
 export function ManagerShowcase() {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
   const sectionRef = useRef<HTMLElement>(null);
   const metricsRef = useRef<HTMLDivElement>(null);
   const badgeRef = useRef<HTMLDivElement>(null);
@@ -273,10 +277,30 @@ export function ManagerShowcase() {
             <div ref={ctaBtnRef} className="pt-4 opacity-0">
               <Link
                 to="/company/signup"
-                className="inline-flex items-center gap-2 rounded-full bg-brand-green px-6 py-3 text-sm font-semibold text-black hover:bg-brand-green-deep transition-all shadow-lg hover:shadow-brand-green/20"
+                className="inline-flex items-center justify-center"
               >
-                <span>Experimente a gestão em tempo real</span>
-                <ArrowRight className="w-4 h-4" />
+                <SpecularButton
+                  size="md"
+                  radius={24}
+                  tint="#ffffff0c"
+                  tintOpacity={0.9}
+                  textColor={isDark ? "#ffffff" : "#000000"}
+                  lineColor="#00d4a4"
+                  baseColor="#00d4a4"
+                  intensity={1.5}
+                  shineSize={14}
+                  shineFade={35}
+                  thickness={1.5}
+                  speed={0.4}
+                  followMouse={true}
+                  proximity={200}
+                  className="font-bold text-sm shadow-lg shadow-brand-green/15 cursor-pointer inline-flex items-center gap-2"
+                >
+                  <span className="inline-flex items-center gap-2">
+                    Experimente a gestão em tempo real
+                    <ArrowRight className="w-4 h-4" />
+                  </span>
+                </SpecularButton>
               </Link>
             </div>
           </div>

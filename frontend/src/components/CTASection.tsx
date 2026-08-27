@@ -4,8 +4,12 @@ import { gsap } from "gsap";
 import { TextSplitter } from "../utils/textSplitter";
 import { TRIAL_DAYS } from "../../../shared/plans";
 import { trackEvent } from "../utils/metrics";
+import SpecularButton from "./SpecularButton";
+import { useTheme } from "../contexts/ThemeContext";
 
 export function CTASection() {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
   const sectionRef = useRef<HTMLElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const paragraphRef = useRef<HTMLParagraphElement>(null);
@@ -120,9 +124,27 @@ export function CTASection() {
           <Link
             to="/company/signup"
             onClick={() => trackEvent("cta_click", { ctaId: "cta-criar-empresa-gratis", path: "/page" })}
-            className="w-full sm:w-auto inline-flex items-center justify-center rounded-full bg-brand-green px-8 py-3.5 text-sm font-semibold text-black hover:bg-brand-green-deep transition-all shadow-lg shadow-brand-green/20"
+            className="w-full sm:w-auto inline-flex items-center justify-center"
           >
-            Criar minha empresa grátis
+            <SpecularButton
+              size="md"
+              radius={24}
+              tint="#ffffff0c"
+              tintOpacity={0.9}
+              textColor={isDark ? "#ffffff" : "#000000"}
+              lineColor="#00d4a4"
+              baseColor="#00d4a4"
+              intensity={1.5}
+              shineSize={14}
+              shineFade={35}
+              thickness={1.5}
+              speed={0.4}
+              followMouse={true}
+              proximity={200}
+              className="w-full sm:w-auto font-bold text-sm shadow-lg shadow-brand-green/15 cursor-pointer"
+            >
+              Criar minha empresa grátis
+            </SpecularButton>
           </Link>
           <a
             href="https://wa.me/5521966921215?text=Ol%C3%A1!%20Gostaria%20de%20tirar%20algumas%20d%C3%BAvidas%20sobre%20o%20Viggo%20antes%20de%20criar%20minha%20conta."
