@@ -145,25 +145,25 @@ export function FAQ() {
   };
 
   return (
-    <section ref={sectionRef} className="py-20 lg:py-28 bg-canvas-dark relative border-t border-white/5" id="faq">
+    <section ref={sectionRef} className="py-20 lg:py-28 bg-slate-50 dark:bg-canvas-dark relative border-t border-slate-200 dark:border-white/5 transition-colors duration-200" id="faq">
       <div className="max-w-4xl mx-auto px-4 lg:px-8 relative z-10">
         <div className="text-center mb-12">
           <span 
             ref={badgeRef}
-            className="inline-flex items-center gap-1.5 rounded-full bg-white/5 border border-white/10 px-3.5 py-1 text-xs font-medium text-on-dark-muted mb-4 opacity-0"
+            className="inline-flex items-center gap-1.5 rounded-full bg-slate-200/80 dark:bg-white/5 border border-slate-300 dark:border-white/10 px-3.5 py-1 text-xs font-semibold text-slate-700 dark:text-on-dark-muted mb-4 opacity-0"
           >
             <HelpCircle className="w-3.5 h-3.5 text-brand-green" />
             Tire suas dúvidas
           </span>
           <h2 
             ref={titleRef}
-            className="text-3xl sm:text-4xl font-bold tracking-tight text-on-dark leading-tight opacity-0"
+            className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-on-dark leading-tight opacity-0"
           >
             Perguntas Frequentes de Empresários e RH
           </h2>
           <p 
             ref={paragraphRef}
-            className="mt-4 text-base sm:text-lg text-on-dark-muted opacity-0"
+            className="mt-4 text-base sm:text-lg text-slate-600 dark:text-on-dark-muted opacity-0"
           >
             Tudo o que você precisa saber sobre a segurança jurídica e operacional do Viggo.
           </p>
@@ -181,22 +181,22 @@ export function FAQ() {
               <div
                 className={`rounded-2xl transition-all duration-200 border ${
                   isOpen
-                    ? "bg-white/[0.05] border-brand-green/40 shadow-xl shadow-brand-green/5"
+                    ? "bg-white dark:bg-white/[0.05] border-brand-green/50 shadow-md shadow-brand-green/5"
                     : isHoveredOrActive
-                    ? "bg-white/[0.03] border-white/20"
-                    : "bg-white/[0.015] border-white/10 hover:border-white/20"
+                    ? "bg-white dark:bg-white/[0.03] border-slate-300 dark:border-white/20"
+                    : "bg-white/80 dark:bg-white/[0.015] border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20"
                 }`}
               >
                 <div
                   className="w-full py-5 px-6 flex items-center justify-between text-left focus:outline-none"
                   aria-expanded={isOpen}
                 >
-                  <span className="text-base sm:text-lg font-semibold text-on-dark pr-4">
+                  <span className="text-base sm:text-lg font-semibold text-slate-900 dark:text-on-dark pr-4">
                     {faq.question}
                   </span>
                   <div
-                    className={`p-1.5 rounded-full bg-white/5 text-on-dark transition-transform duration-300 shrink-0 ${
-                      isOpen ? "rotate-180 bg-brand-green text-black" : ""
+                    className={`p-1.5 rounded-full bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-on-dark transition-transform duration-300 shrink-0 ${
+                      isOpen ? "rotate-180 bg-brand-green text-black dark:text-black" : ""
                     }`}
                   >
                     <ChevronDown className="w-4 h-4" />
@@ -212,7 +212,7 @@ export function FAQ() {
                       transition={{ duration: 0.25, ease: "easeInOut" }}
                       className="overflow-hidden"
                     >
-                      <div className="px-6 pb-6 pt-1 text-sm sm:text-base text-on-dark-muted leading-relaxed border-t border-white/5">
+                      <div className="px-6 pb-6 pt-1 text-sm sm:text-base text-slate-600 dark:text-on-dark-muted leading-relaxed border-t border-slate-100 dark:border-white/5">
                         {faq.answer}
                       </div>
                     </motion.div>

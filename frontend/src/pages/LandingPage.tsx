@@ -35,11 +35,11 @@ export function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-on-dark selection:bg-brand-green selection:text-black">
+    <div className="min-h-screen bg-white dark:bg-black text-slate-900 dark:text-on-dark selection:bg-brand-green selection:text-black transition-colors duration-200">
       {showPreloader && <Preloader onComplete={handlePreloaderComplete} />}
       
       {/* Sticky Navigation Header */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-black/70 border-b border-white/5 transition-all">
+      <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/80 dark:bg-black/70 border-b border-slate-200/80 dark:border-white/5 transition-all">
         <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8" aria-label="Navegação Principal">
           <div className="flex h-20 items-center justify-between">
             <div className="flex items-center gap-8">
@@ -47,23 +47,23 @@ export function LandingPage() {
                 <img src={logo} alt="Viggo Logo" className="w-24 md:w-28 h-auto drop-shadow-xl rounded-xl" />
               </Link>
 
-              <div className="hidden lg:flex items-center gap-7 text-sm text-on-dark-muted font-medium">
-                <a href="#funcionalidades" className="hover:text-brand-green transition-colors">
+              <div className="hidden lg:flex items-center gap-7 text-sm text-slate-600 dark:text-on-dark-muted font-medium">
+                <a href="#funcionalidades" className="hover:text-brand-green dark:hover:text-brand-green transition-colors">
                   Funcionalidades
                 </a>
-                <a href="#como-funciona" className="hover:text-brand-green transition-colors">
+                <a href="#como-funciona" className="hover:text-brand-green dark:hover:text-brand-green transition-colors">
                   Como Funciona
                 </a>
-                <a href="#para-quem-e" className="hover:text-brand-green transition-colors">
+                <a href="#para-quem-e" className="hover:text-brand-green dark:hover:text-brand-green transition-colors">
                   Segmentos
                 </a>
-                <a href="#plataforma-tour" className="hover:text-brand-green transition-colors">
+                <a href="#plataforma-tour" className="hover:text-brand-green dark:hover:text-brand-green transition-colors">
                   Tour do Sistema
                 </a>
-                <a href="#precos" className="hover:text-brand-green transition-colors">
+                <a href="#precos" className="hover:text-brand-green dark:hover:text-brand-green transition-colors">
                   Planos
                 </a>
-                <a href="#faq" className="hover:text-brand-green transition-colors">
+                <a href="#faq" className="hover:text-brand-green dark:hover:text-brand-green transition-colors">
                   Dúvidas Frequentes
                 </a>
               </div>
@@ -73,7 +73,7 @@ export function LandingPage() {
               <Link 
                 to="/" 
                 state={{ fromLanding: true }}
-                className="text-sm font-semibold text-on-dark hover:text-brand-green transition-colors px-3 py-2"
+                className="text-sm font-semibold text-slate-800 dark:text-on-dark hover:text-brand-green dark:hover:text-brand-green transition-colors px-3 py-2"
               >
                 Entrar
               </Link>
@@ -81,16 +81,19 @@ export function LandingPage() {
                 <SpecularButton
                   size="md"
                   radius={24}
+                  tint="#000000"
+                  tintOpacity={0.9}
                   textColor="#ffffff"
                   lineColor="#00d4a4"
                   baseColor="#00d4a4"
-                  intensity={1.4}
-                  shineSize={12}
+                  intensity={1.5}
+                  shineSize={14}
                   shineFade={35}
                   thickness={1.5}
                   speed={0.4}
                   followMouse={true}
                   proximity={200}
+                  className="font-bold text-xs uppercase tracking-wider shadow-lg shadow-brand-green/15 cursor-pointer"
                 >
                   Criar conta grátis
                 </SpecularButton>
@@ -164,53 +167,53 @@ export function LandingPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-white/10 bg-canvas-dark text-on-dark-muted">
+      <footer className="border-t border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-canvas-dark text-slate-600 dark:text-on-dark-muted transition-colors duration-200">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
             <div className="md:col-span-1 space-y-4">
               <img src={logo} alt="Viggo Logo" className="w-24 h-auto drop-shadow-md rounded-xl" />
-              <p className="text-xs text-on-dark-muted leading-relaxed">
+              <p className="text-xs text-slate-500 dark:text-on-dark-muted leading-relaxed">
                 Plataforma inteligente de ponto eletrônico com reconhecimento facial, geolocalização e 100% de conformidade com a Portaria 671 do MTE.
               </p>
             </div>
 
             <div>
-              <h4 className="text-sm font-semibold text-on-dark mb-4 uppercase tracking-wider">Produto</h4>
+              <h4 className="text-sm font-semibold text-slate-900 dark:text-on-dark mb-4 uppercase tracking-wider">Produto</h4>
               <ul className="space-y-2.5 text-xs">
-                <li><a href="#funcionalidades" className="hover:text-brand-green transition-colors">Funcionalidades</a></li>
-                <li><a href="#como-funciona" className="hover:text-brand-green transition-colors">Como Funciona</a></li>
-                <li><a href="#para-quem-e" className="hover:text-brand-green transition-colors">Segmentos Atendidos</a></li>
-                <li><a href="#plataforma-tour" className="hover:text-brand-green transition-colors">Tour do Sistema</a></li>
-                <li><a href="#precos" className="hover:text-brand-green transition-colors">Tabela de Preços</a></li>
+                <li><a href="#funcionalidades" className="hover:text-brand-green dark:hover:text-brand-green transition-colors">Funcionalidades</a></li>
+                <li><a href="#como-funciona" className="hover:text-brand-green dark:hover:text-brand-green transition-colors">Como Funciona</a></li>
+                <li><a href="#para-quem-e" className="hover:text-brand-green dark:hover:text-brand-green transition-colors">Segmentos Atendidos</a></li>
+                <li><a href="#plataforma-tour" className="hover:text-brand-green dark:hover:text-brand-green transition-colors">Tour do Sistema</a></li>
+                <li><a href="#precos" className="hover:text-brand-green dark:hover:text-brand-green transition-colors">Tabela de Preços</a></li>
               </ul>
             </div>
 
             <div>
-              <h4 className="text-sm font-semibold text-on-dark mb-4 uppercase tracking-wider">Jurídico & LGPD</h4>
+              <h4 className="text-sm font-semibold text-slate-900 dark:text-on-dark mb-4 uppercase tracking-wider">Jurídico & LGPD</h4>
               <ul className="space-y-2.5 text-xs">
-                <li><Link to="/termos-de-uso" className="hover:text-brand-green transition-colors">Termos de Uso</Link></li>
-                <li><Link to="/politica-privacidade" className="hover:text-brand-green transition-colors">Política de Privacidade</Link></li>
-                <li><Link to="/contrato-de-tratamento-de-dados" className="hover:text-brand-green transition-colors">Contrato de Tratamento de Dados (DPA)</Link></li>
-                <li><Link to="/consentimento-biometria" className="hover:text-brand-green transition-colors">Consentimento Biométrico</Link></li>
+                <li><Link to="/termos-de-uso" className="hover:text-brand-green dark:hover:text-brand-green transition-colors">Termos de Uso</Link></li>
+                <li><Link to="/politica-privacidade" className="hover:text-brand-green dark:hover:text-brand-green transition-colors">Política de Privacidade</Link></li>
+                <li><Link to="/contrato-de-tratamento-de-dados" className="hover:text-brand-green dark:hover:text-brand-green transition-colors">Contrato de Tratamento de Dados (DPA)</Link></li>
+                <li><Link to="/consentimento-biometria" className="hover:text-brand-green dark:hover:text-brand-green transition-colors">Consentimento Biométrico</Link></li>
               </ul>
             </div>
 
             <div>
-              <h4 className="text-sm font-semibold text-on-dark mb-4 uppercase tracking-wider">Começar Agora</h4>
-              <p className="text-xs text-on-dark-muted mb-4">
+              <h4 className="text-sm font-semibold text-slate-900 dark:text-on-dark mb-4 uppercase tracking-wider">Começar Agora</h4>
+              <p className="text-xs text-slate-500 dark:text-on-dark-muted mb-4">
                 Teste grátis por 30 dias com todos os recursos liberados.
               </p>
               <Link
                 to="/company/signup"
                 onClick={() => trackEvent("cta_click", { ctaId: "footer-cadastrar-empresa", path: "/page" })}
-                className="inline-block w-full text-center py-2.5 px-4 rounded-xl bg-white/10 hover:bg-brand-green hover:text-black text-on-dark text-xs font-semibold transition-all border border-white/10"
+                className="inline-block w-full text-center py-2.5 px-4 rounded-xl bg-slate-900/5 dark:bg-white/10 hover:bg-brand-green dark:hover:bg-brand-green hover:text-black dark:hover:text-black text-slate-900 dark:text-on-dark text-xs font-semibold transition-all border border-slate-200 dark:border-white/10"
               >
                 Cadastrar Empresa
               </Link>
             </div>
           </div>
 
-          <div className="pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-on-dark-muted">
+          <div className="pt-8 border-t border-slate-200 dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-on-dark-muted">
             <p>© {new Date().getFullYear()} Viggo Tecnologia. Todos os direitos reservados.</p>
             <p>Em conformidade com a Portaria 671/2021 MTE e LGPD.</p>
           </div>

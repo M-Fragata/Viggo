@@ -594,13 +594,11 @@ export const MagicBento: React.FC<BentoProps> = ({
       <BentoCardGrid gridRef={gridRef}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 w-full">
           {cards.map((card, index) => {
-            const baseClassName = `card opacity-0 flex flex-col justify-between relative min-h-[240px] w-full p-6 sm:p-7 rounded-2xl border border-white/10 font-normal overflow-hidden transition-all duration-300 ease-in-out bg-white/[0.025] backdrop-blur-sm ${card.colSpan || ''
+            const baseClassName = `card opacity-0 flex flex-col justify-between relative min-h-[240px] w-full p-6 sm:p-7 rounded-2xl border border-slate-200 dark:border-white/10 font-normal overflow-hidden transition-all duration-300 ease-in-out bg-white dark:bg-white/[0.025] shadow-sm dark:shadow-none backdrop-blur-sm ${card.colSpan || ''
               } ${enableBorderGlow ? 'card--border-glow' : ''}`;
 
             const cardStyle = {
-              backgroundColor: card.color || 'var(--background-dark)',
               borderColor: 'var(--border-color)',
-              color: 'var(--white)',
               '--glow-x': '50%',
               '--glow-y': '50%',
               '--glow-intensity': '0',
@@ -627,16 +625,16 @@ export const MagicBento: React.FC<BentoProps> = ({
                     {card.icon && <div className="text-brand-green">{card.icon}</div>}
                   </div>
                   <div className="flex flex-col relative mt-auto">
-                    <h3 className={`font-bold text-xl sm:text-2xl text-on-dark m-0 mb-2`}>
+                    <h3 className={`font-bold text-xl sm:text-2xl text-slate-900 dark:text-on-dark m-0 mb-2`}>
                       {card.title}
                     </h3>
-                    <p className={`text-sm sm:text-base text-on-dark-muted leading-relaxed`}>
+                    <p className={`text-sm sm:text-base text-slate-600 dark:text-on-dark-muted leading-relaxed`}>
                       {card.description}
                     </p>
                     {card.tags && (
-                      <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-white/5">
+                      <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-slate-200 dark:border-white/5">
                         {card.tags.map((tag, idx) => (
-                          <span key={idx} className="text-xs text-on-dark-muted flex items-center gap-1">
+                          <span key={idx} className="text-xs text-slate-600 dark:text-on-dark-muted flex items-center gap-1">
                             <span className="w-1.5 h-1.5 rounded-full bg-brand-green" />
                             {tag}
                           </span>
@@ -772,16 +770,16 @@ export const MagicBento: React.FC<BentoProps> = ({
                   {card.icon && <div className="text-brand-green p-2 rounded-xl bg-white/[0.03] border border-white/5">{card.icon}</div>}
                 </div>
                 <div className="flex flex-col relative mt-auto">
-                  <h3 className="font-bold text-xl sm:text-2xl text-on-dark m-0 mb-2">
+                  <h3 className="font-bold text-xl sm:text-2xl text-slate-900 dark:text-on-dark m-0 mb-2">
                     {card.title}
                   </h3>
-                  <p className="text-sm sm:text-base text-on-dark-muted leading-relaxed">
+                  <p className="text-sm sm:text-base text-slate-600 dark:text-on-dark-muted leading-relaxed">
                     {card.description}
                   </p>
                   {card.tags && (
-                    <div className="flex flex-wrap gap-3 mt-5 pt-4 border-t border-white/5">
+                    <div className="flex flex-wrap gap-3 mt-5 pt-4 border-t border-slate-200 dark:border-white/5">
                       {card.tags.map((tag, idx) => (
-                        <span key={idx} className="text-xs text-on-dark-muted flex items-center gap-1.5">
+                        <span key={idx} className="text-xs text-slate-600 dark:text-on-dark-muted flex items-center gap-1.5">
                           <span className="w-1.5 h-1.5 rounded-full bg-brand-green" />
                           {tag}
                         </span>

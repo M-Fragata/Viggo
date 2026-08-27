@@ -173,7 +173,7 @@ export function BentoGrid() {
   }, []);
 
   return (
-    <section ref={sectionRef} className="py-20 lg:py-28 bg-canvas-dark relative overflow-hidden" id="funcionalidades">
+    <section ref={sectionRef} className="py-20 lg:py-28 bg-slate-50 dark:bg-canvas-dark relative overflow-hidden border-t border-slate-200 dark:border-white/5 transition-colors duration-200" id="funcionalidades">
       {/* Subtle background glow */}
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-brand-green/5 blur-[120px] rounded-full pointer-events-none" />
 
@@ -188,13 +188,13 @@ export function BentoGrid() {
           </span>
           <h2 
             ref={titleRef}
-            className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-on-dark leading-tight opacity-0"
+            className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-slate-900 dark:text-on-dark leading-tight opacity-0"
           >
             Tudo o que sua empresa precisa para <span className="text-brand-green">blindar o RH</span> contra fraudes e passivos.
           </h2>
           <p 
             ref={paragraphRef}
-            className="mt-4 text-base sm:text-lg text-on-dark-muted leading-relaxed opacity-0"
+            className="mt-4 text-base sm:text-lg text-slate-600 dark:text-on-dark-muted leading-relaxed opacity-0"
           >
             Elimine relógios de ponto caros que quebram com frequência. O Viggo transforma qualquer smartphone ou tablet em um sistema de ponto seguro, moderno e auditável.
           </p>

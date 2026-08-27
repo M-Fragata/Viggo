@@ -42,19 +42,19 @@ export const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
           <div className="flex items-center justify-between">
             <label
               htmlFor={inputId}
-              className="text-xs font-semibold uppercase tracking-wider text-on-dark-muted transition-colors group-focus-within:text-brand-green"
+              className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-on-dark-muted transition-colors group-focus-within:text-brand-green"
             >
               {label}
             </label>
             {helperText && !error && (
-              <span className="text-[11px] text-stone">{helperText}</span>
+              <span className="text-[11px] text-slate-400 dark:text-stone">{helperText}</span>
             )}
           </div>
         )}
 
         <div className="relative flex items-center">
           {Icon && (
-            <div className="absolute left-3.5 flex items-center pointer-events-none text-stone group-focus-within:text-brand-green transition-colors duration-200">
+            <div className="absolute left-3.5 flex items-center pointer-events-none text-slate-400 dark:text-stone group-focus-within:text-brand-green transition-colors duration-200">
               <Icon className="w-4 h-4" />
             </div>
           )}
@@ -66,15 +66,15 @@ export const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
             type={inputType}
             disabled={disabled}
             aria-invalid={!!error}
-            className={`w-full bg-white/[0.04] hover:bg-white/[0.07] focus:bg-white/[0.09] text-on-dark placeholder:text-stone text-sm rounded-xl py-3 border transition-all duration-200 outline-none
+            className={`w-full bg-slate-50 hover:bg-slate-100/80 focus:bg-white dark:bg-white/[0.04] dark:hover:bg-white/[0.07] dark:focus:bg-white/[0.09] text-slate-900 dark:text-on-dark placeholder:text-slate-400 dark:placeholder:text-stone text-sm rounded-xl py-3 border transition-all duration-200 outline-none
               ${Icon ? "pl-10" : "pl-4"}
               ${isPassword || rightElement || error || isSuccess ? "pr-11" : "pr-4"}
               ${
                 error
-                  ? "border-red-500/80 focus:border-red-400 focus:ring-2 focus:ring-red-500/20 bg-red-500/[0.02]"
+                  ? "border-red-500/80 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 bg-red-500/[0.02]"
                   : isSuccess
                   ? "border-emerald-500/60 focus:border-brand-green focus:ring-2 focus:ring-brand-green/20"
-                  : "border-white/10 focus:border-brand-green focus:ring-2 focus:ring-brand-green/20"
+                  : "border-slate-200 dark:border-white/10 focus:border-brand-green focus:ring-2 focus:ring-brand-green/20"
               }
               ${disabled ? "opacity-50 cursor-not-allowed" : ""}
               ${className}
@@ -89,7 +89,7 @@ export const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
                 onClick={() => setShowPassword(!showPassword)}
                 tabIndex={-1}
                 aria-label={showPassword ? "Ocultar senha" : "Ver senha"}
-                className="p-1 rounded-lg text-stone hover:text-on-dark transition-colors cursor-pointer focus:outline-none focus:text-brand-green"
+                className="p-1 rounded-lg text-slate-400 dark:text-stone hover:text-slate-800 dark:hover:text-on-dark transition-colors cursor-pointer focus:outline-none focus:text-brand-green"
               >
                 {showPassword ? (
                   <EyeOff className="w-4 h-4" />

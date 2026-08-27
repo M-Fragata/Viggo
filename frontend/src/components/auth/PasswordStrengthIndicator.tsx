@@ -60,12 +60,12 @@ export function PasswordStrengthIndicator({
       {/* Strength Bar */}
       <div className="space-y-1">
         <div className="flex items-center justify-between text-xs">
-          <span className="text-on-dark-muted font-medium">Força da senha</span>
+          <span className="text-slate-600 dark:text-on-dark-muted font-medium">Força da senha</span>
           <span className={`font-semibold ${strengthConfig.textColor}`}>
             {strengthConfig.label}
           </span>
         </div>
-        <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+        <div className="h-1.5 w-full bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
           <div
             className={`h-full transition-all duration-300 rounded-full ${strengthConfig.color}`}
             style={{ width: strengthConfig.width }}
@@ -82,13 +82,13 @@ export function PasswordStrengthIndicator({
               <li
                 key={item.id}
                 className={`flex items-center gap-1.5 transition-colors duration-150 ${
-                  item.valid ? "text-brand-green" : "text-stone"
+                  item.valid ? "text-brand-green font-medium" : "text-slate-400 dark:text-stone"
                 }`}
               >
                 {item.valid ? (
-                  <Check className="w-3.5 h-3.5 shrink-0" />
+                  <Check className="w-3.5 h-3.5 shrink-0 text-brand-green" />
                 ) : (
-                  <X className="w-3.5 h-3.5 shrink-0 opacity-40" />
+                  <X className="w-3.5 h-3.5 shrink-0 opacity-50" />
                 )}
                 <span>{item.label}</span>
               </li>

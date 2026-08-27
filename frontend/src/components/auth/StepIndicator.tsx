@@ -22,7 +22,7 @@ export function StepIndicator({
     <div className="w-full mb-6">
       <div className="grid grid-cols-3 gap-2 relative">
         {/* Progress connecting line */}
-        <div className="absolute top-4 left-[16%] right-[16%] h-[2px] bg-white/10 -z-0" />
+        <div className="absolute top-4 left-[16%] right-[16%] h-[2px] bg-slate-200 dark:bg-white/10 -z-0" />
         <div
           className="absolute top-4 left-[16%] h-[2px] bg-brand-green transition-all duration-300 -z-0"
           style={{
@@ -48,8 +48,8 @@ export function StepIndicator({
                   isCompleted
                     ? "bg-brand-green text-black ring-4 ring-brand-green/20 cursor-pointer shadow-md"
                     : isCurrent
-                    ? "bg-black border-2 border-brand-green text-brand-green ring-4 ring-brand-green/30 shadow-md scale-105"
-                    : "bg-surface-code border border-white/10 text-stone"
+                    ? "bg-white dark:bg-black border-2 border-brand-green text-brand-green ring-4 ring-brand-green/30 shadow-md scale-105"
+                    : "bg-slate-100 dark:bg-surface-code border border-slate-200 dark:border-white/10 text-slate-400 dark:text-stone"
                 } ${canClick ? "hover:scale-110" : ""}`}
               >
                 {isCompleted ? (
@@ -64,8 +64,8 @@ export function StepIndicator({
                   isCurrent
                     ? "text-brand-green font-bold"
                     : isCompleted
-                    ? "text-on-dark"
-                    : "text-stone"
+                    ? "text-slate-900 dark:text-on-dark font-medium"
+                    : "text-slate-400 dark:text-stone"
                 }`}
               >
                 {step.title}

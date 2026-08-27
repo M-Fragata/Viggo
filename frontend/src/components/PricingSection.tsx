@@ -137,7 +137,7 @@ export function PricingSection() {
     <section
       ref={sectionRef}
       id="precos"
-      className="py-10 lg:py-24 bg-canvas-dark"
+      className="py-10 lg:py-24 bg-white dark:bg-canvas-dark border-t border-slate-200 dark:border-white/5 transition-colors duration-200"
       aria-labelledby="pricing-heading"
     >
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
@@ -145,13 +145,13 @@ export function PricingSection() {
           <h2
             ref={titleRef}
             id="pricing-heading"
-            className="text-4xl font-semibold tracking-tight text-on-dark leading-[1.2] opacity-0"
+            className="text-4xl font-semibold tracking-tight text-slate-900 dark:text-on-dark leading-[1.2] opacity-0"
           >
             Planos simples e transparentes
           </h2>
           <p
             ref={paragraphRef}
-            className="mt-4 text-lg leading-relaxed text-on-dark-muted max-w-2xl mx-auto opacity-0"
+            className="mt-4 text-lg leading-relaxed text-slate-600 dark:text-on-dark-muted max-w-2xl mx-auto opacity-0"
           >
             Todos os planos incluem trial de 30 dias, sem cartão de crédito.
             Cancele quando quiser.
@@ -187,18 +187,18 @@ export function PricingSection() {
         </div>
 
         <div ref={bottomBoxRef} className="mt-16 opacity-0">
-          <div className="rounded-lg border border-hairline bg-surface p-8 md:p-12 text-center">
+          <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#121214] p-8 md:p-12 text-center shadow-xs dark:shadow-none">
             <div className="mx-auto max-w-2xl">
-              <h3 className="text-3xl font-semibold text-ink leading-snug sm:text-4xl">
+              <h3 className="text-3xl font-semibold text-slate-900 dark:text-on-dark leading-snug sm:text-4xl">
                 Ficou com alguma dúvida sobre os valores?
               </h3>
-              <p className="mt-4 text-lg leading-relaxed text-steel">
+              <p className="mt-4 text-lg leading-relaxed text-slate-600 dark:text-on-dark-muted">
                 Use nossa calculadora para estimar o custo ideal para sua empresa.
               </p>
               <div className="mt-8">
                 <button
                   onClick={handleShowCalculator}
-                  className="inline-flex items-center justify-center rounded-full bg-primary px-8 py-3.5 text-sm font-medium text-on-primary hover:bg-charcoal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors cursor-pointer"
+                  className="inline-flex items-center justify-center rounded-full bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 px-8 py-3.5 text-sm font-semibold text-white dark:text-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 transition-colors cursor-pointer"
                 >
                   {showCalculator ? "Ocultar calculadora" : "Ver calculadora de preços"}
                 </button>

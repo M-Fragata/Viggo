@@ -96,22 +96,22 @@ export function CustomPlanPage() {
 
   if (isSuccess) {
     return (
-      <div className="flex items-center justify-center w-dvw h-dvh px-2 py-2">
-        <div className="w-full max-w-7xl text-center">
-          <div className="mx-auto mb-6 w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
-            <svg className="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="flex items-center justify-center min-h-dvh w-full px-4 py-8 bg-slate-50 dark:bg-black transition-colors duration-200">
+        <div className="w-full max-w-lg text-center bg-white dark:bg-[#121214] border border-slate-200 dark:border-white/10 rounded-2xl p-8 md:p-10 shadow-xl">
+          <div className="mx-auto mb-6 w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center">
+            <svg className="w-8 h-8 text-brand-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold text-slate-900">Solicitação enviada!</h1>
-          <p className="mt-4 text-slate-600">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Solicitação enviada!</h1>
+          <p className="mt-4 text-slate-600 dark:text-slate-400 leading-relaxed">
             Nossa equipe comercial entrará em contato em até 24h úteis para
             entender suas necessidades e apresentar a melhor proposta.
           </p>
           <div className="mt-8">
             <Link
-              to="/"
-              className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-8 py-3.5 text-base font-semibold text-white shadow-sm hover:bg-emerald-500 transition-colors"
+              to="/page"
+              className="inline-flex items-center justify-center rounded-full bg-brand-green px-8 py-3.5 text-sm font-semibold text-black hover:bg-brand-green-deep transition-all shadow-md shadow-brand-green/20"
             >
               Voltar ao início
             </Link>
@@ -122,26 +122,26 @@ export function CustomPlanPage() {
   }
 
   return (
-    <div className="flex items-center justify-center w-dvw h-dvh px-2 py-2">
+    <div className="flex items-center justify-center min-h-dvh w-full px-4 py-12 bg-slate-50 dark:bg-black transition-colors duration-200">
       <div className="w-full max-w-2xl">
-        <header className="text-center mb-10">
-          <Link to="/" className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-700 mb-6">
+        <header className="text-center mb-8">
+          <Link to="/page" className="inline-flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-brand-green mb-6 text-sm font-medium">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            <span>Voltar</span>
+            <span>Voltar ao site</span>
           </Link>
-          <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">Plano Personalizado</h1>
-          <p className="mt-3 text-lg text-slate-600">
+          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">Plano Personalizado</h1>
+          <p className="mt-3 text-base text-slate-600 dark:text-slate-400">
             Preencha o formulário e nossa equipe entrará em contato para entender
             suas necessidades e montar a proposta ideal.
           </p>
         </header>
 
-        <form action={formAction} className="space-y-6 bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
+        <form action={formAction} className="space-y-6 bg-white dark:bg-[#121214] rounded-2xl border border-slate-200 dark:border-white/10 p-8 shadow-xl dark:shadow-2xl">
           <div className="space-y-4">
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-1">
+              <label htmlFor="name" className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-on-dark-muted mb-1.5">
                 Seu nome completo
               </label>
               <Input
@@ -150,16 +150,16 @@ export function CustomPlanPage() {
                 type="text"
                 placeholder="João da Silva"
                 defaultValue={state.payload.name}
-                className="w-full pl-4 pr-4 py-3 border-2 border-slate-100 focus:border-emerald-400 rounded-2xl outline-none transition-all"
+                className="w-full px-4 py-3 bg-slate-50 dark:bg-white/[0.04] text-slate-900 dark:text-on-dark border border-slate-200 dark:border-white/10 focus:border-brand-green rounded-xl outline-none transition-all"
                 aria-invalid={!!state.fieldErrors.name}
               />
               {state.fieldErrors.name && (
-                <p className="mt-1 text-sm text-red-500">{state.fieldErrors.name}</p>
+                <p className="mt-1 text-xs text-red-500">{state.fieldErrors.name}</p>
               )}
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">
+              <label htmlFor="email" className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-on-dark-muted mb-1.5">
                 E-mail corporativo
               </label>
               <Input
@@ -168,16 +168,16 @@ export function CustomPlanPage() {
                 type="email"
                 placeholder="joao@empresa.com"
                 defaultValue={state.payload.email}
-                className="w-full pl-4 pr-4 py-3 border-2 border-slate-100 focus:border-emerald-400 rounded-2xl outline-none transition-all"
+                className="w-full px-4 py-3 bg-slate-50 dark:bg-white/[0.04] text-slate-900 dark:text-on-dark border border-slate-200 dark:border-white/10 focus:border-brand-green rounded-xl outline-none transition-all"
                 aria-invalid={!!state.fieldErrors.email}
               />
               {state.fieldErrors.email && (
-                <p className="mt-1 text-sm text-red-500">{state.fieldErrors.email}</p>
+                <p className="mt-1 text-xs text-red-500">{state.fieldErrors.email}</p>
               )}
             </div>
 
             <div>
-              <label htmlFor="companyName" className="block text-sm font-medium text-slate-700 mb-1">
+              <label htmlFor="companyName" className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-on-dark-muted mb-1.5">
                 Nome da empresa
               </label>
               <Input
@@ -186,16 +186,16 @@ export function CustomPlanPage() {
                 type="text"
                 placeholder="Minha Empresa Ltda"
                 defaultValue={state.payload.companyName}
-                className="w-full pl-4 pr-4 py-3 border-2 border-slate-100 focus:border-emerald-400 rounded-2xl outline-none transition-all"
+                className="w-full px-4 py-3 bg-slate-50 dark:bg-white/[0.04] text-slate-900 dark:text-on-dark border border-slate-200 dark:border-white/10 focus:border-brand-green rounded-xl outline-none transition-all"
                 aria-invalid={!!state.fieldErrors.companyName}
               />
               {state.fieldErrors.companyName && (
-                <p className="mt-1 text-sm text-red-500">{state.fieldErrors.companyName}</p>
+                <p className="mt-1 text-xs text-red-500">{state.fieldErrors.companyName}</p>
               )}
             </div>
 
             <div>
-              <label htmlFor="estimatedEmployees" className="block text-sm font-medium text-slate-700 mb-1">
+              <label htmlFor="estimatedEmployees" className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-on-dark-muted mb-1.5">
                 Estimativa de funcionários
               </label>
               <Input
@@ -205,50 +205,46 @@ export function CustomPlanPage() {
                 placeholder="Ex: 500"
                 defaultValue={state.payload.estimatedEmployees}
                 min="1"
-                className="w-full pl-4 pr-4 py-3 border-2 border-slate-100 focus:border-emerald-400 rounded-2xl outline-none transition-all"
+                className="w-full px-4 py-3 bg-slate-50 dark:bg-white/[0.04] text-slate-900 dark:text-on-dark border border-slate-200 dark:border-white/10 focus:border-brand-green rounded-xl outline-none transition-all"
                 aria-invalid={!!state.fieldErrors.estimatedEmployees}
               />
               {state.fieldErrors.estimatedEmployees && (
-                <p className="mt-1 text-sm text-red-500">{state.fieldErrors.estimatedEmployees}</p>
+                <p className="mt-1 text-xs text-red-500">{state.fieldErrors.estimatedEmployees}</p>
               )}
             </div>
 
             <div>
-              <label htmlFor="message" className="block text-sm font-medium text-slate-700 mb-1">
-                Conte-nos sua necessidade
+              <label htmlFor="message" className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-on-dark-muted mb-1.5">
+                Mensagem (opcional)
               </label>
               <textarea
                 id="message"
                 name="message"
-                rows={5}
-                placeholder="Descreva suas necessidades: número de unidades, integrações desejadas (ERP, RH, folha), compliance específico, SSO, on-premise, etc."
+                rows={4}
+                placeholder="Conte um pouco sobre as necessidades da sua empresa..."
                 defaultValue={state.payload.message}
-                className="w-full pl-4 pr-4 py-3 border-2 border-slate-100 focus:border-emerald-400 rounded-2xl outline-none transition-all resize-y min-h-[120px]"
-                aria-invalid={!!state.fieldErrors.message}
+                className="w-full px-4 py-3 bg-slate-50 dark:bg-white/[0.04] text-slate-900 dark:text-on-dark border border-slate-200 dark:border-white/10 focus:border-brand-green rounded-xl outline-none transition-all text-sm resize-none"
               />
-              {state.fieldErrors.message && (
-                <p className="mt-1 text-sm text-red-500">{state.fieldErrors.message}</p>
-              )}
             </div>
           </div>
 
           {state.message && (
-            <p className="text-red-500 text-sm text-center p-3 bg-red-50 rounded-lg" role="alert">
+            <p className="text-red-500 text-sm text-center p-3 bg-red-50 dark:bg-red-500/10 rounded-xl" role="alert">
               {state.message}
             </p>
           )}
 
-          <div className="pt-4">
+          <div className="pt-2">
             <Button
               title={isPending ? "Enviando..." : CUSTOM_PLAN_CTA}
               type="submit"
               disabled={isPending}
-              className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded-2xl shadow-lg transition-all active:scale-[0.98] disabled:bg-slate-300 disabled:shadow-none uppercase tracking-widest text-xs cursor-pointer"
+              className="w-full bg-brand-green hover:bg-brand-green-deep text-black font-bold py-3.5 px-6 rounded-full uppercase tracking-wider text-xs shadow-lg shadow-brand-green/20"
             />
           </div>
 
-          <p className="text-center text-sm text-slate-500">
-            Ou inicie agora com nosso <Link to="/company/signup" className="text-emerald-600 hover:underline font-medium">trial gratuito de 30 dias</Link>.
+          <p className="text-center text-xs text-slate-500 dark:text-slate-400">
+            Ou inicie agora com nosso <Link to="/company/signup" className="text-brand-green hover:underline font-semibold">trial gratuito de 30 dias</Link>.
           </p>
         </form>
       </div>

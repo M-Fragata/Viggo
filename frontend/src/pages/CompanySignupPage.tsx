@@ -364,7 +364,7 @@ export function CompanySignupPage() {
                 <button
                   type="button"
                   onClick={handleBack}
-                  className="flex items-center justify-center gap-1.5 bg-white/[0.05] hover:bg-white/[0.1] text-on-dark font-medium py-3.5 px-5 rounded-full border border-white/10 transition-colors cursor-pointer text-xs uppercase tracking-wider"
+                  className="flex items-center justify-center gap-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] text-slate-700 dark:text-on-dark font-medium py-3.5 px-5 rounded-full border border-slate-200 dark:border-white/10 transition-colors cursor-pointer text-xs uppercase tracking-wider"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   <span>Voltar</span>
@@ -428,14 +428,14 @@ export function CompanySignupPage() {
                     name="aceiteContratos"
                     checked={formData.aceiteContratos}
                     onChange={(e) => updateField("aceiteContratos", e.target.checked)}
-                    className="mt-0.5 h-3.5 w-3.5 rounded bg-white/[0.05] border-white/20 text-brand-green focus:ring-brand-green focus:ring-offset-black accent-brand-green cursor-pointer"
+                    className="mt-0.5 h-3.5 w-3.5 rounded bg-slate-100 dark:bg-white/[0.05] border-slate-300 dark:border-white/20 text-brand-green focus:ring-brand-green focus:ring-offset-white dark:focus:ring-offset-black accent-brand-green cursor-pointer"
                   />
-                  <span className="text-[11px] text-on-dark-muted leading-tight group-hover:text-on-dark transition-colors">
+                  <span className="text-[11px] text-slate-600 dark:text-on-dark-muted leading-tight group-hover:text-slate-900 dark:group-hover:text-on-dark transition-colors">
                     Li e concordo com os{" "}
                     <Link
                       to="/termos-de-uso"
                       target="_blank"
-                      className="text-brand-green underline hover:text-brand-green-soft"
+                      className="text-brand-green underline hover:text-brand-green-soft font-medium"
                     >
                       Termos de Uso
                     </Link>{" "}
@@ -443,7 +443,7 @@ export function CompanySignupPage() {
                     <Link
                       to="/politica-privacidade"
                       target="_blank"
-                      className="text-brand-green underline hover:text-brand-green-soft"
+                      className="text-brand-green underline hover:text-brand-green-soft font-medium"
                     >
                       Privacidade (LGPD)
                     </Link>
@@ -451,7 +451,7 @@ export function CompanySignupPage() {
                   </span>
                 </label>
                 {errors.aceiteContratos && (
-                  <p className="mt-1 text-[11px] text-red-400 pl-6">{errors.aceiteContratos}</p>
+                  <p className="mt-1 text-[11px] text-red-500 dark:text-red-400 pl-6">{errors.aceiteContratos}</p>
                 )}
               </div>
 
@@ -460,7 +460,7 @@ export function CompanySignupPage() {
                   type="button"
                   onClick={handleBack}
                   disabled={isSubmitting}
-                  className="flex items-center justify-center gap-1.5 bg-white/[0.05] hover:bg-white/[0.1] text-on-dark font-medium py-3.5 px-5 rounded-full border border-white/10 transition-colors cursor-pointer text-xs uppercase tracking-wider disabled:opacity-50"
+                  className="flex items-center justify-center gap-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] text-slate-700 dark:text-on-dark font-medium py-3.5 px-5 rounded-full border border-slate-200 dark:border-white/10 transition-colors cursor-pointer text-xs uppercase tracking-wider disabled:opacity-50"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   <span>Voltar</span>

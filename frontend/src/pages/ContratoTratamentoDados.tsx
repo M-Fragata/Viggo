@@ -6,36 +6,36 @@ const DATA_VIGENCIA = "23 de julho de 2026";
 export function ContratoTratamentoDados() {
   const navigate = useNavigate();
   return (
-    <div className="min-h-dvh bg-slate-50 py-12 px-4">
-      <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-lg p-8 md:p-12">
-        <header className="mb-8 border-b border-slate-200 pb-6">
+    <div className="min-h-dvh bg-slate-50 dark:bg-black py-12 px-4 transition-colors duration-200">
+      <div className="max-w-3xl mx-auto bg-white dark:bg-[#121214] border border-slate-200 dark:border-white/10 rounded-2xl shadow-lg dark:shadow-2xl p-8 md:p-12">
+        <header className="mb-8 border-b border-slate-200 dark:border-white/10 pb-6">
           <button
             onClick={() => navigate(-1)}
-            className="text-emerald-600 hover:text-emerald-700 text-sm font-medium mb-4 inline-block cursor-pointer"
+            className="text-brand-green hover:text-brand-green-deep text-sm font-semibold mb-4 inline-block cursor-pointer"
           >
             &larr; Voltar
           </button>
-          <h1 className="text-3xl font-black text-slate-800 tracking-tight">
+          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
             Contrato de Tratamento de Dados Pessoais
           </h1>
-          <p className="text-slate-500 text-sm mt-2">
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-2">
             Data Processing Agreement (DPA) &mdash; Versão {VERSAO} &mdash; Vigência: {DATA_VIGENCIA}
           </p>
         </header>
 
-        <article className="prose prose-slate max-w-none text-slate-700 leading-relaxed space-y-6">
+        <article className="prose dark:prose-invert max-w-none text-slate-700 dark:text-slate-300 leading-relaxed space-y-6">
           <section>
-            <h2 className="text-xl font-bold text-slate-800 mb-2">1. Partes</h2>
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">1. Partes</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 not-prose">
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Controladora</p>
-                <p className="text-sm text-slate-700 font-medium">Empresa contratante do Viggo</p>
-                <p className="text-xs text-slate-400 mt-1">Dados preenchidos no cadastro</p>
+              <div className="bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-xl p-4">
+                <p className="text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Controladora</p>
+                <p className="text-sm text-slate-900 dark:text-slate-200 font-medium">Empresa contratante do Viggo</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Dados preenchidos no cadastro</p>
               </div>
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Operadora</p>
-                <p className="text-sm text-slate-700 font-medium">Viggo Tecnologia em Ponto Eletrônico Ltda.</p>
-                <p className="text-xs text-slate-400 mt-1">DPO: dpo@viggo.com.br</p>
+              <div className="bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-xl p-4">
+                <p className="text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Operadora</p>
+                <p className="text-sm text-slate-900 dark:text-slate-200 font-medium">Viggo Tecnologia em Ponto Eletrônico Ltda.</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">DPO: dpo@viggo.com.br</p>
               </div>
             </div>
           </section>

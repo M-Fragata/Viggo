@@ -128,9 +128,9 @@ export function LoginPage() {
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="h-3.5 w-3.5 rounded bg-white/[0.05] border-white/20 text-brand-green focus:ring-brand-green focus:ring-offset-black accent-brand-green cursor-pointer"
+                className="h-3.5 w-3.5 rounded bg-slate-100 dark:bg-white/[0.05] border-slate-300 dark:border-white/20 text-brand-green focus:ring-brand-green focus:ring-offset-white dark:focus:ring-offset-black accent-brand-green cursor-pointer"
               />
-              <span className="text-xs text-on-dark-muted group-hover:text-on-dark transition-colors">
+              <span className="text-xs text-slate-600 dark:text-on-dark-muted group-hover:text-slate-900 dark:group-hover:text-on-dark transition-colors">
                 Lembrar e-mail
               </span>
             </label>
@@ -138,7 +138,7 @@ export function LoginPage() {
             <button
               type="button"
               onClick={() => setShowForgotModal(true)}
-              className="text-xs text-on-dark-muted hover:text-brand-green transition-colors cursor-pointer"
+              className="text-xs text-slate-600 dark:text-on-dark-muted hover:text-brand-green dark:hover:text-brand-green transition-colors cursor-pointer"
             >
               Esqueceu a senha?
             </button>
@@ -167,16 +167,16 @@ export function LoginPage() {
 
       {/* Modal de Recuperação de Senha */}
       {showForgotModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="w-full max-w-md bg-surface-code border border-white/10 rounded-2xl p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
+          <div className="w-full max-w-md bg-white dark:bg-surface-code border border-slate-200 dark:border-white/10 rounded-2xl p-6 shadow-2xl space-y-4">
             <div className="flex items-center gap-3 text-brand-green">
               <HelpCircle className="w-6 h-6" />
-              <h3 className="text-lg font-bold text-on-dark">Recuperação de Senha</h3>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-on-dark">Recuperação de Senha</h3>
             </div>
-            <p className="text-xs text-on-dark-muted leading-relaxed">
+            <p className="text-xs text-slate-600 dark:text-on-dark-muted leading-relaxed">
               Por motivos de segurança e integridade jurídica das folhas de ponto (Portaria 671 MTE), a recuperação de senha é gerenciada pelo administrador da sua empresa.
             </p>
-            <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 text-xs text-on-dark/90 space-y-1">
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 text-xs text-slate-700 dark:text-on-dark/90 space-y-1">
               <p>• <strong>Colaboradores:</strong> Solicite a redefinição de senha ao seu gestor ou departamento de RH.</p>
               <p>• <strong>Administradores:</strong> Entre em contato com o suporte Viggo.</p>
             </div>

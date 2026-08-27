@@ -6,24 +6,24 @@ const DATA_VIGENCIA = "23 de julho de 2026";
 export function ConsentimentoBiometria() {
   const navigate = useNavigate();
   return (
-    <div className="min-h-dvh bg-slate-50 py-12 px-4">
-      <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-lg p-8 md:p-12">
-        <header className="mb-8 border-b border-slate-200 pb-6">
+    <div className="min-h-dvh bg-slate-50 dark:bg-black py-12 px-4 transition-colors duration-200">
+      <div className="max-w-3xl mx-auto bg-white dark:bg-[#121214] border border-slate-200 dark:border-white/10 rounded-2xl shadow-lg dark:shadow-2xl p-8 md:p-12">
+        <header className="mb-8 border-b border-slate-200 dark:border-white/10 pb-6">
           <button
             onClick={() => navigate(-1)}
-            className="text-emerald-600 hover:text-emerald-700 text-sm font-medium mb-4 inline-block cursor-pointer"
+            className="text-brand-green hover:text-brand-green-deep text-sm font-semibold mb-4 inline-block cursor-pointer"
           >
             &larr; Voltar
           </button>
-          <h1 className="text-3xl font-black text-slate-800 tracking-tight">
+          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
             Consentimento para Tratamento de Dados Biométricos
           </h1>
-          <p className="text-slate-500 text-sm mt-2">
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-2">
             Versão {VERSAO} &mdash; Vigência: {DATA_VIGENCIA}
           </p>
         </header>
 
-        <article className="prose prose-slate max-w-none text-slate-700 leading-relaxed space-y-6">
+        <article className="prose dark:prose-invert max-w-none text-slate-700 dark:text-slate-300 leading-relaxed space-y-6">
           <section>
             <h2 className="text-xl font-bold text-slate-800 mb-2">1. Dados Coletados</h2>
             <p>

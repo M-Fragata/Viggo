@@ -151,7 +151,7 @@ export function HowItWorks() {
     <section
       ref={sectionRef}
       id="como-funciona"
-      className="py-20 lg:py-28 bg-canvas-dark relative overflow-hidden border-t border-white/5"
+      className="py-20 lg:py-28 bg-white dark:bg-canvas-dark relative overflow-hidden border-t border-slate-200 dark:border-white/5 transition-colors duration-200"
     >
       {/* Background glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-brand-green/5 blur-[130px] rounded-full pointer-events-none" />
@@ -167,13 +167,13 @@ export function HowItWorks() {
           </span>
           <h2
             ref={titleRef}
-            className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-on-dark leading-tight opacity-0"
+            className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-slate-900 dark:text-on-dark leading-tight opacity-0"
           >
             Comece a rodar o Viggo em <span className="text-brand-green">3 passos simples</span>
           </h2>
           <p
             ref={paragraphRef}
-            className="mt-4 text-base sm:text-lg text-on-dark-muted leading-relaxed opacity-0"
+            className="mt-4 text-base sm:text-lg text-slate-600 dark:text-on-dark-muted leading-relaxed opacity-0"
           >
             Sem técnicos demorados, sem comprar relógios de ponto caros e sem complicação. Sua empresa pronta para operar hoje mesmo.
           </p>
@@ -187,7 +187,7 @@ export function HowItWorks() {
             return (
               <div
                 key={index}
-                className="relative rounded-3xl bg-white/[0.025] border border-white/10 p-7 sm:p-8 flex flex-col justify-between hover:border-brand-green/30 hover:bg-white/[0.04] transition-all duration-300 group opacity-0 shadow-lg"
+                className="relative rounded-3xl bg-slate-50 dark:bg-white/[0.025] border border-slate-200 dark:border-white/10 p-7 sm:p-8 flex flex-col justify-between hover:border-brand-green/30 hover:bg-slate-100/80 dark:hover:bg-white/[0.04] transition-all duration-300 group opacity-0 shadow-sm dark:shadow-lg"
               >
                 <div>
                   {/* Step Header */}
@@ -195,23 +195,23 @@ export function HowItWorks() {
                     <div className="p-3.5 rounded-2xl bg-brand-green/10 text-brand-green group-hover:bg-brand-green group-hover:text-black transition-colors">
                       <Icon className="w-6 h-6" />
                     </div>
-                    <span className="text-4xl font-extrabold font-mono text-white/15 group-hover:text-brand-green/30 transition-colors">
+                    <span className="text-4xl font-extrabold font-mono text-slate-300 dark:text-white/15 group-hover:text-brand-green/40 dark:group-hover:text-brand-green/30 transition-colors">
                       {item.step}
                     </span>
                   </div>
 
-                  <h3 className="text-xl font-bold text-on-dark mb-3">
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-on-dark mb-3">
                     {item.title}
                   </h3>
-                  <p className="text-sm text-on-dark-muted leading-relaxed mb-6">
+                  <p className="text-sm text-slate-600 dark:text-on-dark-muted leading-relaxed mb-6">
                     {item.description}
                   </p>
                 </div>
 
                 {/* Checklist highlights */}
-                <div className="pt-5 border-t border-white/5 space-y-2.5">
+                <div className="pt-5 border-t border-slate-200 dark:border-white/5 space-y-2.5">
                   {item.highlights.map((h, i) => (
-                    <div key={i} className="flex items-center gap-2 text-xs text-on-dark-muted">
+                    <div key={i} className="flex items-center gap-2 text-xs text-slate-600 dark:text-on-dark-muted">
                       <CheckCircle2 className="w-3.5 h-3.5 text-brand-green shrink-0" />
                       <span>{h}</span>
                     </div>

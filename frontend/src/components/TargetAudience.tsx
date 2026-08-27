@@ -186,7 +186,7 @@ export function TargetAudience() {
     <section
       ref={sectionRef}
       id="para-quem-e"
-      className="py-20 lg:py-28 bg-canvas-dark relative overflow-hidden border-t border-white/5"
+      className="py-20 lg:py-28 bg-slate-50 dark:bg-canvas-dark relative overflow-hidden border-t border-slate-200 dark:border-white/5 transition-colors duration-200"
     >
       {/* Ambient background glows */}
       <div className="absolute top-1/3 left-1/4 -translate-y-1/2 w-[500px] h-[500px] bg-brand-green/5 blur-[140px] rounded-full pointer-events-none" />
@@ -203,13 +203,13 @@ export function TargetAudience() {
           </span>
           <h2
             ref={titleRef}
-            className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-on-dark leading-tight opacity-0"
+            className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-slate-900 dark:text-on-dark leading-tight opacity-0"
           >
             O controle de ponto perfeito para <span className="text-brand-green">o seu modelo de negócio</span>
           </h2>
           <p
             ref={paragraphRef}
-            className="mt-4 text-base sm:text-lg text-on-dark-muted leading-relaxed opacity-0"
+            className="mt-4 text-base sm:text-lg text-slate-600 dark:text-on-dark-muted leading-relaxed opacity-0"
           >
             De pequenas equipes locais a grandes operações externas com centenas de colaboradores, o Viggo se adapta à rotina da sua empresa.
           </p>
@@ -223,7 +223,7 @@ export function TargetAudience() {
             return (
               <div
                 key={index}
-                className={`rounded-3xl bg-white/[0.02] border border-white/10 p-7 flex flex-col justify-between hover:border-brand-green/30 hover:bg-white/[0.035] transition-all duration-300 group opacity-0 shadow-lg ${
+                className={`rounded-3xl bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 p-7 flex flex-col justify-between hover:border-brand-green/30 hover:bg-slate-100/80 dark:hover:bg-white/[0.035] transition-all duration-300 group opacity-0 shadow-sm dark:shadow-lg ${
                   index === 4 ? "md:col-span-2 lg:col-span-1" : ""
                 }`}
               >
@@ -241,18 +241,18 @@ export function TargetAudience() {
                   <h3 className="text-sm font-semibold text-brand-green uppercase tracking-wider mb-1">
                     {item.category}
                   </h3>
-                  <h4 className="text-lg font-bold text-on-dark mb-2.5 leading-snug">
+                  <h4 className="text-lg font-bold text-slate-900 dark:text-on-dark mb-2.5 leading-snug">
                     {item.headline}
                   </h4>
-                  <p className="text-xs text-on-dark-muted leading-relaxed mb-6">
+                  <p className="text-xs text-slate-600 dark:text-on-dark-muted leading-relaxed mb-6">
                     {item.description}
                   </p>
                 </div>
 
                 {/* Key Benefits List */}
-                <div className="pt-4 border-t border-white/5 space-y-2">
+                <div className="pt-4 border-t border-slate-200 dark:border-white/5 space-y-2">
                   {item.points.map((pt, i) => (
-                    <div key={i} className="flex items-center gap-2 text-xs text-on-dark/80">
+                    <div key={i} className="flex items-center gap-2 text-xs text-slate-700 dark:text-on-dark/80">
                       <div className="w-4 h-4 rounded-full bg-brand-green/15 text-brand-green flex items-center justify-center shrink-0">
                         <Check className="w-2.5 h-2.5" />
                       </div>
