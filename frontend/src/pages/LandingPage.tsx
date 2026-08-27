@@ -15,6 +15,7 @@ import { ManagerShowcase } from "../components/ManagerShowcase";
 import { AppShowcase } from "../components/AppShowcase";
 import { FAQ } from "../components/FAQ";
 import { FloatingWhatsApp } from "../components/FloatingWhatsApp";
+import { useTheme } from "../contexts/ThemeContext";
 import { trackPageView, trackEvent } from "../utils/metrics";
 
 import logo from "../assets/logo.png";
@@ -22,6 +23,8 @@ import "../scroll-animations.css";
 
 export function LandingPage() {
   useScrollReveal();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
   const [showPreloader, setShowPreloader] = useState(true);
   const [startHeroAnimation, setStartHeroAnimation] = useState(false);
 
@@ -37,7 +40,7 @@ export function LandingPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-black text-slate-900 dark:text-on-dark selection:bg-brand-green selection:text-black transition-colors duration-200">
       {showPreloader && <Preloader onComplete={handlePreloaderComplete} />}
-      
+
       {/* Sticky Navigation Header */}
       <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/80 dark:bg-black/70 border-b border-slate-200/80 dark:border-white/5 transition-all">
         <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8" aria-label="Navegação Principal">
@@ -70,8 +73,8 @@ export function LandingPage() {
             </div>
 
             <div className="flex items-center gap-4">
-              <Link 
-                to="/" 
+              <Link
+                to="/"
                 state={{ fromLanding: true }}
                 className="text-sm font-semibold text-slate-800 dark:text-on-dark hover:text-brand-green dark:hover:text-brand-green transition-colors px-3 py-2"
               >
@@ -108,9 +111,9 @@ export function LandingPage() {
         <section className="relative min-h-[calc(100vh-5rem)] flex items-center justify-center overflow-hidden">
           <div className="absolute inset-0 z-0">
             <GradientWaves
-              horizonColor="#00D4A4"
-              waveColor="#00D4A4"
-              crestColor="#000000"
+              horizonColor={isDark ? "#00D4A4" : "#009B77"}
+              waveColor={isDark ? "#00D4A4" : "#008F6D"}
+              crestColor={isDark ? "#00664e" : "#004D38"}
               speed={0.4}
               amplitude={2.5}
               waveScale={0.6}
@@ -122,7 +125,7 @@ export function LandingPage() {
               height={10}
               fogDepth={15}
               detail="medium"
-              brightness={1.1}
+              brightness={isDark ? 1.35 : 1.0}
               opacity={1}
               mouseInteraction={false}
               parallaxStrength={0.4}
