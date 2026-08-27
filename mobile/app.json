@@ -7,7 +7,10 @@
     "icon": "./assets/icon.png",
     "scheme": "viggo",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
