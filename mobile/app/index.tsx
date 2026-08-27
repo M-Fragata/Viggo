@@ -10,9 +10,13 @@ export default function Index() {
   useEffect(() => {
     if (!isLoading) {
       if (user) {
-        router.replace('/(app)/punch');
+        if (user.role === 'ADMIN' || user.role === 'ENTERPRISE_ADMIN' || user.role === 'MASTER') {
+          router.replace('/(app)/admin');
+        } else {
+          router.replace('/(app)/punch');
+        }
       } else {
-        router.replace('/(auth)/login');
+        router.replace('/(auth)/welcome');
       }
     }
   }, [user, isLoading]);

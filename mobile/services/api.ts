@@ -181,6 +181,35 @@ export const api = {
     return data;
   },
 
+  async companySignup(params: {
+    name: string;
+    email: string;
+    cpf: string;
+    cnpj: string;
+    companyName: string;
+    password: string;
+    confirmPassword: string;
+    aceiteContratos: boolean;
+  }): Promise<{ token: string; user: UserSession }> {
+    const data = await request<{ token: string; user: UserSession; company: any }>('/companies/signup', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: params.name.trim(),
+        email: params.email.trim(),
+        cpf: params.cpf.replace(/\D/g, ''),
+        cnpj: params.cnpj.replace(/\D/g, ''),
+        companyName: params.companyName.trim(),
+        password: params.password,
+        confirmPassword: params.confirmPassword,
+        aceiteContratos: params.aceiteContratos,
+      }),
+    });
+
+    await setStoredToken(data.token);
+    await setStoredUser(data.user);
+    return { token: data.token, user: data.user };
+  },
+
   async getMe(): Promise<UserSession> {
     const data = await request<{ user: UserSession }>('/auth/me');
     await setStoredUser(data.user);

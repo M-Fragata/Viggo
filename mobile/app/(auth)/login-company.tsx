@@ -15,11 +15,11 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { Colors, Spacing, BorderRadius } from '../../constants/theme';
 import { router } from 'expo-router';
-import { ArrowLeft, Lock, Mail, Info, MessageCircle, HelpCircle } from 'lucide-react-native';
+import { ArrowLeft, Lock, Mail, Sparkles, MessageCircle, HelpCircle, ArrowRight } from 'lucide-react-native';
 
-const WHATSAPP_URL = 'https://wa.me/5521966921215?text=Ol%C3%A1!%20Sou%20colaborador%20e%20preciso%20de%20ajuda%20para%20acessar%20minha%20conta%20no%20Viggo.';
+const WHATSAPP_URL = 'https://wa.me/5521966921215?text=Ol%C3%A1!%20Sou%20gestor%20de%20empresa%20e%20gostaria%20de%20tirar%20d%C3%BAvidas%20sobre%20o%20Viggo.';
 
-export default function EmployeeLoginScreen() {
+export default function CompanyLoginScreen() {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -27,7 +27,7 @@ export default function EmployeeLoginScreen() {
 
   async function handleLogin() {
     if (!identifier.trim() || !password) {
-      Alert.alert('Campos Obrigatórios', 'Por favor, informe seu e-mail/CPF e sua senha.');
+      Alert.alert('Campos Obrigatórios', 'Por favor, informe seu e-mail corporativo/CPF e sua senha.');
       return;
     }
 
@@ -37,7 +37,7 @@ export default function EmployeeLoginScreen() {
     } catch (err: any) {
       Alert.alert(
         'Falha no Acesso',
-        err.message || 'Credenciais inválidas. Verifique os dados digitados e tente novamente.'
+        err.message || 'Credenciais inválidas. Verifique os dados e tente novamente.'
       );
     } finally {
       setLoading(false);
@@ -69,27 +69,27 @@ export default function EmployeeLoginScreen() {
             activeOpacity={0.7}
           >
             <HelpCircle size={18} color={Colors.textMuted} />
-            <Text style={styles.faqLinkText}>Ajuda</Text>
+            <Text style={styles.faqLinkText}>FAQ & Ajuda</Text>
           </TouchableOpacity>
         </View>
 
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Acesso do Colaborador</Text>
+          <Text style={styles.title}>Acesso da Empresa</Text>
           <Text style={styles.subtitle}>
-            Informe suas credenciais para acessar o registro de ponto
+            Acesse o painel do gestor para gerenciar colaboradores e fechamentos
           </Text>
         </View>
 
         {/* Form Card */}
         <View style={styles.card}>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>E-mail ou CPF</Text>
+            <Text style={styles.label}>E-mail Corporativo ou CPF</Text>
             <View style={styles.inputContainer}>
               <Mail size={18} color={Colors.textMuted} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="nome@empresa.com ou CPF"
+                placeholder="gestor@suaempresa.com"
                 placeholderTextColor={Colors.textMuted}
                 value={identifier}
                 onChangeText={setIdentifier}
@@ -105,7 +105,7 @@ export default function EmployeeLoginScreen() {
               <Lock size={18} color={Colors.textMuted} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Sua senha de acesso"
+                placeholder="Sua senha de administrador"
                 placeholderTextColor={Colors.textMuted}
                 value={password}
                 onChangeText={setPassword}
@@ -123,20 +123,31 @@ export default function EmployeeLoginScreen() {
             {loading ? (
               <ActivityIndicator color={Colors.textDark} />
             ) : (
-              <Text style={styles.loginButtonText}>Entrar no Viggo</Text>
+              <Text style={styles.loginButtonText}>Acessar Painel</Text>
             )}
           </TouchableOpacity>
         </View>
 
-        {/* Card Informativo de Primeiro Acesso */}
-        <View style={styles.infoCard}>
-          <Info size={20} color={Colors.primary} style={{ marginTop: 2 }} />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.infoTitle}>Primeiro acesso?</Text>
-            <Text style={styles.infoText}>
-              Solicite o link de criação de conta para sua empresa ou sua conta com senha provisória.
-            </Text>
+        {/* Card Criar Conta / 30 Dias Grátis */}
+        <View style={styles.signupCard}>
+          <View style={styles.signupBadge}>
+            <Sparkles size={16} color={Colors.primary} />
+            <Text style={styles.signupBadgeText}>Teste 30 Dias Grátis</Text>
           </View>
+
+          <Text style={styles.signupTitle}>Primeira vez por aqui?</Text>
+          <Text style={styles.signupDescription}>
+            Crie sua conta gratuitamente e experimente todas as funcionalidades de IA e relatórios sem precisar de cartão de crédito.
+          </Text>
+
+          <TouchableOpacity
+            style={styles.signupButton}
+            onPress={() => router.push('/(auth)/company-signup')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.signupButtonText}>Criar Conta da Empresa</Text>
+            <ArrowRight size={18} color={Colors.primary} />
+          </TouchableOpacity>
         </View>
 
         {/* Suporte no Rodapé */}
@@ -148,7 +159,7 @@ export default function EmployeeLoginScreen() {
           >
             <MessageCircle size={16} color="#25D366" />
             <Text style={styles.whatsappButtonText}>
-              Precisa de ajuda com seu acesso? <Text style={{ fontWeight: '700', color: '#25D366' }}>Fale no WhatsApp</Text>
+              Falar com um consultor no <Text style={{ fontWeight: '700', color: '#25D366' }}>WhatsApp</Text>
             </Text>
           </TouchableOpacity>
         </View>
@@ -254,27 +265,54 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
-  infoCard: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(0, 212, 164, 0.08)',
+  signupCard: {
+    backgroundColor: 'rgba(55, 114, 207, 0.06)',
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.xl,
     borderWidth: 1,
-    borderColor: 'rgba(0, 212, 164, 0.2)',
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
-    gap: Spacing.sm,
-    marginTop: Spacing.lg,
+    borderColor: 'rgba(55, 114, 207, 0.25)',
+    marginTop: Spacing.xl,
   },
-  infoTitle: {
-    fontSize: 14,
+  signupBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: Spacing.sm,
+  },
+  signupBadgeText: {
+    fontSize: 12,
     fontWeight: '700',
     color: Colors.primary,
-    marginBottom: 2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
-  infoText: {
-    fontSize: 13,
+  signupTitle: {
+    fontSize: 18,
+    fontWeight: '700',
     color: Colors.text,
-    lineHeight: 18,
-    opacity: 0.9,
+    marginBottom: 4,
+  },
+  signupDescription: {
+    fontSize: 13,
+    color: Colors.textMuted,
+    lineHeight: 19,
+    marginBottom: Spacing.md,
+  },
+  signupButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: Colors.surfaceCard,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    borderRadius: BorderRadius.md,
+    paddingVertical: 13,
+  },
+  signupButtonText: {
+    color: Colors.primary,
+    fontSize: 14,
+    fontWeight: '700',
   },
   footer: {
     marginTop: Spacing.xl,

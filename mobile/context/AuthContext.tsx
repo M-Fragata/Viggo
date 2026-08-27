@@ -7,6 +7,16 @@ interface AuthContextData {
   isLoading: boolean;
   isAdmin: boolean;
   login: (emailOrCpf: string, pass: string) => Promise<void>;
+  companySignup: (params: {
+    name: string;
+    email: string;
+    cpf: string;
+    cnpj: string;
+    companyName: string;
+    password: string;
+    confirmPassword: string;
+    aceiteContratos: boolean;
+  }) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -40,19 +50,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function login(emailOrCpf: string, pass: string) {
     const data = await api.login(emailOrCpf, pass);
     setUser(data.user);
-    router.replace('/(app)/punch');
+    if (data.user.role === 'ADMIN' || data.user.role === 'ENTERPRISE_ADMIN' || data.user.role === 'MASTER') {
+      router.replace('/(app)/admin');
+    } else {
+      router.replace('/(app)/punch');
+    }
+  }
+
+  async function companySignup(params: {
+    name: string;
+    email: string;
+    cpf: string;
+    cnpj: string;
+    companyName: string;
+    password: string;
+    confirmPassword: string;
+    aceiteContratos: boolean;
+  }) {
+    const data = await api.companySignup(params);
+    setUser(data.user);
+    router.replace('/(app)/admin');
   }
 
   async function logout() {
     await api.logout();
     setUser(null);
-    router.replace('/(auth)/login');
+    router.replace('/(auth)/welcome');
   }
 
   const isAdmin = !!(user && (user.role === 'ADMIN' || user.role === 'ENTERPRISE_ADMIN' || user.role === 'MASTER'));
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, isAdmin, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, isAdmin, login, companySignup, logout }}>
       {children}
     </AuthContext.Provider>
   );
