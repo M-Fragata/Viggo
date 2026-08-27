@@ -197,6 +197,12 @@ export function AppShowcase() {
 
             if (tabsRef.current) {
               tl.fromTo(
+                tabsRef.current,
+                { opacity: 0 },
+                { opacity: 1, duration: 0.3 },
+                "-=0.2"
+              );
+              tl.fromTo(
                 tabsRef.current.children,
                 { opacity: 0, y: 20 },
                 {
@@ -207,11 +213,17 @@ export function AppShowcase() {
                   ease: "power3.out",
                   clearProps: "transform",
                 },
-                "-=0.2"
+                "<"
               );
             }
 
             if (desktopTabsRef.current) {
+              tl.fromTo(
+                desktopTabsRef.current,
+                { opacity: 0 },
+                { opacity: 1, duration: 0.35, ease: "power2.out" },
+                "-=0.4"
+              );
               tl.fromTo(
                 desktopTabsRef.current.children,
                 { opacity: 0, x: -20 },
@@ -223,7 +235,7 @@ export function AppShowcase() {
                   ease: "power3.out",
                   clearProps: "transform",
                 },
-                "-=0.4"
+                "<"
               );
             }
 
@@ -261,12 +273,19 @@ export function AppShowcase() {
       setJustificativaStatus("pending");
     }
 
-    // 1. Centraliza horizontalmente o chip clicado no container de navegação mobile
-    if (event?.currentTarget) {
-      event.currentTarget.scrollIntoView({
+    // 1. Centraliza horizontalmente o chip clicado APENAS dentro do container mobile (sem afetar o window)
+    if (tabsRef.current && event?.currentTarget) {
+      const container = tabsRef.current;
+      const button = event.currentTarget;
+      const containerWidth = container.clientWidth;
+      const buttonLeft = button.offsetLeft;
+      const buttonWidth = button.offsetWidth;
+
+      const targetScrollLeft = buttonLeft - (containerWidth / 2) + (buttonWidth / 2);
+
+      container.scrollTo({
+        left: targetScrollLeft,
         behavior: "smooth",
-        inline: "center",
-        block: "nearest",
       });
     }
 
@@ -328,7 +347,7 @@ export function AppShowcase() {
             ref={tabsRef}
             className="
               lg:hidden
-              flex gap-2.5 overflow-x-auto pb-2 pt-1 px-1 snap-x snap-mandatory scroll-smooth
+              flex items-center gap-2.5 overflow-x-auto pb-2 pt-1 px-4 snap-x snap-mandatory scroll-smooth
               [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
             "
           >
@@ -355,10 +374,20 @@ export function AppShowcase() {
                 </button>
               );
             })}
+            {/* Espaço extra de respiro à direita no final da navegação */}
+            <div className="shrink-0 w-8 h-2 pointer-events-none" aria-hidden="true" />
           </div>
 
           {/* ── DESKTOP: vertical sidebar list (left column) ── */}
-          <div ref={desktopTabsRef} className="hidden lg:flex lg:order-1 lg:col-span-4 flex-col gap-2.5 max-h-[640px] overflow-y-auto pr-1">
+          <div
+            ref={desktopTabsRef}
+            className="
+              hidden lg:flex lg:order-1 lg:col-span-4 flex-col gap-2.5 max-h-[640px]
+              overflow-y-auto pr-2 opacity-0
+              [scrollbar-width:thin] [scrollbar-color:rgba(128,128,128,0.2)_transparent]
+              hover:[scrollbar-color:rgba(128,128,128,0.4)_transparent]
+            "
+          >
             {TABS.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
