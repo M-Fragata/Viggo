@@ -1,6 +1,5 @@
-import React, { useRef, useEffect, useState, useCallback, type ReactNode } from 'react';
+import React, { useRef, useEffect, useState, type ReactNode } from 'react';
 import { motion, type PanInfo } from 'framer-motion';
-import { gsap } from 'gsap';
 
 export interface BentoCardProps {
   color?: string;
@@ -30,7 +29,6 @@ export interface BentoProps {
   className?: string;
 }
 
-const DEFAULT_PARTICLE_COUNT = 12;
 const DEFAULT_SPOTLIGHT_RADIUS = 300;
 const DEFAULT_GLOW_COLOR = '0, 212, 164'; // Viggo brand green
 const MOBILE_BREAKPOINT = 768;
@@ -263,7 +261,7 @@ const useItemsPerPage = () => {
 
 export const MagicBento: React.FC<BentoProps> = ({
   cards = defaultCardData,
-  enableStars = false,
+  //enableStars = false,
   enableSpotlight = true,
   enableBorderGlow = true,
   disableAnimations = false,

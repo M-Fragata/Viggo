@@ -6,7 +6,6 @@ import { TRIAL_DAYS } from '../../../shared/plans';
 import TextType from './TextType';
 import { trackEvent } from '../utils/metrics';
 import SpecularButton from './SpecularButton';
-import { useTheme } from '../contexts/ThemeContext';
 
 const HERO_WORDS = [
   "reconhecimento facial",
@@ -20,8 +19,6 @@ interface HeroContentProps {
 }
 
 export function HeroContent({ startAnimation = true }: HeroContentProps) {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const titleRef = useRef<HTMLHeadingElement>(null);
   const paragraphRef = useRef<HTMLParagraphElement>(null);
   const buttonsRef = useRef<HTMLDivElement>(null);
