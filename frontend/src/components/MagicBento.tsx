@@ -576,7 +576,11 @@ export const MagicBento: React.FC<BentoProps> = ({
           }
           
           .card--border-glow:hover {
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5), 0 0 35px rgba(${glowColor}, 0.15);
+            box-shadow: 0 10px 25px -5px rgba(0, 212, 164, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+          }
+
+          .dark .card--border-glow:hover {
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6), 0 0 35px rgba(${glowColor}, 0.15);
           }
         `}
       </style>
@@ -594,11 +598,10 @@ export const MagicBento: React.FC<BentoProps> = ({
       <BentoCardGrid gridRef={gridRef}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 w-full">
           {cards.map((card, index) => {
-            const baseClassName = `card opacity-0 flex flex-col justify-between relative min-h-[240px] w-full p-6 sm:p-7 rounded-2xl border border-slate-200 dark:border-white/10 font-normal overflow-hidden transition-all duration-300 ease-in-out bg-white dark:bg-white/[0.025] shadow-sm dark:shadow-none backdrop-blur-sm ${card.colSpan || ''
+            const baseClassName = `card opacity-0 flex flex-col justify-between relative min-h-[240px] w-full p-6 sm:p-7 rounded-2xl border border-slate-200 dark:border-white/10 font-normal overflow-hidden transition-all duration-300 ease-in-out bg-white dark:bg-white/[0.025] shadow-sm hover:shadow-md dark:shadow-none backdrop-blur-sm ${card.colSpan || ''
               } ${enableBorderGlow ? 'card--border-glow' : ''}`;
 
             const cardStyle = {
-              borderColor: 'var(--border-color)',
               '--glow-x': '50%',
               '--glow-y': '50%',
               '--glow-intensity': '0',
