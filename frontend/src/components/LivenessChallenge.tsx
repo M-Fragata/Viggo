@@ -13,9 +13,10 @@ interface LivenessChallengeProps {
   onCancel: () => void;
   faceToken?: string;
   facialMode?: 'FRONTAL_ONLY' | 'FULL_LIVENESS';
-  verifyOverride?: (descriptor: Float32Array) => Promise<{ success: boolean; distance: number }>;
+  verifyOverride?: (descriptor: Float32Array) => Promise<{ success: boolean; distance: number; message?: string }>;
   onModelsLoaded?: () => void;
   onStepChange?: (message: string) => void;
+  onRetry?: () => Promise<string | null>;
 }
 
 const STEP_CONFIG: Record<LivenessStep, {
@@ -62,42 +63,6 @@ const RING_STROKE = 6;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 const SPIN_SEGMENT = RING_CIRCUMFERENCE * 0.25;
 
-/*
-function DevOverlay({
-  currentStep,
-  currentStepIndex,
-  pose,
-  blinkValidated,
-  validationsNeeded,
-}: {
-  currentStep: string;
-  currentStepIndex: number;
-  pose: HeadPose;
-  blinkValidated: boolean;
-  validationsNeeded: number;
-}) 
-{
-  const [tick, setTick] = useState(0);
-
-  useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 200);
-    return () => clearInterval(id);
-  }, []);
-
-  void tick;
-
-  return (
-    <div className="fixed top-2 left-2 z-50 bg-black/80 text-white text-xs font-mono p-3 rounded-lg pointer-events-none">
-      <div>Step: {currentStep} ({currentStepIndex + 1}/{STEPS.length})</div>
-      <div>Yaw: {Math.round(pose.yaw)}° | Pitch: {Math.round(pose.pitch)}° | Roll: {Math.round(pose.roll)}°</div>
-      <div>Blink: {String(blinkValidated)}</div>
-      <div>Validations needed: {validationsNeeded}</div>
-      <div>Device: {navigator.userAgent.match(/Mobile|Android|iPhone/) ? 'Mobile' : 'Desktop'}</div>
-    </div>
-  );
-}
-*/
-
 function FeedbackVisual({
   ballXPercent,
   ringOffset,
@@ -108,6 +73,7 @@ function FeedbackVisual({
   isTransitioning,
   currentStepIndex,
   ringStrokeMode,
+  ringColorMode,
   steps,
 }: {
   ballXPercent: import('framer-motion').MotionValue<string>;
@@ -119,10 +85,13 @@ function FeedbackVisual({
   isTransitioning: boolean;
   currentStepIndex: number;
   ringStrokeMode: 'progress' | 'spin';
+  ringColorMode: 'green' | 'red';
+  isFailing: boolean;
   steps: LivenessStep[];
 }) {
   const targetXPercent = `${targetX * 80}%`;
   const targetYPercent = `${targetY * 80}%`;
+  const isRed = ringColorMode === 'red';
 
   return (
     <div className="flex flex-col items-center gap-4 flex-1 justify-center">
@@ -139,7 +108,7 @@ function FeedbackVisual({
             cy="60"
             r={RING_RADIUS}
             fill="none"
-            stroke="rgba(255,255,255,0.15)"
+            stroke={isRed ? "rgba(239, 68, 68, 0.25)" : "rgba(255,255,255,0.15)"}
             strokeWidth={RING_STROKE}
           />
           {ringStrokeMode === 'spin' ? (
@@ -148,7 +117,7 @@ function FeedbackVisual({
               cy="60"
               r={RING_RADIUS}
               fill="none"
-              stroke="#10b981"
+              stroke={isRed ? "#ef4444" : "#10b981"}
               strokeWidth={RING_STROKE}
               strokeLinecap="round"
               strokeDasharray={`${SPIN_SEGMENT} ${RING_CIRCUMFERENCE - SPIN_SEGMENT}`}
@@ -160,7 +129,7 @@ function FeedbackVisual({
               cy="60"
               r={RING_RADIUS}
               fill="none"
-              stroke={isCorrectPose ? '#10b981' : '#ef4444'}
+              stroke={isRed ? '#ef4444' : (isCorrectPose ? '#10b981' : '#ef4444')}
               strokeWidth={RING_STROKE}
               strokeLinecap="round"
               strokeDasharray={RING_CIRCUMFERENCE}
@@ -176,22 +145,27 @@ function FeedbackVisual({
               style={{
                 x: targetXPercent,
                 y: targetYPercent,
-                borderColor: isCorrectPose ? '#10b981' : '#fbbf24',
+                borderColor: isRed ? '#ef4444' : (isCorrectPose ? '#10b981' : '#fbbf24'),
                 backgroundColor: 'transparent',
               }}
-              animate={{ opacity: [0.6, 1, 0.6] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
+              animate={{ opacity: isRed ? [1, 0.3, 1] : [0.6, 1, 0.6] }}
+              transition={{ duration: isRed ? 0.6 : 1.5, repeat: Infinity }}
             />
             <motion.div
               className="absolute w-10 h-10 rounded-full shadow-lg"
               style={{
                 x: ballXPercent,
                 y: '0%',
-                backgroundColor: isCorrectPose ? '#10b981' : '#f87171',
+                backgroundColor: isRed ? '#ef4444' : (isCorrectPose ? '#10b981' : '#f87171'),
               }}
-              animate={isCorrectPose ? { boxShadow: '0 0 20px rgba(16, 185, 129, 0.5)' } : { boxShadow: '0 0 8px rgba(248, 113, 113, 0.3)' }}
+              animate={
+                isRed
+                  ? { boxShadow: '0 0 25px rgba(239, 68, 68, 0.8)', scale: [1, 1.15, 1] }
+                  : (isCorrectPose ? { boxShadow: '0 0 20px rgba(16, 185, 129, 0.5)' } : { boxShadow: '0 0 8px rgba(248, 113, 113, 0.3)' })
+              }
+              transition={isRed ? { duration: 0.5, repeat: Infinity } : undefined}
             />
-            {isCorrectPose && (
+            {isCorrectPose && !isRed && (
               <motion.div
                 className="absolute w-2.5 h-2.5 rounded-full bg-white/20 border border-white/30"
                 initial={{ opacity: 0, scale: 0 }}
@@ -209,12 +183,13 @@ function FeedbackVisual({
             key={step}
             className="w-2.5 h-2.5 rounded-full transition-colors"
             animate={{
-              backgroundColor:
-                idx < currentStepIndex
-                  ? '#10b981'
-                  : idx === currentStepIndex
-                    ? '#eab308'
-                    : 'rgba(255,255,255,0.3)',
+              backgroundColor: isRed
+                ? '#ef4444'
+                : (idx < currentStepIndex
+                    ? '#10b981'
+                    : idx === currentStepIndex
+                      ? '#eab308'
+                      : 'rgba(255,255,255,0.3)'),
               scale: idx === currentStepIndex ? [1, 1.3, 1] : 1,
             }}
             transition={idx === currentStepIndex ? { duration: 1.5, repeat: Infinity } : { duration: 0.3 }}
@@ -233,7 +208,8 @@ export function LivenessChallenge({
   facialMode,
   verifyOverride,
   onModelsLoaded,
-  onStepChange
+  onStepChange,
+  onRetry
 }: LivenessChallengeProps) {
   const steps: LivenessStep[] = useMemo(() => {
     if (facialMode === 'FRONTAL_ONLY') {
@@ -254,6 +230,8 @@ export function LivenessChallenge({
   const [wasCorrectPose, setWasCorrectPose] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [ringStrokeMode, setRingStrokeMode] = useState<'progress' | 'spin'>('progress');
+  const [ringColorMode, setRingColorMode] = useState<'green' | 'red'>('green');
+  const [isFailing, setIsFailing] = useState(false);
 
   const currentStepRef = useRef<LivenessStep>('front');
   const currentStepIndexRef = useRef(0);
@@ -262,6 +240,21 @@ export function LivenessChallenge({
   const poseHoldStartRef = useRef(0);
   const isValidatingRef = useRef(false);
   const waitingForBlinkRef = useRef(false);
+  const activeFaceTokenRef = useRef<string | undefined>(faceToken);
+  const onRetryRef = useRef(onRetry);
+  const onCancelRef = useRef(onCancel);
+
+  useEffect(() => {
+    activeFaceTokenRef.current = faceToken;
+  }, [faceToken]);
+
+  useEffect(() => {
+    onRetryRef.current = onRetry;
+  });
+
+  useEffect(() => {
+    onCancelRef.current = onCancel;
+  });
 
   useLayoutEffect(() => {
     bestFrameDescriptorRef.current = bestFrameDescriptor;
@@ -377,20 +370,21 @@ export function LivenessChallenge({
     }
   }, [currentStepIndex, modelsLoaded, ringMotionVal, steps]);
 
-  const validateDescriptorWithBackend = useCallback(async (descriptor: Float32Array): Promise<{ success: boolean; distance: number }> => {
+  const validateDescriptorWithBackend = useCallback(async (descriptor: Float32Array): Promise<{ success: boolean; distance: number; message?: string }> => {
     try {
       if (verifyOverride) {
         return await verifyOverride(descriptor);
       }
-      if (!faceToken) {
+      const currentToken = activeFaceTokenRef.current || faceToken;
+      if (!currentToken) {
         return { success: true, distance: 0 };
       }
       const descriptorArray = Array.from(descriptor);
-      const result = await api.employees.verifyFaceWithToken(faceToken, descriptorArray);
-      return { success: result.success, distance: result.distance };
+      const result = await api.employees.verifyFaceWithToken(currentToken, descriptorArray);
+      return { success: result.success, distance: result.distance, message: result.message };
     } catch (err) {
       console.error('Erro na verificação backend:', err);
-      return { success: false, distance: -1 };
+      return { success: false, distance: -1, message: "Sessão expirada ou erro na validação" };
     }
   }, [faceToken, verifyOverride]);
 
@@ -415,7 +409,7 @@ export function LivenessChallenge({
       return;
     }
 
-    if (isTransitioning) return;
+    if (isTransitioning || isFailing) return;
 
     try {
       const detectorOptions = new faceapi.TinyFaceDetectorOptions({
@@ -499,12 +493,54 @@ export function LivenessChallenge({
                 return;
               }
               handleValidationSuccess(detection.descriptor);
+              isValidatingRef.current = false;
             } else {
-              poseHoldStartRef.current = 0;
-              ringMotionVal.set(0);
-            }
+              // FALHA DE COMPATIBILIDADE FACIAL OU TOKEN EXPIRADO
+              setIsFailing(true);
+              setRingColorMode('red');
+              
+              const failMsg = backendResult.message || (backendResult.distance === -1 ? "Sessão expirada. Reiniciando..." : "Rosto não compatível. Reiniciando...");
+              onStepChangeRef.current?.(failMsg);
 
-            isValidatingRef.current = false;
+              if ('vibrate' in navigator) {
+                navigator.vibrate([100, 50, 100]);
+              }
+
+              // Animação de dissolução do círculo vermelho por 2 segundos
+              ringMotionVal.set(100);
+              animate(ringMotionVal, 0, { duration: 2, ease: "easeOut" });
+
+              setTimeout(async () => {
+                if (onRetryRef.current) {
+                  const newToken = await onRetryRef.current();
+                  if (newToken) {
+                    activeFaceTokenRef.current = newToken;
+                    setCurrentStepIndex(0);
+                    setBlinkValidated(false);
+                    setWasCorrectPose(false);
+                    validationsCountRef.current = 0;
+                    poseHoldStartRef.current = 0;
+                    waitingForBlinkRef.current = false;
+                    ringMotionVal.set(0);
+                    setRingColorMode('green');
+                    setIsFailing(false);
+                    isValidatingRef.current = false;
+
+                    const stepMessages: Record<LivenessStep, string> = {
+                      front: 'Centralize seu rosto',
+                      left: 'Vire o rosto para a esquerda',
+                      right: 'Vire o rosto para a direita',
+                    };
+                    onStepChangeRef.current?.(stepMessages[steps[0]]);
+                    return;
+                  }
+                }
+                // Se onRetry falhar ou não existir
+                setIsFailing(false);
+                isValidatingRef.current = false;
+                onCancelRef.current?.();
+              }, 2000);
+            }
           }
         } else {
           poseHoldStartRef.current = 0;
@@ -523,6 +559,7 @@ export function LivenessChallenge({
     videoRef,
     modelsLoaded,
     isTransitioning,
+    isFailing,
     blinkValidated,
     getHeadPose,
     isLookingFront,
@@ -532,6 +569,7 @@ export function LivenessChallenge({
     ringMotionVal,
     validateDescriptorWithBackend,
     handleValidationSuccess,
+    steps
   ]);
 
   useEffect(() => {
@@ -566,12 +604,14 @@ export function LivenessChallenge({
             isTransitioning={isTransitioning}
             currentStepIndex={currentStepIndex}
             ringStrokeMode={ringStrokeMode}
+            ringColorMode={ringColorMode}
+            isFailing={isFailing}
             steps={steps}
           />
 
           <button
             onClick={onCancel}
-            className="w-full max-w-[200px] py-3 bg-white/10 hover:bg-white/20 text-white rounded-full font-bold transition-all active:scale-95 pointer-events-auto mt-auto"
+            className="w-full max-w-[200px] py-3 bg-white/10 hover:bg-white/20 text-white rounded-full font-bold transition-all active:scale-95 pointer-events-auto mt-auto cursor-pointer"
           >
             Cancelar
           </button>

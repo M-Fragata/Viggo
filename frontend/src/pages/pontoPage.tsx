@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react"
+import { useNavigate } from "react-router"
 
 import { api } from "../services/api"
 import { LivenessChallenge } from "../components/LivenessChallenge"
@@ -21,11 +22,13 @@ type ChekinProps = {
 }
 
 export function PontoPage() {
+    const navigate = useNavigate();
     const { token, user } = useAuth();
     const { company } = useCompany();
 
     const [videoOpen, setVideoOpen] = useState<boolean>(false)
     const [message, setMessage] = useState<string>("Iniciando validação...")
+    const [headerIsError, setHeaderIsError] = useState<boolean>(false)
 
     const [checkins, setCheckins] = useState<ChekinProps[]>([])
     const [isLoadingCheckins, setIsLoadingCheckins] = useState(true)
@@ -116,18 +119,65 @@ export function PontoPage() {
         });
     }
 
+    async function handleRetryFaceToken(): Promise<string | null> {
+        try {
+            if (!token) {
+                stopCamera();
+                setVideoOpen(false);
+                setPendingCheckin(null);
+                navigate("/");
+                return null;
+            }
+            const data = await api.employees.issueFaceToken();
+            setFaceToken(data.token);
+            setHeaderIsError(false);
+            return data.token;
+        } catch (err) {
+            console.error("Erro ao renovar token facial:", err);
+            return null;
+        }
+    }
+
     async function handleGetEmployee() {
         try {
             if (!token) {
-                window.location.assign("/")
-                return { success: false }
+                stopCamera();
+                setVideoOpen(false);
+                setPendingCheckin(null);
+                navigate("/");
+                return { success: false };
             }
 
-            const data = await api.employees.issueFaceToken()
+            if (!user?.hasFaceDescriptor) {
+                setPendingCheckin(null);
+                alert("Registro facial pendente. Por favor, cadastre sua face antes de bater o ponto.");
+                navigate("/register");
+                return { success: false };
+            }
+
+            let data;
+            try {
+                data = await api.employees.issueFaceToken();
+            } catch (err: unknown) {
+                console.error("Erro ao emitir token facial:", err);
+                stopCamera();
+                setVideoOpen(false);
+                setPendingCheckin(null);
+                const errorObj = err as { code?: string; message?: string };
+                if (errorObj?.code === "FACE_NOT_REGISTERED") {
+                    navigate("/register");
+                } else {
+                    alert(errorObj?.message || "Erro ao iniciar validação facial. Tente novamente.");
+                }
+                return { success: false };
+            }
+
             setFaceToken(data.token);
-            setVideoOpen(true)
-            setShowLiveness(true)
-            setMessage("Iniciando validação...")
+            setVideoOpen(true);
+            setShowLiveness(true);
+            setHeaderIsError(false);
+            setMessage("Iniciando validação...");
+
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: {
@@ -152,15 +202,20 @@ export function PontoPage() {
                 }
             } catch (err) {
                 console.error("Erro ao acessar a webcam:", err);
+                stopCamera();
+                setVideoOpen(false);
                 setPendingCheckin(null);
+                alert("Não foi possível acessar a câmera. Verifique as permissões do navegador.");
                 return { success: false };
             }
 
             return { success: true };
 
         } catch {
+            stopCamera();
+            setVideoOpen(false);
             setPendingCheckin(null);
-            return { success: false }
+            return { success: false };
         }
     }
 
@@ -184,13 +239,14 @@ export function PontoPage() {
         stopCamera();
         setShowLiveness(false);
         setIsRegistering(true);
+        setHeaderIsError(false);
         setMessage("Registrando ponto...");
 
         try {
             if (!token) {
                 setIsRegistering(false);
                 setVideoOpen(false);
-                window.location.assign("/");
+                navigate("/");
                 return;
             }
 
@@ -226,6 +282,7 @@ export function PontoPage() {
         setVideoOpen(false);
         setPendingCheckin(null);
         setFaceToken(null);
+        setHeaderIsError(false);
         setMessage("Validação cancelada");
     };
 
@@ -233,7 +290,10 @@ export function PontoPage() {
         setIsLoadingCheckins(true)
 
         try {
-            if (!token) return window.location.assign("/")
+            if (!token) {
+                navigate("/");
+                return;
+            }
 
             const data = await api.checkins.list();
             setCheckins(data)
@@ -269,7 +329,7 @@ export function PontoPage() {
                     <div className="relative w-full max-w-2xl bg-slate-900 sm:rounded-3xl overflow-hidden shadow-2xl border border-white/10 flex flex-col justify-center items-center h-[80vh] max-h-[700px]">
 
                         {/* MENSAGEM NO TOPO DO VÍDEO */}
-                        <div className="absolute top-0 left-0 right-0 z-[100] bg-emerald-400 w-full shadow-lg p-3 h-[60px] flex items-center justify-center">
+                        <div className={`absolute top-0 left-0 right-0 z-[100] ${headerIsError ? 'bg-red-500' : 'bg-emerald-400'} w-full shadow-lg p-3 h-[60px] flex items-center justify-center transition-colors duration-300`}>
                             <p className="text-white text-sm md:text-lg font-bold text-center uppercase tracking-wider">
                                 {message}
                             </p>
@@ -288,7 +348,7 @@ export function PontoPage() {
                         {/* MÁSCARA OVAL EMERALD */}
                         <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
                             <div
-                                className="md:w-[360px] md:h-[460px] w-[80%] h-[60%] shadow-[0_0_0_9999px_rgba(0,0,0,0.7)] border-4 border-dashed border-emerald-400/60"
+                                className={`md:w-[360px] md:h-[460px] w-[80%] h-[60%] shadow-[0_0_0_9999px_rgba(0,0,0,0.7)] border-4 border-dashed ${headerIsError ? 'border-red-500/80' : 'border-emerald-400/60'} transition-colors duration-300`}
                                 style={{ borderRadius: '50% / 40%' }}
                             />
                         </div>
@@ -300,8 +360,20 @@ export function PontoPage() {
                                 facialMode={company?.settings?.ponto?.facialMode || 'FRONTAL_ONLY'}
                                 onComplete={handleLivenessComplete}
                                 onCancel={handleLivenessCancel}
-                                onModelsLoaded={() => setMessage("Centralize seu rosto")}
-                                onStepChange={(msg) => setMessage(msg)}
+                                onRetry={handleRetryFaceToken}
+                                onModelsLoaded={() => {
+                                    setHeaderIsError(false);
+                                    setMessage("Centralize seu rosto");
+                                }}
+                                onStepChange={(msg) => {
+                                    setMessage(msg);
+                                    setHeaderIsError(
+                                        msg.toLowerCase().includes('não compatível') ||
+                                        msg.toLowerCase().includes('não reconhecido') ||
+                                        msg.toLowerCase().includes('expirada') ||
+                                        msg.toLowerCase().includes('erro')
+                                    );
+                                }}
                             />
                         )}
 
