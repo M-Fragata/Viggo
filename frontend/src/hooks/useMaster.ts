@@ -115,9 +115,24 @@ export function useMasterActions() {
   const { toast } = useToast();
 
   const updatePlan = useCallback(
-    async (companyId: string, planTier: PlanTier) => {
-      const result = await api.master.updatePlan(companyId, planTier);
-      toast.success("Plano alterado", { description: `Plano atualizado para ${planTier}` });
+    async (
+      companyId: string,
+      data:
+        | PlanTier
+        | {
+            plan: PlanTier;
+            pricingModel?: "FIXED" | "TIERED_EXTRA";
+            maxEmployees?: number;
+            price?: number;
+            basePrice?: number;
+            extraPricePerUnit?: number;
+            planExpiresAt?: string | null;
+          }
+    ) => {
+      const result = await api.master.updatePlan(companyId, data);
+      const planName = typeof data === "string" ? data : data.plan;
+      const label = planName === "DYNAMIC" ? "Viggo" : "Enterprise Personalizado";
+      toast.success("Plano alterado", { description: `Plano atualizado para ${label}` });
       return result;
     },
     [toast]

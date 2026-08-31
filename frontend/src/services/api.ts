@@ -268,10 +268,34 @@ export const api = {
       const suffix = qs.toString() ? `?${qs.toString()}` : "";
       return fetchApi<MasterMetricsResponse>(`/master/metrics${suffix}`);
     },
-    updatePlan: (id: string, plan: PlanTier) =>
-      fetchApi<{ company: Company }>(`/master/companies/${id}/plan`, {
+    updatePlan: (
+      id: string,
+      data:
+        | PlanTier
+        | {
+            plan: PlanTier;
+            pricingModel?: "FIXED" | "TIERED_EXTRA";
+            maxEmployees?: number;
+            price?: number;
+            basePrice?: number;
+            extraPricePerUnit?: number;
+            planExpiresAt?: string | null;
+          }
+    ) =>
+      fetchApi<{
+        id: string;
+        name: string;
+        plan: PlanTier;
+        status: string;
+        maxEmployees: number;
+        price?: number;
+        calculatedTotal?: number;
+        basePrice?: number;
+        extraPricePerUnit?: number;
+        pricingModel?: "FIXED" | "TIERED_EXTRA";
+      }>(`/master/companies/${id}/plan`, {
         method: "PUT",
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify(typeof data === "string" ? { plan: data } : data),
       }),
     updateStatus: (id: string, status: CompanyStatus) =>
       fetchApi<{ company: Company }>(`/master/companies/${id}/status`, {

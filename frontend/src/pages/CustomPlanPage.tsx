@@ -1,6 +1,5 @@
 import { useActionState } from "react";
 import { Link, useNavigate } from "react-router";
-import { api } from "../services/api";
 import { Input } from "../components/Input";
 import { Button } from "../components/Button";
 import { CUSTOM_PLAN_CTA } from "../../../shared/plans";
@@ -13,31 +12,37 @@ interface CustomPlanFormData {
   message: string;
 }
 
+interface FormState {
+  message: string;
+  fieldErrors: Partial<Record<keyof CustomPlanFormData, string>>;
+  payload: CustomPlanFormData;
+}
+
+const initialFormState: FormState = {
+  message: "",
+  fieldErrors: {},
+  payload: {
+    name: "",
+    email: "",
+    companyName: "",
+    estimatedEmployees: "",
+    message: "",
+  },
+};
+
 export function CustomPlanPage() {
   const navigate = useNavigate();
 
-  const [state, formAction, isPending] = useActionState(handleSubmit, {
-    message: "",
-    fieldErrors: {},
-    payload: {
-      name: "",
-      email: "",
-      companyName: "",
-      estimatedEmployees: "",
-      message: "",
-    },
-  });
-
-  async function handleSubmit(_prevState: unknown, formData: FormData) {
+  async function handleSubmit(_prevState: FormState, formData: FormData): Promise<FormState> {
     const rawData: CustomPlanFormData = {
-      name: formData.get("name") as string,
-      email: formData.get("email") as string,
-      companyName: formData.get("companyName") as string,
-      estimatedEmployees: formData.get("estimatedEmployees") as string,
-      message: formData.get("message") as string,
+      name: (formData.get("name") as string) || "",
+      email: (formData.get("email") as string) || "",
+      companyName: (formData.get("companyName") as string) || "",
+      estimatedEmployees: (formData.get("estimatedEmployees") as string) || "",
+      message: (formData.get("message") as string) || "",
     };
 
-    const fieldErrors: Record<string, string> = {};
+    const fieldErrors: Partial<Record<keyof CustomPlanFormData, string>> = {};
 
     if (!rawData.name.trim() || rawData.name.length < 3) {
       fieldErrors.name = "Nome deve ter no mínimo 3 caracteres";
@@ -69,8 +74,6 @@ export function CustomPlanPage() {
     }
 
     try {
-      await api.company.public.getInviteByToken("dummy"); // placeholder para usar a api
-      
       const response = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:3333"}/master/leads`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -91,13 +94,15 @@ export function CustomPlanPage() {
     return { message: "", fieldErrors: {}, payload: rawData };
   }
 
+  const [state, formAction, isPending] = useActionState(handleSubmit, initialFormState);
+
   const searchParams = new URLSearchParams(window.location.search);
   const isSuccess = searchParams.get("success") === "true";
 
   if (isSuccess) {
     return (
       <div className="flex items-center justify-center min-h-dvh w-full px-4 py-8 bg-slate-50 dark:bg-black transition-colors duration-200">
-        <div className="w-full max-w-lg text-center bg-white dark:bg-[#121214] border border-slate-200 dark:border-white/10 rounded-2xl p-8 md:p-10 shadow-xl">
+        <div className="w-full text-center bg-white dark:bg-[#121214] border border-slate-200 dark:border-white/10 rounded-2xl p-8 md:p-10 shadow-xl">
           <div className="mx-auto mb-6 w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center">
             <svg className="w-8 h-8 text-brand-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />

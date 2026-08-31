@@ -1180,7 +1180,7 @@ export function PricingSection() {
         </header>
 
         {/* Card principal — Plano Dinâmico */}
-        <div className="max-w-lg mx-auto">
+        <div className="max-w-5xl mx-auto">
           <PricingCalculator onCtaClick={() => navigate("/company/signup")} />
         </div>
 

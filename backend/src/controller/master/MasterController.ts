@@ -758,40 +758,78 @@ export class MasterController {
 
   async updateCompanyPlan(req: Request, res: Response) {
     const paramsSchema = z.object({ id: z.uuid() });
-    const bodySchema = z.object({ plan: z.enum(['DYNAMIC', 'ENTERPRISE_CUSTOM']), maxEmployees: z.number().min(1).optional() });
+    const bodySchema = z.object({
+      plan: z.enum(['DYNAMIC', 'ENTERPRISE_CUSTOM']),
+      pricingModel: z.enum(['FIXED', 'TIERED_EXTRA']).optional().default('FIXED'),
+      maxEmployees: z.number().int().min(1).optional(),
+      price: z.number().min(0).optional(),
+      basePrice: z.number().min(0).optional(),
+      extraPricePerUnit: z.number().min(0).optional(),
+      planExpiresAt: z.string().datetime().nullable().optional(),
+    });
     try {
       const { id } = paramsSchema.parse(req.params);
-      const { plan, maxEmployees } = bodySchema.parse(req.body);
+      const { plan, pricingModel, maxEmployees, price: customPrice, basePrice: customBasePrice, extraPricePerUnit: customExtraUnitPrice, planExpiresAt } = bodySchema.parse(req.body);
       const company = await prisma.company.findUnique({
         where: { id },
-        select: { id: true, name: true, plan: true, maxEmployees: true, _count: { select: { users: true } } },
+        select: { id: true, name: true, plan: true, maxEmployees: true, settings: true, _count: { select: { users: true } } },
       });
       if (!company) return res.status(404).json({ message: 'Empresa não encontrada' });
 
       let price = 0;
       let calculatedTotal = 0;
       let extraEmployees = 0;
+      let basePrice = 54.90;
+      let extraPricePerUnit = 5.00;
+
       if (plan === 'DYNAMIC') {
         const pricing = calculateDynamicPrice(company._count.users);
         price = pricing.total;
         calculatedTotal = pricing.total;
         extraEmployees = pricing.extraEmployees;
+        basePrice = 54.90;
+        extraPricePerUnit = 5.00;
+      } else if (plan === 'ENTERPRISE_CUSTOM') {
+        if (pricingModel === 'TIERED_EXTRA') {
+          basePrice = customBasePrice !== undefined ? customBasePrice : 54.90;
+          extraPricePerUnit = customExtraUnitPrice !== undefined ? customExtraUnitPrice : 3.50;
+          extraEmployees = Math.max(0, company._count.users - 10);
+          calculatedTotal = basePrice + (extraEmployees * extraPricePerUnit);
+          price = calculatedTotal;
+        } else {
+          // FIXED
+          price = customPrice !== undefined ? customPrice : 0;
+          calculatedTotal = price;
+          basePrice = price;
+          extraEmployees = 0;
+          extraPricePerUnit = 0;
+        }
       }
 
-      const finalMaxEmployees = plan === 'DYNAMIC' ? null : (maxEmployees ?? company.maxEmployees);
+      // Safe integer fallback: Company.maxEmployees is non-nullable Int in schema.
+      const finalMaxEmployees = plan === 'DYNAMIC' ? 10 : (maxEmployees ?? company.maxEmployees ?? 100);
 
       await prisma.subscription.updateMany({
         where: { companyId: id, status: 'ACTIVE' },
         data: { status: 'CANCELLED', cancelledAt: new Date() },
       });
 
+      const existingSettings = (company.settings as Record<string, any>) || {};
+      const updatedSettings = {
+        ...existingSettings,
+        enterprisePricingModel: plan === 'ENTERPRISE_CUSTOM' ? pricingModel : undefined,
+        customBasePrice: plan === 'ENTERPRISE_CUSTOM' && pricingModel === 'TIERED_EXTRA' ? basePrice : undefined,
+        customExtraPricePerUnit: plan === 'ENTERPRISE_CUSTOM' && pricingModel === 'TIERED_EXTRA' ? extraPricePerUnit : undefined,
+      };
+
       const updated = await prisma.company.update({
         where: { id },
         data: {
           plan: plan as any,
-          maxEmployees: finalMaxEmployees as any,
+          maxEmployees: finalMaxEmployees,
           status: CompanyStatus.ACTIVE,
-          planExpiresAt: null,
+          planExpiresAt: planExpiresAt ? new Date(planExpiresAt) : null,
+          settings: updatedSettings,
         },
       });
 
@@ -802,15 +840,42 @@ export class MasterController {
           price,
           status: 'ACTIVE',
           billingType: 'MANUAL',
-          basePrice: plan === 'DYNAMIC' ? 54.90 : 0,
+          basePrice,
           extraEmployees,
-          extraPricePerUnit: plan === 'DYNAMIC' ? 5.00 : 0,
+          extraPricePerUnit,
           calculatedTotal,
           startedAt: new Date(),
         },
       });
 
-      return res.json({ id: updated.id, name: updated.name, plan: updated.plan, status: updated.status, maxEmployees: updated.maxEmployees });
+      await createAuditLog({
+        userId: req.user!.id,
+        companyId: id,
+        action: 'UPDATE_COMPANY_PLAN',
+        entity: 'Company',
+        entityId: id,
+        oldData: { plan: company.plan, maxEmployees: company.maxEmployees },
+        newData: { plan: updated.plan, maxEmployees: updated.maxEmployees, price, calculatedTotal, pricingModel },
+        ip: req.ip ?? null,
+        userAgent: req.get('user-agent') ?? null,
+        legalBasis: 'Art. 7º, V — Execução de contrato',
+        purpose: 'Alteração de plano da empresa pelo painel Master',
+        personalDataCategories: [],
+      });
+
+      return res.json({
+        id: updated.id,
+        name: updated.name,
+        plan: updated.plan,
+        status: updated.status,
+        maxEmployees: updated.maxEmployees,
+        price,
+        calculatedTotal,
+        basePrice,
+        extraPricePerUnit,
+        extraEmployees,
+        pricingModel,
+      });
     } catch (error) {
       if (error instanceof z.ZodError) return res.status(400).json({ message: 'Dados inválidos', errors: error.issues });
       console.error('Erro ao atualizar plano:', error);
