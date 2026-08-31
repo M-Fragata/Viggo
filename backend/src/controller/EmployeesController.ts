@@ -7,6 +7,7 @@ import { euclideanDistance } from "../utils/euclideanDistance.js";
 import crypto from "node:crypto";
 import bcrypt from "bcrypt";
 import { decryptFaceDescriptor, hasFaceDescriptor } from "../utils/faceEncryption.js";
+import { PaymentController } from "./payment/PaymentController.js";
 
 interface FaceToken {
     descriptor: Float32Array;
@@ -160,6 +161,11 @@ export class EmployeesController {
                 },
             });
 
+            // Atualiza assinatura Asaas de forma assíncrona (plano dinâmico 54.90 +5 por extra além de 10)
+            void new PaymentController().updateSubscriptionValue(companyId).catch((e) =>
+                console.error("[Asaas] updateSubscriptionValue failed (createEmployee):", e)
+            );
+
             return res.status(201).json({
                 user: newUser,
                 temporaryPassword: rawPassword,
@@ -274,6 +280,12 @@ export class EmployeesController {
                         reason: err instanceof Error ? err.message : "Erro desconhecido ao salvar"
                     });
                 }
+            }
+
+            if (createdList.length > 0) {
+                void new PaymentController().updateSubscriptionValue(companyId).catch((e) =>
+                    console.error("[Asaas] updateSubscriptionValue failed (bulkImport):", e)
+                );
             }
 
             return res.status(200).json({

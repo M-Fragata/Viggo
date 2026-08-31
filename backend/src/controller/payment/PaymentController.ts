@@ -168,6 +168,23 @@ export class PaymentController {
         take: 50,
       });
 
+      // Fallback: se ?sync=true e empresa tem asaasCustomerId, tenta buscar no Asaas para reconciliação
+      const sync = (req.query as unknown as Record<string, unknown>)?.sync === 'true';
+      if (sync) {
+        try {
+          const company = await prisma.company.findUnique({ where: { id: companyId }, select: { asaasCustomerId: true } });
+          if (company?.asaasCustomerId) {
+            const asaasPayments = await asaasService.getPaymentsByCustomer(company.asaasCustomerId, 50) as { data?: Array<{ id: string; value: number; billingType: string; status: string; dueDate: string; invoiceUrl?: string }> };
+            // Não persiste, apenas retorna enriquecido para debug; webhook continua fonte da verdade
+            if (asaasPayments?.data) {
+              console.log(`[Asaas] fallback sync: ${asaasPayments.data.length} pagamentos no Asaas para ${companyId}`);
+            }
+          }
+        } catch (e) {
+          console.warn("[Asaas] fallback getPaymentsByCustomer falhou:", e instanceof Error ? e.message : String(e));
+        }
+      }
+
       return res.json(payments.map(p => ({
         id: p.id,
         amount: Number(p.amount),
@@ -184,6 +201,94 @@ export class PaymentController {
     } catch (error) {
       console.error('Erro ao buscar histórico:', error);
       return res.status(500).json({ message: 'Erro ao buscar histórico de pagamentos' });
+    }
+  }
+
+  /**
+   * POST /companies/payments/retry
+   * Cria pagamento avulso (createPayment) para retry de boleto/PIX vencido.
+   * Útil quando PAYMENT_OVERDUE e cliente quer pagar sem cancelar assinatura.
+   */
+  async retryPayment(req: Request, res: Response) {
+    const bodySchema = z.object({
+      billingType: z.enum(['PIX', 'CREDIT_CARD', 'BOLETO']).default('PIX'),
+    });
+    try {
+      const companyId = req.user?.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: 'Empresa não identificada' });
+      }
+
+      const { billingType } = bodySchema.parse(req.body);
+
+      const company = await prisma.company.findUnique({
+        where: { id: companyId },
+        select: { id: true, name: true, cnpj: true, asaasCustomerId: true, _count: { select: { users: true } } },
+      });
+
+      if (!company) {
+        return res.status(404).json({ message: 'Empresa não encontrada' });
+      }
+
+      if (isMasterCnpj(company.cnpj)) {
+        return res.status(200).json({ free: true, message: 'Empresa master isenta de cobrança' });
+      }
+
+      let customerId = company.asaasCustomerId;
+      if (!customerId) {
+        const adminUser = await prisma.user.findFirst({
+          where: { companyId, role: 'ENTERPRISE_ADMIN' },
+          select: { email: true },
+        });
+        const customer = await asaasService.createCustomer({
+          name: company.name,
+          cpfCnpj: company.cnpj,
+          email: adminUser?.email || '',
+        });
+        customerId = customer.id;
+        await prisma.company.update({ where: { id: companyId }, data: { asaasCustomerId: customerId } });
+      }
+
+      const priceInfo = calculateDynamicPrice(company._count.users);
+      const dueDateStr = format(new Date(), 'yyyy-MM-dd');
+
+      const payment = await asaasService.createPayment({
+        customerId,
+        billingType,
+        value: priceInfo.total,
+        dueDate: dueDateStr,
+        description: `Viggo - Pagamento avulso retry - ${priceInfo.paidEmployees} funcionários`,
+        externalReference: companyId,
+      });
+
+      // Persiste como PENDING local (webhook PAYMENT_CONFIRMED vai confirmar)
+      await prisma.payment.create({
+        data: {
+          companyId,
+          asaasPaymentId: (payment as { id?: string }).id || null,
+          amount: priceInfo.total,
+          billingType,
+          status: 'PENDING',
+          dueDate: new Date(dueDateStr),
+          paymentUrl: (payment as { invoiceUrl?: string; paymentUrl?: string }).invoiceUrl || (payment as { paymentUrl?: string }).paymentUrl || null,
+          invoiceUrl: (payment as { invoiceUrl?: string }).invoiceUrl || null,
+        },
+      });
+
+      return res.json({
+        paymentId: (payment as { id?: string }).id,
+        amount: priceInfo.total,
+        billingType,
+        dueDate: dueDateStr,
+        paymentUrl: (payment as { invoiceUrl?: string; paymentUrl?: string }).invoiceUrl || (payment as { paymentUrl?: string }).paymentUrl || null,
+        invoiceUrl: (payment as { invoiceUrl?: string }).invoiceUrl || null,
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Dados inválidos', errors: error.issues });
+      }
+      console.error('Erro ao criar pagamento avulso retry:', error);
+      return res.status(500).json({ message: 'Erro ao criar pagamento avulso' });
     }
   }
 

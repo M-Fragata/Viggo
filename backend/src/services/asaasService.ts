@@ -53,12 +53,14 @@ export interface CreateSubscriptionDTO {
 }
 
 export async function createSubscription(data: CreateSubscriptionDTO): Promise<{ id: string; invoiceUrl?: string; paymentUrl?: string }> {
+  const { customerId, ...rest } = data;
   const response = await fetch(`${ASAAS_BASE_URL}/subscriptions`, {
     method: 'POST',
     headers: ASAAS_HEADERS,
     body: JSON.stringify({
+      customer: customerId,
       cycle: 'MONTHLY',
-      ...data,
+      ...rest,
     }),
   });
 
@@ -111,10 +113,14 @@ export interface CreatePaymentDTO {
 }
 
 export async function createPayment(data: CreatePaymentDTO) {
+  const { customerId, ...rest } = data;
   const response = await fetch(`${ASAAS_BASE_URL}/payments`, {
     method: 'POST',
     headers: ASAAS_HEADERS,
-    body: JSON.stringify(data),
+    body: JSON.stringify({
+      customer: customerId,
+      ...rest,
+    }),
   });
 
   if (!response.ok) {

@@ -97,6 +97,27 @@ export const api = {
         body: JSON.stringify(data),
         requiresAuth: false,
       }),
+
+    forgotPassword: (email: string) =>
+      fetchApi<{ message: string; email?: string }>("/auth/forgot-password", {
+        method: "POST",
+        body: JSON.stringify({ email }),
+        requiresAuth: false,
+      }),
+
+    verifyResetCode: (email: string, code: string) =>
+      fetchApi<{ token: string }>("/auth/verify-reset-code", {
+        method: "POST",
+        body: JSON.stringify({ email, code }),
+        requiresAuth: false,
+      }),
+
+    resetPassword: (token: string, password: string) =>
+      fetchApi<{ message: string }>("/auth/reset-password", {
+        method: "POST",
+        body: JSON.stringify({ token, password }),
+        requiresAuth: false,
+      }),
   },
 
   company: {
@@ -280,12 +301,20 @@ export const api = {
         method: "POST",
         body: JSON.stringify(data),
       }),
-    getHistory: () =>
-      fetchApi<PaymentHistoryItem[]>("/companies/payments/history"),
+    getHistory: (sync?: boolean) =>
+      fetchApi<PaymentHistoryItem[]>(`/companies/payments/history${sync ? "?sync=true" : ""}`),
     cancel: () =>
       fetchApi<{ message: string }>("/companies/payments/cancel", {
         method: "POST",
       }),
+    retry: (billingType: string = "PIX") =>
+      fetchApi<{ paymentId: string; amount: number; billingType: string; dueDate: string; paymentUrl: string | null }>(
+        "/companies/payments/retry",
+        {
+          method: "POST",
+          body: JSON.stringify({ billingType }),
+        }
+      ),
   },
 
   justificativa: {

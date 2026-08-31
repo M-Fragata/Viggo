@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { Mail, Lock, Loader2, ShieldAlert, HelpCircle } from "lucide-react";
+import { Mail, Lock, Loader2, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -22,7 +22,6 @@ export function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showForgotModal, setShowForgotModal] = useState(false);
 
   // Carrega e-mail lembrado ao montar
   useEffect(() => {
@@ -137,7 +136,7 @@ export function LoginPage() {
 
             <button
               type="button"
-              onClick={() => setShowForgotModal(true)}
+              onClick={() => navigate("/forgot-password")}
               className="text-xs text-slate-600 dark:text-on-dark-muted hover:text-brand-green dark:hover:text-brand-green transition-colors cursor-pointer"
             >
               Esqueceu a senha?
@@ -164,34 +163,6 @@ export function LoginPage() {
           </button>
         </div>
       </form>
-
-      {/* Modal de Recuperação de Senha */}
-      {showForgotModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="w-full max-w-md bg-white dark:bg-surface-code border border-slate-200 dark:border-white/10 rounded-2xl p-6 shadow-2xl space-y-4">
-            <div className="flex items-center gap-3 text-brand-green">
-              <HelpCircle className="w-6 h-6" />
-              <h3 className="text-lg font-bold text-slate-900 dark:text-on-dark">Recuperação de Senha</h3>
-            </div>
-            <p className="text-xs text-slate-600 dark:text-on-dark-muted leading-relaxed">
-              Por motivos de segurança e integridade jurídica das folhas de ponto (Portaria 671 MTE), a recuperação de senha é gerenciada pelo administrador da sua empresa.
-            </p>
-            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 text-xs text-slate-700 dark:text-on-dark/90 space-y-1">
-              <p>• <strong>Colaboradores:</strong> Solicite a redefinição de senha ao seu gestor ou departamento de RH.</p>
-              <p>• <strong>Administradores:</strong> Entre em contato com o suporte Viggo.</p>
-            </div>
-            <div className="pt-2 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setShowForgotModal(false)}
-                className="px-5 py-2.5 bg-brand-green text-black font-semibold text-xs rounded-full hover:bg-brand-green-deep transition-colors cursor-pointer uppercase tracking-wider"
-              >
-                Entendi
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </AuthLayout>
   );
 }
