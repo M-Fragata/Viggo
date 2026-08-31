@@ -1,5 +1,15 @@
 import { useState, useCallback } from "react";
-import { api, type MasterListParams, type MasterCompaniesResponse, type MasterCompanyDetail, type MasterMetricsResponse, type PlanTier, type CompanyStatus } from "../services/api";
+import {
+  api,
+  type MasterListParams,
+  type MasterCompaniesResponse,
+  type MasterCompanyDetail,
+  type MasterMetricsResponse,
+  type MasterAuditLogsResponse,
+  type MasterAuditLogParams,
+  type PlanTier,
+  type CompanyStatus,
+} from "../services/api";
 import { useToast } from "./useToast";
 
 export function useMasterCompanies() {
@@ -74,6 +84,33 @@ export function useMasterMetrics() {
   return { metrics, isLoading, error, fetchMetrics };
 }
 
+export function useMasterAuditLogs() {
+  const [data, setData] = useState<MasterAuditLogsResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchAuditLogs = useCallback(async (params?: MasterAuditLogParams) => {
+    try {
+      setIsLoading(true);
+      const result = await api.master.listAuditLogs(params);
+      setData(result);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao carregar logs de auditoria");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return {
+    logs: data?.data || [],
+    pagination: data?.pagination,
+    isLoading,
+    error,
+    fetchAuditLogs,
+  };
+}
+
 export function useMasterActions() {
   const { toast } = useToast();
 
@@ -112,5 +149,26 @@ export function useMasterActions() {
     []
   );
 
-  return { updatePlan, updateStatus, extendTrial, impersonate };
+  const exportCompanies = useCallback(
+    async (params?: { status?: CompanyStatus; plan?: PlanTier; search?: string }) => {
+      try {
+        toast.info("Gerando exportação...", { description: "Preparando arquivo CSV com filtros ativos" });
+        const blob = await api.master.exportCompanies(params);
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `empresas_viggo_${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        toast.success("Download concluído!", { description: "Arquivo CSV baixado com sucesso" });
+      } catch (err) {
+        toast.error("Erro ao exportar", { description: err instanceof Error ? err.message : "Falha na exportação" });
+      }
+    },
+    [toast]
+  );
+
+  return { updatePlan, updateStatus, extendTrial, impersonate, exportCompanies };
 }

@@ -11,8 +11,10 @@ masterRoutes.use(authMiddleware);
 masterRoutes.use(requireMaster);
 
 masterRoutes.get('/companies', masterController.listCompanies);
+masterRoutes.get('/companies/export', masterController.exportCompaniesCsv);
 masterRoutes.get('/companies/:id', masterController.getCompanyDetails);
 masterRoutes.get('/metrics', masterController.getMetrics);
+masterRoutes.get('/audit-logs', masterController.listAuditLogs);
 masterRoutes.put('/companies/:id/plan', masterController.updateCompanyPlan);
 masterRoutes.put('/companies/:id/status', masterController.updateCompanyStatus);
 masterRoutes.post('/companies/:id/extend-trial', masterController.extendTrial);

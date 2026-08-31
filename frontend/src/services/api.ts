@@ -239,6 +239,27 @@ export const api = {
         `/master/companies?${searchParams.toString()}`
       );
     },
+    exportCompanies: (params?: { status?: CompanyStatus; plan?: PlanTier; search?: string }) => {
+      const searchParams = new URLSearchParams();
+      if (params?.status) searchParams.set("status", params.status);
+      if (params?.plan) searchParams.set("plan", params.plan);
+      if (params?.search) searchParams.set("search", params.search);
+      const query = searchParams.toString() ? `?${searchParams.toString()}` : "";
+      return fetchApi<Blob>(`/master/companies/export${query}`, { responseType: "blob" });
+    },
+    listAuditLogs: (params?: MasterAuditLogParams) => {
+      const searchParams = new URLSearchParams();
+      if (params?.page) searchParams.set("page", params.page.toString());
+      if (params?.limit) searchParams.set("limit", params.limit.toString());
+      if (params?.action) searchParams.set("action", params.action);
+      if (params?.entity) searchParams.set("entity", params.entity);
+      if (params?.companyId) searchParams.set("companyId", params.companyId);
+      if (params?.userId) searchParams.set("userId", params.userId);
+      if (params?.search) searchParams.set("search", params.search);
+      if (params?.from) searchParams.set("from", params.from);
+      if (params?.to) searchParams.set("to", params.to);
+      return fetchApi<MasterAuditLogsResponse>(`/master/audit-logs?${searchParams.toString()}`);
+    },
     getCompany: (id: string) => fetchApi<MasterCompanyDetail>(`/master/companies/${id}`),
     getMetrics: (params?: { from?: string; to?: string }) => {
       const qs = new URLSearchParams();
@@ -490,7 +511,7 @@ export interface CompanySettings {
   totem?: {
     authMode?: TotemAuthMode;
   };
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface SignupCompanyResponse {
@@ -646,6 +667,31 @@ export interface MasterCompaniesResponse {
   };
 }
 
+export interface MasterHealthScoreBreakdown {
+  score: number;
+  level: "HEALTHY" | "WARNING" | "CRITICAL";
+  breakdown: {
+    colaboradores: { score: number; max: number; passed: boolean; message: string };
+    atividade: { score: number; max: number; passed: boolean; message: string };
+    biometria: { score: number; max: number; passed: boolean; message: string };
+    financeiro: { score: number; max: number; passed: boolean; message: string };
+    gestao: { score: number; max: number; passed: boolean; message: string };
+  };
+}
+
+export interface MasterPaymentItem {
+  id: string;
+  amount: number;
+  billingType: string;
+  status: string;
+  paymentUrl: string | null;
+  invoiceUrl: string | null;
+  dueDate: string;
+  paidAt: string | null;
+  createdAt: string;
+  asaasPaymentId: string | null;
+}
+
 export interface MasterCompanyListItem {
   id: string;
   name: string;
@@ -656,8 +702,10 @@ export interface MasterCompanyListItem {
   maxEmployees: number;
   employeesCount: number;
   employeeUsagePercent: number;
-  settings: CompanySettings;
+  settings?: CompanySettings;
   createdAt: string;
+  healthScore?: number | MasterHealthScoreBreakdown;
+  healthLevel?: "HEALTHY" | "WARNING" | "CRITICAL";
   pricing: {
     basePrice: number;
     baseMaxEmployees: number;
@@ -672,9 +720,119 @@ export interface MasterCompanyListItem {
 export interface MasterCompanyDetail extends MasterCompanyListItem {
   users: User[];
   subscriptions: Subscription[];
+  payments: MasterPaymentItem[];
   employeesCount: number;
   checkinsCount: number;
   subscriptionsCount: number;
+  healthScore?: MasterHealthScoreBreakdown;
+  lastCheckinAt?: string | null;
+  recentCheckins3d?: number;
+  recentCheckins7d?: number;
+}
+
+export interface MasterAuditLogParams {
+  page?: number;
+  limit?: number;
+  action?: string;
+  entity?: string;
+  companyId?: string;
+  userId?: string;
+  search?: string;
+  from?: string;
+  to?: string;
+}
+
+export interface MasterAuditLogItem {
+  id: string;
+  userId: string;
+  companyId: string;
+  action: string;
+  entity: string;
+  entityId: string | null;
+  oldData: Record<string, unknown> | null;
+  newData: Record<string, unknown> | null;
+  ip: string | null;
+  userAgent: string | null;
+  legalBasis: string | null;
+  purpose: string | null;
+  personalDataCategories: string[] | null;
+  createdAt: string;
+  user?: { id: string; name: string; email: string; role: string } | null;
+  company?: { id: string; name: string; cnpj: string } | null;
+}
+
+export interface MasterAuditLogsResponse {
+  data: MasterAuditLogItem[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+export interface MasterRiskAlerts {
+  total: number;
+  stalledOnboarding: {
+    count: number;
+    list: {
+      id: string;
+      name: string;
+      cnpj: string;
+      createdAt: string;
+      adminName: string | null;
+      adminEmail: string | null;
+    }[];
+  };
+  noRecentCheckins: {
+    count: number;
+    list: {
+      id: string;
+      name: string;
+      cnpj: string;
+      status: string;
+      employeesCount: number;
+      adminName: string | null;
+      adminEmail: string | null;
+    }[];
+  };
+  inactiveAdmins: {
+    count: number;
+    list: {
+      id: string;
+      name: string;
+      cnpj: string;
+      adminName: string | null;
+      adminEmail: string | null;
+      lastLoginAt: string | null;
+      daysSinceLogin: number | null;
+    }[];
+  };
+  expiringTrials: {
+    count: number;
+    list: {
+      id: string;
+      name: string;
+      cnpj: string;
+      planExpiresAt: string;
+      daysRemaining: number;
+      adminName: string | null;
+      adminEmail: string | null;
+    }[];
+  };
+  overduePayments: {
+    count: number;
+    list: {
+      id: string;
+      name: string;
+      cnpj: string;
+      status: string;
+      overdueCount: number;
+      totalOverdueAmount: number;
+      adminName: string | null;
+      adminEmail: string | null;
+    }[];
+  };
 }
 
 export interface Subscription {
@@ -735,6 +893,7 @@ export interface MasterMetricsResponse {
     byDay: { date: string; count: number }[];
   };
   funnel?: { step: string; label: string; count: number }[];
+  riskAlerts?: MasterRiskAlerts;
   range?: { from: string; to: string };
 }
 

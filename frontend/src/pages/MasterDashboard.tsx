@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { Link } from "react-router";
 import {
   Building2,
   TrendingUp,
@@ -11,6 +12,10 @@ import {
   Percent,
   FlaskConical,
   AlertTriangle,
+  CheckCircle2,
+  Copy,
+  ExternalLink,
+  type LucideIcon,
 } from "lucide-react";
 import {
   LineChart,
@@ -23,7 +28,9 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useMasterMetrics } from "../hooks/useMaster";
+import { useToast } from "../hooks/useToast";
 import { MasterDashboardSkeleton } from "../components/master/MasterDashboardSkeleton";
+import type { MasterRiskAlerts } from "../services/api";
 
 type Range = 7 | 30 | 90;
 
@@ -58,6 +65,32 @@ export function MasterDashboard() {
     fetchMetrics({ from, to });
   }, [fetchMetrics, from, to]);
 
+  const acquisition = metrics?.acquisition;
+  const conversion = metrics?.conversion;
+  const funnel = metrics?.funnel ?? [];
+
+  const visits = acquisition?.views ?? 0;
+  const uniques = acquisition?.uniques ?? 0;
+  const companiesCreated = conversion?.companiesCreated ?? 0;
+  const conversionRate = conversion?.rate ?? 0;
+  const showAlert = visits > 500 && conversionRate < 1;
+
+  // Chart data: merge byDay views/uniques + companies byDay (Hook must run unconditionally)
+  const chartData = useMemo(() => {
+    const byDayMap = new Map<string, { date: string; views: number; uniques: number; empresas: number }>();
+    (acquisition?.byDay ?? []).forEach((d) => {
+      byDayMap.set(d.date, { date: d.date, views: d.views, uniques: d.uniques, empresas: 0 });
+    });
+    (conversion?.byDay ?? []).forEach((d) => {
+      const existing = byDayMap.get(d.date);
+      if (existing) existing.empresas = d.count;
+      else byDayMap.set(d.date, { date: d.date, views: 0, uniques: 0, empresas: d.count });
+    });
+    return Array.from(byDayMap.values())
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map((d) => ({ ...d, label: formatDateShort(d.date) }));
+  }, [acquisition?.byDay, conversion?.byDay]);
+
   if (isLoading) {
     return <MasterDashboardSkeleton />;
   }
@@ -75,32 +108,6 @@ export function MasterDashboard() {
       </div>
     );
   }
-
-  const acquisition = metrics?.acquisition;
-  const conversion = metrics?.conversion;
-  const funnel = metrics?.funnel ?? [];
-
-  const visits = acquisition?.views ?? 0;
-  const uniques = acquisition?.uniques ?? 0;
-  const companiesCreated = conversion?.companiesCreated ?? 0;
-  const conversionRate = conversion?.rate ?? 0;
-  const showAlert = visits > 500 && conversionRate < 1;
-
-  // Chart data: merge byDay views/uniques + companies byDay
-  const chartData = useMemo(() => {
-    const byDayMap = new Map<string, { date: string; views: number; uniques: number; empresas: number }>();
-    (acquisition?.byDay ?? []).forEach((d) => {
-      byDayMap.set(d.date, { date: d.date, views: d.views, uniques: d.uniques, empresas: 0 });
-    });
-    (conversion?.byDay ?? []).forEach((d) => {
-      const existing = byDayMap.get(d.date);
-      if (existing) existing.empresas = d.count;
-      else byDayMap.set(d.date, { date: d.date, views: 0, uniques: 0, empresas: d.count });
-    });
-    return Array.from(byDayMap.values())
-      .sort((a, b) => a.date.localeCompare(b.date))
-      .map((d) => ({ ...d, label: formatDateShort(d.date) }));
-  }, [acquisition?.byDay, conversion?.byDay]);
 
   const cardsLegacy = [
     { label: "Total de Empresas", value: metrics?.companies.total ?? 0, icon: Building2, color: "blue", change: null as number | null },
@@ -179,6 +186,9 @@ export function MasterDashboard() {
           </div>
         )}
       </div>
+
+      {/* Widget de Alertas de Risco & Customer Success Proativo */}
+      <RiskAlertsSection riskAlerts={metrics?.riskAlerts} />
 
       {/* Funnel */}
       <div className="bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 rounded-3xl shadow-sm p-6">
@@ -321,17 +331,328 @@ export function MasterDashboard() {
       <div className="bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 rounded-3xl shadow-sm p-6">
         <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Ações Rápidas</h2>
         <div className="flex flex-wrap gap-3">
-          <a href="/master/companies" className="px-4 py-2 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors text-sm font-medium">
+          <Link to="/master/companies" className="px-4 py-2 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors text-sm font-medium">
             Ver todas as empresas
-          </a>
-          <button className="px-4 py-2 bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 transition-colors text-sm">
-            Exportar relatório
-          </button>
-          <button className="px-4 py-2 bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 transition-colors text-sm">
-            Configurar alertas
-          </button>
+          </Link>
+          <Link to="/master/audit-logs" className="px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors text-sm font-medium">
+            Consultar logs de auditoria
+          </Link>
         </div>
       </div>
+    </div>
+  );
+}
+
+function RiskAlertsSection({ riskAlerts }: { riskAlerts?: MasterRiskAlerts }) {
+  const [activeTab, setActiveTab] = useState<"onboarding" | "checkins" | "admins" | "trials" | "payments">("onboarding");
+  const { toast } = useToast();
+
+  const total = riskAlerts?.total ?? 0;
+  const stalledOnboarding = riskAlerts?.stalledOnboarding?.list ?? [];
+  const noRecentCheckins = riskAlerts?.noRecentCheckins?.list ?? [];
+  const inactiveAdmins = riskAlerts?.inactiveAdmins?.list ?? [];
+  const expiringTrials = riskAlerts?.expiringTrials?.list ?? [];
+  const overduePayments = riskAlerts?.overduePayments?.list ?? [];
+
+  const copyEmail = (email: string) => {
+    navigator.clipboard.writeText(email);
+    toast.success("E-mail copiado!", { description: email });
+  };
+
+  return (
+    <div className="bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-3xl shadow-sm p-6 space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-white/10 pb-4">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50">
+            <AlertTriangle size={20} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-bold text-slate-800 dark:text-white">Alertas de Risco & CS Proativo</h2>
+              {total > 0 && (
+                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300">
+                  {total} empresa{total > 1 ? "s" : ""}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Gatilhos automáticos para onboarding e retenção (0 func 1d, sem ponto 3d, admin inativo 10d)
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {total === 0 ? (
+        <div className="py-8 text-center bg-emerald-50/50 dark:bg-emerald-950/20 rounded-2xl border border-emerald-100 dark:border-emerald-900/30">
+          <CheckCircle2 className="mx-auto text-emerald-600 dark:text-emerald-400 mb-2" size={32} />
+          <p className="text-sm font-bold text-emerald-900 dark:text-emerald-300">Tudo em ordem!</p>
+          <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5">
+            Nenhuma empresa em risco identificada no momento. Todas as contas estão ativas e com engajamento regular.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {/* Tabs */}
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setActiveTab("onboarding")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer ${
+                activeTab === "onboarding"
+                  ? "bg-amber-600 text-white"
+                  : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10"
+              }`}
+            >
+              <span>🚨 Onboarding Travado (1d)</span>
+              {stalledOnboarding.length > 0 && (
+                <span className="px-1.5 py-0.2 rounded-md text-[10px] bg-black/20 text-white">
+                  {stalledOnboarding.length}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => setActiveTab("checkins")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer ${
+                activeTab === "checkins"
+                  ? "bg-amber-600 text-white"
+                  : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10"
+              }`}
+            >
+              <span>⚠️ Sem Ponto (3d)</span>
+              {noRecentCheckins.length > 0 && (
+                <span className="px-1.5 py-0.2 rounded-md text-[10px] bg-black/20 text-white">
+                  {noRecentCheckins.length}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => setActiveTab("admins")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer ${
+                activeTab === "admins"
+                  ? "bg-amber-600 text-white"
+                  : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10"
+              }`}
+            >
+              <span>⏱️ Admin Inativo (+10d)</span>
+              {inactiveAdmins.length > 0 && (
+                <span className="px-1.5 py-0.2 rounded-md text-[10px] bg-black/20 text-white">
+                  {inactiveAdmins.length}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => setActiveTab("trials")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer ${
+                activeTab === "trials"
+                  ? "bg-purple-600 text-white"
+                  : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10"
+              }`}
+            >
+              <span>⏳ Trial Expirando (≤ 5d)</span>
+              {expiringTrials.length > 0 && (
+                <span className="px-1.5 py-0.2 rounded-md text-[10px] bg-black/20 text-white">
+                  {expiringTrials.length}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => setActiveTab("payments")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer ${
+                activeTab === "payments"
+                  ? "bg-red-600 text-white"
+                  : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10"
+              }`}
+            >
+              <span>💳 Inadimplência</span>
+              {overduePayments.length > 0 && (
+                <span className="px-1.5 py-0.2 rounded-md text-[10px] bg-black/20 text-white">
+                  {overduePayments.length}
+                </span>
+              )}
+            </button>
+          </div>
+
+          {/* Active Tab Content */}
+          <div className="divide-y divide-slate-100 dark:divide-white/5 border border-slate-100 dark:border-white/10 rounded-2xl overflow-hidden bg-slate-50/50 dark:bg-white/[0.01]">
+            {activeTab === "onboarding" && (
+              stalledOnboarding.length === 0 ? (
+                <div className="p-6 text-center text-xs text-slate-400">Nenhuma empresa com onboarding travado.</div>
+              ) : (
+                stalledOnboarding.map((item) => (
+                  <div key={item.id} className="p-3.5 flex items-center justify-between gap-4 hover:bg-slate-100/50 dark:hover:bg-white/5 transition-colors">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-xs text-slate-800 dark:text-white truncate">{item.name}</span>
+                        <span className="text-[10px] px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded font-semibold">
+                          0 colaboradores
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                        Admin: <strong>{item.adminName || "N/A"}</strong> {item.adminEmail ? `(${item.adminEmail})` : ""}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {item.adminEmail && (
+                        <button
+                          onClick={() => copyEmail(item.adminEmail!)}
+                          className="p-1.5 rounded-lg border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 text-xs flex items-center gap-1 cursor-pointer"
+                          title="Copiar E-mail"
+                        >
+                          <Copy size={13} />
+                          <span className="hidden sm:inline text-[11px]">Copiar E-mail</span>
+                        </button>
+                      )}
+                      <Link
+                        to={`/master/companies/${item.id}`}
+                        className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
+                      >
+                        <span>Acessar</span>
+                        <ExternalLink size={12} />
+                      </Link>
+                    </div>
+                  </div>
+                ))
+              )
+            )}
+
+            {activeTab === "checkins" && (
+              noRecentCheckins.length === 0 ? (
+                <div className="p-6 text-center text-xs text-slate-400">Nenhuma empresa ativa sem check-in nos últimos 3 dias.</div>
+              ) : (
+                noRecentCheckins.map((item) => (
+                  <div key={item.id} className="p-3.5 flex items-center justify-between gap-4 hover:bg-slate-100/50 dark:hover:bg-white/5 transition-colors">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-xs text-slate-800 dark:text-white truncate">{item.name}</span>
+                        <span className="text-[10px] px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded font-semibold">
+                          {item.employeesCount} funcionário(s)
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                        Nenhum registro de ponto registrado nas últimas 72 horas.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Link
+                        to={`/master/companies/${item.id}`}
+                        className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
+                      >
+                        <span>Ver Empresa</span>
+                        <ExternalLink size={12} />
+                      </Link>
+                    </div>
+                  </div>
+                ))
+              )
+            )}
+
+            {activeTab === "admins" && (
+              inactiveAdmins.length === 0 ? (
+                <div className="p-6 text-center text-xs text-slate-400">Nenhum administrador inativo há mais de 10 dias.</div>
+              ) : (
+                inactiveAdmins.map((item) => (
+                  <div key={item.id} className="p-3.5 flex items-center justify-between gap-4 hover:bg-slate-100/50 dark:hover:bg-white/5 transition-colors">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-xs text-slate-800 dark:text-white truncate">{item.name}</span>
+                        <span className="text-[10px] px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded font-semibold">
+                          {item.daysSinceLogin ? `${item.daysSinceLogin}d sem login` : "Nunca logou"}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                        Admin: {item.adminName || "N/A"} ({item.adminEmail || "Sem e-mail"})
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {item.adminEmail && (
+                        <button
+                          onClick={() => copyEmail(item.adminEmail!)}
+                          className="p-1.5 rounded-lg border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 text-xs flex items-center gap-1 cursor-pointer"
+                        >
+                          <Copy size={13} />
+                          <span className="hidden sm:inline text-[11px]">Copiar E-mail</span>
+                        </button>
+                      )}
+                      <Link
+                        to={`/master/companies/${item.id}`}
+                        className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
+                      >
+                        <span>Acessar</span>
+                        <ExternalLink size={12} />
+                      </Link>
+                    </div>
+                  </div>
+                ))
+              )
+            )}
+
+            {activeTab === "trials" && (
+              expiringTrials.length === 0 ? (
+                <div className="p-6 text-center text-xs text-slate-400">Nenhum trial expirando nos próximos 5 dias.</div>
+              ) : (
+                expiringTrials.map((item) => (
+                  <div key={item.id} className="p-3.5 flex items-center justify-between gap-4 hover:bg-slate-100/50 dark:hover:bg-white/5 transition-colors">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-xs text-slate-800 dark:text-white truncate">{item.name}</span>
+                        <span className="text-[10px] px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded font-bold">
+                          {item.daysRemaining === 0 ? "Expira hoje!" : `Resta(m) ${item.daysRemaining} dia(s)`}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                        Admin: {item.adminName || "N/A"} ({item.adminEmail || "Sem e-mail"})
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Link
+                        to={`/master/companies/${item.id}`}
+                        className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
+                      >
+                        <span>Gerenciar Trial</span>
+                        <ExternalLink size={12} />
+                      </Link>
+                    </div>
+                  </div>
+                ))
+              )
+            )}
+
+            {activeTab === "payments" && (
+              overduePayments.length === 0 ? (
+                <div className="p-6 text-center text-xs text-slate-400">Nenhuma empresa com faturas em atraso.</div>
+              ) : (
+                overduePayments.map((item) => (
+                  <div key={item.id} className="p-3.5 flex items-center justify-between gap-4 hover:bg-slate-100/50 dark:hover:bg-white/5 transition-colors">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-xs text-slate-800 dark:text-white truncate">{item.name}</span>
+                        <span className="text-[10px] px-1.5 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded font-bold">
+                          {item.overdueCount} fatura(s) — R$ {Number(item.totalOverdueAmount).toFixed(2)}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                        Admin: {item.adminName || "N/A"} ({item.adminEmail || "Sem e-mail"})
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Link
+                        to={`/master/companies/${item.id}`}
+                        className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
+                      >
+                        <span>Ver Faturas</span>
+                        <ExternalLink size={12} />
+                      </Link>
+                    </div>
+                  </div>
+                ))
+              )
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -347,7 +668,7 @@ function KpiCard({
   label: string;
   value: string | number;
   sub?: string;
-  icon: any;
+  icon: LucideIcon;
   color: string;
   alert?: string;
 }) {
@@ -375,7 +696,7 @@ function KpiCard({
   );
 }
 
-function MetricCard({ label, value, icon: Icon, color, change }: { label: string; value: string | number; icon: any; color: string; change: number | null | undefined }) {
+function MetricCard({ label, value, icon: Icon, color, change }: { label: string; value: string | number; icon: LucideIcon; color: string; change: number | null | undefined }) {
   const colorMap: Record<string, string> = {
     blue: "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800",
     emerald: "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800",

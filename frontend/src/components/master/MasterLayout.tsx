@@ -1,6 +1,6 @@
 import { Outlet, Link, NavLink } from "react-router";
 import { useState, useEffect, useRef } from "react";
-import { LogOut, Menu, X, BarChart3, Building2 } from "lucide-react";
+import { LogOut, Menu, X, BarChart3, Building2, ShieldCheck } from "lucide-react";
 import logo from "../../assets/logo.png";
 import { useAuth } from "../../hooks/useAuth";
 import { ImpersonationBanner } from "./ImpersonationBanner";
@@ -24,6 +24,7 @@ export function MasterLayout() {
   const navItems = [
     { to: "/master", label: "Métricas & Insights", icon: BarChart3 },
     { to: "/master/companies", label: "Empresas & Contas", icon: Building2 },
+    { to: "/master/audit-logs", label: "Logs de Auditoria", icon: ShieldCheck },
   ];
 
   return (
