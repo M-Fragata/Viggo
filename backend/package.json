@@ -17,6 +17,7 @@
     "test:email:real": "tsx --env-file .env src/scripts/sendTestEmail.ts",
     "test:email:dry": "tsx --env-file .env src/scripts/sendTestEmail.ts --dry",
     "test:asaas:e2e": "tsx --env-file .env src/scripts/e2eAsaasSandbox.ts",
+    "test:cert": "tsx --env-file .env src/scripts/testCertificate.ts",
     "backup:afd": "tsx --env-file .env src/scripts/afdBackup.ts"
   },
   "keywords": [],
