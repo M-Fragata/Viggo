@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router";
 import { LivenessChallenge } from "../components/LivenessChallenge";
 import { api } from "../services/api";
 import { useAuth } from "../hooks/useAuth";
+import { preloadFaceModels, areFaceModelsLoaded } from "../utils/faceModels";
 
 export function RegisterFace() {
     const [videoOpen, setVideoOpen] = useState(false);
@@ -11,9 +13,14 @@ export function RegisterFace() {
     const [isRegistering, setIsRegistering] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
     const { user, token, refreshUser } = useAuth();
-    const [check, setCheck] = useState<boolean>(false)
+    const [check, setCheck] = useState<boolean>(false);
+    const navigate = useNavigate();
 
     useEffect(() => {
+        // Inicia o carregamento dos modelos em background imediatamente
+        preloadFaceModels().catch((err) => {
+            console.error("Erro ao pré-carregar modelos face-api:", err);
+        });
 
         const initCamera = async () => {
             setVideoOpen(true);
@@ -42,7 +49,7 @@ export function RegisterFace() {
                 }
 
                 setShowLiveness(true);
-                setMessage("Carregando validação...");
+                setMessage(areFaceModelsLoaded() ? "Centralize seu rosto" : "Carregando validação...");
             } catch (err) {
                 console.error("Erro ao acessar a câmera:", err);
                 alert("Câmera não encontrada ou permissão negada. Permita câmera e atualize.");
@@ -52,9 +59,10 @@ export function RegisterFace() {
 
         if (!check) initCamera();
 
+        const currentVideo = videoRef.current;
         return () => {
-            if (videoRef.current && videoRef.current.srcObject) {
-                const stream = videoRef.current.srcObject as MediaStream;
+            if (currentVideo && currentVideo.srcObject) {
+                const stream = currentVideo.srcObject as MediaStream;
                 stream.getTracks().forEach(track => track.stop());
             }
         };
@@ -82,10 +90,13 @@ export function RegisterFace() {
             await api.employees.updateFaceDescriptor(user.id, Array.from(descriptor));
             await refreshUser();
 
+            setIsRegistering(false);
             setIsSuccess(true);
             setMessage("Cadastro facial concluído!");
 
-            window.location.href = "/ponto";
+            setTimeout(() => {
+                navigate("/ponto");
+            }, 1500);
 
         } catch (error) {
             console.error("Erro ao salvar cadastro:", error);

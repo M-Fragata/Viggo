@@ -4,6 +4,7 @@ import type { HeadPose } from '../hooks/useHeadPose';
 import * as faceapi from 'face-api.js';
 import { motion, useMotionValue, useSpring, useTransform, animate } from 'framer-motion';
 import { api } from '../services/api';
+import { preloadFaceModels, areFaceModelsLoaded } from '../utils/faceModels';
 
 type LivenessStep = 'front' | 'left' | 'right';
 
@@ -226,7 +227,7 @@ export function LivenessChallenge({
   const [, setPose] = useState<HeadPose>({ yaw: 0, pitch: 0, roll: 0 });
   const [blinkValidated, setBlinkValidated] = useState(false);
   const [bestFrameDescriptor, setBestFrameDescriptor] = useState<Float32Array | null>(null);
-  const [modelsLoaded, setModelsLoaded] = useState(false);
+  const [modelsLoaded, setModelsLoaded] = useState(() => areFaceModelsLoaded());
   const [wasCorrectPose, setWasCorrectPose] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [ringStrokeMode, setRingStrokeMode] = useState<'progress' | 'spin'>('progress');
@@ -333,21 +334,27 @@ export function LivenessChallenge({
   }, [ringMotionVal, onComplete, steps.length]);
 
   useEffect(() => {
-    const loadModels = async () => {
-      try {
-        const MODEL_URL = '/models';
-        await Promise.all([
-          faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-          faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-          faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
-        ]);
-        setModelsLoaded(true);
-        onModelsLoadedRef.current?.();
-      } catch (err) {
+    if (areFaceModelsLoaded()) {
+      setModelsLoaded(true);
+      onModelsLoadedRef.current?.();
+      return;
+    }
+
+    let isMounted = true;
+    preloadFaceModels()
+      .then(() => {
+        if (isMounted) {
+          setModelsLoaded(true);
+          onModelsLoadedRef.current?.();
+        }
+      })
+      .catch((err) => {
         console.error('Erro ao carregar modelos:', err);
-      }
+      });
+
+    return () => {
+      isMounted = false;
     };
-    loadModels();
   }, []);
 
   useEffect(() => {

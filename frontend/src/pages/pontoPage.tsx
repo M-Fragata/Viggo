@@ -6,12 +6,13 @@ import { LivenessChallenge } from "../components/LivenessChallenge"
 import { useAuth } from "../hooks/useAuth"
 import { useCompany } from "../hooks/useCompany"
 
-import { LogIn, Utensils, Coffee, LogOut, ScanFace } from "lucide-react"
+import { LogIn, Utensils, Coffee, LogOut, ScanFace, Copy, Check } from "lucide-react"
 import { PontoPageSkeleton } from "../components/PontoPageSkeleton"
 import { z } from "zod"
 import { Button } from "../components/Button"
 import { PageHeader } from "../components/common/PageHeader"
 import type { CheckinCreateDto } from "../services/api"
+import { preloadFaceModels, areFaceModelsLoaded } from "../utils/faceModels"
 
 type ChekinProps = {
     id: string,
@@ -42,6 +43,7 @@ export function PontoPage() {
     const [showLiveness, setShowLiveness] = useState(false);
     const [isPreparingCheckin, setIsPreparingCheckin] = useState(false);
     const [comprovanteText, setComprovanteText] = useState<string | null>(null);
+    const [copiedComprovante, setCopiedComprovante] = useState(false);
     const [pendingCheckin, setPendingCheckin] = useState<{
         type: string;
         latitude: number | null;
@@ -176,7 +178,7 @@ export function PontoPage() {
             setVideoOpen(true);
             setShowLiveness(true);
             setHeaderIsError(false);
-            setMessage("Iniciando validação...");
+            setMessage(areFaceModelsLoaded() ? "Centralize seu rosto" : "Iniciando validação...");
 
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
@@ -227,7 +229,7 @@ export function PontoPage() {
         }
     }
 
-    async function handleLivenessComplete(_descriptor: Float32Array) {
+    async function handleLivenessComplete() {
         if (!pendingCheckin) {
             setShowLiveness(false);
             setIsRegistering(false);
@@ -252,19 +254,25 @@ export function PontoPage() {
 
             const response = await api.checkins.create(pendingCheckin as CheckinCreateDto);
 
+            // Desativa o spinner de registro para que o modal de sucesso com comprovante fique visível
+            setIsRegistering(false);
             setComprovanteText(response.comprovante);
             setIsSuccess(true);
             setMessage("Ponto registrado com sucesso!");
             setPendingCheckin(null);
             setFaceToken(null);
 
-            await handleGetCheckin();
+            // Atualização otimista e imediata para que os botões reflitam "Ponto Registrado" sem delay
+            if (response.checkin?.checkin) {
+                const newCheckin = response.checkin.checkin as ChekinProps;
+                setCheckins((prev) => {
+                    const filtered = prev.filter((c) => c.type !== newCheckin.type);
+                    return [...filtered, newCheckin];
+                });
+            }
 
-            setTimeout(() => {
-                setIsSuccess(false);
-                setIsRegistering(false);
-                setVideoOpen(false);
-            }, 3000);
+            // Sincroniza estado com o backend
+            await handleGetCheckin();
         } catch (error) {
             console.error("Erro ao registrar o ponto:", error);
             setIsRegistering(false);
@@ -308,9 +316,13 @@ export function PontoPage() {
     }
 
     useEffect(() => {
+        // Pré-carrega os modelos em background assim que a página é acessada
+        preloadFaceModels().catch((err) => {
+            console.error("Erro ao pré-carregar modelos face-api no PontoPage:", err);
+        });
         setHasFaceRegistered(user?.hasFaceDescriptor ? true : false);
-        handleGetCheckin()
-    }, [])
+        handleGetCheckin();
+    }, []);
 
     useEffect(() => {
         if (videoOpen) {
@@ -401,24 +413,51 @@ export function PontoPage() {
                         )}
 
                         {isSuccess && (
-                            <div className="absolute inset-0 z-[110] bg-emerald-500/95 flex flex-col items-center justify-center animate-in zoom-in duration-300 p-6">
-                                <div className="bg-white dark:bg-[#111113] rounded-2xl p-5 mb-4 shadow-xl max-w-sm w-full border border-transparent dark:border-white/10">
-                                    <div className="flex items-center justify-center gap-2 mb-3">
+                            <div className="absolute inset-0 z-[120] bg-emerald-600/95 backdrop-blur-sm flex flex-col items-center justify-center animate-in zoom-in duration-300 p-4 sm:p-6">
+                                <div className="bg-white dark:bg-[#111113] rounded-3xl p-5 md:p-6 shadow-2xl max-w-md w-full border border-slate-200 dark:border-white/10 flex flex-col max-h-[85vh]">
+                                    <div className="flex items-center justify-center gap-3 mb-3">
                                         <span className="text-3xl">✅</span>
-                                        <h2 className="text-emerald-700 dark:text-emerald-400 text-lg font-bold">Ponto Registrado!</h2>
+                                        <div>
+                                            <h2 className="text-emerald-700 dark:text-emerald-400 text-lg font-bold">Ponto Registrado com Sucesso!</h2>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">Comprovante emitido (Portaria 671/MTP)</p>
+                                        </div>
                                     </div>
                                     {comprovanteText && (
-                                        <pre className="text-[10px] sm:text-xs text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-white/5 rounded-lg p-3 whitespace-pre-wrap font-mono leading-relaxed border border-slate-200 dark:border-white/10 max-h-[280px] overflow-y-auto">
-                                            {comprovanteText}
-                                        </pre>
+                                        <div className="relative flex-1 min-h-0 my-2">
+                                            <pre className="text-[10px] sm:text-xs text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-black/40 rounded-xl p-3 sm:p-4 whitespace-pre-wrap font-mono leading-relaxed border border-slate-200 dark:border-white/10 max-h-[300px] overflow-y-auto select-all">
+                                                {comprovanteText}
+                                            </pre>
+                                        </div>
                                     )}
+                                    <div className="flex items-center gap-3 mt-4 pt-2 border-t border-slate-100 dark:border-white/10">
+                                        {comprovanteText && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(comprovanteText);
+                                                    setCopiedComprovante(true);
+                                                    setTimeout(() => setCopiedComprovante(false), 2000);
+                                                }}
+                                                className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 text-xs font-semibold transition-all cursor-pointer"
+                                            >
+                                                {copiedComprovante ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
+                                                <span>{copiedComprovante ? "Copiado!" : "Copiar Comprovante"}</span>
+                                            </button>
+                                        )}
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setVideoOpen(false);
+                                                setIsSuccess(false);
+                                                setComprovanteText(null);
+                                                setCopiedComprovante(false);
+                                            }}
+                                            className="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-900/20 active:scale-95 cursor-pointer uppercase tracking-wider text-center"
+                                        >
+                                            Concluir
+                                        </button>
+                                    </div>
                                 </div>
-                                <button
-                                    onClick={() => { setVideoOpen(false); setIsSuccess(false); setComprovanteText(null); }}
-                                    className="mt-4 bg-white/20 hover:bg-white/30 p-2 rounded-full text-white transition-all cursor-pointer"
-                                >
-                                    <span className="text-sm px-4 font-bold">FECHAR</span>
-                                </button>
                             </div>
                         )}
 
