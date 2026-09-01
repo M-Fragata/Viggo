@@ -92,7 +92,7 @@ export function CompanyManagePage() {
   const handleOpenEnterpriseModal = () => {
     if (!company) return;
     const activeSub = company.subscriptions?.find((s) => s.status === "ACTIVE");
-    const settings = (company.settings as Record<string, any>) || {};
+    const settings = (company.settings as Record<string, unknown>) || {};
 
     const savedModel = (settings.enterprisePricingModel as "FIXED" | "TIERED_EXTRA") || (activeSub?.extraPricePerUnit && activeSub.extraPricePerUnit < 5 ? "TIERED_EXTRA" : "FIXED");
     setEnterprisePricingModel(savedModel);

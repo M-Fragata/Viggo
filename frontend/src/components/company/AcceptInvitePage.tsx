@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2, Shield, User, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { usePublicInvite } from "../../hooks/useInviteTokens";
+import type { AcceptInviteDto } from "../../services/api";
 import { useToast } from "../../hooks/useToast";
 import { useAuth } from "../../hooks/useAuth";
 import logo from "../../assets/logo.png";
@@ -61,7 +62,7 @@ export function AcceptInvitePage() {
 
     setIsSubmitting(true);
     try {
-      const result = await acceptInvite({
+      const payload: AcceptInviteDto = {
         token,
         email: data.email,
         name: data.name,
@@ -72,7 +73,8 @@ export function AcceptInvitePage() {
         // compat: envia também aceiteTermos/Dpa para backend legado
         aceiteTermos: data.aceiteContratos,
         aceiteDpa: data.aceiteContratos,
-      } as any);
+      };
+      const result = await acceptInvite(payload);
       setSession(result.user, result.token, result.company.name);
       toast.success("Conta criada com sucesso!");
       navigate("/");

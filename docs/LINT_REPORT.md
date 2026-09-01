@@ -10,8 +10,8 @@ Este documento lista e classifica todos os **39 problemas** apontados pelo ESLin
 |---|:---:|:---:|---|
 | 🔴 **Nível 1 - Crítico / Alto** | 6 | **RESOLVIDO ✅ (0 pendências)** | Desmontagem indevida de componentes, perda de estado em formulários, mutações ilegais e falha no linter. |
 | 🟡 **Nível 2 - Médio** | 22 | **RESOLVIDO ✅ (0 pendências)** | Cascata de renders síncronos (*cascading renders*), lentidão inicial nas páginas e risco de *stale closures*. |
-| 🔵 **Nível 3 - Baixo / Qualidade** | 11 | **9 Restantes** | Quebra do Fast Refresh (HMR) no desenvolvimento, perda de tipagem segura (`any`) e código morto. |
-| **Total** | **39** | **30 Resolvidos / 9 Restantes** | **Build: 100% Aprovado (1.99s)** |
+| 🔵 **Nível 3 - Baixo / Qualidade** | 11 | **RESOLVIDO ✅ (0 pendências)** | Quebra do Fast Refresh (HMR) no desenvolvimento, perda de tipagem segura (`any`) e código morto. |
+| **Total** | **39** | **100% RESOLVIDO ✅ (0 pendências)** | **Build: 100% Aprovado (2.07s) • ESLint: 0 erros / 0 avisos** |
 
 ---
 

@@ -16,7 +16,7 @@ import { TargetAudience } from "../components/TargetAudience";
 import { AppShowcase } from "../components/AppShowcase";
 import { FAQ } from "../components/FAQ";
 import { FloatingWhatsApp } from "../components/FloatingWhatsApp";
-import { useTheme } from "../contexts/ThemeContext";
+import { useTheme } from "../hooks/useTheme";
 import { trackPageView, trackEvent } from "../utils/metrics";
 
 import logo from "../assets/logo.png";

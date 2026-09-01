@@ -2,7 +2,7 @@ import { useRef, useEffect } from "react";
 import { type PlanData, type PlanFeature, formatPrice, formatMaxEmployees } from "../../../shared/plans";
 import { gsap } from "gsap";
 import SpecularButton from "./SpecularButton";
-import { useTheme } from "../contexts/ThemeContext";
+import { useTheme } from "../hooks/useTheme";
 
 interface PricingCardProps {
   plan: PlanData;

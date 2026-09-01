@@ -5,7 +5,7 @@ import { TextSplitter } from "../utils/textSplitter";
 import { UserPlus, Settings2, Smartphone, ArrowRight, Sparkles, CheckCircle2 } from "lucide-react";
 import { TRIAL_DAYS } from "../../../shared/plans";
 import SpecularButton from "./SpecularButton";
-import { useTheme } from "../contexts/ThemeContext";
+import { useTheme } from "../hooks/useTheme";
 
 const STEPS = [
   {

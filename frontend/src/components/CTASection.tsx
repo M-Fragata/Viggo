@@ -5,7 +5,7 @@ import { TextSplitter } from "../utils/textSplitter";
 import { TRIAL_DAYS } from "../../../shared/plans";
 import { trackEvent } from "../utils/metrics";
 import SpecularButton from "./SpecularButton";
-import { useTheme } from "../contexts/ThemeContext";
+import { useTheme } from "../hooks/useTheme";
 
 export function CTASection() {
   const { resolvedTheme } = useTheme();

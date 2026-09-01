@@ -9,7 +9,7 @@ import { Link } from "react-router";
 import { gsap } from "gsap";
 import { TextSplitter } from "../utils/textSplitter";
 import SpecularButton from "./SpecularButton";
-import { useTheme } from "../contexts/ThemeContext";
+import { useTheme } from "../hooks/useTheme";
 
 export function ManagerShowcase() {
   const { resolvedTheme } = useTheme();

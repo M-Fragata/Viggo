@@ -1,14 +1,7 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { ThemeContext, type ThemeMode, type ThemeContextType } from "./themeContextBase";
 
-export type ThemeMode = "light" | "dark" | "system";
-
-export interface ThemeContextType {
-  mode: ThemeMode;
-  resolvedTheme: "light" | "dark";
-  setMode: (mode: ThemeMode) => void;
-}
-
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+export type { ThemeMode, ThemeContextType };
 
 const THEME_STORAGE_KEY = "@viggo:theme";
 
@@ -71,12 +64,4 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       {children}
     </ThemeContext.Provider>
   );
-}
-
-export function useTheme() {
-  const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error("useTheme deve ser utilizado dentro de um ThemeProvider");
-  }
-  return context;
 }

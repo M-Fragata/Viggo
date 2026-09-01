@@ -307,7 +307,11 @@ const GradientWaves: React.FC<GradientWavesProps> = ({
     const io = new IntersectionObserver(
       ([entry]) => {
         isVisible = entry.isIntersecting;
-        isVisible ? tryStart() : tryStop();
+        if (isVisible) {
+          tryStart();
+        } else {
+          tryStop();
+        }
       },
       { threshold: 0 }
     );
@@ -315,7 +319,11 @@ const GradientWaves: React.FC<GradientWavesProps> = ({
 
     const onVisibility = () => {
       isPageVisible = !document.hidden;
-      isPageVisible ? tryStart() : tryStop();
+      if (isPageVisible) {
+        tryStart();
+      } else {
+        tryStop();
+      }
     };
     document.addEventListener('visibilitychange', onVisibility);
 
@@ -331,7 +339,9 @@ const GradientWaves: React.FC<GradientWavesProps> = ({
       ctxMap.delete(container);
       try {
         container.removeChild(canvas);
-      } catch { }
+      } catch {
+        // Elemento já pode ter sido desmontado do DOM
+      }
       gl.getExtension('WEBGL_lose_context')?.loseContext();
     };
   }, []);
@@ -342,7 +352,7 @@ const GradientWaves: React.FC<GradientWavesProps> = ({
     const ctx = ctxMap.get(container);
     if (!ctx) return;
     const { program } = ctx;
-    const u = program.uniforms as Record<string, { value: any }>;
+    const u = program.uniforms as Record<string, { value: unknown }>;
 
     enableMouseRef.current = mouseInteraction;
 

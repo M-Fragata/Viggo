@@ -1,29 +1,9 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+import { useState, useEffect, useCallback, type ReactNode } from "react";
 import { api, type User } from "../services/api";
 import { decodeJWT, type JWTPayload } from "../utils/jwt";
+import { AuthContext, type AuthContextType } from "./authContextBase";
 
-interface AuthContextType {
-  user: User | null;
-  name: string | null;
-  token: string | null;
-  company: string | null;
-  isLoading: boolean;
-  login: (email: string, password: string) => Promise<User>;
-  setSession: (user: User, token: string, company?: string) => void;
-  logout: () => void;
-  refreshUser: () => void;
-  clearMustChangePassword: () => void;
-  isMaster: boolean;
-  isEnterpriseAdmin: boolean;
-  isEmployee: boolean;
-  isAdminOrMaster: boolean;
-  isImpersonated: boolean;
-  impersonatedCompanyName: string | null;
-  startImpersonation: (token: string, user: User, companyName: string) => void;
-  stopImpersonation: () => void;
-}
-
-const AuthContext = createContext<AuthContextType | null>(null);
+export type { AuthContextType };
 
 function userFromJWT(decoded: JWTPayload): User {
   return {
@@ -246,13 +226,3 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     </AuthContext.Provider>
   );
 }
-
-export function useAuthContext(): AuthContextType {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuthContext must be used within an AuthProvider");
-  }
-  return context;
-}
-
-export const useAuth = useAuthContext;
