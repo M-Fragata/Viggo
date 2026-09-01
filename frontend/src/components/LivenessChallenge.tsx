@@ -382,6 +382,18 @@ export function LivenessChallenge({
       if (verifyOverride) {
         return await verifyOverride(descriptor);
       }
+
+      // Para steps laterais (left/right) no FULL_LIVENESS, o token de uso único já foi
+      // consumido na validação frontal. Renovar antes de cada chamada não-frontal.
+      const step = currentStepRef.current;
+      if (step !== 'front' && onRetryRef.current) {
+        const newToken = await onRetryRef.current();
+        if (!newToken) {
+          return { success: false, distance: -1, message: "Não foi possível renovar a sessão facial" };
+        }
+        activeFaceTokenRef.current = newToken;
+      }
+
       const currentToken = activeFaceTokenRef.current || faceToken;
       if (!currentToken) {
         return { success: true, distance: 0 };

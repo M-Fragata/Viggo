@@ -4,6 +4,9 @@ interface FetchOptions extends RequestInit {
   requiresAuth?: boolean;
   totemToken?: boolean;
   responseType?: "json" | "blob";
+  /** Quando true, um 401 lança ApiError em vez de deslogar o usuário.
+   * Use para endpoints que retornam 401 com significado próprio (ex: token facial inválido). */
+  skipAuthRedirect?: boolean;
 }
 
 export class ApiError extends Error {
@@ -21,7 +24,7 @@ export class ApiError extends Error {
 }
 
 async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {
-  const { requiresAuth = true, totemToken = false, responseType = "json", headers = {}, ...restOptions } = options;
+  const { requiresAuth = true, totemToken = false, responseType = "json", skipAuthRedirect = false, headers = {}, ...restOptions } = options;
 
   const token = totemToken
     ? localStorage.getItem("@viggo:totem")
@@ -39,6 +42,10 @@ async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promis
   });
 
   if (response.status === 401) {
+    if (skipAuthRedirect) {
+      const error = await response.json().catch(() => ({ message: "Token inválido ou expirado" }));
+      throw new ApiError(error.message || "Token inválido ou expirado", error.code, 401, error);
+    }
     if (totemToken) {
       localStorage.removeItem("@viggo:totem");
       window.location.href = "/";
@@ -200,6 +207,7 @@ export const api = {
       fetchApi<VerifyFaceResponse>("/employees/face/verify", {
         method: "POST",
         body: JSON.stringify({ token, descriptor }),
+        skipAuthRedirect: true, // 401 aqui significa token facial inválido, não sessão expirada
       }),
   },
 
