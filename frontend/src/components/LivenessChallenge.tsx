@@ -20,6 +20,11 @@ interface LivenessChallengeProps {
   onRetry?: () => Promise<string | null>;
 }
 
+const DETECTOR_OPTIONS = new faceapi.TinyFaceDetectorOptions({
+  inputSize: 224,
+  scoreThreshold: 0.5,
+});
+
 const STEP_CONFIG: Record<LivenessStep, {
   label: string;
   instruction: string;
@@ -35,7 +40,7 @@ const STEP_CONFIG: Record<LivenessStep, {
     icon: '👁️',
     targetX: 0,
     targetY: 0,
-    holdDuration: 4000,
+    holdDuration: 1200,
     validationsNeeded: 1,
   },
   left: {
@@ -44,7 +49,7 @@ const STEP_CONFIG: Record<LivenessStep, {
     icon: '◀️',
     targetX: -1,
     targetY: 0,
-    holdDuration: 2000,
+    holdDuration: 1200,
     validationsNeeded: 1,
   },
   right: {
@@ -53,7 +58,7 @@ const STEP_CONFIG: Record<LivenessStep, {
     icon: '▶️',
     targetX: 1,
     targetY: 0,
-    holdDuration: 2000,
+    holdDuration: 1200,
     validationsNeeded: 1,
   },
 };
@@ -428,15 +433,9 @@ export function LivenessChallenge({
     if (isTransitioning || isFailing || isCompletedRef.current) return;
 
     try {
-      const detectorOptions = new faceapi.TinyFaceDetectorOptions({
-        inputSize: 320,
-        scoreThreshold: 0.5,
-      });
-
       const detection = await faceapi
-        .detectSingleFace(videoRef.current, detectorOptions)
-        .withFaceLandmarks()
-        .withFaceDescriptor();
+        .detectSingleFace(videoRef.current, DETECTOR_OPTIONS)
+        .withFaceLandmarks();
 
       if (detection) {
         const headPose = getHeadPose(detection.landmarks);
@@ -453,7 +452,9 @@ export function LivenessChallenge({
           if (blinked) {
             setBlinkValidated(true);
             waitingForBlinkRef.current = false;
-            handleValidationSuccess(detection.descriptor);
+            if (bestFrameDescriptorRef.current) {
+              handleValidationSuccess(bestFrameDescriptorRef.current);
+            }
           }
           return;
         }
@@ -500,19 +501,30 @@ export function LivenessChallenge({
             isValidatingRef.current = true;
 
             if (step === 'front') {
+              // Computa o descriptor facial completo apenas no momento da validação
+              const fullDetection = await faceapi
+                .detectSingleFace(videoRef.current, DETECTOR_OPTIONS)
+                .withFaceLandmarks()
+                .withFaceDescriptor();
+
+              if (!fullDetection) {
+                isValidatingRef.current = false;
+                return;
+              }
+
               // Validação biométrica no backend (face match frontal)
-              const backendResult = await validateDescriptorWithBackend(detection.descriptor);
+              const backendResult = await validateDescriptorWithBackend(fullDetection.descriptor);
 
               if (backendResult.success) {
-                bestFrameDescriptorRef.current = detection.descriptor;
-                setBestFrameDescriptor(detection.descriptor);
+                bestFrameDescriptorRef.current = fullDetection.descriptor;
+                setBestFrameDescriptor(fullDetection.descriptor);
 
                 if (!blinkValidated) {
                   waitingForBlinkRef.current = true;
                   isValidatingRef.current = false;
                   return;
                 }
-                handleValidationSuccess(detection.descriptor);
+                handleValidationSuccess(fullDetection.descriptor);
                 isValidatingRef.current = false;
               } else {
                 // FALHA DE COMPATIBILIDADE FACIAL OU TOKEN EXPIRADO
@@ -563,7 +575,7 @@ export function LivenessChallenge({
               }
             } else {
               // Steps laterais (left / right): validação de vivacidade tridimensional mantida com sucesso
-              handleValidationSuccess(bestFrameDescriptorRef.current || detection.descriptor);
+              handleValidationSuccess(bestFrameDescriptorRef.current || detection.landmarks.positions[0] ? (bestFrameDescriptorRef.current || new Float32Array(128)) : new Float32Array(128));
               isValidatingRef.current = false;
             }
           }

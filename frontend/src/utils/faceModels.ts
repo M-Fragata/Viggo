@@ -40,7 +40,24 @@ export function preloadFaceModels(): Promise<void> {
     faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
     faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
   ])
-    .then(() => {
+    .then(async () => {
+      // Warm-up em background: compila shaders WebGL e inicializa tensores na GPU
+      // antes do usuário abrir a câmera, eliminando o congelamento inicial de ~3-4s.
+      try {
+        if (typeof document !== 'undefined') {
+          const dummyCanvas = document.createElement('canvas');
+          dummyCanvas.width = 128;
+          dummyCanvas.height = 128;
+          const ctx = dummyCanvas.getContext('2d');
+          if (ctx) {
+            ctx.fillStyle = '#808080';
+            ctx.fillRect(0, 0, 128, 128);
+          }
+          await faceapi.detectSingleFace(dummyCanvas, new faceapi.TinyFaceDetectorOptions({ inputSize: 160 }));
+        }
+      } catch (warmupErr) {
+        console.warn('Warm-up de modelos faciais:', warmupErr);
+      }
       // Promise concluída — limpa referência para liberar memória
       modelsPromise = null;
     })

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { LogIn, Utensils, Coffee, LogOut, MonitorSmartphone, ShieldCheck, ArrowLeft, Loader2, Camera } from "lucide-react";
 import { api, ApiError, type TotemVerifyResponse } from "../../services/api";
 import { LivenessChallenge } from "../../components/LivenessChallenge";
+import { preloadFaceModels } from "../../utils/faceModels";
 
 type CheckinType = "ENTRY" | "LUNCH_START" | "LUNCH_END" | "EXIT";
 
@@ -45,7 +46,14 @@ export function TotemPage() {
   const [recoverPassword, setRecoverPassword] = useState("");
   const [isRecovering, setIsRecovering] = useState(false);
 
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  useEffect(() => {
+    preloadFaceModels().catch((err) => {
+      console.error("Erro ao pré-carregar modelos no Totem:", err);
+    });
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("@viggo:totem");
@@ -70,9 +78,11 @@ export function TotemPage() {
   }, []);
 
   function stopCamera() {
-    if (videoRef.current && videoRef.current.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach((track) => track.stop());
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
   }
@@ -98,7 +108,7 @@ export function TotemPage() {
     setIsRecovering(false);
   }
 
-  async function startCamera() {
+  async function startCamera(targetScreen: "camera" | "register-face" = "camera") {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
@@ -108,19 +118,13 @@ export function TotemPage() {
         },
       });
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await new Promise((resolve) => {
-          if (videoRef.current) {
-            videoRef.current.onloadedmetadata = () => {
-              videoRef.current?.play();
-              resolve(true);
-            };
-          }
-        });
-      }
+      streamRef.current = stream;
       setMessage("Iniciando validação...");
-      setScreen({ name: "camera" });
+      if (targetScreen === "register-face") {
+        setScreen({ name: "register-face" });
+      } else {
+        setScreen({ name: "camera" });
+      }
     } catch (err) {
       console.error("Erro ao acessar a webcam:", err);
       setError("Não foi possível acessar a câmera. Verifique as permissões do dispositivo.");
@@ -179,10 +183,17 @@ export function TotemPage() {
     }
   }
 
+  const handleVideoRef = (el: HTMLVideoElement | null) => {
+    videoRef.current = el;
+    if (el && streamRef.current && el.srcObject !== streamRef.current) {
+      el.srcObject = streamRef.current;
+      el.play().catch((err) => console.error("Erro ao reproduzir stream da câmera no Totem:", err));
+    }
+  };
+
   async function handleStartFaceRegister() {
     setError(null);
-    await startCamera();
-    setScreen({ name: "register-face" });
+    await startCamera("register-face");
   }
 
   async function handleFaceRegistered(descriptor: Float32Array) {
@@ -478,7 +489,7 @@ export function TotemPage() {
             </div>
 
             <video
-              ref={videoRef}
+              ref={handleVideoRef}
               autoPlay
               muted
               playsInline
@@ -527,7 +538,7 @@ export function TotemPage() {
                 </div>
 
                 <video
-                  ref={videoRef}
+                  ref={handleVideoRef}
                   autoPlay
                   muted
                   playsInline
