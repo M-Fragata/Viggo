@@ -241,6 +241,7 @@ export function LivenessChallenge({
   const poseHoldStartRef = useRef(0);
   const isValidatingRef = useRef(false);
   const waitingForBlinkRef = useRef(false);
+  const isCompletedRef = useRef(false);
   const activeFaceTokenRef = useRef<string | undefined>(faceToken);
   const onRetryRef = useRef(onRetry);
   const onCancelRef = useRef(onCancel);
@@ -320,6 +321,7 @@ export function LivenessChallenge({
         navigator.vibrate([30, 50, 30]);
       }
     } else {
+      isCompletedRef.current = true;
       ringMotionVal.set(100);
       if ('vibrate' in navigator) {
         navigator.vibrate(200);
@@ -382,18 +384,6 @@ export function LivenessChallenge({
       if (verifyOverride) {
         return await verifyOverride(descriptor);
       }
-
-      // Para steps laterais (left/right) no FULL_LIVENESS, o token de uso único já foi
-      // consumido na validação frontal. Renovar antes de cada chamada não-frontal.
-      const step = currentStepRef.current;
-      if (step !== 'front' && onRetryRef.current) {
-        const newToken = await onRetryRef.current();
-        if (!newToken) {
-          return { success: false, distance: -1, message: "Não foi possível renovar a sessão facial" };
-        }
-        activeFaceTokenRef.current = newToken;
-      }
-
       const currentToken = activeFaceTokenRef.current || faceToken;
       if (!currentToken) {
         return { success: true, distance: 0 };
@@ -428,7 +418,7 @@ export function LivenessChallenge({
       return;
     }
 
-    if (isTransitioning || isFailing) return;
+    if (isTransitioning || isFailing || isCompletedRef.current) return;
 
     try {
       const detectorOptions = new faceapi.TinyFaceDetectorOptions({
@@ -502,63 +492,72 @@ export function LivenessChallenge({
           if (heldTime >= config.holdDuration && !isValidatingRef.current) {
             isValidatingRef.current = true;
 
-            // Validate against backend using token
-            const backendResult = await validateDescriptorWithBackend(detection.descriptor);
+            if (step === 'front') {
+              // Validação biométrica no backend (face match frontal)
+              const backendResult = await validateDescriptorWithBackend(detection.descriptor);
 
-            if (backendResult.success) {
-              if (step === 'front' && !blinkValidated) {
-                waitingForBlinkRef.current = true;
-                isValidatingRef.current = false;
-                return;
-              }
-              handleValidationSuccess(detection.descriptor);
-              isValidatingRef.current = false;
-            } else {
-              // FALHA DE COMPATIBILIDADE FACIAL OU TOKEN EXPIRADO
-              setIsFailing(true);
-              setRingColorMode('red');
-              
-              const failMsg = backendResult.message || (backendResult.distance === -1 ? "Sessão expirada. Reiniciando..." : "Rosto não compatível. Reiniciando...");
-              onStepChangeRef.current?.(failMsg);
+              if (backendResult.success) {
+                bestFrameDescriptorRef.current = detection.descriptor;
+                setBestFrameDescriptor(detection.descriptor);
 
-              if ('vibrate' in navigator) {
-                navigator.vibrate([100, 50, 100]);
-              }
-
-              // Animação de dissolução do círculo vermelho por 2 segundos
-              ringMotionVal.set(100);
-              animate(ringMotionVal, 0, { duration: 2, ease: "easeOut" });
-
-              setTimeout(async () => {
-                if (onRetryRef.current) {
-                  const newToken = await onRetryRef.current();
-                  if (newToken) {
-                    activeFaceTokenRef.current = newToken;
-                    setCurrentStepIndex(0);
-                    setBlinkValidated(false);
-                    setWasCorrectPose(false);
-                    validationsCountRef.current = 0;
-                    poseHoldStartRef.current = 0;
-                    waitingForBlinkRef.current = false;
-                    ringMotionVal.set(0);
-                    setRingColorMode('green');
-                    setIsFailing(false);
-                    isValidatingRef.current = false;
-
-                    const stepMessages: Record<LivenessStep, string> = {
-                      front: 'Centralize seu rosto',
-                      left: 'Vire o rosto para a esquerda',
-                      right: 'Vire o rosto para a direita',
-                    };
-                    onStepChangeRef.current?.(stepMessages[steps[0]]);
-                    return;
-                  }
+                if (!blinkValidated) {
+                  waitingForBlinkRef.current = true;
+                  isValidatingRef.current = false;
+                  return;
                 }
-                // Se onRetry falhar ou não existir
-                setIsFailing(false);
+                handleValidationSuccess(detection.descriptor);
                 isValidatingRef.current = false;
-                onCancelRef.current?.();
-              }, 2000);
+              } else {
+                // FALHA DE COMPATIBILIDADE FACIAL OU TOKEN EXPIRADO
+                setIsFailing(true);
+                setRingColorMode('red');
+                
+                const failMsg = backendResult.message || (backendResult.distance === -1 ? "Sessão expirada. Reiniciando..." : "Rosto não compatível. Reiniciando...");
+                onStepChangeRef.current?.(failMsg);
+
+                if ('vibrate' in navigator) {
+                  navigator.vibrate([100, 50, 100]);
+                }
+
+                // Animação de dissolução do círculo vermelho por 2 segundos
+                ringMotionVal.set(100);
+                animate(ringMotionVal, 0, { duration: 2, ease: "easeOut" });
+
+                setTimeout(async () => {
+                  if (onRetryRef.current) {
+                    const newToken = await onRetryRef.current();
+                    if (newToken) {
+                      activeFaceTokenRef.current = newToken;
+                      setCurrentStepIndex(0);
+                      setBlinkValidated(false);
+                      setWasCorrectPose(false);
+                      validationsCountRef.current = 0;
+                      poseHoldStartRef.current = 0;
+                      waitingForBlinkRef.current = false;
+                      ringMotionVal.set(0);
+                      setRingColorMode('green');
+                      setIsFailing(false);
+                      isValidatingRef.current = false;
+
+                      const stepMessages: Record<LivenessStep, string> = {
+                        front: 'Centralize seu rosto',
+                        left: 'Vire o rosto para a esquerda',
+                        right: 'Vire o rosto para a direita',
+                      };
+                      onStepChangeRef.current?.(stepMessages[steps[0]]);
+                      return;
+                    }
+                  }
+                  // Se onRetry falhar ou não existir
+                  setIsFailing(false);
+                  isValidatingRef.current = false;
+                  onCancelRef.current?.();
+                }, 2000);
+              }
+            } else {
+              // Steps laterais (left / right): validação de vivacidade tridimensional mantida com sucesso
+              handleValidationSuccess(bestFrameDescriptorRef.current || detection.descriptor);
+              isValidatingRef.current = false;
             }
           }
         } else {
