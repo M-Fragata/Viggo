@@ -112,11 +112,10 @@ export function JustificativasContent() {
   const [actionPending, setActionPending] = useState<string | null>(null);
 
   const loadJustificativas = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
     try {
       const data = await api.justificativa.list();
       setJustificativas(data as JustificativaWithUser[]);
+      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao carregar justificativas.");
     } finally {
@@ -125,12 +124,29 @@ export function JustificativasContent() {
   }, []);
 
   useEffect(() => {
-    loadJustificativas();
-  }, [loadJustificativas]);
+    let isMounted = true;
+    api.justificativa.list()
+      .then((data) => {
+        if (isMounted) {
+          setJustificativas(data as JustificativaWithUser[]);
+          setError(null);
+          setIsLoading(false);
+        }
+      })
+      .catch((err) => {
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : "Erro ao carregar justificativas.");
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const loadCheckinsForDate = useCallback(async (dateStr: string) => {
     if (!dateStr) return;
-    setIsLoadingCheckins(true);
     try {
       const data = await api.checkins.list(dateStr);
       setCheckinsForDate(data);
@@ -142,10 +158,26 @@ export function JustificativasContent() {
   }, []);
 
   useEffect(() => {
-    if (showForm && !isAdmin && formData.dataInicio) {
-      loadCheckinsForDate(formData.dataInicio);
-    }
-  }, [showForm, isAdmin, formData.dataInicio, loadCheckinsForDate]);
+    if (!showForm || isAdmin || !formData.dataInicio) return;
+    let isMounted = true;
+    api.checkins.list(formData.dataInicio)
+      .then((data) => {
+        if (isMounted) {
+          setCheckinsForDate(data);
+          setIsLoadingCheckins(false);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setCheckinsForDate([]);
+          setIsLoadingCheckins(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [showForm, isAdmin, formData.dataInicio]);
 
   function handleDateChange(newDate: string) {
     setFormData((prev) => ({

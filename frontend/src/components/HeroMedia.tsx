@@ -8,7 +8,10 @@ export function HeroMedia({ className = "" }: HeroMediaProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [showVideo, setShowVideo] = useState(false);
   const [videoError, setVideoError] = useState(false);
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  });
 
   const handleVideoLoad = useCallback(() => {
     setShowVideo(true);
@@ -37,18 +40,11 @@ export function HeroMedia({ className = "" }: HeroMediaProps) {
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const checkReducedMotion = () => mediaQuery.matches;
-
     const handler = () => {
-      setPrefersReducedMotion(checkReducedMotion());
+      setPrefersReducedMotion(mediaQuery.matches);
     };
     mediaQuery.addEventListener("change", handler);
     return () => mediaQuery.removeEventListener("change", handler);
-  }, []);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setPrefersReducedMotion(mediaQuery.matches);
   }, []);
 
   if (prefersReducedMotion || videoError) {

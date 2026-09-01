@@ -278,13 +278,7 @@ export const MagicBento: React.FC<BentoProps> = ({
 
   // Limite máximo de índice do slider
   const maxIndex = Math.max(0, cards.length - itemsPerPage);
-
-  // Garante que o índice não passe do máximo ao redimensionar a tela
-  useEffect(() => {
-    if (currentIndex > maxIndex) {
-      setCurrentIndex(maxIndex);
-    }
-  }, [itemsPerPage, maxIndex, currentIndex]);
+  const activeIndex = Math.min(currentIndex, maxIndex);
 
   // Gestos de arrasto com touch ou mouse (swipe slider)
   const handleDragEnd = (_: unknown, info: PanInfo) => {
@@ -453,7 +447,7 @@ export const MagicBento: React.FC<BentoProps> = ({
               dragConstraints={{ left: 0, right: 0 }}
               dragElastic={0.2}
               onDragEnd={handleDragEnd}
-              animate={{ x: `-${currentIndex * (100 / itemsPerPage)}%` }}
+              animate={{ x: `-${activeIndex * (100 / itemsPerPage)}%` }}
               transition={{ type: "spring", stiffness: 320, damping: 32 }}
             >
               {cards.map((card, index) => {
@@ -492,7 +486,7 @@ export const MagicBento: React.FC<BentoProps> = ({
             {cards.map((_, index) => {
               // No tablet (2 cards), ambas as bolinhas dos cards visíveis ficam verdes
               // No mobile (1 card), a bolinha do card visível fica verde
-              const isVisible = index >= currentIndex && index < currentIndex + itemsPerPage;
+              const isVisible = index >= activeIndex && index < activeIndex + itemsPerPage;
 
               return (
                 <button

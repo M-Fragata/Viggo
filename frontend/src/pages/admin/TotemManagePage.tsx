@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import {
   TabletSmartphone,
@@ -22,17 +22,11 @@ export function TotemManagePage() {
   const [confirmPin, setConfirmPin] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [hasActiveTotem, setHasActiveTotem] = useState(false);
-
-  useEffect(() => {
+  const [hasActiveTotem, setHasActiveTotem] = useState(() => {
     const token = localStorage.getItem("@viggo:totem");
     const expiresAt = localStorage.getItem("@viggo:totem:expiresAt");
-    if (token && (!expiresAt || Number(expiresAt) > Date.now())) {
-      setHasActiveTotem(true);
-    } else {
-      setHasActiveTotem(false);
-    }
-  }, []);
+    return Boolean(token && (!expiresAt || Number(expiresAt) > Date.now()));
+  });
 
   const handleActivate = async (e: React.FormEvent) => {
     e.preventDefault();

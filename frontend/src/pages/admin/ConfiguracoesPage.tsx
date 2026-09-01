@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { PageHeader } from "../../components/common/PageHeader";
 import { useCompany } from "../../hooks/useCompany";
 import { useToast } from "../../hooks/useToast";
@@ -23,21 +23,13 @@ export function ConfiguracoesPage() {
   const { company, isLoading, updateCompany } = useCompany();
   const { toast } = useToast();
 
-  const [facialMode, setFacialMode] = useState<FacialValidationMode>("FRONTAL_ONLY");
-  const [totemMode, setTotemMode] = useState<TotemAuthMode>("FRONTAL_ONLY");
+  const currentSettings = company?.settings as CompanySettings | undefined;
+  const [facialModeOverride, setFacialModeOverride] = useState<FacialValidationMode | null>(null);
+  const [totemModeOverride, setTotemModeOverride] = useState<TotemAuthMode | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
-    if (company?.settings) {
-      const currentSettings = company.settings as CompanySettings;
-      if (currentSettings.ponto?.facialMode) {
-        setFacialMode(currentSettings.ponto.facialMode);
-      }
-      if (currentSettings.totem?.authMode) {
-        setTotemMode(currentSettings.totem.authMode);
-      }
-    }
-  }, [company]);
+  const facialMode: FacialValidationMode = facialModeOverride ?? (currentSettings?.ponto?.facialMode || "FRONTAL_ONLY");
+  const totemMode: TotemAuthMode = totemModeOverride ?? (currentSettings?.totem?.authMode || "FRONTAL_ONLY");
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -103,7 +95,7 @@ export function ConfiguracoesPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Opção 1: FRONTAL_ONLY */}
           <div
-            onClick={() => setFacialMode("FRONTAL_ONLY")}
+            onClick={() => setFacialModeOverride("FRONTAL_ONLY")}
             className={`p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between relative ${
               facialMode === "FRONTAL_ONLY"
                 ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-xs"
@@ -136,7 +128,7 @@ export function ConfiguracoesPage() {
 
           {/* Opção 2: FULL_LIVENESS */}
           <div
-            onClick={() => setFacialMode("FULL_LIVENESS")}
+            onClick={() => setFacialModeOverride("FULL_LIVENESS")}
             className={`p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between relative ${
               facialMode === "FULL_LIVENESS"
                 ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-xs"
@@ -190,7 +182,7 @@ export function ConfiguracoesPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Totem Opção 1: FRONTAL_ONLY */}
           <div
-            onClick={() => setTotemMode("FRONTAL_ONLY")}
+            onClick={() => setTotemModeOverride("FRONTAL_ONLY")}
             className={`p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between relative ${
               totemMode === "FRONTAL_ONLY"
                 ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-xs"
@@ -223,7 +215,7 @@ export function ConfiguracoesPage() {
 
           {/* Totem Opção 2: CREDENTIALS_ONLY */}
           <div
-            onClick={() => setTotemMode("CREDENTIALS_ONLY")}
+            onClick={() => setTotemModeOverride("CREDENTIALS_ONLY")}
             className={`p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between relative ${
               totemMode === "CREDENTIALS_ONLY"
                 ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-xs"
@@ -256,7 +248,7 @@ export function ConfiguracoesPage() {
 
           {/* Totem Opção 3: FULL_LIVENESS */}
           <div
-            onClick={() => setTotemMode("FULL_LIVENESS")}
+            onClick={() => setTotemModeOverride("FULL_LIVENESS")}
             className={`p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between relative ${
               totemMode === "FULL_LIVENESS"
                 ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-xs"

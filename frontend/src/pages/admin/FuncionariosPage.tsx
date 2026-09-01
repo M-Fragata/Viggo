@@ -38,7 +38,6 @@ export function FuncionariosPage() {
 
   const fetchEmployees = useCallback(async () => {
     try {
-      setIsLoadingEmployees(true);
       const data = await api.employees.list(selectedDate);
       setEmployees(data);
     } catch {
@@ -58,9 +57,22 @@ export function FuncionariosPage() {
   }, []);
 
   useEffect(() => {
-    fetchEmployees();
-    fetchSchedules();
-  }, [fetchEmployees, fetchSchedules]);
+    let isMounted = true;
+    Promise.all([
+      api.employees.list(selectedDate).catch(() => []),
+      api.workSchedules.list().catch(() => []),
+    ]).then(([employeesData, schedulesData]) => {
+      if (isMounted) {
+        setEmployees(employeesData);
+        setSchedules(schedulesData);
+        setIsLoadingEmployees(false);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedDate]);
 
   // Lista filtrada
   const filteredEmployees = useMemo(() => {
@@ -202,7 +214,10 @@ export function FuncionariosPage() {
               <input
                 type="date"
                 value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
+                onChange={(e) => {
+                  setIsLoadingEmployees(true);
+                  setSelectedDate(e.target.value);
+                }}
                 className="bg-transparent border-none focus:outline-none text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer"
               />
             </div>

@@ -322,6 +322,8 @@ export function LivenessChallenge({
     const stepIdx = currentStepIndexRef.current;
     if (stepIdx < steps.length - 1) {
       setCurrentStepIndex(stepIdx + 1);
+      setBlinkValidated(false);
+      setWasCorrectPose(false);
       if ('vibrate' in navigator) {
         navigator.vibrate([30, 50, 30]);
       }
@@ -379,8 +381,6 @@ export function LivenessChallenge({
     };
     onStepChangeRef.current?.(stepMessages[steps[currentStepIndex]]);
 
-    setBlinkValidated(false);
-    setWasCorrectPose(false);
     validationsCountRef.current = 0;
     ringMotionVal.set(0);
     poseHoldStartRef.current = 0;
@@ -423,7 +423,7 @@ export function LivenessChallenge({
     if (count >= needed) {
       playTransitionAnimation(advanceToNextStep);
     }
-  }, [ringMotionVal, playTransitionAnimation, advanceToNextStep]);
+  }, [playTransitionAnimation, advanceToNextStep]);
 
   const checkPose = useCallback(async () => {
     if (!videoRef.current || !modelsLoaded || videoRef.current.readyState !== 4) {

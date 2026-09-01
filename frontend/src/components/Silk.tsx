@@ -1,5 +1,4 @@
-/* eslint-disable react/no-unknown-property */
-import React, { forwardRef, useMemo, useRef, useLayoutEffect, useEffect } from 'react';
+import React, { forwardRef, useRef, useLayoutEffect, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Color, Mesh, ShaderMaterial } from 'three';
 
@@ -24,7 +23,7 @@ interface SilkUniforms {
   uColor: UniformValue<Color>;
   uRotation: UniformValue<number>;
   uTime: UniformValue<number>;
-  [uniform: string]: { value: any };
+  [uniform: string]: { value: unknown };
 }
 
 const vertexShader = `
@@ -86,9 +85,17 @@ void main() {
 
 interface SilkPlaneProps {
   uniforms: SilkUniforms;
+  speed: number;
+  scale: number;
+  noiseIntensity: number;
+  color: string;
+  rotation: number;
 }
 
-const SilkPlane = forwardRef<Mesh, SilkPlaneProps>(function SilkPlane({ uniforms }, ref) {
+const SilkPlane = forwardRef<Mesh, SilkPlaneProps>(function SilkPlane(
+  { uniforms, speed, scale, noiseIntensity, color, rotation },
+  ref
+) {
   const { viewport } = useThree();
 
   useLayoutEffect(() => {
@@ -105,6 +112,11 @@ const SilkPlane = forwardRef<Mesh, SilkPlaneProps>(function SilkPlane({ uniforms
         uniforms: SilkUniforms;
       };
       material.uniforms.uTime.value += 0.1 * delta;
+      material.uniforms.uSpeed.value = speed;
+      material.uniforms.uScale.value = scale;
+      material.uniforms.uNoiseIntensity.value = noiseIntensity;
+      material.uniforms.uColor.value.setRGB(...hexToNormalizedRGB(color));
+      material.uniforms.uRotation.value = rotation;
     }
   });
 
@@ -136,30 +148,26 @@ const Silk: React.FC<SilkProps> = ({
 }) => {
   const meshRef = useRef<Mesh>(null);
 
-  const uniforms = useMemo<SilkUniforms>(
-    () => ({
-      uSpeed: { value: speed },
-      uScale: { value: scale },
-      uNoiseIntensity: { value: noiseIntensity },
-      uColor: { value: new Color(...hexToNormalizedRGB(color)) },
-      uRotation: { value: rotation },
-      uTime: { value: 0 }
-    }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  );
-
-  useEffect(() => {
-    uniforms.uSpeed.value = speed;
-    uniforms.uScale.value = scale;
-    uniforms.uNoiseIntensity.value = noiseIntensity;
-    uniforms.uColor.value.setRGB(...hexToNormalizedRGB(color));
-    uniforms.uRotation.value = rotation;
-  }, [speed, scale, noiseIntensity, color, rotation, uniforms]);
+  const [uniforms] = useState<SilkUniforms>(() => ({
+    uSpeed: { value: speed },
+    uScale: { value: scale },
+    uNoiseIntensity: { value: noiseIntensity },
+    uColor: { value: new Color(...hexToNormalizedRGB(color)) },
+    uRotation: { value: rotation },
+    uTime: { value: 0 }
+  }));
 
   return (
     <Canvas dpr={[1, 2]} frameloop="always" className={className}>
-      <SilkPlane ref={meshRef} uniforms={uniforms} />
+      <SilkPlane
+        ref={meshRef}
+        uniforms={uniforms}
+        speed={speed}
+        scale={scale}
+        noiseIntensity={noiseIntensity}
+        color={color}
+        rotation={rotation}
+      />
     </Canvas>
   );
 };

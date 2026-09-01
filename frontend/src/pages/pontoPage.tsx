@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useNavigate } from "react-router"
 
 import { api } from "../services/api"
@@ -33,7 +33,7 @@ export function PontoPage() {
 
     const [checkins, setCheckins] = useState<ChekinProps[]>([])
     const [isLoadingCheckins, setIsLoadingCheckins] = useState(true)
-    const [hasFaceRegistered, setHasFaceRegistered] = useState(true)
+    const hasFaceRegistered = Boolean(user?.hasFaceDescriptor)
 
     const videoRef = useRef<HTMLVideoElement>(null)
 
@@ -294,8 +294,8 @@ export function PontoPage() {
         setMessage("Validação cancelada");
     };
 
-    async function handleGetCheckin() {
-        setIsLoadingCheckins(true)
+    const handleGetCheckin = useCallback(async () => {
+        setIsLoadingCheckins(true);
 
         try {
             if (!token) {
@@ -304,25 +304,23 @@ export function PontoPage() {
             }
 
             const data = await api.checkins.list();
-            setCheckins(data)
+            setCheckins(data);
 
         } catch (error) {
             console.error("Erro ao buscar os pontos:", error);
             alert(error instanceof Error ? error.message : "Erro ao buscar os pontos. Tente novamente.");
         } finally {
-            setIsLoadingCheckins(false)
+            setIsLoadingCheckins(false);
         }
-
-    }
+    }, [navigate, token]);
 
     useEffect(() => {
         // Pré-carrega os modelos em background assim que a página é acessada
         preloadFaceModels().catch((err) => {
             console.error("Erro ao pré-carregar modelos face-api no PontoPage:", err);
         });
-        setHasFaceRegistered(user?.hasFaceDescriptor ? true : false);
         handleGetCheckin();
-    }, []);
+    }, [handleGetCheckin]);
 
     useEffect(() => {
         if (videoOpen) {

@@ -66,7 +66,7 @@ export function RegisterFace() {
                 stream.getTracks().forEach(track => track.stop());
             }
         };
-    }, []);
+    }, [check]);
 
     const handleLivenessComplete = async (descriptor: Float32Array) => {
         setShowLiveness(false);

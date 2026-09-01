@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 import { useAuth } from "../hooks/useAuth";
 import { api } from "../services/api";
@@ -22,18 +22,30 @@ export function PontoViewPage() {
   const [checkins, setCheckins] = useState<Checkin[]>([]);
   const [isLoadingCheckins, setIsLoadingCheckins] = useState(true);
 
-  const handleGetPontos = useCallback(async () => {
-    setIsLoadingCheckins(true);
-    try {
-      if (!token) return window.location.assign("/");
-      const data = await api.checkins.list(date);
-      setCheckins(data);
-    } catch (error) {
-      console.error("Erro ao buscar os pontos:", error);
-      alert(error instanceof Error ? error.message : "Erro ao buscar os pontos. Tente novamente.");
-    } finally {
-      setIsLoadingCheckins(false);
+  useEffect(() => {
+    let isMounted = true;
+    if (!token) {
+      window.location.assign("/");
+      return;
     }
+    api.checkins.list(date)
+      .then((data) => {
+        if (isMounted) {
+          setCheckins(data);
+          setIsLoadingCheckins(false);
+        }
+      })
+      .catch((error) => {
+        if (isMounted) {
+          console.error("Erro ao buscar os pontos:", error);
+          alert(error instanceof Error ? error.message : "Erro ao buscar os pontos. Tente novamente.");
+          setIsLoadingCheckins(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [date, token]);
 
   const formatType = (type: string) => {
@@ -178,10 +190,6 @@ export function PontoViewPage() {
     printWindow.document.close();
   }
 
-  useEffect(() => {
-    handleGetPontos();
-  }, [handleGetPontos]);
-
   return (
     <div className="w-full space-y-6">
       {isLoadingCheckins ? (
@@ -199,7 +207,10 @@ export function PontoViewPage() {
                 <input
                   type="date"
                   value={date}
-                  onChange={(e) => setDate(e.target.value)}
+                  onChange={(e) => {
+                    setIsLoadingCheckins(true);
+                    setDate(e.target.value);
+                  }}
                   className="bg-transparent border-none focus:outline-none text-slate-700 dark:text-slate-200 text-sm font-medium w-full sm:w-auto cursor-pointer"
                 />
               </div>

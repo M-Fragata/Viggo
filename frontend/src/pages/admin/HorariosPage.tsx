@@ -39,7 +39,6 @@ function WorkScheduleManager() {
 
   const fetchSchedules = useCallback(async () => {
     try {
-      setIsLoading(true);
       const data = await api.workSchedules.list();
       setSchedules(data);
     } catch {
@@ -49,7 +48,26 @@ function WorkScheduleManager() {
     }
   }, []);
 
-  useEffect(() => { fetchSchedules(); }, [fetchSchedules]);
+  useEffect(() => {
+    let isMounted = true;
+    api.workSchedules.list()
+      .then((data) => {
+        if (isMounted) {
+          setSchedules(data);
+          setIsLoading(false);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setSchedules([]);
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   async function handleSave() {
     try {

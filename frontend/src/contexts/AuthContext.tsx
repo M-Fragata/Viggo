@@ -44,14 +44,62 @@ function formatName(rawName: string): string {
   return `${firstLetter?.toUpperCase()}${restName?.toLowerCase()}`;
 }
 
+function getInitialSession(): {
+  user: User | null;
+  company: string | null;
+  name: string | null;
+  token: string | null;
+  isImpersonated: boolean;
+  impersonatedCompanyName: string | null;
+} {
+  if (typeof window === "undefined") {
+    return { user: null, company: null, name: null, token: null, isImpersonated: false, impersonatedCompanyName: null };
+  }
+  const storedToken = localStorage.getItem("@viggo:token");
+  const storedMasterToken = localStorage.getItem("@viggo:masterToken");
+
+  if (!storedToken) {
+    return { user: null, company: null, name: null, token: null, isImpersonated: false, impersonatedCompanyName: null };
+  }
+
+  const decoded = decodeJWT(storedToken);
+  if (!decoded || decoded.exp < Math.floor(Date.now() / 1000)) {
+    localStorage.removeItem("@viggo:token");
+    localStorage.removeItem("@viggo:masterToken");
+    return { user: null, company: null, name: null, token: null, isImpersonated: false, impersonatedCompanyName: null };
+  }
+
+  const jwtUser = userFromJWT(decoded);
+  let isImpersonated = false;
+  let impersonatedCompanyName: string | null = null;
+
+  if (storedMasterToken) {
+    const masterDecoded = decodeJWT(storedMasterToken);
+    if (masterDecoded) {
+      isImpersonated = true;
+      impersonatedCompanyName = decoded.companyName || null;
+    }
+  }
+
+  return {
+    user: jwtUser,
+    company: decoded.companyName || null,
+    name: formatName(decoded.name),
+    token: storedToken,
+    isImpersonated,
+    impersonatedCompanyName,
+  };
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [company, setCompany] = useState<string | null>(null);
-  const [name, setName] = useState<string | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isImpersonated, setIsImpersonated] = useState(false);
-  const [impersonatedCompanyName, setImpersonatedCompanyName] = useState<string | null>(null);
+  const [initialSession] = useState(getInitialSession);
+  const [user, setUser] = useState<User | null>(initialSession.user);
+  const [company, setCompany] = useState<string | null>(initialSession.company);
+  const [name, setName] = useState<string | null>(initialSession.name);
+  const [token, setToken] = useState<string | null>(initialSession.token);
+  const [isLoading] = useState(false);
+  const [isImpersonated, setIsImpersonated] = useState(initialSession.isImpersonated);
+  const [impersonatedCompanyName, setImpersonatedCompanyName] = useState<string | null>(initialSession.impersonatedCompanyName);
 
   const clearSession = useCallback(() => {
     localStorage.removeItem("@viggo:token");
@@ -64,53 +112,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setImpersonatedCompanyName(null);
   }, []);
 
-  const loadSession = useCallback(() => {
-    const storedToken = localStorage.getItem("@viggo:token");
-    const storedMasterToken = localStorage.getItem("@viggo:masterToken");
-
-    if (storedToken) {
-      const decoded = decodeJWT(storedToken);
-      if (!decoded) {
-        clearSession();
-        setIsLoading(false);
-        return;
-      }
-
-      const now = Math.floor(Date.now() / 1000);
-      if (decoded.exp < now) {
-        clearSession();
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const jwtUser = userFromJWT(decoded);
-        setUser(jwtUser);
-        setToken(storedToken);
-        setCompany(decoded.companyName || null);
-        setName(formatName(decoded.name));
-
-        if (storedMasterToken) {
-          const masterDecoded = decodeJWT(storedMasterToken);
-          if (masterDecoded) {
-            setIsImpersonated(true);
-            setImpersonatedCompanyName(decoded.companyName || null);
-          }
-        }
-
-        api.auth.me().then(({ user: freshUser }) => {
-          setUser(prev => prev ? { ...prev, hasFaceDescriptor: freshUser.hasFaceDescriptor } : prev);
-        }).catch(() => {});
-      } catch {
-        clearSession();
-      }
-    }
-    setIsLoading(false);
-  }, [clearSession]);
-
   useEffect(() => {
-    loadSession();
-  }, [loadSession]);
+    if (token) {
+      api.auth.me().then(({ user: freshUser }) => {
+        setUser(prev => prev ? { ...prev, hasFaceDescriptor: freshUser.hasFaceDescriptor } : prev);
+      }).catch(() => {});
+    }
+  }, [token]);
 
   const login = useCallback(
     async (email: string, password: string) => {
@@ -133,14 +141,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     []
   );
 
-  const setSession = useCallback((newUser: User, newToken: string, _newCompany?: string) => {
+  const setSession = useCallback((newUser: User, newToken: string, newCompany?: string) => {
     localStorage.setItem("@viggo:token", newToken);
 
     const decoded = decodeJWT(newToken);
     const jwtUser = decoded ? userFromJWT(decoded) : newUser;
     setUser({ ...jwtUser, hasFaceDescriptor: newUser.hasFaceDescriptor });
     setToken(newToken);
-    setCompany(decoded?.companyName || null);
+    setCompany(newCompany || decoded?.companyName || null);
     setName(formatName(jwtUser.name));
   }, []);
 

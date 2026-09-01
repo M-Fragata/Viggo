@@ -61,9 +61,10 @@ export function FaceAuth({ onAuthenticate }: { onAuthenticate: (descriptor: Floa
         };
         startCamera();
 
+        const currentVideo = videoRef.current;
         return () => {
-            if (videoRef.current && videoRef.current.srcObject) {
-                const stream = videoRef.current.srcObject as MediaStream;
+            if (currentVideo && currentVideo.srcObject) {
+                const stream = currentVideo.srcObject as MediaStream;
                 stream.getTracks().forEach(track => track.stop());
             }
         };

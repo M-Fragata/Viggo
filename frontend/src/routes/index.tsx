@@ -8,27 +8,27 @@ import { AdminRoutes } from "./AdminRoutes";
 import { UserRoutes } from "./UserRoutes";
 import { MasterRoutes } from "./MasterRoutes";
 
+function RoleRoutes({ role }: { role?: string }) {
+  switch (role) {
+    case "EMPLOYEE":
+      return <UserRoutes />;
+    case "ENTERPRISE_ADMIN":
+      return <AdminRoutes />;
+    case "MASTER":
+      return <MasterRoutes />;
+    default:
+      return <AuthRoutes />;
+  }
+}
+
 export function AppRoutes() {
   const { user, isLoading } = useAuth();
 
   if (isLoading) return <Loading />;
 
-  function Route() {
-    switch (user?.role) {
-      case "EMPLOYEE":
-        return <UserRoutes />;
-      case "ENTERPRISE_ADMIN":
-        return <AdminRoutes />;
-      case "MASTER":
-        return <MasterRoutes />;
-      default:
-        return <AuthRoutes />;
-    }
-  }
-
   return (
     <BrowserRouter>
-      <Route />
+      <RoleRoutes role={user?.role} />
     </BrowserRouter>
   );
 }

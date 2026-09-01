@@ -23,13 +23,32 @@ export function useCompany() {
       setError(err instanceof Error ? err.message : "Erro ao carregar empresa");
     } finally {
       setIsLoading(false);
-
     }
   }, []);
 
   useEffect(() => {
-    fetchCompany();
-  }, [fetchCompany]);
+    let isMounted = true;
+    Promise.all([
+      api.company.getMe(),
+      api.company.getUsage(),
+    ]).then(([companyData, usageData]) => {
+      if (isMounted) {
+        setCompany(companyData);
+        setUsage(usageData);
+        setError(null);
+        setIsLoading(false);
+      }
+    }).catch((err) => {
+      if (isMounted) {
+        setError(err instanceof Error ? err.message : "Erro ao carregar empresa");
+        setIsLoading(false);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const updateCompany = useCallback(
     async (data: UpdateCompanyDto) => {

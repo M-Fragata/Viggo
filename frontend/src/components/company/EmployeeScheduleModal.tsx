@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { X, Clock, Plus, Trash2 } from "lucide-react";
 import { api, type WorkScheduleResponse } from "../../services/api";
 
@@ -54,18 +54,20 @@ export function EmployeeScheduleModal({
 
   const currentSchedule = schedules.find((s) => s.id === currentScheduleId);
 
-  const refreshSchedules = useCallback(async () => {
-    try {
-      const data = await api.workSchedules.list();
-      setSchedules(data);
-    } catch {
-      // mantém a lista atual
-    }
-  }, []);
-
   useEffect(() => {
-    refreshSchedules();
-  }, [refreshSchedules]);
+    let isMounted = true;
+    api.workSchedules.list()
+      .then((data) => {
+        if (isMounted) {
+          setSchedules(data);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   function resetForm() {
     setForm({

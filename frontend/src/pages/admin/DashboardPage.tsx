@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import {
   Users, CheckCircle, FileText, Clock, CreditCard, Mail, ClipboardList,
@@ -30,22 +30,22 @@ export function DashboardOverviewPage() {
   const trialExpired = isTrialExpired(company?.planExpiresAt ?? null, company?.status ?? "ACTIVE");
   const trialDays = getTrialDaysRemaining(company?.planExpiresAt ?? null);
 
-  const fetchOverviewData = useCallback(async () => {
-    try {
-      const [justificativasData, invitesData] = await Promise.all([
-        api.justificativa.list().catch(() => []),
-        api.company.inviteTokens.list().catch(() => []),
-      ]);
-      setJustificativas(justificativasData as (JustificativaResponse & { user?: { id: string; name: string; email: string } })[]);
-      setInvites(invitesData as InviteTokenResponse[]);
-    } catch {
-      // silent
-    }
-  }, []);
-
   useEffect(() => {
-    fetchOverviewData();
-  }, [fetchOverviewData]);
+    let isMounted = true;
+    Promise.all([
+      api.justificativa.list().catch(() => []),
+      api.company.inviteTokens.list().catch(() => []),
+    ]).then(([justificativasData, invitesData]) => {
+      if (isMounted) {
+        setJustificativas(justificativasData as (JustificativaResponse & { user?: { id: string; name: string; email: string } })[]);
+        setInvites(invitesData as InviteTokenResponse[]);
+      }
+    }).catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const presentesHoje = checkins.length;
   const justificativasPendentes = justificativas.filter((j) => j.aprovado === null).length;

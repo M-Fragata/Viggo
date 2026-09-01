@@ -38,8 +38,6 @@ export function MeusDadosPage() {
   const [editSuccess, setEditSuccess] = useState(false);
 
   const loadData = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
     try {
       const [myData, myLogs] = await Promise.all([
         api.privacy.getMyData(),
@@ -47,6 +45,7 @@ export function MeusDadosPage() {
       ]);
       setData(myData);
       setLogs(myLogs.logs);
+      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao carregar dados.");
     } finally {
@@ -55,8 +54,28 @@ export function MeusDadosPage() {
   }, []);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    let isMounted = true;
+    Promise.all([
+      api.privacy.getMyData(),
+      api.privacy.getMyLogs(),
+    ]).then(([myData, myLogs]) => {
+      if (isMounted) {
+        setData(myData);
+        setLogs(myLogs.logs);
+        setError(null);
+        setIsLoading(false);
+      }
+    }).catch((err) => {
+      if (isMounted) {
+        setError(err instanceof Error ? err.message : "Erro ao carregar dados.");
+        setIsLoading(false);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   async function handleDeleteFace() {
     setIsDeletingFace(true);
