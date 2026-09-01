@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from "react";
-import { LogIn, Utensils, Coffee, LogOut, MonitorSmartphone, ShieldCheck, ArrowLeft, Loader2, Camera, User } from "lucide-react";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { LogIn, Utensils, Coffee, LogOut, MonitorSmartphone, ShieldCheck, ArrowLeft, Loader2, Camera, User, Radio, WifiOff } from "lucide-react";
 import { toast } from "sonner";
 import { api, ApiError, type TotemVerifyResponse } from "../../services/api";
 import { LivenessChallenge } from "../../components/LivenessChallenge";
 import { preloadFaceModels, areFaceModelsLoaded } from "../../utils/faceModels";
+import { saveOfflineCheckin, getPendingOfflineCheckins, removeOfflineCheckin, type OfflineCheckin } from "../../utils/offlineQueue";
 
 type CheckinType = "ENTRY" | "LUNCH_START" | "LUNCH_END" | "EXIT";
 
@@ -20,7 +21,7 @@ type Screen =
   | { name: "select-type" }
   | { name: "camera" }
   | { name: "register-face" }
-  | { name: "success"; comprovante: string }
+  | { name: "success"; comprovante?: string; isOffline?: boolean; offlineRecord?: OfflineCheckin }
   | { name: "exit" };
 
 export function TotemPage() {
@@ -240,6 +241,42 @@ export function TotemPage() {
       setIsRegistering(false);
     } catch (err) {
       console.error("Erro ao registrar ponto no totem:", err);
+
+      const isNetworkError =
+        !navigator.onLine ||
+        (err instanceof Error &&
+          (err.message.includes("fetch") ||
+           err.message.includes("Network") ||
+           err.message.includes("Failed") ||
+           err.message.includes("conexão")));
+
+      if (isNetworkError && userId && pendingType) {
+        try {
+          const offlineItem = await saveOfflineCheckin({
+            userId,
+            userName: userName || undefined,
+            type: pendingType,
+            latitude: pendingCoords.latitude,
+            longitude: pendingCoords.longitude,
+          });
+
+          toast.info("Ponto registrado offline!", {
+            description: "Sua marcação foi salva com segurança no totem e será sincronizada automaticamente assim que a conexão retornar.",
+            duration: 6000,
+          });
+
+          setScreen({
+            name: "success",
+            isOffline: true,
+            offlineRecord: offlineItem,
+          });
+          setIsRegistering(false);
+          return;
+        } catch (offlineErr) {
+          console.error("Erro ao salvar ponto offline no totem:", offlineErr);
+        }
+      }
+
       const msg = err instanceof Error ? err.message : "Erro ao registrar ponto. Tente novamente.";
       setError(msg);
       toast.error(msg, { duration: 6000 });
@@ -247,6 +284,41 @@ export function TotemPage() {
       resetToIdle();
     }
   }
+
+  const syncTotemOfflineCheckins = useCallback(async () => {
+    if (!navigator.onLine) return;
+    try {
+      const pending = await getPendingOfflineCheckins();
+      if (pending.length === 0) return;
+
+      const itemsToSync = pending.map((p) => ({
+        id: p.id,
+        type: p.type,
+        timestamp: p.timestamp,
+        latitude: p.latitude,
+        longitude: p.longitude,
+        accuracy: p.accuracy,
+        hash: p.hash,
+      }));
+
+      const result = await api.checkins.syncOffline(itemsToSync);
+      for (const item of result.synced) {
+        await removeOfflineCheckin(item.id);
+      }
+
+      toast.success("Marcações offline sincronizadas!", {
+        description: `${result.synced.length} ponto(s) foram sincronizados com sucesso no servidor.`,
+      });
+    } catch (err) {
+      console.warn("Sincronização offline no totem postergada:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    syncTotemOfflineCheckins();
+    window.addEventListener("online", syncTotemOfflineCheckins);
+    return () => window.removeEventListener("online", syncTotemOfflineCheckins);
+  }, [syncTotemOfflineCheckins]);
 
   function handleFaceCancel() {
     stopCamera();
@@ -682,19 +754,79 @@ export function TotemPage() {
         {screen.name === "success" && (
           <div className="flex-1 flex flex-col items-center justify-center gap-6 p-8">
             <div className="bg-white rounded-2xl p-6 shadow-xl max-w-sm w-full">
-              <div className="flex items-center justify-center gap-2 mb-4">
-                <span className="text-3xl">✅</span>
-                <h2 className="text-emerald-700 text-lg font-bold text-center">Ponto Registrado!</h2>
-              </div>
-              <pre className="text-[10px] sm:text-xs text-slate-700 bg-slate-50 rounded-lg p-3 whitespace-pre-wrap font-mono leading-relaxed border border-slate-200 max-h-[280px] overflow-y-auto">
-                {screen.comprovante}
-              </pre>
+              {screen.isOffline && screen.offlineRecord ? (
+                <>
+                  <div className="flex items-center justify-center gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
+                      <Radio size={24} className="animate-pulse" />
+                    </div>
+                    <div>
+                      <h2 className="text-amber-600 text-lg font-bold">Ponto Registrado Offline!</h2>
+                      <p className="text-xs text-slate-500">Gravado localmente no totem</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-50 rounded-xl p-4 my-3 border border-slate-200 space-y-2 text-xs">
+                    {userName && (
+                      <div className="flex justify-between py-1 border-b border-slate-200/60">
+                        <span className="text-slate-500">Colaborador:</span>
+                        <span className="font-bold text-slate-800">{userName}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between py-1 border-b border-slate-200/60">
+                      <span className="text-slate-500">Tipo de Ponto:</span>
+                      <span className="font-bold text-slate-800">
+                        {screen.offlineRecord.type === "ENTRY"
+                          ? "Entrada"
+                          : screen.offlineRecord.type === "LUNCH_START"
+                          ? "Início Almoço"
+                          : screen.offlineRecord.type === "LUNCH_END"
+                          ? "Retorno Almoço"
+                          : "Saída"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-slate-200/60">
+                      <span className="text-slate-500">Horário Gravado:</span>
+                      <span className="font-bold text-slate-800">
+                        {new Date(screen.offlineRecord.timestamp).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          second: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-1">
+                      <span className="text-slate-500">Biometria:</span>
+                      <span className="font-semibold text-emerald-600">Validada com Vivacidade ✅</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 my-2 text-xs text-amber-800 flex items-start gap-2">
+                    <WifiOff size={16} className="shrink-0 mt-0.5 text-amber-500" />
+                    <p className="leading-relaxed">
+                      O comprovante fiscal definitivo com o número de registro (NSR) será gerado e disponibilizado para consulta assim que o totem restabelecer a conexão com a internet.
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center justify-center gap-2 mb-4">
+                    <span className="text-3xl">✅</span>
+                    <h2 className="text-emerald-700 text-lg font-bold text-center">Ponto Registrado!</h2>
+                  </div>
+                  {screen.comprovante && (
+                    <pre className="text-[10px] sm:text-xs text-slate-700 bg-slate-50 rounded-lg p-3 whitespace-pre-wrap font-mono leading-relaxed border border-slate-200 max-h-[280px] overflow-y-auto">
+                      {screen.comprovante}
+                    </pre>
+                  )}
+                </>
+              )}
             </div>
             <button
               onClick={resetToIdle}
               className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-8 py-4 rounded-2xl transition-all cursor-pointer shadow-lg shadow-emerald-500/20 active:scale-95"
             >
-              Finalizar
+              {screen.isOffline ? "Entendido / Finalizar" : "Finalizar"}
             </button>
           </div>
         )}

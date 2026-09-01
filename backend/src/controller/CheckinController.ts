@@ -448,4 +448,122 @@ export class CheckinController {
             return res.status(500).json({ message: "Erro ao gerar relatório mensal" });
         }
     }
+
+    /**
+     * POST /checkins/sync-offline
+     * Sincroniza em lote marcações gravadas em contingência offline (IndexedDB).
+     * Atribui NSR consecutivo oficial e gera comprovante fiscal para cada ponto.
+     */
+    async syncOfflineCheckins(req: Request, res: Response) {
+        const bodySchema = z.object({
+            items: z.array(
+                z.object({
+                    id: z.string().uuid(),
+                    type: z.enum(["ENTRY", "LUNCH_START", "LUNCH_END", "EXIT"]),
+                    timestamp: z.string().datetime(),
+                    latitude: z.number().nullable().optional(),
+                    longitude: z.number().nullable().optional(),
+                    accuracy: z.number().nullable().optional(),
+                    hash: z.string().optional(),
+                })
+            ).min(1).max(50),
+        });
+
+        try {
+            const userId = req.user.id;
+            const user = await extendedPrisma.user.findUnique({
+                where: { id: userId },
+            });
+            if (!user) return res.status(404).json({ message: "Usuário não encontrado" });
+
+            const { items } = bodySchema.parse(req.body);
+            const companyId = user.companyId;
+            const ano = currentYear();
+
+            const company = await extendedPrisma.company.findUnique({
+                where: { id: companyId },
+                select: { cnpj: true, name: true },
+            });
+            if (!company) return res.status(404).json({ message: "Empresa não encontrada" });
+
+            const syncedResults = [];
+
+            for (const item of items) {
+                const itemDate = new Date(item.timestamp);
+
+                // Verifica duplicidade no mesmo dia para aquele tipo
+                const existing = await extendedPrisma.checkIn.findFirst({
+                    where: {
+                        userId,
+                        type: item.type,
+                        createdAt: {
+                            gte: startOfDay(itemDate),
+                            lte: endOfDay(itemDate),
+                        },
+                    },
+                });
+
+                if (existing) {
+                    syncedResults.push({
+                        id: item.id,
+                        status: "ALREADY_EXISTS",
+                        checkinId: existing.id,
+                        nsr: existing.nsr,
+                    });
+                    continue;
+                }
+
+                const checkin = await extendedPrisma.$transaction(async (tx) => {
+                    const nsr = await getNextNSR(tx as unknown as Parameters<typeof getNextNSR>[0], companyId, ano);
+                    return tx.checkIn.create({
+                        data: {
+                            type: item.type,
+                            latitude: item.latitude ?? null,
+                            longitude: item.longitude ?? null,
+                            geolocationAccuracy: item.accuracy ?? null,
+                            geolocationDenied: item.latitude == null,
+                            geolocationConsent: item.latitude != null,
+                            nsr,
+                            ano,
+                            userId,
+                            companyId,
+                            employerCnpj: company.cnpj,
+                            createdAt: itemDate,
+                        },
+                    });
+                });
+
+                const comprovante = gerarComprovante({
+                    nsr: checkin.nsr,
+                    companyName: company.name,
+                    companyCnpj: company.cnpj,
+                    employeeName: user.name,
+                    employeeCpf: formatCpfDigits(decryptCpf(user.cpf ?? "")),
+                    checkinType: item.type,
+                    checkinDate: checkin.createdAt,
+                    latitude: item.latitude ?? 0,
+                    longitude: item.longitude ?? 0,
+                });
+
+                syncedResults.push({
+                    id: item.id,
+                    status: "SYNCED",
+                    checkinId: checkin.id,
+                    nsr: checkin.nsr,
+                    comprovante: comprovante.texto,
+                });
+            }
+
+            return res.status(200).json({
+                message: "Sincronização offline concluída com sucesso",
+                synced: syncedResults,
+            });
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                return res.status(400).json({ message: "Dados de sincronização inválidos", errors: error.issues });
+            }
+            console.error("Erro na sincronização offline:", error);
+            return res.status(500).json({ message: "Erro ao sincronizar pontos offline" });
+        }
+    }
 }

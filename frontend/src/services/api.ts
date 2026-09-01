@@ -217,6 +217,28 @@ export const api = {
         method: "POST",
         body: JSON.stringify(data),
       }),
+    syncOffline: (items: Array<{
+      id: string;
+      type: "ENTRY" | "LUNCH_START" | "LUNCH_END" | "EXIT";
+      timestamp: string;
+      latitude?: number | null;
+      longitude?: number | null;
+      accuracy?: number | null;
+      hash?: string;
+    }>) =>
+      fetchApi<{
+        message: string;
+        synced: Array<{
+          id: string;
+          status: string;
+          checkinId: string;
+          nsr: number;
+          comprovante?: string;
+        }>;
+      }>("/checkins/sync-offline", {
+        method: "POST",
+        body: JSON.stringify({ items }),
+      }),
     list: (date?: string) =>
       fetchApi<CheckinResponse[]>(`/checkins${date ? `?date=${date}` : ""}`),
     listByCompany: (date?: string) =>

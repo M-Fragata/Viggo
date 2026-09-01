@@ -1,18 +1,20 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useNavigate } from "react-router"
+import { toast } from "sonner"
 
 import { api } from "../services/api"
 import { LivenessChallenge } from "../components/LivenessChallenge"
 import { useAuth } from "../hooks/useAuth"
 import { useCompany } from "../hooks/useCompany"
 
-import { LogIn, Utensils, Coffee, LogOut, ScanFace, Copy, Check } from "lucide-react"
+import { LogIn, Utensils, Coffee, LogOut, ScanFace, Copy, Check, Radio, WifiOff } from "lucide-react"
 import { PontoPageSkeleton } from "../components/PontoPageSkeleton"
 import { z } from "zod"
 import { Button } from "../components/Button"
 import { PageHeader } from "../components/common/PageHeader"
 import type { CheckinCreateDto } from "../services/api"
 import { preloadFaceModels, areFaceModelsLoaded } from "../utils/faceModels"
+import { saveOfflineCheckin, getPendingOfflineCheckins, removeOfflineCheckin, type OfflineCheckin } from "../utils/offlineQueue"
 
 type ChekinProps = {
     id: string,
@@ -44,6 +46,8 @@ export function PontoPage() {
     const [isPreparingCheckin, setIsPreparingCheckin] = useState(false);
     const [comprovanteText, setComprovanteText] = useState<string | null>(null);
     const [copiedComprovante, setCopiedComprovante] = useState(false);
+    const [offlineRecord, setOfflineRecord] = useState<OfflineCheckin | null>(null);
+    const [isOfflineSuccess, setIsOfflineSuccess] = useState(false);
     const [pendingCheckin, setPendingCheckin] = useState<{
         type: string;
         latitude: number | null;
@@ -280,12 +284,53 @@ export function PontoPage() {
             await handleGetCheckin();
         } catch (error) {
             console.error("Erro ao registrar o ponto:", error);
+
+            // Detecção de falha de conexão ou rede indisponível
+            const isNetworkError =
+                !navigator.onLine ||
+                (error instanceof Error &&
+                    (error.message.includes("fetch") ||
+                     error.message.includes("Network") ||
+                     error.message.includes("Failed") ||
+                     error.message.includes("conexão")));
+
+            if (isNetworkError && user?.id && pendingCheckin?.type) {
+                try {
+                    const offlineItem = await saveOfflineCheckin({
+                        userId: user.id,
+                        userName: user.name,
+                        type: pendingCheckin.type as "ENTRY" | "LUNCH_START" | "LUNCH_END" | "EXIT",
+                        latitude: pendingCheckin.latitude,
+                        longitude: pendingCheckin.longitude,
+                        accuracy: pendingCheckin.accuracy,
+                    });
+
+                    // Mensagem flutuante no padrão de boas-vindas do login
+                    toast.info("Ponto registrado offline!", {
+                        description: "Sua marcação foi salva com segurança no aparelho e será sincronizada automaticamente assim que a conexão retornar.",
+                        duration: 6000,
+                    });
+
+                    setIsRegistering(false);
+                    setOfflineRecord(offlineItem);
+                    setIsOfflineSuccess(true);
+                    setIsSuccess(true);
+                    setPendingCheckin(null);
+                    setFaceToken(null);
+                    return;
+                } catch (offlineErr) {
+                    console.error("Falha ao gravar contingência offline:", offlineErr);
+                }
+            }
+
             setIsRegistering(false);
             setVideoOpen(false);
             setPendingCheckin(null);
             setFaceToken(null);
             setComprovanteText(null);
-            setMessage(error instanceof Error ? error.message : "Erro ao registrar o ponto. Tente novamente.");
+            const errorMsg = error instanceof Error ? error.message : "Erro ao registrar o ponto. Tente novamente.";
+            setMessage(errorMsg);
+            toast.error(errorMsg);
         }
     }
 
@@ -313,11 +358,18 @@ export function PontoPage() {
 
         } catch (error) {
             console.error("Erro ao buscar os pontos:", error);
-            alert(error instanceof Error ? error.message : "Erro ao buscar os pontos. Tente novamente.");
+            if (navigator.onLine) {
+                toast.error(error instanceof Error ? error.message : "Erro ao buscar os pontos. Tente novamente.");
+            }
         } finally {
             setIsLoadingCheckins(false);
         }
     }, [navigate, token]);
+
+    const handleGetCheckinRef = useRef(handleGetCheckin);
+    useEffect(() => {
+        handleGetCheckinRef.current = handleGetCheckin;
+    }, [handleGetCheckin]);
 
     useEffect(() => {
         // Pré-carrega os modelos em background assim que a página é acessada
@@ -325,7 +377,46 @@ export function PontoPage() {
             console.error("Erro ao pré-carregar modelos face-api no PontoPage:", err);
         });
         handleGetCheckin();
-    }, [handleGetCheckin]);
+
+        const syncPendingOffline = async () => {
+            if (!user?.id || !token || !navigator.onLine) return;
+            try {
+                const pending = await getPendingOfflineCheckins(user.id);
+                if (pending.length === 0) return;
+
+                const itemsToSync = pending.map((p) => ({
+                    id: p.id,
+                    type: p.type,
+                    timestamp: p.timestamp,
+                    latitude: p.latitude,
+                    longitude: p.longitude,
+                    accuracy: p.accuracy,
+                    hash: p.hash,
+                }));
+
+                const result = await api.checkins.syncOffline(itemsToSync);
+                for (const item of result.synced) {
+                    await removeOfflineCheckin(item.id);
+                }
+
+                toast.success("Marcações sincronizadas!", {
+                    description: `${result.synced.length} ponto(s) gravados offline foram sincronizados com sucesso no servidor.`,
+                });
+                handleGetCheckinRef.current();
+            } catch (err) {
+                console.warn("Tentativa de sincronização offline postergada:", err);
+            }
+        };
+
+        syncPendingOffline();
+
+        const handleOnline = () => {
+            syncPendingOffline();
+        };
+
+        window.addEventListener("online", handleOnline);
+        return () => window.removeEventListener("online", handleOnline);
+    }, [handleGetCheckin, user?.id, token]);
 
     useEffect(() => {
         if (videoOpen) {
@@ -418,48 +509,115 @@ export function PontoPage() {
                         {isSuccess && (
                             <div className="absolute inset-0 z-[120] bg-emerald-600/95 backdrop-blur-sm flex flex-col items-center justify-center animate-in zoom-in duration-300 p-4 sm:p-6">
                                 <div className="bg-white dark:bg-[#111113] rounded-3xl p-5 md:p-6 shadow-2xl max-w-md w-full border border-slate-200 dark:border-white/10 flex flex-col max-h-[85vh]">
-                                    <div className="flex items-center justify-center gap-3 mb-3">
-                                        <span className="text-3xl">✅</span>
-                                        <div>
-                                            <h2 className="text-emerald-700 dark:text-emerald-400 text-lg font-bold">Ponto Registrado com Sucesso!</h2>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400">Comprovante emitido (Portaria 671/MTP)</p>
-                                        </div>
-                                    </div>
-                                    {comprovanteText && (
-                                        <div className="relative flex-1 min-h-0 my-2">
-                                            <pre className="text-[10px] sm:text-xs text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-black/40 rounded-xl p-3 sm:p-4 whitespace-pre-wrap font-mono leading-relaxed border border-slate-200 dark:border-white/10 max-h-[300px] overflow-y-auto select-all">
-                                                {comprovanteText}
-                                            </pre>
-                                        </div>
+                                    {isOfflineSuccess && offlineRecord ? (
+                                        <>
+                                            <div className="flex items-center justify-center gap-3 mb-3">
+                                                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
+                                                    <Radio size={24} className="animate-pulse" />
+                                                </div>
+                                                <div>
+                                                    <div className="flex items-center gap-2">
+                                                        <h2 className="text-amber-600 dark:text-amber-400 text-lg font-bold">Ponto Registrado Offline!</h2>
+                                                    </div>
+                                                    <p className="text-xs text-slate-500 dark:text-slate-400">Gravado localmente com integridade SHA-256</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-slate-50 dark:bg-black/40 rounded-2xl p-4 my-2 border border-slate-200 dark:border-white/10 space-y-2 text-xs">
+                                                <div className="flex justify-between py-1 border-b border-slate-200/60 dark:border-white/5">
+                                                    <span className="text-slate-500">Tipo de Marcação:</span>
+                                                    <span className="font-bold text-slate-800 dark:text-slate-200">
+                                                        {offlineRecord.type === "ENTRY" ? "Entrada" : offlineRecord.type === "LUNCH_START" ? "Início Almoço" : offlineRecord.type === "LUNCH_END" ? "Retorno Almoço" : "Saída"}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between py-1 border-b border-slate-200/60 dark:border-white/5">
+                                                    <span className="text-slate-500">Horário Gravado:</span>
+                                                    <span className="font-bold text-slate-800 dark:text-slate-200">
+                                                        {new Date(offlineRecord.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between py-1 border-b border-slate-200/60 dark:border-white/5">
+                                                    <span className="text-slate-500">Biometria Facial:</span>
+                                                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">Validada com Vivacidade ✅</span>
+                                                </div>
+                                                {offlineRecord.latitude != null && (
+                                                    <div className="flex justify-between py-1">
+                                                        <span className="text-slate-500">Geolocalização:</span>
+                                                        <span className="text-slate-700 dark:text-slate-300 font-mono text-[11px]">
+                                                            {offlineRecord.latitude.toFixed(4)}, {offlineRecord.longitude?.toFixed(4)}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 my-2 text-xs text-amber-800 dark:text-amber-200 flex items-start gap-2">
+                                                <WifiOff size={16} className="shrink-0 mt-0.5 text-amber-500" />
+                                                <p className="leading-relaxed">
+                                                    O comprovante fiscal definitivo com o número de registro (NSR) será gerado e ficará disponível para consulta e download assim que a conexão com a internet retornar.
+                                                </p>
+                                            </div>
+
+                                            <div className="mt-3 pt-2 border-t border-slate-100 dark:border-white/10">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setVideoOpen(false);
+                                                        setIsSuccess(false);
+                                                        setIsOfflineSuccess(false);
+                                                        setOfflineRecord(null);
+                                                    }}
+                                                    className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-900/20 active:scale-95 cursor-pointer uppercase tracking-wider text-center"
+                                                >
+                                                    Entendido / Concluir
+                                                </button>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="flex items-center justify-center gap-3 mb-3">
+                                                <span className="text-3xl">✅</span>
+                                                <div>
+                                                    <h2 className="text-emerald-700 dark:text-emerald-400 text-lg font-bold">Ponto Registrado com Sucesso!</h2>
+                                                    <p className="text-xs text-slate-500 dark:text-slate-400">Comprovante emitido (Portaria 671/MTP)</p>
+                                                </div>
+                                            </div>
+                                            {comprovanteText && (
+                                                <div className="relative flex-1 min-h-0 my-2">
+                                                    <pre className="text-[10px] sm:text-xs text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-black/40 rounded-xl p-3 sm:p-4 whitespace-pre-wrap font-mono leading-relaxed border border-slate-200 dark:border-white/10 max-h-[300px] overflow-y-auto select-all">
+                                                        {comprovanteText}
+                                                    </pre>
+                                                </div>
+                                            )}
+                                            <div className="flex items-center gap-3 mt-4 pt-2 border-t border-slate-100 dark:border-white/10">
+                                                {comprovanteText && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            navigator.clipboard.writeText(comprovanteText);
+                                                            setCopiedComprovante(true);
+                                                            setTimeout(() => setCopiedComprovante(false), 2000);
+                                                        }}
+                                                        className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 text-xs font-semibold transition-all cursor-pointer"
+                                                    >
+                                                        {copiedComprovante ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
+                                                        <span>{copiedComprovante ? "Copiado!" : "Copiar Comprovante"}</span>
+                                                    </button>
+                                                )}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setVideoOpen(false);
+                                                        setIsSuccess(false);
+                                                        setComprovanteText(null);
+                                                        setCopiedComprovante(false);
+                                                    }}
+                                                    className="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-900/20 active:scale-95 cursor-pointer uppercase tracking-wider text-center"
+                                                >
+                                                    Concluir
+                                                </button>
+                                            </div>
+                                        </>
                                     )}
-                                    <div className="flex items-center gap-3 mt-4 pt-2 border-t border-slate-100 dark:border-white/10">
-                                        {comprovanteText && (
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    navigator.clipboard.writeText(comprovanteText);
-                                                    setCopiedComprovante(true);
-                                                    setTimeout(() => setCopiedComprovante(false), 2000);
-                                                }}
-                                                className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 text-xs font-semibold transition-all cursor-pointer"
-                                            >
-                                                {copiedComprovante ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
-                                                <span>{copiedComprovante ? "Copiado!" : "Copiar Comprovante"}</span>
-                                            </button>
-                                        )}
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setVideoOpen(false);
-                                                setIsSuccess(false);
-                                                setComprovanteText(null);
-                                                setCopiedComprovante(false);
-                                            }}
-                                            className="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-900/20 active:scale-95 cursor-pointer uppercase tracking-wider text-center"
-                                        >
-                                            Concluir
-                                        </button>
-                                    </div>
                                 </div>
                             </div>
                         )}

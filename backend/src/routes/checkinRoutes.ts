@@ -13,6 +13,7 @@ const afdController = new AfdController();
 const aejController = new AejController();
 
 checkinRoutes.post("/", authMiddleware, checkinLimiter, checkinController.createCheckin);
+checkinRoutes.post("/sync-offline", authMiddleware, checkinLimiter, checkinController.syncOfflineCheckins);
 checkinRoutes.get("/export/afd", authMiddleware, requireEnterpriseAdmin, afdController.exportAfd);
 checkinRoutes.get("/export/aej", authMiddleware, requireEnterpriseAdmin, aejController.exportAej);
 checkinRoutes.get("/export/relatorio-mensal", authMiddleware, requireEnterpriseAdmin, checkinController.exportRelatorioMensal);
