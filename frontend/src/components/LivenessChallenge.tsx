@@ -335,10 +335,17 @@ export function LivenessChallenge({
     }
   }, [ringMotionVal, onComplete, steps.length]);
 
+  // Dispara onModelsLoaded imediatamente se os modelos já estiverem na memória ao montar.
+  // useLayoutEffect garante que o callback ocorra antes do primeiro paint — sem delay visual.
+  useLayoutEffect(() => {
+    if (areFaceModelsLoaded()) {
+      onModelsLoadedRef.current?.();
+    }
+  }, []);
+
   useEffect(() => {
     if (areFaceModelsLoaded()) {
-      setModelsLoaded(true);
-      onModelsLoadedRef.current?.();
+      // Já carregados — state já foi inicializado corretamente no useState
       return;
     }
 

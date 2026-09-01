@@ -1,24 +1,34 @@
 import * as faceapi from 'face-api.js';
 
+/** Promise compartilhada enquanto o carregamento está em andamento. Evita downloads duplicados. */
 let modelsPromise: Promise<void> | null = null;
-let modelsLoaded = false;
 
 /**
- * Retorna true se os modelos do face-api já estiverem carregados na memória.
+ * Retorna true se os três modelos já estão carregados na memória do TensorFlow.
+ * Usa o getter .isLoaded do próprio face-api como fonte de verdade, evitando
+ * dessincronias entre a flag interna e o estado real dos modelos.
  */
 export function areFaceModelsLoaded(): boolean {
-  return modelsLoaded;
+  return (
+    faceapi.nets.tinyFaceDetector.isLoaded &&
+    faceapi.nets.faceLandmark68Net.isLoaded &&
+    faceapi.nets.faceRecognitionNet.isLoaded
+  );
 }
 
 /**
- * Pré-carrega os modelos da IA facial (TinyFaceDetector, FaceLandmarks68, FaceRecognition)
- * mantendo uma única Promise em memória para evitar carregamento concorrente ou duplicado.
+ * Pré-carrega os modelos da IA facial (TinyFaceDetector, FaceLandmarks68, FaceRecognition).
+ * - Idempotente: retorna imediatamente se já carregados.
+ * - Thread-safe: múltiplas chamadas concorrentes compartilham a mesma Promise,
+ *   prevenindo downloads duplicados.
  */
 export function preloadFaceModels(): Promise<void> {
-  if (modelsLoaded) {
+  // Já carregados — retorno imediato sem I/O
+  if (areFaceModelsLoaded()) {
     return Promise.resolve();
   }
 
+  // Carregamento já em andamento — retorna a mesma Promise
   if (modelsPromise) {
     return modelsPromise;
   }
@@ -31,10 +41,11 @@ export function preloadFaceModels(): Promise<void> {
     faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
   ])
     .then(() => {
-      modelsLoaded = true;
+      // Promise concluída — limpa referência para liberar memória
+      modelsPromise = null;
     })
     .catch((err) => {
-      // Reseta a promise caso haja falha de rede para permitir novas tentativas
+      // Reseta em caso de falha de rede para permitir novas tentativas
       modelsPromise = null;
       console.error('Erro ao carregar modelos do face-api:', err);
       throw err;
