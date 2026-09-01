@@ -23,8 +23,11 @@ export function RegisterFace() {
         });
 
         const initCamera = async () => {
-            setVideoOpen(true);
             try {
+                if (!areFaceModelsLoaded()) {
+                    await preloadFaceModels();
+                }
+
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: {
                         width: { ideal: 640 },
@@ -32,6 +35,10 @@ export function RegisterFace() {
                         facingMode: "user"
                     }
                 });
+
+                setVideoOpen(true);
+                setShowLiveness(true);
+                setMessage("Centralize seu rosto");
 
                 if (videoRef.current) {
                     videoRef.current.srcObject = stream;
@@ -45,11 +52,8 @@ export function RegisterFace() {
                         }
                     });
 
-                    await new Promise(resolve => setTimeout(resolve, 500));
+                    await new Promise(resolve => setTimeout(resolve, 300));
                 }
-
-                setShowLiveness(true);
-                setMessage(areFaceModelsLoaded() ? "Centralize seu rosto" : "Carregando validação...");
             } catch (err) {
                 console.error("Erro ao acessar a câmera:", err);
                 alert("Câmera não encontrada ou permissão negada. Permita câmera e atualize.");
@@ -115,7 +119,7 @@ export function RegisterFace() {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center p-4">
                 <div className="animate-spin rounded-full h-12 w-12 border-4 border-emerald-500 border-t-transparent" />
-                <p className="mt-4 text-gray-600">Iniciando câmera...</p>
+                <p className="mt-4 text-slate-600 dark:text-slate-300 font-medium">Preparando validação facial...</p>
             </div>
         );
     }

@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { LogIn, Utensils, Coffee, LogOut, MonitorSmartphone, ShieldCheck, ArrowLeft, Loader2, Camera } from "lucide-react";
+import { LogIn, Utensils, Coffee, LogOut, MonitorSmartphone, ShieldCheck, ArrowLeft, Loader2, Camera, User } from "lucide-react";
 import { toast } from "sonner";
 import { api, ApiError, type TotemVerifyResponse } from "../../services/api";
 import { LivenessChallenge } from "../../components/LivenessChallenge";
-import { preloadFaceModels } from "../../utils/faceModels";
+import { preloadFaceModels, areFaceModelsLoaded } from "../../utils/faceModels";
 
 type CheckinType = "ENTRY" | "LUNCH_START" | "LUNCH_END" | "EXIT";
 
@@ -16,8 +16,8 @@ const CHECKIN_OPTIONS: { label: string; type: CheckinType; icon: React.ReactNode
 
 type Screen =
   | { name: "idle" }
+  | { name: "login" }
   | { name: "select-type" }
-  | { name: "login"; type: CheckinType }
   | { name: "camera" }
   | { name: "register-face" }
   | { name: "success"; comprovante: string }
@@ -35,6 +35,7 @@ export function TotemPage() {
   const [faceToken, setFaceToken] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
+  const [checkinsToday, setCheckinsToday] = useState<Array<{ id: string; type: CheckinType; createdAt: string }>>([]);
   const [pendingType, setPendingType] = useState<CheckinType | null>(null);
   const [pendingCoords, setPendingCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [pendingUserId, setPendingUserId] = useState<string | null>(null);
@@ -97,6 +98,7 @@ export function TotemPage() {
     setFaceToken(null);
     setUserId(null);
     setUserName(null);
+    setCheckinsToday([]);
     setPendingType(null);
     setPendingCoords(null);
     setPendingUserId(null);
@@ -111,16 +113,20 @@ export function TotemPage() {
 
   async function startCamera(targetScreen: "camera" | "register-face" = "camera") {
     try {
+      if (!areFaceModelsLoaded()) {
+        await preloadFaceModels();
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
-          width: { ideal: 640 },
-          height: { ideal: 480 },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
           facingMode: "user",
         },
       });
 
       streamRef.current = stream;
-      setMessage("Iniciando validação...");
+      setMessage(targetScreen === "register-face" ? "Centralize seu rosto para o cadastro" : "Centralize seu rosto");
       if (targetScreen === "register-face") {
         setScreen({ name: "register-face" });
       } else {
@@ -128,8 +134,10 @@ export function TotemPage() {
       }
     } catch (err) {
       console.error("Erro ao acessar a webcam:", err);
-      setError("Não foi possível acessar a câmera. Verifique as permissões do dispositivo.");
-      setScreen({ name: "login", type: pendingType ?? "ENTRY" });
+      const msg = "Não foi possível acessar a câmera. Verifique as permissões do dispositivo.";
+      setError(msg);
+      toast.error(msg);
+      setScreen({ name: "select-type" });
     }
   }
 
@@ -142,37 +150,12 @@ export function TotemPage() {
       setFaceToken(data.faceToken);
       setUserId(data.userId);
       setUserName(data.userName);
+      setCheckinsToday((data.checkinsToday as Array<{ id: string; type: CheckinType; createdAt: string }>) || []);
       if (data.totemAuthMode) {
         setTotemAuthMode(data.totemAuthMode);
       }
       setIsVerifying(false);
-
-      if (data.totemAuthMode === "CREDENTIALS_ONLY") {
-        setIsRegistering(true);
-        setMessage("Registrando ponto...");
-        let coords = pendingCoords;
-        if (!coords) {
-          try {
-            coords = await getLocation();
-            setPendingCoords(coords);
-          } catch {
-            coords = { latitude: 0, longitude: 0 };
-          }
-        }
-        const response = await api.totem.checkin({
-          userId: data.userId,
-          type: pendingType ?? "ENTRY",
-          latitude: coords.latitude,
-          longitude: coords.longitude,
-          faceToken: data.faceToken,
-        });
-        toast.success("Ponto registrado com sucesso!");
-        setScreen({ name: "success", comprovante: response.comprovante });
-        setIsRegistering(false);
-        return;
-      }
-
-      await startCamera();
+      setScreen({ name: "select-type" });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Erro ao verificar credenciais.";
       setError(msg);
@@ -183,7 +166,6 @@ export function TotemPage() {
       }
       setIsVerifying(false);
       stopCamera();
-      setScreen({ name: "login", type: pendingType ?? "ENTRY" });
     }
   }
 
@@ -197,7 +179,19 @@ export function TotemPage() {
 
   async function handleStartFaceRegister() {
     setError(null);
-    await startCamera("register-face");
+    setIsVerifying(true);
+    try {
+      if (!areFaceModelsLoaded()) {
+        toast.info("Carregando validação facial...");
+        await preloadFaceModels();
+      }
+      await startCamera("register-face");
+    } catch (err) {
+      console.error("Erro ao iniciar cadastro facial:", err);
+      toast.error("Falha ao carregar modelos para cadastro facial.");
+    } finally {
+      setIsVerifying(false);
+    }
   }
 
   async function handleFaceRegistered(descriptor: Float32Array) {
@@ -221,7 +215,7 @@ export function TotemPage() {
       setError(msg);
       toast.error(msg);
       setIsRegistering(false);
-      setScreen({ name: "login", type: pendingType ?? "ENTRY" });
+      setScreen({ name: "login" });
     }
   }
 
@@ -258,19 +252,14 @@ export function TotemPage() {
     stopCamera();
     toast.info("Validação facial cancelada");
     setError("Validação cancelada");
-    setScreen({ name: "login", type: pendingType ?? "ENTRY" });
+    setScreen({ name: "select-type" });
   }
 
   function handleFaceRegisterCancel() {
     stopCamera();
     toast.info("Cadastro facial cancelado");
     setError("Cadastro facial cancelado");
-    setScreen({ name: "login", type: pendingType ?? "ENTRY" });
-  }
-
-  function handleSelectType(type: CheckinType) {
-    setPendingType(type);
-    setScreen({ name: "login", type });
+    setScreen({ name: "login" });
   }
 
   function handleExit() {
@@ -341,19 +330,62 @@ export function TotemPage() {
 
   async function handleStartCheckin() {
     setError(null);
-    setScreen({ name: "select-type" });
+    setScreen({ name: "login" });
   }
 
   async function handlePickType(type: CheckinType) {
+    setPendingType(type);
     setIsVerifying(true);
     setError(null);
+
+    let coords = pendingCoords;
+    if (!coords) {
+      try {
+        coords = await getLocation();
+        setPendingCoords(coords);
+      } catch (err) {
+        console.warn("Localização não obtida no totem:", err);
+        coords = { latitude: 0, longitude: 0 };
+        setPendingCoords(coords);
+      }
+    }
+
+    if (totemAuthMode === "CREDENTIALS_ONLY") {
+      if (!userId || !faceToken) {
+        setIsVerifying(false);
+        return;
+      }
+      setIsRegistering(true);
+      setMessage("Registrando ponto...");
+      try {
+        const response = await api.totem.checkin({
+          userId,
+          type,
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          faceToken,
+        });
+        toast.success("Ponto registrado com sucesso!");
+        setScreen({ name: "success", comprovante: response.comprovante });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Erro ao registrar ponto.";
+        toast.error(msg, { duration: 6000 });
+        setError(msg);
+      } finally {
+        setIsRegistering(false);
+        setIsVerifying(false);
+      }
+      return;
+    }
+
     try {
-      const coords = await getLocation();
-      setPendingCoords(coords);
-      handleSelectType(type);
+      if (!areFaceModelsLoaded()) {
+        await preloadFaceModels();
+      }
+      await startCamera("camera");
     } catch (err) {
-      console.error("Erro ao obter localização:", err);
-      setError("Erro ao obter localização. Permita o acesso e tente novamente.");
+      console.error("Erro ao preparar câmera:", err);
+      toast.error("Falha ao inicializar validação facial. Tente novamente.");
     } finally {
       setIsVerifying(false);
     }
@@ -363,7 +395,7 @@ export function TotemPage() {
   const date = clock.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col overflow-hidden">
+    <div className="min-h-screen bg-slate-950 text-white flex flex-col overflow-hidden select-none">
       <div className="flex-1 flex flex-col">
         {screen.name === "idle" && (
           <div className="flex-1 flex flex-col items-center justify-center gap-10 p-8">
@@ -389,7 +421,7 @@ export function TotemPage() {
 
             <button
               onClick={handleExit}
-              className="flex items-center gap-2 text-slate-500 hover:text-slate-300 transition-colors text-sm"
+              className="flex items-center gap-2 text-slate-500 hover:text-slate-300 transition-colors text-sm cursor-pointer"
             >
               <ShieldCheck size={16} />
               Sair do modo totem (administrador)
@@ -397,54 +429,22 @@ export function TotemPage() {
           </div>
         )}
 
-        {screen.name === "select-type" && (
-          <div className="flex-1 flex flex-col items-center justify-center gap-8 p-8">
-            <div className="text-center space-y-2">
-              <h2 className="text-3xl font-bold">Selecione o tipo de marcação</h2>
-              <p className="text-slate-400">Identifique-se após escolher o tipo</p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-4xl h-full">
-              {CHECKIN_OPTIONS.map((option) => (
-                <button
-                  key={option.type}
-                  onClick={() => handlePickType(option.type)}
-                  disabled={isVerifying}
-                  className="bg-slate-900 border border-slate-700 hover:border-emerald-400 rounded-2xl p-6 flex flex-col items-center gap-4 transition-all hover:scale-[1.02] disabled:opacity-60"
-                >
-                  {option.icon}
-                  <span className="text-lg font-bold">{option.label}</span>
-                </button>
-              ))}
-            </div>
-
-            <button
-              onClick={() => setScreen({ name: "idle" })}
-              className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
-            >
-              <ArrowLeft size={18} />
-              Voltar
-            </button>
-          </div>
-        )}
-
         {screen.name === "login" && (
-          <div className="flex-1 flex flex-col items-center justify-center gap-8 p-8">
+          <div className="flex-1 flex flex-col items-center justify-center gap-8 p-6 md:p-8 max-w-xl mx-auto w-full">
             <div className="text-center space-y-2">
-              <h2 className="text-3xl font-bold">
-                Identificação do funcionário
-              </h2>
-              <p className="text-slate-400">
-                {CHECKIN_OPTIONS.find((o) => o.type === screen.type)?.label} · {userName ?? "Informe email e senha"}
-              </p>
+              <div className="w-14 h-14 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto mb-2">
+                <User size={28} />
+              </div>
+              <h2 className="text-3xl font-bold">Identificação</h2>
+              <p className="text-slate-400">Informe seu email e senha para acessar os pontos</p>
             </div>
 
-            <div className="w-full max-w-5xl space-y-4">
+            <div className="w-full space-y-4">
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email do funcionário"
+                placeholder="Email do colaborador"
                 autoFocus
                 className="w-full px-4 py-4 rounded-xl bg-slate-900 border border-slate-700 focus:border-emerald-400 focus:outline-none text-lg placeholder:text-slate-500"
               />
@@ -467,31 +467,31 @@ export function TotemPage() {
                 <button
                   onClick={handleStartFaceRegister}
                   disabled={isVerifying}
-                  className="w-full py-4 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full py-4 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-sky-500/20 active:scale-95"
                 >
                   <Camera size={20} />
-                  Cadastrar Facial
+                  Cadastrar Biometria Facial
                 </button>
               )}
 
               <button
                 onClick={handleVerify}
                 disabled={isVerifying || !email || !password}
-                className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-500/20 active:scale-95"
               >
                 {isVerifying ? (
                   <>
                     <Loader2 size={20} className="animate-spin" />
-                    Verificando...
+                    Identificando...
                   </>
                 ) : (
-                  "Verificar e continuar"
+                  "Continuar"
                 )}
               </button>
 
               <button
                 onClick={resetToIdle}
-                className="w-full text-slate-400 hover:text-white transition-colors text-sm py-2 flex items-center justify-center gap-2"
+                className="w-full text-slate-400 hover:text-white transition-colors text-sm py-2 flex items-center justify-center gap-2 cursor-pointer"
               >
                 <ArrowLeft size={16} />
                 Cancelar
@@ -500,23 +500,88 @@ export function TotemPage() {
           </div>
         )}
 
+        {screen.name === "select-type" && (
+          <div className="flex-1 flex flex-col items-center justify-center gap-8 p-6 md:p-8 max-w-4xl mx-auto w-full">
+            <div className="text-center space-y-2">
+              <h2 className="text-3xl font-bold">
+                {userName ? `Olá, ${userName}` : "Selecione a marcação"}
+              </h2>
+              <p className="text-slate-400">
+                Selecione o tipo de ponto a ser registrado hoje
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+              {CHECKIN_OPTIONS.map((option) => {
+                const existing = checkinsToday.find((c) => c.type === option.type);
+                const hasRegistered = !!existing;
+                const checkinTime = existing
+                  ? new Date(existing.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                  : null;
+
+                const isCurrentPreparing = isVerifying && pendingType === option.type;
+
+                return (
+                  <button
+                    key={option.type}
+                    onClick={() => !hasRegistered && handlePickType(option.type)}
+                    disabled={hasRegistered || isVerifying}
+                    className={`rounded-2xl p-6 flex flex-col items-center justify-between gap-4 transition-all border ${
+                      hasRegistered
+                        ? "bg-slate-900/40 border-slate-800 opacity-60 cursor-not-allowed"
+                        : isCurrentPreparing
+                        ? "bg-emerald-950/40 border-emerald-500 scale-[1.01] cursor-wait shadow-lg shadow-emerald-500/10"
+                        : "bg-slate-900 border-slate-700 hover:border-emerald-400 hover:scale-[1.02] cursor-pointer shadow-lg active:scale-95"
+                    }`}
+                  >
+                    <div className="text-3xl">
+                      {isCurrentPreparing ? <Loader2 className="animate-spin text-emerald-400" size={32} /> : option.icon}
+                    </div>
+                    <div className="text-center space-y-1">
+                      <span className="text-xl font-bold block">{option.label}</span>
+                      <span className={`text-xs font-medium block ${hasRegistered ? "text-slate-400" : "text-emerald-400"}`}>
+                        {hasRegistered
+                          ? `✅ Registrado às ${checkinTime}`
+                          : isCurrentPreparing
+                          ? "Preparando câmera..."
+                          : "Toque para registrar"}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={resetToIdle}
+              className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors py-2 px-4 rounded-xl hover:bg-slate-900 cursor-pointer"
+            >
+              <ArrowLeft size={18} />
+              Cancelar / Trocar Colaborador
+            </button>
+          </div>
+        )}
+
         {screen.name === "camera" && (
-          <div className="relative flex-1 bg-black">
+          <div className="fixed inset-0 w-full h-full bg-black z-50 overflow-hidden flex flex-col items-center justify-center">
+            {/* Barra superior de instruções */}
             <div className="absolute top-0 left-0 right-0 z-[100] bg-emerald-500 w-full shadow-lg p-3 flex items-center justify-center">
               <p className="text-white text-sm md:text-lg font-bold text-center uppercase tracking-wider">
                 {message}
               </p>
             </div>
 
+            {/* Vídeo em tela cheia com preenchimento total e sem letterbox */}
             <video
               ref={handleVideoRef}
               autoPlay
               muted
               playsInline
-              className="w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-cover"
               style={{ transform: "scaleX(-1)" }}
             />
 
+            {/* Máscara oval de centralização */}
             <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
               <div
                 className="md:w-[360px] md:h-[460px] w-[80%] h-[60%] shadow-[0_0_0_9999px_rgba(0,0,0,0.7)] border-4 border-dashed border-emerald-400/60"
@@ -539,6 +604,16 @@ export function TotemPage() {
               />
             )}
 
+            {/* Botão de Cancelar no rodapé da câmera */}
+            <div className="absolute bottom-6 left-0 right-0 z-[100] flex justify-center px-4 pointer-events-auto">
+              <button
+                onClick={handleFaceCancel}
+                className="px-6 py-3 bg-slate-900/80 hover:bg-slate-900 border border-white/20 text-white rounded-full font-bold transition-all active:scale-95 text-sm cursor-pointer shadow-xl backdrop-blur-sm"
+              >
+                Cancelar
+              </button>
+            </div>
+
             {isRegistering && (
               <div className="absolute inset-0 z-[110] bg-emerald-500/95 flex flex-col items-center justify-center">
                 <Loader2 size={48} className="animate-spin text-white mb-4" />
@@ -549,49 +624,62 @@ export function TotemPage() {
           </div>
         )}
 
-            {screen.name === "register-face" && (
-              <div className="relative flex-1 bg-black">
-                <div className="absolute top-0 left-0 right-0 z-[100] bg-sky-500 w-full shadow-lg p-3 flex items-center justify-center">
-                  <p className="text-white text-sm md:text-lg font-bold text-center uppercase tracking-wider">
-                    {message}
-                  </p>
-                </div>
+        {screen.name === "register-face" && (
+          <div className="fixed inset-0 w-full h-full bg-black z-50 overflow-hidden flex flex-col items-center justify-center">
+            {/* Barra superior de instruções em azul */}
+            <div className="absolute top-0 left-0 right-0 z-[100] bg-sky-500 w-full shadow-lg p-3 flex items-center justify-center">
+              <p className="text-white text-sm md:text-lg font-bold text-center uppercase tracking-wider">
+                {message}
+              </p>
+            </div>
 
-                <video
-                  ref={handleVideoRef}
-                  autoPlay
-                  muted
-                  playsInline
-                  className="w-full h-full object-cover"
-                  style={{ transform: "scaleX(-1)" }}
-                />
+            {/* Vídeo em tela cheia */}
+            <video
+              ref={handleVideoRef}
+              autoPlay
+              muted
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover"
+              style={{ transform: "scaleX(-1)" }}
+            />
 
-                <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
-                  <div
-                    className="md:w-[360px] md:h-[460px] w-[80%] h-[60%] shadow-[0_0_0_9999px_rgba(0,0,0,0.7)] border-4 border-dashed border-sky-400/60"
-                    style={{ borderRadius: "50% / 40%" }}
-                  />
-                </div>
+            {/* Máscara oval de centralização */}
+            <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
+              <div
+                className="md:w-[360px] md:h-[460px] w-[80%] h-[60%] shadow-[0_0_0_9999px_rgba(0,0,0,0.7)] border-4 border-dashed border-sky-400/60"
+                style={{ borderRadius: "50% / 40%" }}
+              />
+            </div>
 
-                <LivenessChallenge
-                  videoRef={videoRef}
-                  onComplete={handleFaceRegistered}
-                  onCancel={handleFaceRegisterCancel}
-                  onModelsLoaded={() => setMessage("Centralize seu rosto para o cadastro facial")}
-                  onStepChange={(msg) => setMessage(msg)}
-                />
+            <LivenessChallenge
+              videoRef={videoRef}
+              onComplete={handleFaceRegistered}
+              onCancel={handleFaceRegisterCancel}
+              onModelsLoaded={() => setMessage("Centralize seu rosto para o cadastro facial")}
+              onStepChange={(msg) => setMessage(msg)}
+            />
 
-                {isRegistering && (
-                  <div className="absolute inset-0 z-[110] bg-sky-500/95 flex flex-col items-center justify-center">
-                    <Loader2 size={48} className="animate-spin text-white mb-4" />
-                    <h2 className="text-white text-2xl font-bold">Salvando Cadastro...</h2>
-                    <p className="text-sky-200 mt-2">{message}</p>
-                  </div>
-                )}
+            {/* Botão de Cancelar no rodapé da câmera */}
+            <div className="absolute bottom-6 left-0 right-0 z-[100] flex justify-center px-4 pointer-events-auto">
+              <button
+                onClick={handleFaceRegisterCancel}
+                className="px-6 py-3 bg-slate-900/80 hover:bg-slate-900 border border-white/20 text-white rounded-full font-bold transition-all active:scale-95 text-sm cursor-pointer shadow-xl backdrop-blur-sm"
+              >
+                Cancelar
+              </button>
+            </div>
+
+            {isRegistering && (
+              <div className="absolute inset-0 z-[110] bg-sky-500/95 flex flex-col items-center justify-center">
+                <Loader2 size={48} className="animate-spin text-white mb-4" />
+                <h2 className="text-white text-2xl font-bold">Salvando Cadastro...</h2>
+                <p className="text-sky-200 mt-2">{message}</p>
               </div>
             )}
+          </div>
+        )}
 
-            {screen.name === "success" && (
+        {screen.name === "success" && (
           <div className="flex-1 flex flex-col items-center justify-center gap-6 p-8">
             <div className="bg-white rounded-2xl p-6 shadow-xl max-w-sm w-full">
               <div className="flex items-center justify-center gap-2 mb-4">
@@ -604,7 +692,7 @@ export function TotemPage() {
             </div>
             <button
               onClick={resetToIdle}
-              className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-8 py-4 rounded-2xl transition-all"
+              className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-8 py-4 rounded-2xl transition-all cursor-pointer shadow-lg shadow-emerald-500/20 active:scale-95"
             >
               Finalizar
             </button>

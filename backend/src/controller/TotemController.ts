@@ -236,12 +236,30 @@ export class TotemController {
             faceTokens.set(token, { descriptor, expiresAt, userId: user.id });
             setTimeout(() => faceTokens.delete(token), 30_000);
 
+            const today = new Date();
+            const checkinsHoje = await extendedPrisma.checkIn.findMany({
+                where: {
+                    userId: user.id,
+                    createdAt: {
+                        gte: startOfDay(today),
+                        lte: endOfDay(today),
+                    },
+                },
+                select: {
+                    id: true,
+                    type: true,
+                    createdAt: true,
+                },
+                orderBy: { createdAt: "asc" },
+            });
+
             return res.json({
                 faceToken: token,
                 expiresIn: 30,
                 userId: user.id,
                 userName: user.name,
                 totemAuthMode,
+                checkinsToday: checkinsHoje,
             });
         } catch (error) {
             if (error instanceof z.ZodError) {

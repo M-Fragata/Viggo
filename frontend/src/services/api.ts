@@ -1118,6 +1118,11 @@ export interface TotemVerifyResponse {
   userId: string;
   userName: string;
   totemAuthMode?: TotemAuthMode;
+  checkinsToday?: Array<{
+    id: string;
+    type: "ENTRY" | "LUNCH_START" | "LUNCH_END" | "EXIT";
+    createdAt: string;
+  }>;
 }
 
 export interface TotemCheckinDto {

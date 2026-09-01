@@ -175,10 +175,11 @@ export function PontoPage() {
             }
 
             setFaceToken(data.token);
-            setVideoOpen(true);
-            setShowLiveness(true);
-            setHeaderIsError(false);
-            setMessage(areFaceModelsLoaded() ? "Centralize seu rosto" : "Iniciando validação...");
+
+            // Garante que os modelos de IA estejam 100% carregados antes de abrir a câmera
+            if (!areFaceModelsLoaded()) {
+                await preloadFaceModels();
+            }
 
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
@@ -188,6 +189,11 @@ export function PontoPage() {
                         facingMode: "user"
                     }
                 });
+
+                setVideoOpen(true);
+                setShowLiveness(true);
+                setHeaderIsError(false);
+                setMessage("Centralize seu rosto");
 
                 if (videoRef.current) {
                     videoRef.current.srcObject = stream;
@@ -200,7 +206,6 @@ export function PontoPage() {
                             };
                         }
                     });
-
                 }
             } catch (err) {
                 console.error("Erro ao acessar a webcam:", err);
