@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { LogIn, Utensils, Coffee, LogOut, MonitorSmartphone, ShieldCheck, ArrowLeft, Loader2, Camera } from "lucide-react";
+import { toast } from "sonner";
 import { api, ApiError, type TotemVerifyResponse } from "../../services/api";
 import { LivenessChallenge } from "../../components/LivenessChallenge";
 import { preloadFaceModels } from "../../utils/faceModels";
@@ -165,6 +166,7 @@ export function TotemPage() {
           longitude: coords.longitude,
           faceToken: data.faceToken,
         });
+        toast.success("Ponto registrado com sucesso!");
         setScreen({ name: "success", comprovante: response.comprovante });
         setIsRegistering(false);
         return;
@@ -172,7 +174,9 @@ export function TotemPage() {
 
       await startCamera();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao verificar credenciais.");
+      const msg = err instanceof Error ? err.message : "Erro ao verificar credenciais.";
+      setError(msg);
+      toast.error(msg);
       if (err instanceof ApiError && err.code === "FACE_NOT_REGISTERED") {
         setPendingUserId(typeof err.data?.userId === "string" ? err.data.userId : null);
         setNeedsFaceRegistration(true);
@@ -209,10 +213,13 @@ export function TotemPage() {
       setNeedsFaceRegistration(false);
       setError(null);
       setIsRegistering(false);
+      toast.success("Biometria facial cadastrada com sucesso!");
       await handleVerify();
     } catch (err) {
       console.error("Erro ao salvar cadastro facial no totem:", err);
-      setError(err instanceof Error ? err.message : "Erro ao salvar cadastro facial. Tente novamente.");
+      const msg = err instanceof Error ? err.message : "Erro ao salvar cadastro facial. Tente novamente.";
+      setError(msg);
+      toast.error(msg);
       setIsRegistering(false);
       setScreen({ name: "login", type: pendingType ?? "ENTRY" });
     }
@@ -234,11 +241,14 @@ export function TotemPage() {
         faceToken,
       });
 
+      toast.success("Ponto registrado com sucesso!");
       setScreen({ name: "success", comprovante: response.comprovante });
       setIsRegistering(false);
     } catch (err) {
       console.error("Erro ao registrar ponto no totem:", err);
-      setError(err instanceof Error ? err.message : "Erro ao registrar ponto. Tente novamente.");
+      const msg = err instanceof Error ? err.message : "Erro ao registrar ponto. Tente novamente.";
+      setError(msg);
+      toast.error(msg, { duration: 6000 });
       setIsRegistering(false);
       resetToIdle();
     }
@@ -246,12 +256,14 @@ export function TotemPage() {
 
   function handleFaceCancel() {
     stopCamera();
+    toast.info("Validação facial cancelada");
     setError("Validação cancelada");
     setScreen({ name: "login", type: pendingType ?? "ENTRY" });
   }
 
   function handleFaceRegisterCancel() {
     stopCamera();
+    toast.info("Cadastro facial cancelado");
     setError("Cadastro facial cancelado");
     setScreen({ name: "login", type: pendingType ?? "ENTRY" });
   }
@@ -272,11 +284,14 @@ export function TotemPage() {
     setIsExiting(true);
     try {
       await api.totem.deactivate(exitPin);
+      toast.success("Modo totem desativado");
       localStorage.removeItem("@viggo:totem");
       localStorage.removeItem("@viggo:totem:expiresAt");
       window.location.href = "/totem";
     } catch (err) {
-      setError(err instanceof Error ? err.message : "PIN incorreto.");
+      const msg = err instanceof Error ? err.message : "PIN incorreto.";
+      setError(msg);
+      toast.error(msg);
       setIsExiting(false);
     }
   }
@@ -294,17 +309,22 @@ export function TotemPage() {
   async function handleRecover() {
     setError(null);
     if (!recoverEmail.trim() || !recoverPassword) {
-      setError("Informe email e senha de um administrador.");
+      const msg = "Informe email e senha de um administrador.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
     setIsRecovering(true);
     try {
       await api.totem.recover(recoverEmail.trim(), recoverPassword);
+      toast.success("Acesso recuperado com sucesso");
       localStorage.removeItem("@viggo:totem");
       localStorage.removeItem("@viggo:totem:expiresAt");
       window.location.href = "/totem";
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não foi possível recuperar o acesso.");
+      const msg = err instanceof Error ? err.message : "Não foi possível recuperar o acesso.";
+      setError(msg);
+      toast.error(msg);
       setIsRecovering(false);
     }
   }

@@ -307,8 +307,16 @@ export class TotemController {
                 },
             });
 
+            const TIPO_LABELS: Record<string, string> = {
+                ENTRY: "Entrada",
+                LUNCH_START: "Início Almoço",
+                LUNCH_END: "Retorno Almoço",
+                EXIT: "Saída",
+            };
+
             if (checkinExists) {
-                return res.status(400).json({ message: `Ponto de ${type} já registrado hoje.` });
+                const label = TIPO_LABELS[type] ?? type;
+                return res.status(400).json({ message: `Ponto de ${label} já registrado hoje.` });
             }
 
             const ano = currentYear();
