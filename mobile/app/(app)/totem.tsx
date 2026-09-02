@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,12 @@ import {
   removeStoredTotemToken,
   TotemVerifyResponse,
 } from '../../services/api';
+import {
+  enqueueTotemOfflineCheckIn,
+  syncTotemOfflineQueue,
+  getTotemOfflineQueue,
+  CheckinType,
+} from '../../services/offlineQueue';
 import { Colors, Spacing, BorderRadius } from '../../constants/theme';
 import {
   Tablet,
@@ -29,21 +35,18 @@ import {
   Coffee,
   LogOut,
   ArrowLeft,
-  Camera,
   ShieldAlert,
-  Clock,
-  UserCheck,
   User,
   Lock,
-  RefreshCw,
   Power,
+  WifiOff,
+  Radio,
+  ScanFace,
 } from 'lucide-react-native';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 const { width } = Dimensions.get('window');
-
-type CheckinType = 'ENTRY' | 'LUNCH_START' | 'LUNCH_END' | 'EXIT';
 
 const CHECKIN_OPTIONS: { label: string; type: CheckinType; icon: any; color: string }[] = [
   { label: 'Entrada', type: 'ENTRY', icon: LogIn, color: Colors.primary },
@@ -55,9 +58,24 @@ const CHECKIN_OPTIONS: { label: string; type: CheckinType; icon: any; color: str
 type TotemScreenState =
   | { name: 'activation' }
   | { name: 'idle' }
-  | { name: 'employee-auth'; type: CheckinType }
+  | { name: 'employee-auth' }
+  | {
+      name: 'select-type';
+      userId: string;
+      userName: string;
+      faceToken: string;
+      totemAuthMode?: 'CREDENTIALS_ONLY' | 'FRONTAL_ONLY' | 'FULL_LIVENESS';
+      checkinsToday: Array<{ id: string; type: CheckinType; createdAt: string }>;
+    }
   | { name: 'camera'; type: CheckinType; faceToken: string; userId: string; userName: string }
-  | { name: 'success'; comprovante: string; userName: string }
+  | {
+      name: 'success';
+      comprovante?: string;
+      userName: string;
+      isOffline?: boolean;
+      offlineType?: CheckinType;
+      offlineTime?: string;
+    }
   | { name: 'exit' }
   | { name: 'recover' };
 
@@ -108,6 +126,24 @@ export default function TotemScreen() {
     checkToken();
   }, []);
 
+  // Auto-sincronização de marcações pendentes do Totem
+  const trySyncTotemOffline = useCallback(async () => {
+    try {
+      const queue = await getTotemOfflineQueue();
+      if (queue.length > 0) {
+        await syncTotemOfflineQueue();
+      }
+    } catch {
+      // Ignora falhas silenciosamente enquanto estiver sem conexão
+    }
+  }, []);
+
+  useEffect(() => {
+    trySyncTotemOffline();
+    const interval = setInterval(trySyncTotemOffline, 30000);
+    return () => clearInterval(interval);
+  }, [trySyncTotemOffline]);
+
   // Countdown do comprovante de sucesso
   useEffect(() => {
     if (screenState.name === 'success') {
@@ -146,15 +182,15 @@ export default function TotemScreen() {
     }
   }
 
-  // 2. Iniciar Batida no Totem
-  function handleSelectType(type: CheckinType) {
+  // 2. Iniciar Batida no Totem (Vai para Autenticação)
+  function handleStartPunch() {
     setEmailOrCpf('');
     setPassword('');
-    setScreenState({ name: 'employee-auth', type });
+    setScreenState({ name: 'employee-auth' });
   }
 
   // 3. Autenticar Colaborador
-  async function handleEmployeeAuth(type: CheckinType) {
+  async function handleEmployeeAuth() {
     if (!emailOrCpf.trim() || !password) {
       Alert.alert('Atenção', 'Informe seu e-mail corporativo ou CPF e sua senha.');
       return;
@@ -164,52 +200,13 @@ export default function TotemScreen() {
     try {
       const data: TotemVerifyResponse = await api.totem.verify(emailOrCpf, password);
 
-      if (data.totemAuthMode === 'CREDENTIALS_ONLY') {
-        let coords = { latitude: 0, longitude: 0 };
-        try {
-          const loc = await Location.getCurrentPositionAsync({
-            accuracy: Location.Accuracy.High,
-          });
-          coords = {
-            latitude: loc.coords.latitude,
-            longitude: loc.coords.longitude,
-          };
-        } catch {
-          console.warn('GPS não disponível no Totem');
-        }
-
-        const response = await api.totem.checkin({
-          userId: data.userId,
-          type,
-          latitude: coords.latitude,
-          longitude: coords.longitude,
-          faceToken: data.faceToken,
-        });
-
-        setScreenState({
-          name: 'success',
-          comprovante: response.comprovante,
-          userName: data.userName,
-        });
-        return;
-      }
-      
-      // Solicitar permissão de câmera se não concedida
-      if (!cameraPermission?.granted) {
-        const { granted } = await requestCameraPermission();
-        if (!granted) {
-          Alert.alert('Câmera Necessária', 'É preciso permitir o uso da câmera para bater ponto.');
-          setLoadingAuth(false);
-          return;
-        }
-      }
-
       setScreenState({
-        name: 'camera',
-        type,
-        faceToken: data.faceToken,
+        name: 'select-type',
         userId: data.userId,
         userName: data.userName,
+        faceToken: data.faceToken,
+        totemAuthMode: data.totemAuthMode,
+        checkinsToday: data.checkinsToday || [],
       });
     } catch (err: any) {
       if (err instanceof ApiError && err.code === 'FACE_NOT_REGISTERED') {
@@ -225,17 +222,20 @@ export default function TotemScreen() {
     }
   }
 
-  // 4. Confirmar Ponto com Câmera
-  async function handleConfirmPunch(state: {
-    type: CheckinType;
-    faceToken: string;
-    userId: string;
-    userName: string;
-  }) {
-    setSubmittingCheckin(true);
-
-    try {
-      // Obter GPS
+  // 4. Selecionar Tipo de Ponto (com validação prévia)
+  async function handleSelectType(
+    state: {
+      userId: string;
+      userName: string;
+      faceToken: string;
+      totemAuthMode?: 'CREDENTIALS_ONLY' | 'FRONTAL_ONLY' | 'FULL_LIVENESS';
+      checkinsToday: Array<{ id: string; type: CheckinType; createdAt: string }>;
+    },
+    type: CheckinType
+  ) {
+    // Se o modo for CREDENTIALS_ONLY, faz o registro direto
+    if (state.totemAuthMode === 'CREDENTIALS_ONLY') {
+      setSubmittingCheckin(true);
       let coords = { latitude: 0, longitude: 0 };
       try {
         const loc = await Location.getCurrentPositionAsync({
@@ -249,7 +249,93 @@ export default function TotemScreen() {
         console.warn('GPS não disponível no Totem');
       }
 
-      // Enviar registro de ponto
+      try {
+        const response = await api.totem.checkin({
+          userId: state.userId,
+          type,
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          faceToken: state.faceToken,
+        });
+
+        setScreenState({
+          name: 'success',
+          comprovante: response.comprovante,
+          userName: state.userName,
+        });
+      } catch (err: any) {
+        const isNetworkError =
+          (err instanceof ApiError && (err.code === 'NETWORK_ERROR' || err.status === 0)) ||
+          err.message?.includes('Network') ||
+          err.message?.includes('fetch');
+
+        if (isNetworkError) {
+          await enqueueTotemOfflineCheckIn({
+            userId: state.userId,
+            userName: state.userName,
+            type,
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+          });
+
+          setScreenState({
+            name: 'success',
+            userName: state.userName,
+            isOffline: true,
+            offlineType: type,
+            offlineTime: format(new Date(), 'HH:mm:ss'),
+          });
+        } else {
+          Alert.alert('Erro ao Registrar Ponto', err.message || 'Não foi possível registrar o ponto.');
+          setScreenState({ name: 'idle' });
+        }
+      } finally {
+        setSubmittingCheckin(false);
+      }
+      return;
+    }
+
+    // Solicitar permissão de câmera se necessário
+    if (!cameraPermission?.granted) {
+      const { granted } = await requestCameraPermission();
+      if (!granted) {
+        Alert.alert('Câmera Necessária', 'É preciso permitir o uso da câmera para bater ponto.');
+        return;
+      }
+    }
+
+    setScreenState({
+      name: 'camera',
+      type,
+      faceToken: state.faceToken,
+      userId: state.userId,
+      userName: state.userName,
+    });
+  }
+
+  // 5. Confirmar Ponto com Câmera
+  async function handleConfirmPunch(state: {
+    type: CheckinType;
+    faceToken: string;
+    userId: string;
+    userName: string;
+  }) {
+    setSubmittingCheckin(true);
+
+    let coords = { latitude: 0, longitude: 0 };
+    try {
+      const loc = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+      coords = {
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+      };
+    } catch {
+      console.warn('GPS não disponível no Totem');
+    }
+
+    try {
       const response = await api.totem.checkin({
         userId: state.userId,
         type: state.type,
@@ -264,6 +350,34 @@ export default function TotemScreen() {
         userName: state.userName,
       });
     } catch (err: any) {
+      const isNetworkError =
+        (err instanceof ApiError && (err.code === 'NETWORK_ERROR' || err.status === 0)) ||
+        err.message?.includes('Network') ||
+        err.message?.includes('fetch');
+
+      if (isNetworkError) {
+        try {
+          await enqueueTotemOfflineCheckIn({
+            userId: state.userId,
+            userName: state.userName,
+            type: state.type,
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+          });
+
+          setScreenState({
+            name: 'success',
+            userName: state.userName,
+            isOffline: true,
+            offlineType: state.type,
+            offlineTime: format(new Date(), 'HH:mm:ss'),
+          });
+          return;
+        } catch (offlineErr) {
+          console.error('Erro ao salvar ponto offline no totem:', offlineErr);
+        }
+      }
+
       Alert.alert('Erro ao Registrar Ponto', err.message || 'Não foi possível confirmar o ponto.');
       setScreenState({ name: 'idle' });
     } finally {
@@ -271,7 +385,7 @@ export default function TotemScreen() {
     }
   }
 
-  // 5. Desativar Totem
+  // 6. Desativar Totem
   async function handleDeactivate() {
     if (!exitPin) {
       Alert.alert('Atenção', 'Digite o PIN para desativar.');
@@ -290,7 +404,7 @@ export default function TotemScreen() {
     }
   }
 
-  // 6. Recuperar Modo Totem (Admin Master)
+  // 7. Recuperar Modo Totem (Admin Master)
   async function handleRecover() {
     if (!recoverEmail || !recoverPassword) {
       Alert.alert('Atenção', 'Informe o e-mail e senha de administrador.');
@@ -310,29 +424,25 @@ export default function TotemScreen() {
     }
   }
 
-  // ===================== RENDER SCREENS =====================
-
-  // TELA 1: ATIVAÇÃO POR PIN
+  // TELA 1: ATIVAÇÃO
   if (screenState.name === 'activation') {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <View style={styles.iconContainer}>
-            <Tablet size={36} color={Colors.primary} />
-          </View>
+          <Tablet size={48} color={Colors.primary} />
           <Text style={styles.title}>Ativar Modo Totem</Text>
           <Text style={styles.subtitle}>
-            Transforme este dispositivo em um terminal de ponto coletivo corporativo para sua equipe.
+            Transforme este dispositivo em um terminal corporativo de ponto eletrônico.
           </Text>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.label}>PIN de Segurança do Totem</Text>
+          <Text style={styles.label}>PIN Corporativo de Ativação</Text>
           <View style={styles.inputContainer}>
             <KeyRound size={18} color={Colors.textMuted} style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Digite o PIN (4-6 dígitos)"
+              placeholder="Digite o PIN (4 a 6 dígitos)"
               placeholderTextColor={Colors.textMuted}
               value={activationPin}
               onChangeText={setActivationPin}
@@ -358,7 +468,7 @@ export default function TotemScreen() {
     );
   }
 
-  // TELA 2: IDLE (SELEÇÃO DE TIPO DE PONTO)
+  // TELA 2: IDLE (TELA INICIAL DO TOTEM)
   if (screenState.name === 'idle') {
     return (
       <View style={styles.container}>
@@ -382,37 +492,27 @@ export default function TotemScreen() {
             {format(currentTime, "EEEE, d 'de' MMMM", { locale: ptBR })}
           </Text>
           <Text style={styles.idleTimeText}>{format(currentTime, 'HH:mm:ss')}</Text>
-          <Text style={styles.idlePrompt}>Selecione o tipo de registro para bater ponto</Text>
+          <Text style={styles.idlePrompt}>Reconhecimento facial com vivacidade</Text>
         </View>
 
-        {/* Grid de Opções de Ponto */}
-        <View style={styles.optionsGrid}>
-          {CHECKIN_OPTIONS.map((opt) => {
-            const Icon = opt.icon;
-            return (
-              <TouchableOpacity
-                key={opt.type}
-                style={styles.optionCard}
-                onPress={() => handleSelectType(opt.type)}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.optionIconBox, { backgroundColor: `${opt.color}15` }]}>
-                  <Icon size={28} color={opt.color} />
-                </View>
-                <Text style={styles.optionLabel}>{opt.label}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+        {/* Botão Principal de Entrada */}
+        <TouchableOpacity
+          style={styles.primaryActionButton}
+          onPress={handleStartPunch}
+          activeOpacity={0.85}
+        >
+          <View style={styles.primaryActionIconBox}>
+            <ScanFace size={36} color={Colors.textDark} />
+          </View>
+          <Text style={styles.primaryActionButtonText}>Bater Ponto</Text>
+          <Text style={styles.primaryActionButtonSub}>Toque aqui para se identificar</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
   // TELA 3: IDENTIFICAÇÃO DO COLABORADOR
   if (screenState.name === 'employee-auth') {
-    const currentType = screenState.type;
-    const option = CHECKIN_OPTIONS.find((o) => o.type === currentType);
-
     return (
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <TouchableOpacity
@@ -420,20 +520,10 @@ export default function TotemScreen() {
           onPress={() => setScreenState({ name: 'idle' })}
         >
           <ArrowLeft size={18} color={Colors.textMuted} />
-          <Text style={styles.backButtonText}>Voltar</Text>
+          <Text style={styles.backButtonText}>Cancelar</Text>
         </TouchableOpacity>
 
         <View style={styles.authHeader}>
-          <View
-            style={[
-              styles.selectedTypeBadge,
-              { backgroundColor: `${option?.color || Colors.primary}20` },
-            ]}
-          >
-            <Text style={[styles.selectedTypeText, { color: option?.color || Colors.primary }]}>
-              {option?.label || 'Marcação de Ponto'}
-            </Text>
-          </View>
           <Text style={styles.title}>Identificação</Text>
           <Text style={styles.subtitle}>Digite suas credenciais corporativas para continuar</Text>
         </View>
@@ -467,13 +557,13 @@ export default function TotemScreen() {
 
           <TouchableOpacity
             style={[styles.primaryButton, loadingAuth && { opacity: 0.7 }]}
-            onPress={() => handleEmployeeAuth(currentType)}
+            onPress={handleEmployeeAuth}
             disabled={loadingAuth}
           >
             {loadingAuth ? (
               <ActivityIndicator color={Colors.textDark} />
             ) : (
-              <Text style={styles.primaryButtonText}>Avançar para Foto</Text>
+              <Text style={styles.primaryButtonText}>Avançar</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -481,7 +571,82 @@ export default function TotemScreen() {
     );
   }
 
-  // TELA 4: CÂMERA FACIAL
+  // TELA 4: SELEÇÃO DE TIPO DE PONTO (COM BLOQUEIO DE PONTOS JÁ BATIDOS)
+  if (screenState.name === 'select-type') {
+    const currentState = screenState;
+
+    return (
+      <View style={styles.container}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => setScreenState({ name: 'idle' })}
+        >
+          <ArrowLeft size={18} color={Colors.textMuted} />
+          <Text style={styles.backButtonText}>Trocar Colaborador</Text>
+        </TouchableOpacity>
+
+        <View style={styles.selectTypeHeader}>
+          <Text style={styles.greetingTitle}>Olá, {currentState.userName.split(' ')[0]}!</Text>
+          <Text style={styles.subtitle}>Selecione o tipo de registro que deseja realizar</Text>
+        </View>
+
+        <View style={styles.optionsGrid}>
+          {CHECKIN_OPTIONS.map((opt) => {
+            const Icon = opt.icon;
+            const existing = currentState.checkinsToday.find((c) => c.type === opt.type);
+            const hasRegistered = Boolean(existing);
+            const checkinTime = existing ? format(new Date(existing.createdAt), 'HH:mm') : null;
+
+            return (
+              <TouchableOpacity
+                key={opt.type}
+                style={[
+                  styles.optionCard,
+                  hasRegistered && styles.optionCardDisabled,
+                ]}
+                onPress={() => !hasRegistered && handleSelectType(currentState, opt.type)}
+                disabled={hasRegistered || submittingCheckin}
+                activeOpacity={0.8}
+              >
+                <View
+                  style={[
+                    styles.optionIconBox,
+                    {
+                      backgroundColor: hasRegistered
+                        ? 'rgba(255,255,255,0.05)'
+                        : `${opt.color}15`,
+                    },
+                  ]}
+                >
+                  <Icon size={28} color={hasRegistered ? Colors.textMuted : opt.color} />
+                </View>
+                <Text
+                  style={[
+                    styles.optionLabel,
+                    hasRegistered && { color: Colors.textMuted },
+                  ]}
+                >
+                  {opt.label}
+                </Text>
+                <Text
+                  style={[
+                    styles.optionStatusText,
+                    hasRegistered
+                      ? { color: Colors.textMuted }
+                      : { color: Colors.primary },
+                  ]}
+                >
+                  {hasRegistered ? `✅ Registrado às ${checkinTime}` : 'Toque para registrar'}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </View>
+    );
+  }
+
+  // TELA 5: CÂMERA FACIAL
   if (screenState.name === 'camera') {
     const currentState = screenState;
 
@@ -490,13 +655,21 @@ export default function TotemScreen() {
         <View style={styles.cameraHeader}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => setScreenState({ name: 'idle' })}
+            onPress={() =>
+              setScreenState({
+                name: 'select-type',
+                userId: currentState.userId,
+                userName: currentState.userName,
+                faceToken: currentState.faceToken,
+                checkinsToday: [],
+              })
+            }
           >
             <ArrowLeft size={18} color={Colors.textMuted} />
             <Text style={styles.backButtonText}>Cancelar</Text>
           </TouchableOpacity>
 
-          <Text style={styles.cameraUserName}>Olá, {currentState.userName}</Text>
+          <Text style={styles.cameraUserName}>Olá, {currentState.userName.split(' ')[0]}</Text>
         </View>
 
         <View style={styles.cameraFrame}>
@@ -527,18 +700,57 @@ export default function TotemScreen() {
     );
   }
 
-  // TELA 5: SUCESSO & COMPROVANTE
+  // TELA 6: SUCESSO & COMPROVANTE (ONLINE OU OFFLINE)
   if (screenState.name === 'success') {
+    const isOffline = screenState.isOffline;
+
     return (
       <View style={styles.container}>
         <View style={styles.successCard}>
-          <CheckCircle2 size={56} color={Colors.primary} />
-          <Text style={styles.successTitle}>Ponto Registrado!</Text>
+          {isOffline ? (
+            <View style={styles.offlineIconBox}>
+              <Radio size={48} color={Colors.warn} />
+            </View>
+          ) : (
+            <CheckCircle2 size={56} color={Colors.primary} />
+          )}
+
+          <Text style={[styles.successTitle, isOffline && { color: Colors.warn }]}>
+            {isOffline ? 'Ponto Registrado Offline!' : 'Ponto Registrado com Sucesso!'}
+          </Text>
+
           <Text style={styles.successSubtitle}>
             Obrigado, <Text style={{ color: Colors.text, fontWeight: '700' }}>{screenState.userName}</Text>
           </Text>
 
-          {screenState.comprovante ? (
+          {isOffline ? (
+            <View style={styles.offlineDetailsCard}>
+              <View style={styles.offlineDetailRow}>
+                <Text style={styles.offlineDetailLabel}>Tipo:</Text>
+                <Text style={styles.offlineDetailValue}>
+                  {screenState.offlineType === 'ENTRY'
+                    ? 'Entrada'
+                    : screenState.offlineType === 'LUNCH_START'
+                    ? 'Início Almoço'
+                    : screenState.offlineType === 'LUNCH_END'
+                    ? 'Retorno Almoço'
+                    : 'Saída'}
+                </Text>
+              </View>
+
+              <View style={styles.offlineDetailRow}>
+                <Text style={styles.offlineDetailLabel}>Horário Gravado:</Text>
+                <Text style={styles.offlineDetailValue}>{screenState.offlineTime}</Text>
+              </View>
+
+              <View style={styles.offlineNoticeBox}>
+                <WifiOff size={16} color={Colors.warn} style={{ marginTop: 2 }} />
+                <Text style={styles.offlineNoticeText}>
+                  O comprovante fiscal definitivo com o número de registro (NSR) será gerado e disponibilizado para consulta assim que o totem se reconectar à internet.
+                </Text>
+              </View>
+            </View>
+          ) : screenState.comprovante ? (
             <View style={styles.comprovanteBox}>
               <Text style={styles.comprovanteTitle}>Comprovante de Registro</Text>
               <Text style={styles.comprovanteText} numberOfLines={8}>
@@ -548,17 +760,19 @@ export default function TotemScreen() {
           ) : null}
 
           <TouchableOpacity
-            style={styles.doneButton}
+            style={[styles.doneButton, isOffline && { backgroundColor: Colors.warn }]}
             onPress={() => setScreenState({ name: 'idle' })}
           >
-            <Text style={styles.doneButtonText}>Concluir ({countdown}s)</Text>
+            <Text style={[styles.doneButtonText, isOffline && { color: Colors.textDark }]}>
+              {isOffline ? `Entendido (${countdown}s)` : `Concluir (${countdown}s)`}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
     );
   }
 
-  // TELA 6: SAÍDA DO TOTEM (PIN)
+  // TELA 7: SAÍDA DO TOTEM (PIN)
   if (screenState.name === 'exit') {
     return (
       <View style={styles.container}>
@@ -615,7 +829,7 @@ export default function TotemScreen() {
     );
   }
 
-  // TELA 7: RECUPERAÇÃO ADMINISTRATIVA
+  // TELA 8: RECUPERAÇÃO ADMINISTRATIVA
   if (screenState.name === 'recover') {
     return (
       <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -701,34 +915,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: Spacing.xl,
   },
-  iconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: Colors.surfaceCard,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    justifyContent: 'center',
+  selectTypeHeader: {
     alignItems: 'center',
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.lg,
+  },
+  greetingTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: Colors.text,
+    marginBottom: 4,
+    textAlign: 'center',
   },
   title: {
     fontSize: 22,
     fontWeight: '800',
     color: Colors.text,
+    marginTop: Spacing.md,
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 13,
+    fontSize: 14,
     color: Colors.textMuted,
     textAlign: 'center',
     marginTop: Spacing.xs,
-    lineHeight: 18,
+    lineHeight: 20,
+    paddingHorizontal: Spacing.md,
   },
   card: {
     backgroundColor: Colors.surfaceCard,
     borderRadius: BorderRadius.xl,
-    padding: Spacing.xl,
+    padding: Spacing.lg,
     borderWidth: 1,
     borderColor: Colors.border,
   },
@@ -737,6 +953,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.text,
     marginBottom: Spacing.xs,
+    marginTop: Spacing.sm,
   },
   inputContainer: {
     flexDirection: 'row',
@@ -745,48 +962,95 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     borderWidth: 1,
     borderColor: Colors.border,
-    paddingHorizontal: Spacing.md,
     marginBottom: Spacing.md,
+    paddingHorizontal: Spacing.md,
   },
   inputIcon: {
-    marginRight: Spacing.xs,
+    marginRight: Spacing.sm,
   },
   input: {
     flex: 1,
+    height: 48,
     color: Colors.text,
-    paddingVertical: 14,
-    fontSize: 18,
-    letterSpacing: 4,
+    fontSize: 16,
     textAlign: 'center',
+    letterSpacing: 2,
+    fontWeight: '700',
   },
   inputLeft: {
     flex: 1,
+    height: 48,
     color: Colors.text,
-    paddingVertical: 14,
     fontSize: 14,
   },
   primaryButton: {
     backgroundColor: Colors.primary,
     borderRadius: BorderRadius.md,
-    paddingVertical: 16,
+    height: 48,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: Spacing.sm,
+    marginTop: Spacing.md,
   },
   primaryButtonText: {
     color: Colors.textDark,
     fontSize: 15,
     fontWeight: '700',
   },
+  primaryActionButton: {
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.xl,
+    paddingVertical: Spacing.xl,
+    paddingHorizontal: Spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 8,
+    marginBottom: Spacing.xl,
+  },
+  primaryActionIconBox: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.sm,
+  },
+  primaryActionButtonText: {
+    color: Colors.textDark,
+    fontSize: 22,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  primaryActionButtonSub: {
+    color: 'rgba(0,0,0,0.6)',
+    fontSize: 13,
+    fontWeight: '600',
+    marginTop: 2,
+  },
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.md,
+    alignSelf: 'flex-start',
   },
   backButtonText: {
     color: Colors.textMuted,
     fontSize: 14,
     fontWeight: '600',
+  },
+  recoverLink: {
+    marginTop: Spacing.lg,
+    alignItems: 'center',
+  },
+  recoverLinkText: {
+    color: Colors.textMuted,
+    fontSize: 12,
+    textDecorationLine: 'underline',
   },
   idleTopBar: {
     flexDirection: 'row',
@@ -854,18 +1118,23 @@ const styles = StyleSheet.create({
     width: (width - Spacing.lg * 2 - Spacing.md) / 2,
     backgroundColor: Colors.surfaceCard,
     borderRadius: BorderRadius.lg,
-    padding: Spacing.lg,
+    padding: Spacing.md,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: Colors.border,
   },
+  optionCardDisabled: {
+    opacity: 0.5,
+    backgroundColor: 'rgba(255,255,255,0.02)',
+    borderColor: 'rgba(255,255,255,0.05)',
+  },
   optionIconBox: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
   optionLabel: {
     fontSize: 14,
@@ -873,19 +1142,15 @@ const styles = StyleSheet.create({
     color: Colors.text,
     textAlign: 'center',
   },
+  optionStatusText: {
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 4,
+    textAlign: 'center',
+  },
   authHeader: {
     alignItems: 'center',
     marginBottom: Spacing.lg,
-  },
-  selectedTypeBadge: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 4,
-    borderRadius: BorderRadius.full,
-    marginBottom: Spacing.sm,
-  },
-  selectedTypeText: {
-    fontSize: 12,
-    fontWeight: '700',
   },
   cameraHeader: {
     flexDirection: 'row',
@@ -918,49 +1183,86 @@ const styles = StyleSheet.create({
     borderRadius: 140,
     borderWidth: 2,
     borderColor: 'rgba(0, 212, 164, 0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
     position: 'relative',
   },
   corner: {
     position: 'absolute',
-    width: 20,
-    height: 20,
+    width: 24,
+    height: 24,
     borderColor: Colors.primary,
   },
-  cornerTL: { top: -2, left: -2, borderTopWidth: 3, borderLeftWidth: 3 },
-  cornerTR: { top: -2, right: -2, borderTopWidth: 3, borderRightWidth: 3 },
-  cornerBL: { bottom: -2, left: -2, borderBottomWidth: 3, borderLeftWidth: 3 },
-  cornerBR: { bottom: -2, right: -2, borderBottomWidth: 3, borderRightWidth: 3 },
+  cornerTL: {
+    top: -2,
+    left: -2,
+    borderTopWidth: 3,
+    borderLeftWidth: 3,
+    borderTopLeftRadius: 12,
+  },
+  cornerTR: {
+    top: -2,
+    right: -2,
+    borderTopWidth: 3,
+    borderRightWidth: 3,
+    borderTopRightRadius: 12,
+  },
+  cornerBL: {
+    bottom: -2,
+    left: -2,
+    borderBottomWidth: 3,
+    borderLeftWidth: 3,
+    borderBottomLeftRadius: 12,
+  },
+  cornerBR: {
+    bottom: -2,
+    right: -2,
+    borderBottomWidth: 3,
+    borderRightWidth: 3,
+    borderBottomRightRadius: 12,
+  },
   cameraInstructions: {
-    textAlign: 'center',
-    color: Colors.textMuted,
     fontSize: 13,
-    marginBottom: Spacing.sm,
+    color: Colors.textMuted,
+    textAlign: 'center',
+    marginBottom: Spacing.md,
   },
   successCard: {
     backgroundColor: Colors.surfaceCard,
     borderRadius: BorderRadius.xl,
     padding: Spacing.xl,
-    borderWidth: 1,
-    borderColor: Colors.primary,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  offlineIconBox: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: 'rgba(234, 179, 8, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.sm,
   },
   successTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '800',
-    color: Colors.text,
+    color: Colors.primary,
     marginTop: Spacing.md,
+    textAlign: 'center',
   },
   successSubtitle: {
     fontSize: 14,
     color: Colors.textMuted,
     marginTop: Spacing.xs,
     marginBottom: Spacing.lg,
+    textAlign: 'center',
   },
   comprovanteBox: {
     width: '100%',
     backgroundColor: Colors.surface,
-    padding: Spacing.md,
     borderRadius: BorderRadius.md,
+    padding: Spacing.md,
     borderWidth: 1,
     borderColor: Colors.border,
     marginBottom: Spacing.lg,
@@ -969,33 +1271,69 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: Colors.primary,
-    marginBottom: 4,
+    marginBottom: Spacing.xs,
     textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   comprovanteText: {
+    fontSize: 10,
     fontFamily: 'monospace',
-    fontSize: 11,
     color: Colors.textMuted,
-    lineHeight: 16,
+    lineHeight: 14,
+  },
+  offlineDetailsCard: {
+    width: '100%',
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginBottom: Spacing.lg,
+    gap: Spacing.xs,
+  },
+  offlineDetailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
+  },
+  offlineDetailLabel: {
+    fontSize: 12,
+    color: Colors.textMuted,
+  },
+  offlineDetailValue: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.text,
+  },
+  offlineNoticeBox: {
+    flexDirection: 'row',
+    gap: 8,
+    backgroundColor: 'rgba(234, 179, 8, 0.08)',
+    borderRadius: BorderRadius.sm,
+    padding: Spacing.sm,
+    marginTop: Spacing.xs,
+    borderWidth: 1,
+    borderColor: 'rgba(234, 179, 8, 0.2)',
+  },
+  offlineNoticeText: {
+    flex: 1,
+    fontSize: 11,
+    color: Colors.warn,
+    lineHeight: 15,
   },
   doneButton: {
     backgroundColor: Colors.primary,
-    paddingVertical: 14,
-    paddingHorizontal: Spacing.xxl,
     borderRadius: BorderRadius.md,
+    height: 48,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   doneButtonText: {
     color: Colors.textDark,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
-  },
-  recoverLink: {
-    marginTop: Spacing.md,
-    alignItems: 'center',
-  },
-  recoverLinkText: {
-    color: Colors.primary,
-    fontSize: 12,
-    fontWeight: '600',
   },
 });

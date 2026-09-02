@@ -34,6 +34,7 @@ export interface TotemVerifyResponse {
   userId: string;
   userName: string;
   totemAuthMode?: 'CREDENTIALS_ONLY' | 'FRONTAL_ONLY' | 'FULL_LIVENESS';
+  checkinsToday?: Array<{ id: string; type: 'ENTRY' | 'LUNCH_START' | 'LUNCH_END' | 'EXIT'; createdAt: string }>;
 }
 
 export interface TotemCheckinDto {
@@ -226,6 +227,39 @@ export const api = {
     return request<{ message: string; checkIn: CheckInItem; comprovante?: string }>('/checkins', {
       method: 'POST',
       body: JSON.stringify(params),
+    });
+  },
+
+  async syncOfflineCheckIns(items: Array<{
+    id: string;
+    type: 'ENTRY' | 'LUNCH_START' | 'LUNCH_END' | 'EXIT';
+    timestamp: string;
+    latitude?: number | null;
+    longitude?: number | null;
+    accuracy?: number | null;
+    hash?: string;
+  }>): Promise<{
+    message: string;
+    synced: Array<{
+      id: string;
+      status: string;
+      checkinId: string;
+      nsr: number;
+      comprovante?: string;
+    }>;
+  }> {
+    return request<{
+      message: string;
+      synced: Array<{
+        id: string;
+        status: string;
+        checkinId: string;
+        nsr: number;
+        comprovante?: string;
+      }>;
+    }>('/checkins/sync-offline', {
+      method: 'POST',
+      body: JSON.stringify({ items }),
     });
   },
 

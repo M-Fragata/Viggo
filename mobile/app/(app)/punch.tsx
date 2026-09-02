@@ -65,12 +65,12 @@ export default function PunchScreen() {
     setSyncingOffline(true);
     try {
       const res = await syncOfflineQueue();
-      if (res.synced.length > 0) {
+      if (res.syncedCount > 0) {
         Alert.alert(
           'Sincronização Concluída',
-          `${res.synced.length} ponto(s) offline foram sincronizados com sucesso!`
+          `${res.syncedCount} ponto(s) offline foram sincronizados com sucesso!`
         );
-      } else if (res.failed > 0) {
+      } else if (res.failedCount > 0) {
         Alert.alert('Atenção', 'Não foi possível sincronizar todos os pontos. Verifique sua conexão.');
       }
       await checkOfflineQueue();
@@ -140,8 +140,11 @@ export default function PunchScreen() {
         // Se for erro de rede / offline, enfileirar localmente
         if (apiErr instanceof ApiError && apiErr.code === 'NETWORK_ERROR') {
           await enqueueOfflineCheckIn({
+            type: 'ENTRY',
             ...coords,
             photoBase64,
+            userId: user?.id,
+            userName: user?.name,
           });
           await checkOfflineQueue();
           setSuccessInfo('Sem conexão! Ponto salvo offline e será sincronizado em breve.');
