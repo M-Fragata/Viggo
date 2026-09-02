@@ -18,7 +18,7 @@ Este documento detalha as funcionalidades e boas práticas consolidadas nos prin
 | **Nível 3 (Média)** | 3.1 Cerca Geográfica com Raio em Metros (Geofencing) | Controle de Ponto em Clientes e Obras | Média |
 | **Nível 3 (Média)** | 3.2 Detecção de Mock Location (Anti-Fake GPS) | Proteção Antifraude no Mobile | Baixa |
 | **Nível 4 (Baixa)** | 4.1 Notificações Push de Lembrete de Ponto | Redução de Esquecimentos no Dia a Dia | Baixa |
-| **Nível 4 (Baixa)** | 4.2 Modo Kiosk / Bloqueio de Terminal no Totem | Proteção Física do Dispositivo | Baixa |
+| **Nível 4 (Baixa)** | 4.2 Modo Kiosk / Bloqueio de Terminal no Totem | Proteção Física do Dispositivo | ✅ Concluído |
 
 ---
 
@@ -147,10 +147,27 @@ Este documento detalha as funcionalidades e boas práticas consolidadas nos prin
 
 ---
 
-### 4.2 Modo Kiosk / Bloqueio de Terminal no Totem
-* **Como Funciona:**
-  - Em tablets instalados na recepção, ativa o modo de fixação de tela (*Android Lock Task Mode* ou *iOS Guided Access*).
-  - O dispositivo fica travado exclusivamente no aplicativo Viggo, impedindo que colaboradores ou terceiros fechem o app, abram o YouTube ou desativem o Wi-Fi nas configurações.
+### 4.2 Modo Kiosk / Bloqueio de Terminal no Totem e Recuperação de Acesso ✅ *(Concluído)*
+* **Implementação Realizada:**
+  - **Terminal Web e Tablets de Recepção (`TotemPage.tsx` / `TotemManagePage.tsx`):**
+    - Ativação imediata em tela cheia (`requestFullscreen`).
+    - Integração com a **Wake Lock API** (`navigator.wakeLock.request('screen')`) impedindo que a tela apague ou suspenda na portaria.
+    - Bloqueio de teclado e teclas de desenvolvedor/refresh (`F12`, `F5`, `Ctrl+R`, `Ctrl+W`, `Ctrl+U`, `Ctrl+Shift+I/J`).
+    - Bloqueio do menu de contexto (clique direito com mouse).
+    - Trava de recuo no histórico (`window.history.pushState` e `popstate`).
+    - Proteção contra fechamento de aba via `beforeunload`.
+    - **4 Métodos de Saída e Recuperação:**
+      1. *PIN do Totem:* Saída operacional rápida padrão.
+      2. *Biometria Facial do Admin:* Scanner com máscara oval e matching euclidiano estrito (< 0.5) contra administradores (`ENTERPRISE_ADMIN`/`MASTER`) cadastrados da empresa.
+      3. *Código OTP por E-mail:* Envio de código numérico de 6 dígitos via Resend válido por 10 minutos com e-mail mascarado (`adm***@empresa.com`) e limite anti-brute force de 5 tentativas.
+      4. *Credenciais de Admin:* Desbloqueio emergencial por e-mail e senha de administrador.
+  - **Aplicativo Mobile (`mobile/app/(app)/totem.tsx`):**
+    - Interceptação de hardware back press do Android com `BackHandler`, evitando saída acidental da tela do Totem pelo botão ou gestos nativos.
+    - Card nativo de solicitação e validação de código OTP de recuperação por e-mail.
+  - **Backend & Testes (`TotemController.ts` / `TotemController.test.ts` / `templates.test.ts`):**
+    - Rotas protegidas com rate limiting (`/totem/recover/face`, `/totem/recover/code/send` e `/totem/recover/code/verify`).
+    - Template corporativo responsivo [`totemRecoveryCode.ts`](file:///c:/Users/matheusmoraes/Documents/GitHub/Viggo/backend/src/templates/totemRecoveryCode.ts).
+    - 100% de cobertura em testes unitários automatizados com Vitest.
 
 ---
 

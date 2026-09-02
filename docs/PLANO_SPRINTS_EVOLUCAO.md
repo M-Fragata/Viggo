@@ -8,7 +8,7 @@ Este documento detalha o planejamento das **4 Sprints de Desenvolvimento** para 
 * **Item 3.8:** Cerca Geográfica com Raio em Metros (Geofencing)
 * **Item 3.9:** Detecção de Mock Location (Anti-Fake GPS) no Mobile
 * **Item 4.11:** Notificações Push de Lembrete de Ponto no Mobile
-* **Item 4.12:** Modo Kiosk / Bloqueio de Terminal no Totem
+* **Item 4.12:** Modo Kiosk / Bloqueio de Terminal no Totem e Recuperação de Acesso ✅ *(Concluído)*
 
 ---
 
@@ -105,14 +105,29 @@ Este documento detalha o planejamento das **4 Sprints de Desenvolvimento** para 
     - **10 min antes da saída:** *"Fim de expediente! Registre sua saída às [17:00]."*
   - Opção no perfil do usuário para silenciar ou personalizar a antecedência dos lembretes.
 
-#### 4.12 Modo Kiosk / Bloqueio de Terminal no Totem
-* **Mobile (`mobile/app/(app)/totem.tsx`):**
-  - Implementação de fixação de tela para Android (*Lock Task Mode*) e suporte a Acesso Guiado (*Guided Access*) no iOS/iPadOS.
-  - Opção no menu de configuração do Totem com proteção pelo PIN de Administrador.
-  - Ao ativar, o tablet não permite:
-    - Sair do app pelo botão Home ou gestos do sistema;
-    - Abrir outros aplicativos ou navegador;
-    - Puxar a barra de notificações para desligar Wi-Fi ou alterar o brilho.
+#### 4.12 Modo Kiosk / Bloqueio de Terminal no Totem e Recuperação de Acesso ✅ *(Concluído)*
+* **Frontend Web (`TotemPage.tsx` / `TotemManagePage.tsx`):**
+  - **Ativação Automática de Kiosk:** Ao ativar o terminal, inicia imediatamente em tela cheia (`requestFullscreen`).
+  - **Wake Lock API:** Mantém a tela do monitor ou tablet permanentemente acesa na recepção/portaria sem entrar em suspensão (`navigator.wakeLock.request('screen')`).
+  - **Bloqueio de Atalhos e Teclado:** Bloqueio de teclas de inspeção e recarregamento (`F12`, `F5`, `Ctrl+R`, `Ctrl+W`, `Ctrl+U`, `Ctrl+Shift+I/J`).
+  - **Bloqueio de Menu de Contexto:** Previne o clique com o botão direito do mouse (`contextmenu`).
+  - **Trava de Histórico e Navegação:** Previne o botão "Voltar" do navegador via `window.history.pushState` e evento `popstate`.
+  - **Proteção contra Fechamento Acidental:** Listener `beforeunload` para confirmação antes de fechar a aba.
+  - **Interface Moderna de Saída com 4 Abas:**
+    1. **PIN do Totem:** Saída padrão rápida via PIN numérico configurado.
+    2. **Biometria Facial do Admin:** Leitura facial em tempo real com máscara oval e comparação euclidiana estrita (< 0.5) contra administradores (`ENTERPRISE_ADMIN` ou `MASTER`) da empresa.
+    3. **Código OTP por E-mail:** Envio de código numérico de 6 dígitos para o e-mail dos administradores cadastrados com validade de 10 minutos, máscara de privacidade (`adm***@empresa.com`), timer regressivo de 60s para reenvio e proteção anti-brute-force (máximo de 5 tentativas).
+    4. **Credenciais de Administrador:** Saída clássica de emergência informando e-mail e senha do administrador.
+* **Backend (`TotemController.ts` / `totemRoutes.ts` / `emailService.ts`):**
+  - Rotas autenticadas com rate limiting (`totemAuthMiddleware` e `totemPinLimiter`):
+    - `POST /totem/recover/face`: Validação facial contra biometrias decifradas dos administradores.
+    - `POST /totem/recover/code/send`: Geração de OTP criptografado com bcrypt e envio via Resend.
+    - `POST /totem/recover/code/verify`: Validação de OTP, controle de tentativas e desativação do totem (`totemActive: false`).
+  - Template corporativo responsivo de e-mail [`totemRecoveryCode.ts`](file:///c:/Users/matheusmoraes/Documents/GitHub/Viggo/backend/src/templates/totemRecoveryCode.ts).
+  - Testes unitários com Vitest cobrindo 100% dos cenários de sucesso, erro e rate limiting em [`TotemController.test.ts`](file:///c:/Users/matheusmoraes/Documents/GitHub/Viggo/backend/src/test/unit/controller/TotemController.test.ts) e [`templates.test.ts`](file:///c:/Users/matheusmoraes/Documents/GitHub/Viggo/backend/src/test/unit/templates/templates.test.ts).
+* **Mobile (`mobile/app/(app)/totem.tsx` / `mobile/services/api.ts`):**
+  - Interceptação do botão físico/gestual de "Voltar" do Android via `BackHandler` (`hardwareBackPress`), impedindo a saída indevida do terminal.
+  - Card integrado de recuperação via código OTP por e-mail no app móvel.
 
 ---
 
