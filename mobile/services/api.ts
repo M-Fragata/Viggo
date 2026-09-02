@@ -26,6 +26,10 @@ export interface CheckInItem {
   address?: string;
   geolocationAccuracy?: number;
   comprovante?: string;
+  workLocationId?: string | null;
+  distanciaMetros?: number | null;
+  dentroDoRaio?: boolean | null;
+  workLocation?: { id: string; nome: string; raioMetros: number } | null;
 }
 
 export interface TotemVerifyResponse {
@@ -331,4 +335,156 @@ export const api = {
       });
     },
   },
+
+  espelhos: {
+    async listarMeus(): Promise<MobileEspelhoItem[]> {
+      return request<MobileEspelhoItem[]>('/espelhos/me');
+    },
+
+    async obterDetalhes(id: string): Promise<MobileEspelhoDetalhe> {
+      return request<MobileEspelhoDetalhe>(`/espelhos/${id}`);
+    },
+
+    async assinar(id: string, password: string): Promise<{ message: string }> {
+      return request<{ message: string }>(`/espelhos/${id}/assinar`, {
+        method: 'POST',
+        body: JSON.stringify({ password }),
+      });
+    },
+
+    async contestar(id: string, motivo: string): Promise<{ message: string }> {
+      return request<{ message: string }>(`/espelhos/${id}/contestar`, {
+        method: 'POST',
+        body: JSON.stringify({ motivo }),
+      });
+    },
+
+    downloadPdfUrl(id: string): string {
+      return `${API_URL}/espelhos/${id}/pdf`;
+    },
+  },
+
+  justificativas: {
+    async create(body: MobileJustificativaCreateDto): Promise<{ message: string; justificativa: MobileJustificativaItem }> {
+      return request<{ message: string; justificativa: MobileJustificativaItem }>('/justificativas', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+    },
+
+    async list(): Promise<MobileJustificativaItem[]> {
+      return request<MobileJustificativaItem[]>('/justificativas');
+    },
+
+    getComprovanteUrl(id: string): string {
+      return `${API_URL}/justificativas/${id}/comprovante`;
+    },
+  },
+
+  workLocations: {
+    async list(): Promise<MobileWorkLocationItem[]> {
+      return request<MobileWorkLocationItem[]>('/work-locations');
+    },
+  },
 };
+
+export type MobileEspelhoStatus = 'LIBERADO' | 'ASSINADO' | 'CONTESTADO';
+
+export interface MobileDiaEspelho {
+  data: string;
+  diaNumero: string;
+  diaSemana: string;
+  entrada: string;
+  saidaAlmoco: string;
+  retornoAlmoco: string;
+  saida: string;
+  horasTrabalhadas: string;
+  horasExtras: string;
+  observacoes: string;
+}
+
+export interface MobileResumoHorasEspelho {
+  totalMinutosTrabalhados: number;
+  totalMinutosExtras: number;
+  totalDiasTrabalhados: number;
+  horasTrabalhadasFormatadas: string;
+  horasExtrasFormatadas: string;
+}
+
+export interface MobileEspelhoItem {
+  id: string;
+  ano: number;
+  mes: number;
+  status: MobileEspelhoStatus;
+  resumoHoras: MobileResumoHorasEspelho;
+  assinadoEm: string | null;
+  motivoRecusa: string | null;
+  createdAt: string;
+}
+
+export interface MobileEspelhoDetalhe {
+  id: string;
+  companyId: string;
+  userId: string;
+  ano: number;
+  mes: number;
+  status: MobileEspelhoStatus;
+  hashDocumento: string;
+  resumoHoras: MobileResumoHorasEspelho;
+  detalhesDias: MobileDiaEspelho[];
+  assinadoEm: string | null;
+  motivoRecusa: string | null;
+  createdAt: string;
+}
+
+export type MobileJustificativaTipo =
+  | 'ESQUECIMENTO_PONTO'
+  | 'ATESTADO_MEDICO'
+  | 'DECLARACAO_COMPARECIMENTO'
+  | 'ABONO_FALTA'
+  | 'OUTRO';
+
+export interface MobileJustificativaCreateDto {
+  tipo: MobileJustificativaTipo;
+  descricao: string;
+  dataInicio: string;
+  dataFim?: string;
+  horarioAjustado?: string;
+  tipoBatidaAjuste?: 'ENTRY' | 'LUNCH_START' | 'LUNCH_END' | 'EXIT';
+  diasAfastamento?: number;
+  arquivo?: {
+    nomeOriginal: string;
+    mimeType: string;
+    conteudoBase64: string;
+  };
+}
+
+export interface MobileJustificativaItem {
+  id: string;
+  userId: string;
+  companyId: string;
+  tipo: MobileJustificativaTipo;
+  descricao: string;
+  dataInicio: string;
+  dataFim: string | null;
+  horarioAjustado: string | null;
+  tipoBatidaAjuste: 'ENTRY' | 'LUNCH_START' | 'LUNCH_END' | 'EXIT' | null;
+  diasAfastamento: number | null;
+  motivoRecusa: string | null;
+  comprovanteNomeOriginal: string | null;
+  comprovanteTamanho: number | null;
+  aprovado: boolean | null;
+  aprovadoPor: string | null;
+  createdAt: string;
+}
+
+export interface MobileWorkLocationItem {
+  id: string;
+  nome: string;
+  endereco: string | null;
+  latitude: number;
+  longitude: number;
+  raioMetros: number;
+  ativo: boolean;
+}
+

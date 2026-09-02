@@ -17,6 +17,7 @@ import {
   Sliders,
   LogOut,
   Building2,
+  MapPin,
 } from "lucide-react";
 import logo from "../../assets/logo.png";
 import { useAuth } from "../../hooks/useAuth";
@@ -65,6 +66,7 @@ export function NavDrawer({ isOpen, onClose }: NavDrawerProps) {
   const personalItems = [
     { to: "/ponto", label: "Bater Ponto", icon: Fingerprint },
     { to: "/pontos", label: "Histórico de Pontos", icon: Clock },
+    { to: "/espelhos", label: "Espelho de Ponto", icon: FileText },
     { to: "/justificativas", label: "Minhas Justificativas", icon: ClipboardList },
     { to: "/meus-dados", label: "Meus Dados", icon: User },
   ];
@@ -75,6 +77,7 @@ export function NavDrawer({ isOpen, onClose }: NavDrawerProps) {
     { to: "/presentes", label: "Quem está Presente", icon: UserCheck },
     { to: "/folha-mensal", label: "Folha Mensal & Espelho", icon: FileText },
     { to: "/horarios", label: "Escalas & Horários", icon: Calendar },
+    { to: "/polos", label: "Polos & Cercas Virtuais", icon: MapPin },
   ];
 
   const adminSystemItems = [

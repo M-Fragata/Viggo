@@ -30,6 +30,8 @@ model Company {
   invites            InviteToken[]
   justificativas     Justificativa[]
   workSchedules      WorkSchedule[]
+  espelhosPonto      EspelhoPonto[]
+  workLocations      WorkLocation[]
 }
 
 model User {
@@ -59,6 +61,7 @@ model User {
   inviteTokenUsages          InviteTokenUsage[]
   consentimentos             Consentimento[]
   justificativas             Justificativa[]
+  espelhosPonto              EspelhoPonto[]
 }
 
 model CheckIn {
@@ -78,12 +81,34 @@ model CheckIn {
   companyId           String
   company             Company         @relation(fields: [companyId], references: [id])
   user                User            @relation(fields: [userId], references: [id])
+  workLocationId      String?
+  workLocation        WorkLocation?   @relation(fields: [workLocationId], references: [id], onDelete: SetNull)
+  distanciaMetros     Int?
+  dentroDoRaio        Boolean?
   justificativas      Justificativa[]
 
   @@unique([companyId, nsr, ano])
   @@index([userId, createdAt])
   @@index([companyId, createdAt])
   @@index([companyId, nsr, ano])
+  @@index([workLocationId])
+}
+
+model WorkLocation {
+  id          String    @id @default(uuid())
+  companyId   String
+  company     Company   @relation(fields: [companyId], references: [id])
+  nome        String
+  endereco    String?
+  latitude    Float
+  longitude   Float
+  raioMetros  Int       @default(100)
+  ativo       Boolean   @default(true)
+  checkIns    CheckIn[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([companyId, ativo])
 }
 
 model Subscription {
@@ -255,25 +280,34 @@ model Consentimento {
 }
 
 model Justificativa {
-  id          String    @id @default(uuid())
-  userId      String
-  user        User      @relation(fields: [userId], references: [id])
-  companyId   String
-  company     Company   @relation(fields: [companyId], references: [id])
-  tipo        String
-  descricao   String
-  dataInicio  DateTime
-  dataFim     DateTime?
-  comprovante String?
-  aprovado    Boolean?
-  aprovadoPor String?
-  checkinId   String?
-  checkin     CheckIn?  @relation(fields: [checkinId], references: [id], onDelete: SetNull)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id                      String       @id @default(uuid())
+  userId                  String
+  user                    User         @relation(fields: [userId], references: [id])
+  companyId               String
+  company                 Company      @relation(fields: [companyId], references: [id])
+  tipo                    String       // "ESQUECIMENTO_PONTO", "ATESTADO_MEDICO", "DECLARACAO_COMPARECIMENTO", "ABONO_FALTA", "OUTRO"
+  descricao               String
+  dataInicio              DateTime
+  dataFim                 DateTime?
+  horarioAjustado         String?      // Ex: "08:00" quando tipo for ESQUECIMENTO_PONTO
+  tipoBatidaAjuste        CheckInType? // ENTRY, LUNCH_START, LUNCH_END, EXIT
+  diasAfastamento         Int?         @default(1)
+  motivoRecusa            String?      // Preenchido obrigatoriamente quando recusado pelo RH
+  comprovantePath         String?      // Caminho local seguro do anexo no storage
+  comprovanteNomeOriginal String?      // Nome original do arquivo (ex: atestado.pdf)
+  comprovanteTamanho      Int?         // Tamanho em bytes (limite de 4MB)
+  comprovanteMimeType     String?      // image/jpeg, image/png, application/pdf, etc.
+  comprovante             String?      // Mantido para compatibilidade retroativa
+  aprovado                Boolean?     // null = Pendente, true = Aprovado, false = Rejeitado
+  aprovadoPor             String?
+  checkinId               String?
+  checkin                 CheckIn?     @relation(fields: [checkinId], references: [id], onDelete: SetNull)
+  createdAt               DateTime     @default(now())
+  updatedAt               DateTime     @updatedAt
 
   @@index([userId, dataInicio])
   @@index([companyId, dataInicio])
+  @@index([companyId, aprovado])
   @@index([checkinId])
 }
 
@@ -309,3 +343,44 @@ model AnalyticsEvent {
   @@index([visitorId])
   @@index([companyId])
 }
+
+enum EspelhoStatus {
+  LIBERADO
+  ASSINADO
+  CONTESTADO
+}
+
+model EspelhoPonto {
+  id              String         @id @default(uuid())
+  companyId       String
+  userId          String
+  ano             Int
+  mes             Int
+  periodoInicio   DateTime
+  periodoFim      DateTime
+  status          EspelhoStatus  @default(LIBERADO)
+
+  hashDocumento   String         // SHA-256 do espelho consolidado
+  resumoHoras     Json           // { totalMinutosTrabalhados, totalMinutosExtras, totalMinutosAtrasos, totalMinutosFaltas }
+  detalhesDias    Json?          // Array com o detalhamento de cada dia do período
+
+  assinadoEm      DateTime?
+  ipAssinatura    String?
+  userAgent       String?
+  metodoAuth      String?        // "SENHA" | "BIOMETRIA"
+
+  motivoRecusa    String?
+  dataContestacao DateTime?
+  respostaRh      String?
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  company         Company        @relation(fields: [companyId], references: [id])
+  user            User           @relation(fields: [userId], references: [id])
+
+  @@unique([companyId, userId, ano, mes])
+  @@index([companyId, ano, mes])
+  @@index([userId, status])
+}
+

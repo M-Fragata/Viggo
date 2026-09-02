@@ -8,6 +8,7 @@ import { gerarRelatorioMensal, gerarRelatorioMensalPdf } from "../services/relat
 import { signContent } from "../utils/afSignature.js";
 
 import { parseISO, startOfDay, endOfDay, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from "date-fns"
+import { avaliarLocalizacaoCheckin } from "../services/geofenceService.js";
 
 
 export class CheckinController {
@@ -127,6 +128,11 @@ export class CheckinController {
             // address ignorado por enquanto — reverse-geocode pendente (ver PENDENCIAS-CONFORMIDADE.md A4)
             const finalAddress = address ?? null;
 
+            // Auditoria Geográfica (Item 3.8 / Portaria 671 MTE):
+            // Calcula a menor distância em relação a todos os polos ativos da empresa.
+            // O ponto é sempre aceito; se fora do raio, audita sem bloquear.
+            const auditoriaGeofence = await avaliarLocalizacaoCheckin(companyId, finalLatitude, finalLongitude);
+
             const checkin = await extendedPrisma.$transaction(async (tx) => {
                 const nsr = await getNextNSR(tx as unknown as Parameters<typeof getNextNSR>[0], companyId, ano);
 
@@ -139,6 +145,9 @@ export class CheckinController {
                         geolocationDenied: !!geolocationDenied,
                         geolocationConsent: geolocationConsent ?? !geolocationDenied,
                         address: finalAddress,
+                        workLocationId: auditoriaGeofence.poloMaisProximo?.id ?? null,
+                        distanciaMetros: auditoriaGeofence.distanciaMetros,
+                        dentroDoRaio: auditoriaGeofence.dentroDoRaio,
                         nsr,
                         ano,
                         userId,
@@ -154,6 +163,22 @@ export class CheckinController {
                         data: {
                             tipo: "JUSTIFICATIVA_GERAL",
                             descricao: `Ponto ${type} sem localização — GPS negado pelo colaborador. CheckIn ${created.id} em ${rawCreatedAt.toISOString()}. Pendente de análise.`,
+                            dataInicio: rawCreatedAt,
+                            userId,
+                            companyId,
+                            checkinId: created.id,
+                            aprovado: null,
+                        }
+                    });
+                }
+
+                // Item 3.8: se a empresa possui polos e o colaborador bateu fora do raio estipulado,
+                // registra justificativa de auditoria para visualização clara do RH (sem bloquear o ponto)
+                if (auditoriaGeofence.possuiPolosCadastrados && !auditoriaGeofence.dentroDoRaio) {
+                    await tx.justificativa.create({
+                        data: {
+                            tipo: "JUSTIFICATIVA_GERAL",
+                            descricao: auditoriaGeofence.mensagemAuditoria,
                             dataInicio: rawCreatedAt,
                             userId,
                             companyId,
@@ -265,7 +290,13 @@ export class CheckinController {
                         gte: startOfDay(parsedDate),
                         lte: endOfDay(parsedDate)
                     }
-                }
+                },
+                include: {
+                    workLocation: {
+                        select: { id: true, nome: true, raioMetros: true }
+                    }
+                },
+                orderBy: { createdAt: "asc" }
             })
 
             return res.status(200).json(checkins)
@@ -311,6 +342,11 @@ export class CheckinController {
                         lte: endOfDay(parsedDate),
                     },
                 },
+                include: {
+                    workLocation: {
+                        select: { id: true, nome: true, raioMetros: true }
+                    }
+                },
                 orderBy: { createdAt: "asc" },
             });
 
@@ -326,6 +362,9 @@ export class CheckinController {
                             type: c.type,
                             latitude: c.latitude,
                             longitude: c.longitude,
+                            distanciaMetros: c.distanciaMetros,
+                            dentroDoRaio: c.dentroDoRaio,
+                            workLocation: c.workLocation,
                         })),
                 }))
                 .filter((emp) => emp.checkins.length > 0);

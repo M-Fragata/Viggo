@@ -26,6 +26,8 @@ const JustificativasAdminPage = lazy(() => import("../pages/admin/Justificativas
 const TotemManagePage = lazy(() => import("../pages/admin/TotemManagePage").then((m) => ({ default: m.TotemManagePage })));
 const TotemPage = lazy(() => import("../pages/admin/TotemPage").then((m) => ({ default: m.TotemPage })));
 const ConfiguracoesPage = lazy(() => import("../pages/admin/ConfiguracoesPage").then((m) => ({ default: m.ConfiguracoesPage })));
+const MeusEspelhosPage = lazy(() => import("../pages/MeusEspelhosPage").then((m) => ({ default: m.MeusEspelhosPage })));
+const PolosTrabalhoPage = lazy(() => import("../pages/admin/PolosTrabalhoPage").then((m) => ({ default: m.PolosTrabalhoPage })));
 
 export function AdminRoutes() {
   const { user } = useAuth();
@@ -46,11 +48,15 @@ export function AdminRoutes() {
         <Route path="presentes" element={<Suspense fallback={<Loading />}><PresentesPage /></Suspense>} />
         <Route path="folha-mensal" element={<Suspense fallback={<Loading />}><FolhaMensalPage /></Suspense>} />
         <Route path="horarios" element={<Suspense fallback={<Loading />}><HorariosPage /></Suspense>} />
+        <Route path="polos" element={<Suspense fallback={<Loading />}><PolosTrabalhoPage /></Suspense>} />
+        <Route path="cercas" element={<Suspense fallback={<Loading />}><PolosTrabalhoPage /></Suspense>} />
         <Route path="plano" element={<Suspense fallback={<Loading />}><PlanoPage /></Suspense>} />
         <Route path="convites" element={<Suspense fallback={<Loading />}><ConvitesPage /></Suspense>} />
         <Route path="justificativas" element={<Suspense fallback={<Loading />}><JustificativasAdminPage /></Suspense>} />
         <Route path="totem" element={<Suspense fallback={<Loading />}><TotemManagePage /></Suspense>} />
         <Route path="configuracoes" element={<Suspense fallback={<Loading />}><ConfiguracoesPage /></Suspense>} />
+        <Route path="espelhos" element={<Suspense fallback={<Loading />}><MeusEspelhosPage /></Suspense>} />
+        <Route path="espelho" element={<Suspense fallback={<Loading />}><MeusEspelhosPage /></Suspense>} />
         <Route path="ponto" element={<PontoPage />} />
         <Route path="pontos" element={<PontoViewPage />} />
         <Route path="register" element={<RegisterFace />} />

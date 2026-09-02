@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { api } from "../../services/api";
 import { PageHeader } from "../../components/common/PageHeader";
+import { FechamentoAssinaturasSection } from "../../components/admin/FechamentoAssinaturasSection";
 
 const MONTHS = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -26,11 +27,16 @@ export function FolhaMensalPage() {
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-10">
       <PageHeader
         title="Folha Mensal & Espelho MTE"
-        subtitle="Consolidação mensal e arquivos fiscais obrigatórios (Portaria 671/2021 MTE)"
-        helpText="Gere relatórios mensais consolidados para fechamento de folha de pagamento e contabilidade, ou emita os arquivos fiscais oficiais (AFD e AEJ) exigidos pelo Ministério do Trabalho."
+        subtitle="Ciclo de fechamento, assinaturas eletrônicas e arquivos fiscais obrigatórios (Portaria 671/2021 MTE / Lei 14.063/2020)"
+        helpText="Libere os espelhos de ponto para assinatura eletrônica dos colaboradores, gere relatórios mensais consolidados para fechamento da folha e emita os arquivos fiscais oficiais (AFD e AEJ) exigidos pelo Ministério do Trabalho."
       />
 
-      {/* TÓPICO 1: FOLHA MENSAL */}
+      {/* TÓPICO 1: CICLO DE FECHAMENTO & ASSINATURAS ELETRÔNICAS */}
+      <section className="space-y-4">
+        <FechamentoAssinaturasSection />
+      </section>
+
+      {/* TÓPICO 2: FOLHA MENSAL */}
       <section className="space-y-4">
         <div className="flex items-center gap-3 pb-2 border-b border-slate-200 dark:border-white/10">
           <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
@@ -39,7 +45,7 @@ export function FolhaMensalPage() {
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                Folha Mensal
+                Relatórios de Fechamento de Folha
               </h2>
               <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
                 Rotina Mensal / RH

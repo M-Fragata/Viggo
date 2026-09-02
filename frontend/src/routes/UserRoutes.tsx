@@ -6,6 +6,7 @@ import { PontoViewPage } from "../pages/pontoViewPage";
 import { RegisterFace } from "../pages/RegisterFace";
 import { MeusDadosPage } from "../pages/MeusDadosPage";
 import { JustificativasPage } from "../pages/JustificativasPage";
+import { MeusEspelhosPage } from "../pages/MeusEspelhosPage";
 import { useAuth } from "../hooks/useAuth";
 import { NotFoundPage } from "../pages/NotFoundPage";
 
@@ -34,6 +35,8 @@ export function UserRoutes() {
         <Route path="register" element={<RegisterFace />} />
         <Route path="meus-dados" element={<MeusDadosPage />} />
         <Route path="justificativas" element={<JustificativasPage />} />
+        <Route path="espelhos" element={<MeusEspelhosPage />} />
+        <Route path="espelho" element={<MeusEspelhosPage />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

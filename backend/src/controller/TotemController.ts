@@ -10,6 +10,7 @@ import { decryptCpf, formatCpfDigits } from "../utils/cpfEncryption.js";
 import { gerarComprovante } from "../utils/comprovanteGenerator.js";
 import { getNextNSR, currentYear, NsrLimitExceededError } from "../utils/nsrGenerator.js";
 import { parseISO, startOfDay, endOfDay } from "date-fns";
+import { avaliarLocalizacaoCheckin } from "../services/geofenceService.js";
 
 interface FaceToken {
     descriptor: Float32Array;
@@ -350,6 +351,9 @@ export class TotemController {
             // A2 mínimo: preservar cru (ver CheckinController)
             const rawCreatedAt = new Date();
 
+            // Auditoria Geográfica no Totem (Item 3.8 / Portaria 671 MTE):
+            const auditoriaGeofence = await avaliarLocalizacaoCheckin(companyId, latitude, longitude);
+
             const checkin = await extendedPrisma.$transaction(async (tx) => {
                 const nsr = await getNextNSR(tx as unknown as Parameters<typeof getNextNSR>[0], companyId, ano);
 
@@ -358,6 +362,9 @@ export class TotemController {
                         type,
                         latitude,
                         longitude,
+                        workLocationId: auditoriaGeofence.poloMaisProximo?.id ?? null,
+                        distanciaMetros: auditoriaGeofence.distanciaMetros,
+                        dentroDoRaio: auditoriaGeofence.dentroDoRaio,
                         nsr,
                         ano,
                         userId,

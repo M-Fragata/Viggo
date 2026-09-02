@@ -394,19 +394,26 @@ export const api = {
 
   justificativa: {
     create: (body: JustificativaCreateBody) =>
-      fetchApi<JustificativaResponse>("/justificativas", {
+      fetchApi<{ message: string; justificativa: JustificativaResponse }>("/justificativas", {
         method: "POST",
         body: JSON.stringify(body),
       }),
 
-    list: () =>
-      fetchApi<(JustificativaResponse & { user?: { id: string; name: string; email: string } })[]>("/justificativas"),
+    list: (params?: { status?: string; tipo?: string }) => {
+      const searchParams = new URLSearchParams();
+      if (params?.status) searchParams.set("status", params.status);
+      if (params?.tipo) searchParams.set("tipo", params.tipo);
+      const qs = searchParams.toString() ? `?${searchParams.toString()}` : "";
+      return fetchApi<JustificativaResponse[]>(`/justificativas${qs}`);
+    },
 
-    approve: (id: string, aprovado: boolean) =>
-      fetchApi<JustificativaResponse>(`/justificativas/${id}/aprovar`, {
+    approve: (id: string, aprovado: boolean, motivoRecusa?: string) =>
+      fetchApi<{ message: string; justificativa: JustificativaResponse }>(`/justificativas/${id}/aprovar`, {
         method: "PUT",
-        body: JSON.stringify({ aprovado }),
+        body: JSON.stringify({ aprovado, motivoRecusa }),
       }),
+
+    getComprovanteUrl: (id: string) => `${API_URL}/justificativas/${id}/comprovante`,
   },
 
   workSchedules: {
@@ -434,6 +441,28 @@ export const api = {
       fetchApi<{ id: string; name: string; workScheduleId: string | null }>("/work-schedules/assign", {
         method: "POST",
         body: JSON.stringify({ employeeId, workScheduleId }),
+      }),
+  },
+
+  workLocations: {
+    list: () =>
+      fetchApi<WorkLocationResponse[]>("/work-locations"),
+
+    create: (body: WorkLocationCreateBody) =>
+      fetchApi<{ message: string; polo: WorkLocationResponse }>("/work-locations", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+
+    update: (id: string, body: Partial<WorkLocationCreateBody> & { ativo?: boolean }) =>
+      fetchApi<{ message: string; polo: WorkLocationResponse }>(`/work-locations/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(body),
+      }),
+
+    remove: (id: string) =>
+      fetchApi<{ message: string; removido?: boolean; desativado?: boolean }>(`/work-locations/${id}`, {
+        method: "DELETE",
       }),
   },
 
@@ -490,7 +519,134 @@ export const api = {
         totemToken: true,
       }),
   },
+
+  espelhos: {
+    liberarFechamento: (year: number, month: number, userId?: string) =>
+      fetchApi<{
+        message: string;
+        totalColaboradores: number;
+        espelhosCriados: number;
+        espelhosAtualizados: number;
+      }>("/espelhos/fechamento", {
+        method: "POST",
+        body: JSON.stringify({ year, month, userId }),
+      }),
+
+    listarEmpresa: (year?: number, month?: number) => {
+      const searchParams = new URLSearchParams();
+      if (year) searchParams.set("year", year.toString());
+      if (month) searchParams.set("month", month.toString());
+      const query = searchParams.toString() ? `?${searchParams.toString()}` : "";
+      return fetchApi<ListarEspelhosEmpresaResponse>(`/espelhos/empresa${query}`);
+    },
+
+    listarMeus: () =>
+      fetchApi<MeuEspelhoItem[]>("/espelhos/me"),
+
+    obterDetalhes: (id: string) =>
+      fetchApi<EspelhoPontoDetalheResponse>(`/espelhos/${id}`),
+
+    assinar: (id: string, password: string) =>
+      fetchApi<{ message: string; espelho: EspelhoPontoDetalheResponse }>(`/espelhos/${id}/assinar`, {
+        method: "POST",
+        body: JSON.stringify({ password }),
+      }),
+
+    contestar: (id: string, motivo: string) =>
+      fetchApi<{ message: string; espelho: EspelhoPontoDetalheResponse }>(`/espelhos/${id}/contestar`, {
+        method: "POST",
+        body: JSON.stringify({ motivo }),
+      }),
+
+    downloadPdfUrl: (id: string) => `${API_URL}/espelhos/${id}/pdf`,
+  },
 };
+
+export type EspelhoStatus = "LIBERADO" | "ASSINADO" | "CONTESTADO" | "NAO_GERADO";
+
+export interface DiaEspelhoItem {
+  data: string;
+  diaNumero: string;
+  diaSemana: string;
+  entrada: string;
+  saidaAlmoco: string;
+  retornoAlmoco: string;
+  saida: string;
+  horasTrabalhadas: string;
+  horasExtras: string;
+  observacoes: string;
+}
+
+export interface ResumoHorasEspelhoItem {
+  totalMinutosTrabalhados: number;
+  totalMinutosExtras: number;
+  totalDiasTrabalhados: number;
+  horasTrabalhadasFormatadas: string;
+  horasExtrasFormatadas: string;
+}
+
+export interface MeuEspelhoItem {
+  id: string;
+  ano: number;
+  mes: number;
+  status: EspelhoStatus;
+  resumoHoras: ResumoHorasEspelhoItem;
+  assinadoEm: string | null;
+  motivoRecusa: string | null;
+  createdAt: string;
+}
+
+export interface ItemEspelhoEmpresa {
+  id?: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  hasEspelho: boolean;
+  status: EspelhoStatus;
+  resumoHoras?: ResumoHorasEspelhoItem;
+  assinadoEm?: string | null;
+  motivoRecusa?: string | null;
+  updatedAt?: string;
+}
+
+export interface ListarEspelhosEmpresaResponse {
+  year: number;
+  month: number;
+  totalColaboradores: number;
+  stats: {
+    total: number;
+    assinados: number;
+    pendentes: number;
+    contestados: number;
+    naoGerados: number;
+    percentualAssinado: number;
+  };
+  items: ItemEspelhoEmpresa[];
+}
+
+export interface EspelhoPontoDetalheResponse {
+  id: string;
+  companyId: string;
+  userId: string;
+  ano: number;
+  mes: number;
+  periodoInicio: string;
+  periodoFim: string;
+  status: EspelhoStatus;
+  hashDocumento: string;
+  resumoHoras: ResumoHorasEspelhoItem;
+  detalhesDias: DiaEspelhoItem[];
+  assinadoEm: string | null;
+  ipAssinatura: string | null;
+  userAgent: string | null;
+  metodoAuth: string | null;
+  motivoRecusa: string | null;
+  dataContestacao: string | null;
+  user?: { name: string; email: string; cpf: string | null };
+  company?: { name: string; cnpj: string };
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface User {
   id: string;
@@ -986,6 +1142,10 @@ export interface CheckinResponse {
   geolocationDenied?: boolean;
   geolocationConsent?: boolean | null;
   address?: string | null;
+  workLocationId?: string | null;
+  distanciaMetros?: number | null;
+  dentroDoRaio?: boolean | null;
+  workLocation?: { id: string; nome: string; raioMetros: number } | null;
   userId: string;
   companyId: string;
 }
@@ -1078,14 +1238,33 @@ export interface AuditLogEntry {
   personalDataCategories: string[] | null;
 }
 
-export type JustificativaTipo = "ABONO" | "FALTA" | "ATESTADO" | "JUSTIFICATIVA_GERAL";
+export type JustificativaTipo =
+  | "ESQUECIMENTO_PONTO"
+  | "ATESTADO_MEDICO"
+  | "DECLARACAO_COMPARECIMENTO"
+  | "ABONO_FALTA"
+  | "OUTRO"
+  | "ABONO"
+  | "FALTA"
+  | "ATESTADO"
+  | "JUSTIFICATIVA_GERAL";
+
+export interface JustificativaArquivoDto {
+  nomeOriginal: string;
+  mimeType: string;
+  conteudoBase64: string;
+}
 
 export interface JustificativaCreateBody {
   tipo: JustificativaTipo;
   descricao: string;
   dataInicio: string;
   dataFim?: string;
+  horarioAjustado?: string;
+  tipoBatidaAjuste?: "ENTRY" | "LUNCH_START" | "LUNCH_END" | "EXIT";
+  diasAfastamento?: number;
   checkinId?: string;
+  arquivo?: JustificativaArquivoDto;
 }
 
 export interface JustificativaResponse {
@@ -1096,9 +1275,19 @@ export interface JustificativaResponse {
   descricao: string;
   dataInicio: string;
   dataFim: string | null;
+  horarioAjustado: string | null;
+  tipoBatidaAjuste: "ENTRY" | "LUNCH_START" | "LUNCH_END" | "EXIT" | null;
+  diasAfastamento: number | null;
+  motivoRecusa: string | null;
+  comprovantePath: string | null;
+  comprovanteNomeOriginal: string | null;
+  comprovanteTamanho: number | null;
+  comprovanteMimeType: string | null;
   comprovante: string | null;
   aprovado: boolean | null;
   aprovadoPor: string | null;
+  checkinId: string | null;
+  user?: { id: string; name: string; email: string };
   createdAt: string;
   updatedAt: string;
 }
@@ -1161,4 +1350,26 @@ export interface TotemCheckinResponse {
   };
   comprovante: string;
   hashVerificacao: string;
+}
+
+export interface WorkLocationCreateBody {
+  nome: string;
+  endereco?: string;
+  latitude: number;
+  longitude: number;
+  raioMetros?: number;
+}
+
+export interface WorkLocationResponse {
+  id: string;
+  companyId: string;
+  nome: string;
+  endereco: string | null;
+  latitude: number;
+  longitude: number;
+  raioMetros: number;
+  ativo: boolean;
+  _count?: { checkIns: number };
+  createdAt: string;
+  updatedAt: string;
 }

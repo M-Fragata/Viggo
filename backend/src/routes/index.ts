@@ -13,6 +13,8 @@ import { workScheduleRoutes } from "./workScheduleRoutes.js";
 import { biometricRevalidationRoutes } from "./biometricRevalidationRoutes.js";
 import { totemRoutes } from "./totemRoutes.js";
 import { metricsRoutes } from "./metricsRoutes.js";
+import { espelhoRoutes } from "./espelhoRoutes.js";
+import { workLocationRoutes } from "./workLocationRoutes.js";
 
 const routes = Router();
 
@@ -29,5 +31,7 @@ routes.use("/work-schedules", workScheduleRoutes);
 routes.use("/biometric-revalidation", biometricRevalidationRoutes);
 routes.use("/totem", totemRoutes);
 routes.use("/metrics", metricsRoutes);
+routes.use("/espelhos", espelhoRoutes);
+routes.use("/work-locations", workLocationRoutes);
 
 export { routes }

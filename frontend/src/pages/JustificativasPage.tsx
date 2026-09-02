@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { api } from "../services/api";
 import type {
   JustificativaResponse,
   JustificativaTipo,
   JustificativaCreateBody,
-  CheckinResponse,
+  JustificativaArquivoDto,
 } from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 import { PageHeader } from "../components/common/PageHeader";
@@ -19,59 +19,39 @@ import {
   Clock,
   Calendar,
   Filter,
-  LogIn,
-  Utensils,
-  Coffee,
-  LogOut,
+  UploadCloud,
+  Eye,
+  MessageSquareWarning,
+  Paperclip,
+  Trash2,
 } from "lucide-react";
-
-type JustificativaWithUser = JustificativaResponse & {
-  user?: { id: string; name: string; email: string };
-};
+import { toast } from "sonner";
 
 const TIPO_LABELS: Record<JustificativaTipo, string> = {
-  ABONO: "Abono",
-  FALTA: "Falta",
-  ATESTADO: "Atestado Médico",
-  JUSTIFICATIVA_GERAL: "Justificativa Geral",
+  ESQUECIMENTO_PONTO: "Esquecimento de Ponto (Ajuste)",
+  ATESTADO_MEDICO: "Atestado Médico / Odontológico",
+  DECLARACAO_COMPARECIMENTO: "Declaração de Comparecimento",
+  ABONO_FALTA: "Abono de Falta / Ausência",
+  OUTRO: "Outra Justificativa",
+  ABONO: "Abono (Legado)",
+  FALTA: "Falta (Legado)",
+  ATESTADO: "Atestado (Legado)",
+  JUSTIFICATIVA_GERAL: "Geral (Legado)",
 };
 
 const TIPO_COLORS: Record<JustificativaTipo, string> = {
+  ESQUECIMENTO_PONTO: "bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300",
+  ATESTADO_MEDICO: "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300",
+  DECLARACAO_COMPARECIMENTO: "bg-cyan-100 dark:bg-cyan-900/40 text-cyan-700 dark:text-cyan-300",
+  ABONO_FALTA: "bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300",
+  OUTRO: "bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300",
   ABONO: "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300",
   FALTA: "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300",
   ATESTADO: "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300",
   JUSTIFICATIVA_GERAL: "bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300",
 };
 
-function getCheckinIcon(type: string) {
-  switch (type) {
-    case "ENTRY":
-      return <LogIn size={16} className="text-emerald-600 dark:text-emerald-400" />;
-    case "LUNCH_START":
-      return <Utensils size={16} className="text-emerald-600 dark:text-emerald-400" />;
-    case "LUNCH_END":
-      return <Coffee size={16} className="text-emerald-600 dark:text-emerald-400" />;
-    case "EXIT":
-      return <LogOut size={16} className="text-red-500 dark:text-red-400" />;
-    default:
-      return <Clock size={16} className="text-slate-600 dark:text-slate-400" />;
-  }
-}
-
-function getCheckinLabel(type: string): string {
-  switch (type) {
-    case "ENTRY":
-      return "Entrada";
-    case "LUNCH_START":
-      return "Início Almoço";
-    case "LUNCH_END":
-      return "Retorno Almoço";
-    case "EXIT":
-      return "Saída";
-    default:
-      return type;
-  }
-}
+const LIMITE_ARQUIVO_BYTES = 4 * 1024 * 1024; // 4 MB
 
 export function JustificativasPage() {
   return (
@@ -85,7 +65,7 @@ export function JustificativasContent() {
   const { user } = useAuth();
   const isAdmin = user?.role === "ENTERPRISE_ADMIN" || user?.role === "MASTER";
 
-  const [justificativas, setJustificativas] = useState<JustificativaWithUser[]>([]);
+  const [justificativas, setJustificativas] = useState<JustificativaResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<"TODOS" | "PENDENTE" | "APROVADO" | "REJEITADO">("TODOS");
@@ -93,125 +73,145 @@ export function JustificativasContent() {
   const [showForm, setShowForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Form State
   const [formData, setFormData] = useState<{
     tipo: JustificativaTipo;
     descricao: string;
     dataInicio: string;
     dataFim: string;
-    checkinId: string | null;
+    horarioAjustado: string;
+    tipoBatidaAjuste: "ENTRY" | "LUNCH_START" | "LUNCH_END" | "EXIT";
+    diasAfastamento: number;
+    arquivo?: JustificativaArquivoDto;
   }>({
-    tipo: "JUSTIFICATIVA_GERAL",
+    tipo: "ESQUECIMENTO_PONTO",
     descricao: "",
     dataInicio: new Date().toISOString().slice(0, 10),
     dataFim: "",
-    checkinId: null,
+    horarioAjustado: "08:00",
+    tipoBatidaAjuste: "ENTRY",
+    diasAfastamento: 1,
   });
 
-  const [checkinsForDate, setCheckinsForDate] = useState<CheckinResponse[]>([]);
-  const [isLoadingCheckins, setIsLoadingCheckins] = useState(false);
+  const [arquivoPreview, setArquivoPreview] = useState<{
+    nome: string;
+    tamanhoFormatado: string;
+    isPdf: boolean;
+    previewUrl?: string;
+  } | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Modal de Recusa com Motivo (Admin)
+  const [modalRecusaId, setModalRecusaId] = useState<string | null>(null);
+  const [motivoRecusa, setMotivoRecusa] = useState("");
   const [actionPending, setActionPending] = useState<string | null>(null);
 
-  const loadJustificativas = useCallback(async () => {
+  // Modal de Visualização de Anexo
+  const [visualizarAnexoUrl, setVisualizarAnexoUrl] = useState<string | null>(null);
+  const [visualizarAnexoNome, setVisualizarAnexoNome] = useState<string>("");
+
+  async function carregarJustificativas() {
     try {
+      setIsLoading(true);
       const data = await api.justificativa.list();
-      setJustificativas(data as JustificativaWithUser[]);
+      setJustificativas(data);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao carregar justificativas.");
+      setError(err instanceof Error ? err.message : "Erro ao carregar solicitações.");
     } finally {
       setIsLoading(false);
     }
-  }, []);
-
-  useEffect(() => {
-    let isMounted = true;
-    api.justificativa.list()
-      .then((data) => {
-        if (isMounted) {
-          setJustificativas(data as JustificativaWithUser[]);
-          setError(null);
-          setIsLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (isMounted) {
-          setError(err instanceof Error ? err.message : "Erro ao carregar justificativas.");
-          setIsLoading(false);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  const loadCheckinsForDate = useCallback(async (dateStr: string) => {
-    if (!dateStr) return;
-    try {
-      const data = await api.checkins.list(dateStr);
-      setCheckinsForDate(data);
-    } catch {
-      setCheckinsForDate([]);
-    } finally {
-      setIsLoadingCheckins(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!showForm || isAdmin || !formData.dataInicio) return;
-    let isMounted = true;
-    api.checkins.list(formData.dataInicio)
-      .then((data) => {
-        if (isMounted) {
-          setCheckinsForDate(data);
-          setIsLoadingCheckins(false);
-        }
-      })
-      .catch(() => {
-        if (isMounted) {
-          setCheckinsForDate([]);
-          setIsLoadingCheckins(false);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [showForm, isAdmin, formData.dataInicio]);
-
-  function handleDateChange(newDate: string) {
-    setFormData((prev) => ({
-      ...prev,
-      dataInicio: newDate,
-      checkinId: null,
-    }));
-    loadCheckinsForDate(newDate);
   }
 
-  function handleSelectCheckin(checkinId: string | null) {
-    setFormData((prev) => ({
-      ...prev,
-      checkinId: prev.checkinId === checkinId ? null : checkinId,
-    }));
+  useEffect(() => {
+    let ativo = true;
+    api.justificativa
+      .list()
+      .then((data) => {
+        if (ativo) {
+          setJustificativas(data);
+          setError(null);
+        }
+      })
+      .catch((err: unknown) => {
+        if (ativo) {
+          setError(err instanceof Error ? err.message : "Erro ao carregar solicitações.");
+        }
+      })
+      .finally(() => {
+        if (ativo) setIsLoading(false);
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, []);
+
+  function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > LIMITE_ARQUIVO_BYTES) {
+      toast.error(`O arquivo excede o limite máximo permitido de 4 MB (${(file.size / (1024 * 1024)).toFixed(1)} MB).`);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    const mime = file.type || "application/octet-stream";
+    const isPdf = mime === "application/pdf";
+    const tamanhoKb = Math.round(file.size / 1024);
+    const tamanhoFormatado = tamanhoKb > 1024 ? `${(tamanhoKb / 1024).toFixed(1)} MB` : `${tamanhoKb} KB`;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result as string;
+      setFormData((prev) => ({
+        ...prev,
+        arquivo: {
+          nomeOriginal: file.name,
+          mimeType: mime,
+          conteudoBase64: base64,
+        },
+      }));
+
+      setArquivoPreview({
+        nome: file.name,
+        tamanhoFormatado,
+        isPdf,
+        previewUrl: !isPdf ? base64 : undefined,
+      });
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function handleRemoverArquivo() {
+    setFormData((prev) => ({ ...prev, arquivo: undefined }));
+    setArquivoPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   function resetForm() {
     setFormData({
-      tipo: "JUSTIFICATIVA_GERAL",
+      tipo: "ESQUECIMENTO_PONTO",
       descricao: "",
       dataInicio: new Date().toISOString().slice(0, 10),
       dataFim: "",
-      checkinId: null,
+      horarioAjustado: "08:00",
+      tipoBatidaAjuste: "ENTRY",
+      diasAfastamento: 1,
     });
-    setCheckinsForDate([]);
+    handleRemoverArquivo();
+    setFormError(null);
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setFormError(null);
 
-    if (formData.descricao.trim().length < 10) {
-      setFormError("A descrição deve ter no mínimo 10 caracteres.");
+    if (formData.descricao.trim().length < 5) {
+      setFormError("A descrição deve conter no mínimo 5 caracteres.");
       return;
     }
 
@@ -220,31 +220,57 @@ export function JustificativasContent() {
       const payload: JustificativaCreateBody = {
         tipo: formData.tipo,
         descricao: formData.descricao.trim(),
-        dataInicio: new Date(formData.dataInicio + "T00:00:00.000Z").toISOString(),
-        dataFim: formData.dataFim
-          ? new Date(formData.dataFim + "T23:59:59.999Z").toISOString()
-          : undefined,
-        checkinId: formData.checkinId ?? undefined,
+        dataInicio: formData.dataInicio,
+        dataFim: formData.dataFim || undefined,
+        horarioAjustado: formData.tipo === "ESQUECIMENTO_PONTO" ? formData.horarioAjustado : undefined,
+        tipoBatidaAjuste: formData.tipo === "ESQUECIMENTO_PONTO" ? formData.tipoBatidaAjuste : undefined,
+        diasAfastamento: formData.tipo === "ATESTADO_MEDICO" ? formData.diasAfastamento : undefined,
+        arquivo: formData.arquivo,
       };
 
-      await api.justificativa.create(payload);
+      const res = await api.justificativa.create(payload);
+      toast.success(res.message || "Solicitação registrada com sucesso!");
       setShowForm(false);
       resetForm();
-      await loadJustificativas();
+      await carregarJustificativas();
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Erro ao registrar justificativa.");
+      const msg = err instanceof Error ? err.message : "Erro ao enviar solicitação.";
+      setFormError(msg);
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }
   }
 
-  async function handleAprovar(id: string, aprovado: boolean) {
+  async function handleAprovar(id: string) {
     setActionPending(id);
     try {
-      await api.justificativa.approve(id, aprovado);
-      await loadJustificativas();
+      const res = await api.justificativa.approve(id, true);
+      toast.success(res.message || "Solicitação aprovada!");
+      await carregarJustificativas();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao processar aprovação.");
+      toast.error(err instanceof Error ? err.message : "Erro ao processar aprovação.");
+    } finally {
+      setActionPending(null);
+    }
+  }
+
+  async function handleConfirmarRecusa() {
+    if (!modalRecusaId) return;
+    if (motivoRecusa.trim().length < 5) {
+      toast.error("Informe o motivo da recusa para orientar o colaborador (mínimo de 5 caracteres).");
+      return;
+    }
+
+    setActionPending(modalRecusaId);
+    try {
+      const res = await api.justificativa.approve(modalRecusaId, false, motivoRecusa.trim());
+      toast.success(res.message || "Solicitação recusada com sucesso.");
+      setModalRecusaId(null);
+      setMotivoRecusa("");
+      await carregarJustificativas();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao recusar solicitação.");
     } finally {
       setActionPending(null);
     }
@@ -275,7 +301,7 @@ export function JustificativasContent() {
         <AlertTriangle className="mx-auto text-red-500 mb-3" size={32} />
         <p className="text-red-700 dark:text-red-300 font-medium">{error}</p>
         <button
-          onClick={loadJustificativas}
+          onClick={carregarJustificativas}
           className="mt-4 px-5 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors font-bold text-sm cursor-pointer"
         >
           Tentar novamente
@@ -286,419 +312,547 @@ export function JustificativasContent() {
 
   return (
     <>
-      {/* HEADER */}
       <PageHeader
-        title={isAdmin ? "Gestão de Justificativas" : "Minhas Justificativas"}
+        title={isAdmin ? "Gestão de Justificativas e Ajustes" : "Minhas Justificativas e Ajustes"}
         subtitle={
           isAdmin
-            ? "Gerencie e aprove justificativas de ausência e atestados dos funcionários"
-            : "Registre justificativas de ausência, faltas ou atestados médicos"
+            ? "Analise solicitações de esquecimento de ponto, atestados médicos e declarações dos colaboradores"
+            : "Solicite ajustes de horários esquecidos e envie atestados médicos com foto (máx 4 MB)"
         }
         helpText={
           isAdmin
-            ? "Analise, aprove ou recuse pedidos de abono de faltas, atrasos e atestados médicos enviados pelos colaboradores com anexo."
-            : "Envie atestados médicos ou justificativas de ausência e acompanhe o status de aprovação pelo seu gestor."
+            ? "Ao aprovar um esquecimento de ponto, o horário é automaticamente registrado no espelho do colaborador com a devida auditoria exigida pela Portaria 671/2021 MTE."
+            : "Esqueceu de registrar a entrada ou saída? Anexe seu atestado médico ou informe o horário que trabalhou para análise do RH."
         }
         actions={
           !isAdmin ? (
             <button
               onClick={() => setShowForm(!showForm)}
-              className="px-5 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors font-bold flex items-center gap-2 cursor-pointer text-sm whitespace-nowrap"
+              className="px-5 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors font-bold flex items-center gap-2 cursor-pointer text-sm whitespace-nowrap shadow-sm shadow-emerald-600/30"
             >
               <Plus size={18} />
-              Nova Justificativa
+              {showForm ? "Fechar Formulário" : "Nova Solicitação"}
             </button>
           ) : undefined
         }
       />
 
-      {/* FORM DE CRIAR (EMPLOYEE) */}
+      {/* FORMULÁRIO DE SOLICITAÇÃO (COLABORADOR) */}
       {showForm && !isAdmin && (
-        <section className="bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-3xl shadow-sm p-6 transition-colors">
+        <section className="bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-3xl shadow-sm p-6 transition-colors animate-in fade-in zoom-in duration-200">
           <div className="flex items-center gap-3 mb-5">
             <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-950/60 rounded-xl flex items-center justify-center">
               <Plus className="text-emerald-600 dark:text-emerald-400" size={20} />
             </div>
-            <h2 className="text-lg font-bold text-slate-800 dark:text-white">Nova Justificativa</h2>
+            <div>
+              <h2 className="text-lg font-bold text-slate-800 dark:text-white">
+                Nova Solicitação de Ajuste ou Atestado
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Preencha os dados e anexe comprovante se aplicável (limite de 4 MB).
+              </p>
+            </div>
           </div>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
-                  Tipo
+                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                  Tipo de Solicitação
                 </label>
                 <select
                   value={formData.tipo}
-                  onChange={(e) => setFormData({ ...formData, tipo: e.target.value as JustificativaTipo })}
-                  className="w-full border border-slate-200 dark:border-white/10 rounded-xl p-2.5 text-sm text-slate-700 dark:text-white bg-white dark:bg-white/5 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none cursor-pointer"
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      tipo: e.target.value as JustificativaTipo,
+                    }))
+                  }
+                  className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-[#18181b] text-slate-800 dark:text-white text-sm font-medium"
                 >
-                  {Object.entries(TIPO_LABELS).map(([value, label]) => (
-                    <option key={value} value={value} className="bg-white dark:bg-slate-900 text-slate-800 dark:text-white">
-                      {label}
-                    </option>
-                  ))}
+                  <option value="ESQUECIMENTO_PONTO">Esquecimento de Ponto (Ajustar Horário)</option>
+                  <option value="ATESTADO_MEDICO">Atestado Médico / Odontológico</option>
+                  <option value="DECLARACAO_COMPARECIMENTO">Declaração de Comparecimento</option>
+                  <option value="ABONO_FALTA">Abono de Falta / Ausência Justificada</option>
+                  <option value="OUTRO">Outra Justificativa</option>
                 </select>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                  Data do Ocorrido / Início
+                </label>
+                <input
+                  type="date"
+                  value={formData.dataInicio}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, dataInicio: e.target.value }))}
+                  required
+                  className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-[#18181b] text-slate-800 dark:text-white text-sm"
+                />
+              </div>
+            </div>
+
+            {/* Campos condicionais: Esquecimento de Ponto */}
+            {formData.tipo === "ESQUECIMENTO_PONTO" && (
+              <div className="p-4 rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-200/60 dark:border-indigo-800/40 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
-                    Data Início
+                  <label className="block text-xs font-bold text-indigo-900 dark:text-indigo-300 uppercase tracking-wider mb-1">
+                    Qual batida você esqueceu?
+                  </label>
+                  <select
+                    value={formData.tipoBatidaAjuste}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        tipoBatidaAjuste: e.target.value as "ENTRY" | "LUNCH_START" | "LUNCH_END" | "EXIT",
+                      }))
+                    }
+                    className="w-full px-3.5 py-2.5 border border-indigo-200 dark:border-indigo-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-[#18181b] text-slate-800 dark:text-white text-sm"
+                  >
+                    <option value="ENTRY">Entrada Inicial do Turno</option>
+                    <option value="LUNCH_START">Saída para Intervalo / Almoço</option>
+                    <option value="LUNCH_END">Retorno do Intervalo / Almoço</option>
+                    <option value="EXIT">Saída Final do Turno</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-indigo-900 dark:text-indigo-300 uppercase tracking-wider mb-1">
+                    Horário efetivo em que ocorreu:
                   </label>
                   <input
-                    type="date"
+                    type="time"
+                    value={formData.horarioAjustado}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, horarioAjustado: e.target.value }))}
                     required
-                    value={formData.dataInicio}
-                    onChange={(e) => handleDateChange(e.target.value)}
-                    className="w-full border border-slate-200 dark:border-white/10 rounded-xl p-2.5 text-sm text-slate-700 dark:text-white bg-white dark:bg-white/5 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
+                    className="w-full px-3.5 py-2.5 border border-indigo-200 dark:border-indigo-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-[#18181b] text-slate-800 dark:text-white text-sm font-mono"
                   />
                 </div>
+              </div>
+            )}
+
+            {/* Campos condicionais: Atestado / Declaração */}
+            {(formData.tipo === "ATESTADO_MEDICO" || formData.tipo === "DECLARACAO_COMPARECIMENTO") && (
+              <div className="p-4 rounded-2xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
-                    Data Fim
+                  <label className="block text-xs font-bold text-amber-900 dark:text-amber-300 uppercase tracking-wider mb-1">
+                    Data de Término (Opcional)
                   </label>
                   <input
                     type="date"
                     value={formData.dataFim}
-                    onChange={(e) => setFormData({ ...formData, dataFim: e.target.value })}
-                    className="w-full border border-slate-200 dark:border-white/10 rounded-xl p-2.5 text-sm text-slate-700 dark:text-white bg-white dark:bg-white/5 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
+                    min={formData.dataInicio}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, dataFim: e.target.value }))}
+                    className="w-full px-3.5 py-2.5 border border-amber-200 dark:border-amber-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white dark:bg-[#18181b] text-slate-800 dark:text-white text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-amber-900 dark:text-amber-300 uppercase tracking-wider mb-1">
+                    Dias de Afastamento
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={60}
+                    value={formData.diasAfastamento}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, diasAfastamento: Number(e.target.value) }))}
+                    className="w-full px-3.5 py-2.5 border border-amber-200 dark:border-amber-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white dark:bg-[#18181b] text-slate-800 dark:text-white text-sm"
                   />
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Seleção de Check-in */}
-            <div>
-              <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
-                Ponto a Justificar
+            {/* UPLOAD SEGURO DE ANEXO (FOTO OU PDF COM LIMITE DE 4MB) */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                <span>Comprovante / Atestado (Foto ou PDF)</span>
+                <span className="text-[11px] text-slate-400 font-normal">Máximo de 4 MB</span>
               </label>
-              {isLoadingCheckins ? (
-                <div className="flex items-center gap-2 p-4 bg-slate-50 dark:bg-white/5 rounded-xl">
-                  <Loader2 size={16} className="animate-spin text-slate-400" />
-                  <span className="text-sm text-slate-500 dark:text-slate-400">Carregando pontos...</span>
-                </div>
-              ) : checkinsForDate.length === 0 ? (
-                <div className="p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-xl">
-                  <div className="flex items-center gap-2 mb-1">
-                    <AlertTriangle size={16} className="text-amber-600 dark:text-amber-400" />
-                    <span className="text-sm font-medium text-amber-800 dark:text-amber-300">Nenhum ponto registrado neste dia</span>
-                  </div>
-                  <p className="text-xs text-amber-600 dark:text-amber-400">
-                    Você pode criar uma justificativa de ausência/falta para este dia.
+
+              {!arquivoPreview ? (
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="border-2 border-dashed border-slate-300 dark:border-white/15 hover:border-emerald-500 dark:hover:border-emerald-500/50 rounded-2xl p-6 text-center cursor-pointer transition-colors bg-slate-50/50 dark:bg-white/[0.01]"
+                >
+                  <UploadCloud className="mx-auto text-slate-400 dark:text-slate-500 mb-2" size={32} />
+                  <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Clique para selecionar ou arraste o comprovante
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => handleSelectCheckin(null)}
-                    className={`mt-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
-                      formData.checkinId === null
-                        ? "bg-amber-500 text-white"
-                        : "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/60"
-                    }`}
-                  >
-                    Justificar ausência
-                  </button>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Formatos aceitos: JPEG, PNG, WEBP ou PDF (até 4 MB)
+                  </p>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,application/pdf"
+                    onChange={handleFileSelected}
+                    className="hidden"
+                  />
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="p-3.5 rounded-2xl border border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/20 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    {arquivoPreview.previewUrl ? (
+                      <img
+                        src={arquivoPreview.previewUrl}
+                        alt="Preview"
+                        className="w-12 h-12 object-cover rounded-xl border border-emerald-500/20"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-300 flex items-center justify-center">
+                        <FileText size={24} />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                        {arquivoPreview.nome}
+                      </p>
+                      <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+                        {arquivoPreview.tamanhoFormatado} • Pronto para envio
+                      </p>
+                    </div>
+                  </div>
+
                   <button
                     type="button"
-                    onClick={() => handleSelectCheckin(null)}
-                    className={`flex items-center gap-3 w-full p-3 rounded-xl border text-left transition-colors cursor-pointer ${
-                      formData.checkinId === null
-                        ? "border-amber-400 bg-amber-50 dark:bg-amber-950/30"
-                        : "border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5"
-                    }`}
+                    onClick={handleRemoverArquivo}
+                    className="p-2 text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-950/40 rounded-xl transition-colors cursor-pointer"
+                    title="Remover anexo"
                   >
-                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                      formData.checkinId === null ? "border-amber-500" : "border-slate-300 dark:border-slate-600"
-                    }`}>
-                      {formData.checkinId === null && (
-                        <div className="w-2 h-2 rounded-full bg-amber-500" />
-                      )}
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Justificar ausência/falta</span>
-                      <span className="text-xs text-slate-400 dark:text-slate-500 block">Sem check-in específico</span>
-                    </div>
+                    <Trash2 size={16} />
                   </button>
-
-                  {checkinsForDate.map((checkin) => {
-                    const checkinTime = new Date(checkin.createdAt).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    });
-                    const isSelected = formData.checkinId === checkin.id;
-                    const icon = getCheckinIcon(checkin.type);
-                    const label = getCheckinLabel(checkin.type);
-
-                    return (
-                      <button
-                        key={checkin.id}
-                        type="button"
-                        onClick={() => handleSelectCheckin(checkin.id)}
-                        className={`flex items-center gap-3 w-full p-3 rounded-xl border text-left transition-colors cursor-pointer ${
-                          isSelected
-                            ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30"
-                            : "border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5"
-                        }`}
-                      >
-                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                          isSelected ? "border-emerald-500" : "border-slate-300 dark:border-slate-600"
-                        }`}>
-                          {isSelected && (
-                            <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                          )}
-                        </div>
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                          isSelected ? "bg-emerald-100 dark:bg-emerald-900/40" : "bg-slate-100 dark:bg-white/5"
-                        }`}>
-                          {icon}
-                        </div>
-                        <div className="flex-1">
-                          <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{label}</span>
-                          <span className="text-xs text-slate-400 dark:text-slate-500 block">Registrado às {checkinTime}</span>
-                        </div>
-                      </button>
-                    );
-                  })}
                 </div>
               )}
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
-                Descrição
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                Motivo / Descrição detalhada
               </label>
               <textarea
-                required
-                minLength={10}
-                maxLength={500}
-                rows={4}
-                placeholder="Descreva o motivo da ausência ou omissão (mínimo 10 caracteres)..."
                 value={formData.descricao}
-                onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-                className="w-full border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 rounded-xl p-3 text-sm text-slate-700 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none resize-none"
+                onChange={(e) => setFormData((prev) => ({ ...prev, descricao: e.target.value }))}
+                rows={3}
+                required
+                placeholder="Descreva claramente o motivo da solicitação para conferência do RH..."
+                className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-[#18181b] text-slate-800 dark:text-white text-sm resize-none"
               />
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-                {formData.descricao.length}/500 caracteres
-              </p>
             </div>
+
             {formError && (
-              <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/60 rounded-xl p-3 text-sm text-red-700 dark:text-red-300 flex items-center gap-2">
-                <AlertTriangle size={16} className="shrink-0" />
+              <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/60 rounded-xl text-red-600 dark:text-red-400 text-xs font-medium">
                 {formError}
               </div>
             )}
-            <div className="flex gap-3">
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="px-5 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors font-bold flex items-center gap-2 disabled:opacity-50 cursor-pointer text-sm"
-              >
-                {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
-                {isSubmitting ? "Enviando..." : "Registrar"}
-              </button>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => {
                   setShowForm(false);
-                  setFormError(null);
                   resetForm();
                 }}
                 disabled={isSubmitting}
-                className="px-5 py-2.5 bg-white dark:bg-white/5 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/10 rounded-xl hover:bg-slate-50 dark:hover:bg-white/10 transition-colors font-bold disabled:opacity-50 cursor-pointer text-sm"
+                className="px-5 py-2.5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 font-semibold text-sm transition-colors cursor-pointer"
               >
                 Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors font-bold text-sm cursor-pointer disabled:opacity-50 flex items-center gap-2 shadow-sm shadow-emerald-600/30"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  "Enviar Solicitação"
+                )}
               </button>
             </div>
           </form>
         </section>
       )}
 
-      {/* ESTATÍSTICAS RÁPIDAS */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard label="Total" value={stats.total} color="bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300" icon={<FileText size={16} />} />
-        <StatCard label="Pendentes" value={stats.pendentes} color="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300" icon={<Clock size={16} />} />
-        <StatCard label="Aprovadas" value={stats.aprovadas} color="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300" icon={<Check size={16} />} />
-        <StatCard label="Rejeitadas" value={stats.rejeitadas} color="bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300" icon={<X size={16} />} />
+      {/* STATS CARDS */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-2xl p-4 shadow-xs">
+          <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase">Total</p>
+          <p className="text-2xl font-bold text-slate-800 dark:text-white mt-1">{stats.total}</p>
+        </div>
+        <div className="bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-2xl p-4 shadow-xs">
+          <p className="text-xs font-semibold text-amber-500 uppercase flex items-center gap-1">
+            <Clock size={12} /> Pendentes
+          </p>
+          <p className="text-2xl font-bold text-amber-500 mt-1">{stats.pendentes}</p>
+        </div>
+        <div className="bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-2xl p-4 shadow-xs">
+          <p className="text-xs font-semibold text-emerald-500 uppercase flex items-center gap-1">
+            <Check size={12} /> Aprovadas
+          </p>
+          <p className="text-2xl font-bold text-emerald-500 mt-1">{stats.aprovadas}</p>
+        </div>
+        <div className="bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-2xl p-4 shadow-xs">
+          <p className="text-xs font-semibold text-red-500 uppercase flex items-center gap-1">
+            <X size={12} /> Recusadas
+          </p>
+          <p className="text-2xl font-bold text-red-500 mt-1">{stats.rejeitadas}</p>
+        </div>
       </div>
 
-      {/* FILTRO (ADMIN) */}
-      {isAdmin && (
-        <div className="flex items-center gap-3 bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-2xl p-3 transition-colors">
-          <Filter size={18} className="text-slate-400 dark:text-slate-500 shrink-0" />
-          <div className="flex flex-wrap gap-2">
-            {(["TODOS", "PENDENTE", "APROVADO", "REJEITADO"] as const).map((status) => (
-              <button
-                key={status}
-                onClick={() => setFilterStatus(status)}
-                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors cursor-pointer ${
-                  filterStatus === status
-                    ? "bg-emerald-600 text-white"
-                    : "bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10"
-                }`}
+      {/* FILTROS */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        <Filter size={16} className="text-slate-400 shrink-0" />
+        {(["TODOS", "PENDENTE", "APROVADO", "REJEITADO"] as const).map((st) => (
+          <button
+            key={st}
+            onClick={() => setFilterStatus(st)}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer shrink-0 ${
+              filterStatus === st
+                ? "bg-emerald-600 text-white shadow-xs"
+                : "bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-white/20"
+            }`}
+          >
+            {st === "TODOS"
+              ? "Todas"
+              : st === "PENDENTE"
+              ? "Pendentes"
+              : st === "APROVADO"
+              ? "Aprovadas"
+              : "Recusadas"}
+          </button>
+        ))}
+      </div>
+
+      {/* LISTAGEM DE SOLICITAÇÕES */}
+      {filteredJustificativas.length === 0 ? (
+        <div className="bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-3xl p-12 text-center">
+          <FileText className="mx-auto text-slate-300 dark:text-slate-600 mb-3" size={40} />
+          <p className="text-slate-600 dark:text-slate-400 font-medium">Nenhuma solicitação encontrada.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filteredJustificativas.map((j) => {
+            const hasComprovante = !!j.comprovantePath;
+
+            return (
+              <div
+                key={j.id}
+                className="bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-2xl p-5 shadow-xs transition-colors space-y-3"
               >
-                {status}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${TIPO_COLORS[j.tipo] || TIPO_COLORS.OUTRO}`}>
+                      {TIPO_LABELS[j.tipo] || j.tipo}
+                    </span>
+
+                    {j.aprovado === null && (
+                      <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
+                        Pendente
+                      </span>
+                    )}
+                    {j.aprovado === true && (
+                      <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
+                        Aprovado
+                      </span>
+                    )}
+                    {j.aprovado === false && (
+                      <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300">
+                        Recusado
+                      </span>
+                    )}
+
+                    {isAdmin && j.user && (
+                      <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        • {j.user.name}
+                      </span>
+                    )}
+                  </div>
+
+                  <span className="text-xs text-slate-400">
+                    Enviado em {new Date(j.createdAt).toLocaleDateString("pt-BR")}
+                  </span>
+                </div>
+
+                <div className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                  {j.descricao}
+                </div>
+
+                {/* Detalhes de Horário / Dias */}
+                <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-white/[0.02] p-2.5 rounded-xl border border-slate-200/60 dark:border-white/5">
+                  <span className="flex items-center gap-1.5">
+                    <Calendar size={13} className="text-emerald-500" />
+                    Data: {new Date(j.dataInicio).toLocaleDateString("pt-BR")}
+                    {j.dataFim ? ` até ${new Date(j.dataFim).toLocaleDateString("pt-BR")}` : ""}
+                  </span>
+
+                  {j.horarioAjustado && (
+                    <span className="flex items-center gap-1.5 font-mono text-indigo-600 dark:text-indigo-400 font-semibold">
+                      <Clock size={13} />
+                      Horário Ajustado: {j.horarioAjustado} ({j.tipoBatidaAjuste || "Batida"})
+                    </span>
+                  )}
+
+                  {hasComprovante && (
+                    <button
+                      onClick={() => {
+                        setVisualizarAnexoUrl(api.justificativa.getComprovanteUrl(j.id));
+                        setVisualizarAnexoNome(j.comprovanteNomeOriginal || "Comprovante");
+                      }}
+                      className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 hover:underline font-semibold cursor-pointer"
+                    >
+                      <Paperclip size={13} />
+                      {j.comprovanteNomeOriginal || "Ver Anexo"}
+                    </button>
+                  )}
+                </div>
+
+                {/* Motivo da Recusa se Rejeitado */}
+                {j.aprovado === false && j.motivoRecusa && (
+                  <div className="p-3 bg-red-50/70 dark:bg-red-950/30 border border-red-200 dark:border-red-800/40 rounded-xl text-xs text-red-700 dark:text-red-300 flex items-start gap-2">
+                    <MessageSquareWarning size={15} className="shrink-0 mt-0.5 text-red-500" />
+                    <div>
+                      <span className="font-bold">Motivo da Recusa pelo RH: </span>
+                      {j.motivoRecusa}
+                    </div>
+                  </div>
+                )}
+
+                {/* Ações do Administrador / Gestor */}
+                {isAdmin && j.aprovado === null && (
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-white/5">
+                    <button
+                      onClick={() => {
+                        setModalRecusaId(j.id);
+                        setMotivoRecusa("");
+                      }}
+                      disabled={actionPending === j.id}
+                      className="px-4 py-2 border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-300 rounded-xl hover:bg-red-100 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <X size={14} />
+                      Recusar com Motivo
+                    </button>
+
+                    <button
+                      onClick={() => handleAprovar(j.id)}
+                      disabled={actionPending === j.id}
+                      className="px-5 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs shadow-emerald-600/30"
+                    >
+                      {actionPending === j.id ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : (
+                        <Check size={14} />
+                      )}
+                      Aprovar Solicitação
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* MODAL PARA JUSTIFICAR RECUSA (ADMIN) */}
+      {modalRecusaId && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-500/20 text-red-500 flex items-center justify-center shrink-0">
+                <MessageSquareWarning size={20} />
+              </div>
+              <div>
+                <h4 className="font-bold text-slate-900 dark:text-white text-sm">
+                  Recusar Solicitação
+                </h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Informe o motivo para orientação do colaborador
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Motivo da Recusa:
+              </label>
+              <textarea
+                value={motivoRecusa}
+                onChange={(e) => setMotivoRecusa(e.target.value)}
+                rows={3}
+                placeholder="Exemplo: Foto do atestado médico está ilegível ou sem carimbo com CRM; favor reenviar imagem nítida."
+                className="w-full p-3 rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs focus:ring-2 focus:ring-red-500 resize-none"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                onClick={() => setModalRecusaId(null)}
+                className="px-4 py-2 rounded-xl border border-slate-300 dark:border-white/10 text-slate-700 dark:text-slate-300 font-semibold text-xs hover:bg-slate-50 dark:hover:bg-slate-800"
+              >
+                Cancelar
               </button>
-            ))}
+              <button
+                onClick={handleConfirmarRecusa}
+                disabled={motivoRecusa.trim().length < 5}
+                className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-bold text-xs"
+              >
+                Confirmar Recusa
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* LISTA DE JUSTIFICATIVAS */}
-      <section className="bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-3xl shadow-sm p-6 transition-colors">
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-10 h-10 bg-blue-100 dark:bg-blue-950/60 rounded-xl flex items-center justify-center">
-            <FileText className="text-blue-600 dark:text-blue-400" size={20} />
-          </div>
-          <h2 className="text-lg font-bold text-slate-800 dark:text-white">
-            {isAdmin ? "Todas as Justificativas" : "Histórico"}
-          </h2>
-          <span className="ml-auto text-sm text-slate-400 dark:text-slate-500">
-            {filteredJustificativas.length} {filteredJustificativas.length === 1 ? "registro" : "registros"}
-          </span>
-        </div>
+      {/* MODAL DE VISUALIZAÇÃO DE ANEXO SEGURO */}
+      {visualizarAnexoUrl && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in duration-200 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-white/10">
+              <div className="flex items-center gap-2">
+                <Paperclip size={18} className="text-emerald-500" />
+                <h4 className="font-bold text-slate-900 dark:text-white text-sm truncate max-w-sm">
+                  {visualizarAnexoNome}
+                </h4>
+              </div>
+              <button
+                onClick={() => setVisualizarAnexoUrl(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg"
+              >
+                <X size={18} />
+              </button>
+            </div>
 
-        {filteredJustificativas.length === 0 ? (
-          <div className="py-12 text-center">
-            <FileText className="mx-auto text-slate-300 dark:text-slate-600 mb-3" size={40} />
-            <p className="text-slate-400 dark:text-slate-500 text-sm">
-              {filterStatus !== "TODOS"
-                ? `Nenhuma justificativa com status "${filterStatus}".`
-                : "Nenhuma justificativa registrada."}
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {filteredJustificativas.map((j) => (
-              <JustificativaCard
-                key={j.id}
-                justificativa={j}
-                isAdmin={isAdmin}
-                actionPending={actionPending === j.id}
-                onAprovar={handleAprovar}
+            <div className="flex-1 overflow-auto flex items-center justify-center bg-slate-100 dark:bg-slate-950/60 rounded-xl p-4 min-h-[300px]">
+              <iframe
+                src={visualizarAnexoUrl}
+                title="Comprovante"
+                className="w-full h-[450px] rounded-lg border-0"
               />
-            ))}
+            </div>
+
+            <div className="flex items-center justify-between pt-2">
+              <a
+                href={visualizarAnexoUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-semibold flex items-center gap-1"
+              >
+                <Eye size={13} />
+                Abrir em nova aba
+              </a>
+              <button
+                onClick={() => setVisualizarAnexoUrl(null)}
+                className="px-4 py-2 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-xs hover:opacity-90"
+              >
+                Fechar
+              </button>
+            </div>
           </div>
-        )}
-      </section>
+        </div>
+      )}
     </>
   );
-}
-
-function StatCard({ label, value, color, icon }: { label: string; value: number; color: string; icon: React.ReactNode }) {
-  return (
-    <div className="bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-2xl p-4 flex items-center gap-3 transition-colors">
-      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${color}`}>{icon}</div>
-      <div>
-        <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">{label}</p>
-        <p className="text-lg font-bold text-slate-700 dark:text-white">{value}</p>
-      </div>
-    </div>
-  );
-}
-
-function JustificativaCard({
-  justificativa: j,
-  isAdmin,
-  actionPending,
-  onAprovar,
-}: {
-  justificativa: JustificativaWithUser;
-  isAdmin: boolean;
-  actionPending: boolean;
-  onAprovar: (id: string, aprovado: boolean) => void;
-}) {
-  const isPendente = j.aprovado === null;
-  const isAprovado = j.aprovado === true;
-
-  return (
-    <div className="border border-slate-100 dark:border-white/10 rounded-2xl p-4 hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors bg-slate-50/30 dark:bg-white/[0.01]">
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-3">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${TIPO_COLORS[j.tipo]}`}>
-              {TIPO_LABELS[j.tipo]}
-            </span>
-            {isAdmin && j.user && (
-              <span className="text-sm text-slate-600 dark:text-slate-300 font-medium">
-                {j.user.name}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-4 text-xs text-slate-400 dark:text-slate-500">
-            <span className="flex items-center gap-1">
-              <Calendar size={12} />
-              {formatDate(j.dataInicio)}
-              {j.dataFim && ` → ${formatDate(j.dataFim)}`}
-            </span>
-            <span>Registrada em {formatDate(j.createdAt)}</span>
-          </div>
-        </div>
-        <StatusBadge aprovado={j.aprovado} />
-      </div>
-
-      <p className="text-sm text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-xl p-3 mb-3">
-        {j.descricao}
-      </p>
-
-      {isAdmin && isPendente && (
-        <div className="flex gap-3">
-          <button
-            onClick={() => onAprovar(j.id, true)}
-            disabled={actionPending}
-            className="px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors font-bold flex items-center gap-2 disabled:opacity-50 cursor-pointer text-sm"
-          >
-            {actionPending ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
-            Aprovar
-          </button>
-          <button
-            onClick={() => onAprovar(j.id, false)}
-            disabled={actionPending}
-            className="px-4 py-2 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/60 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors font-bold flex items-center gap-2 disabled:opacity-50 cursor-pointer text-sm"
-          >
-            {actionPending ? <Loader2 size={16} className="animate-spin" /> : <X size={16} />}
-            Rejeitar
-          </button>
-        </div>
-      )}
-
-      {isAdmin && !isPendente && j.aprovadoPor && (
-        <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">
-          {isAprovado ? "Aprovada" : "Rejeitada"} em {formatDate(j.updatedAt)}
-        </p>
-      )}
-    </div>
-  );
-}
-
-function StatusBadge({ aprovado }: { aprovado: boolean | null }) {
-  if (aprovado === null) {
-    return (
-      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 whitespace-nowrap">
-        Pendente
-      </span>
-    );
-  }
-  if (aprovado === true) {
-    return (
-      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 whitespace-nowrap">
-        Aprovada
-      </span>
-    );
-  }
-  return (
-    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 whitespace-nowrap">
-      Rejeitada
-    </span>
-  );
-}
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 }
