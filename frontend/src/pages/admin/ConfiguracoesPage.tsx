@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { PageHeader } from "../../components/common/PageHeader";
+import { ConfiguracoesSkeleton } from "../../components/admin/ConfiguracoesSkeleton";
 import { useCompany } from "../../hooks/useCompany";
 import { useToast } from "../../hooks/useToast";
 import {
@@ -56,18 +57,11 @@ export function ConfiguracoesPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="p-8 max-w-5xl mx-auto flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="animate-spin text-emerald-600 dark:text-emerald-400" size={32} />
-          <p className="text-sm text-slate-500 dark:text-slate-400">Carregando configurações...</p>
-        </div>
-      </div>
-    );
+    return <ConfiguracoesSkeleton />;
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-8">
+    <div className="w-full max-w-full overflow-x-hidden space-y-8">
       <PageHeader
         title="Configurações do Ponto & Totem"
         subtitle="Personalize as regras de validação facial e a forma de registro dos colaboradores"

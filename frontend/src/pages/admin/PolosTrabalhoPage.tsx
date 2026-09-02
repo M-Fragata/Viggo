@@ -3,6 +3,7 @@ import { api } from "../../services/api";
 import type { WorkLocationResponse, WorkLocationCreateBody } from "../../services/api";
 import { PageHeader } from "../../components/common/PageHeader";
 import { MapaPolosPicker } from "../../components/admin/MapaPolosPicker";
+import { PolosTrabalhoSkeleton } from "../../components/admin/PolosTrabalhoSkeleton";
 import {
   MapPin,
   Plus,
@@ -140,7 +141,7 @@ export function PolosTrabalhoPage() {
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
+    <div className="w-full max-w-full overflow-x-hidden space-y-6">
       <PageHeader
         title="Polos de Trabalho & Cercas Virtuais (Geofencing)"
         subtitle="Cadastre sedes, filiais e canteiros de obras para cálculo automático de menor distância e auditoria de pontos"
@@ -297,10 +298,7 @@ export function PolosTrabalhoPage() {
 
       {/* LISTA DE POLOS CADASTRADOS */}
       {loading ? (
-        <div className="bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-3xl p-12 text-center">
-          <Loader2 className="mx-auto text-emerald-500 animate-spin mb-3" size={32} />
-          <p className="text-slate-500 text-xs">Carregando polos de trabalho da empresa...</p>
-        </div>
+        <PolosTrabalhoSkeleton />
       ) : polos.length === 0 ? (
         <div className="bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-3xl p-12 text-center space-y-3">
           <Building2 className="mx-auto text-slate-300 dark:text-slate-600" size={48} />

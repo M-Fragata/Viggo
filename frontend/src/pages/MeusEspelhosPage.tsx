@@ -12,6 +12,7 @@ import {
 import { toast } from "sonner";
 import { api, type MeuEspelhoItem, type EspelhoPontoDetalheResponse } from "../services/api";
 import { PageHeader } from "../components/common/PageHeader";
+import { MeusEspelhosSkeleton } from "../components/espelhos/MeusEspelhosSkeleton";
 
 const MESES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -166,19 +167,19 @@ export function MeusEspelhosPage() {
     window.open(url, "_blank");
   }
 
+  if (loadingList) {
+    return <MeusEspelhosSkeleton />;
+  }
+
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8">
+    <div className="w-full max-w-full overflow-x-hidden space-y-8">
       <PageHeader
         title="Meus Espelhos de Ponto"
         subtitle="Conferência mensal, histórico e assinatura eletrônica avançada (Portaria 671/2021 MTE e Lei 14.063/2020)"
         helpText="Nesta página você pode revisar dia a dia os registros do seu ponto mensal, atestar a conformidade das suas horas trabalhadas e assinar digitalmente seu espelho sem necessidade de papel."
       />
 
-      {loadingList ? (
-        <div className="flex items-center justify-center p-16">
-          <Loader2 className="animate-spin text-emerald-500" size={36} />
-        </div>
-      ) : espelhos.length === 0 ? (
+      {espelhos.length === 0 ? (
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-12 text-center space-y-4">
           <div className="w-16 h-16 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/40 text-amber-500 flex items-center justify-center mx-auto">
             <Clock size={32} />
