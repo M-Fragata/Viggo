@@ -1,5 +1,24 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { LogIn, Utensils, Coffee, LogOut, MonitorSmartphone, ShieldCheck, ArrowLeft, Loader2, Camera, User, Radio, WifiOff } from "lucide-react";
+import { useNavigate } from "react-router";
+import {
+  LogIn,
+  Utensils,
+  Coffee,
+  LogOut,
+  MonitorSmartphone,
+  ShieldCheck,
+  ArrowLeft,
+  Loader2,
+  Camera,
+  User,
+  Radio,
+  WifiOff,
+  KeyRound,
+  ScanFace,
+  Mail,
+  UserCheck,
+  Send,
+} from "lucide-react";
 import { toast } from "sonner";
 import { api, ApiError, type TotemVerifyResponse } from "../../services/api";
 import { LivenessChallenge } from "../../components/LivenessChallenge";
@@ -21,10 +40,12 @@ type Screen =
   | { name: "select-type" }
   | { name: "camera" }
   | { name: "register-face" }
+  | { name: "recover-face" }
   | { name: "success"; comprovante?: string; isOffline?: boolean; offlineRecord?: OfflineCheckin }
   | { name: "exit" };
 
 export function TotemPage() {
+  const navigate = useNavigate();
   const [screen, setScreen] = useState<Screen>({ name: "idle" });
   const [clock, setClock] = useState(new Date());
   const [email, setEmail] = useState("");
@@ -44,13 +65,48 @@ export function TotemPage() {
   const [totemAuthMode, setTotemAuthMode] = useState<string>("FRONTAL_ONLY");
   const [exitPin, setExitPin] = useState("");
   const [isExiting, setIsExiting] = useState(false);
-  const [showRecover, setShowRecover] = useState(false);
+  type ExitTab = "pin" | "face" | "email-code" | "credentials";
+  const [exitTab, setExitTab] = useState<ExitTab>("pin");
+  const [recoveryEmailMasked, setRecoveryEmailMasked] = useState<string | null>(null);
+  const [recoveryCode, setRecoveryCode] = useState<string>("");
+  const [isSendingCode, setIsSendingCode] = useState<boolean>(false);
+  const [isVerifyingCode, setIsVerifyingCode] = useState<boolean>(false);
+  const [codeCountdown, setCodeCountdown] = useState<number>(0);
+  const [isVerifyingAdminFace, setIsVerifyingAdminFace] = useState<boolean>(false);
   const [recoverEmail, setRecoverEmail] = useState("");
   const [recoverPassword, setRecoverPassword] = useState("");
   const [isRecovering, setIsRecovering] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+
+  const ativarModoKiosk = useCallback(() => {
+    if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+    if ("wakeLock" in navigator && !wakeLockRef.current) {
+      navigator.wakeLock.request("screen").then((sentinel) => {
+        wakeLockRef.current = sentinel;
+      }).catch(() => {});
+    }
+  }, []);
+
+  function encerrarSessaoTotem(mensagemSucesso?: string) {
+    stopCamera();
+    try {
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+      wakeLockRef.current?.release().catch(() => {});
+    } catch (err) {
+      console.warn("Erro ao liberar recursos do terminal:", err);
+    }
+    localStorage.removeItem("@viggo:totem");
+    localStorage.removeItem("@viggo:totem:expiresAt");
+    toast.success(mensagemSucesso || "Modo totem encerrado com sucesso");
+    navigate("/totem");
+  }
 
   useEffect(() => {
     preloadFaceModels().catch((err) => {
@@ -63,22 +119,76 @@ export function TotemPage() {
     const expiresAt = localStorage.getItem("@viggo:totem:expiresAt");
 
     if (!token) {
-      window.location.href = "/totem";
+      navigate("/totem");
       return;
     }
 
     if (expiresAt && Number(expiresAt) < Date.now()) {
       localStorage.removeItem("@viggo:totem");
       localStorage.removeItem("@viggo:totem:expiresAt");
-      window.location.href = "/totem";
+      navigate("/totem");
       return;
     }
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     const interval = setInterval(() => setClock(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // Bloqueio Kiosk Automático (Fullscreen, WakeLock, Atalhos e Navegação)
+  useEffect(() => {
+    ativarModoKiosk();
+    const handlePrimeiroToque = () => ativarModoKiosk();
+    window.addEventListener("click", handlePrimeiroToque, { once: true });
+    window.addEventListener("touchstart", handlePrimeiroToque, { once: true });
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.key === "F12" ||
+        e.key === "F5" ||
+        (e.ctrlKey && ["r", "R", "w", "W", "u", "U"].includes(e.key)) ||
+        (e.ctrlKey && e.shiftKey && ["i", "I", "j", "J"].includes(e.key))
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("contextmenu", handleContextMenu);
+
+    window.history.pushState(null, "", window.location.href);
+    const handlePopState = () => {
+      window.history.pushState(null, "", window.location.href);
+    };
+    window.addEventListener("popstate", handlePopState);
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("click", handlePrimeiroToque);
+      window.removeEventListener("touchstart", handlePrimeiroToque);
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("contextmenu", handleContextMenu);
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      wakeLockRef.current?.release().catch(() => {});
+    };
+  }, [ativarModoKiosk]);
+
+  useEffect(() => {
+    if (codeCountdown <= 0) return;
+    const timer = setTimeout(() => setCodeCountdown((prev) => prev - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [codeCountdown]);
 
   function stopCamera() {
     if (streamRef.current) {
@@ -106,13 +216,16 @@ export function TotemPage() {
     setNeedsFaceRegistration(false);
     setExitPin("");
     setIsExiting(false);
-    setShowRecover(false);
+    setExitTab("pin");
+    setRecoveryCode("");
+    setIsSendingCode(false);
+    setIsVerifyingCode(false);
     setRecoverEmail("");
     setRecoverPassword("");
     setIsRecovering(false);
   }
 
-  async function startCamera(targetScreen: "camera" | "register-face" = "camera") {
+  async function startCamera(targetScreen: "camera" | "register-face" | "recover-face" = "camera") {
     try {
       if (!areFaceModelsLoaded()) {
         await preloadFaceModels();
@@ -127,10 +240,14 @@ export function TotemPage() {
       });
 
       streamRef.current = stream;
-      setMessage(targetScreen === "register-face" ? "Centralize seu rosto para o cadastro" : "Centralize seu rosto");
       if (targetScreen === "register-face") {
+        setMessage("Centralize seu rosto para o cadastro");
         setScreen({ name: "register-face" });
+      } else if (targetScreen === "recover-face") {
+        setMessage("Aproxime o rosto para validação como Administrador");
+        setScreen({ name: "recover-face" });
       } else {
+        setMessage("Centralize seu rosto");
         setScreen({ name: "camera" });
       }
     } catch (err) {
@@ -138,7 +255,11 @@ export function TotemPage() {
       const msg = "Não foi possível acessar a câmera. Verifique as permissões do dispositivo.";
       setError(msg);
       toast.error(msg);
-      setScreen({ name: "select-type" });
+      if (targetScreen === "recover-face") {
+        setScreen({ name: "exit" });
+      } else {
+        setScreen({ name: "select-type" });
+      }
     }
   }
 
@@ -337,6 +458,7 @@ export function TotemPage() {
   function handleExit() {
     setScreen({ name: "exit" });
     setExitPin("");
+    setExitTab("pin");
     setError(null);
   }
 
@@ -345,10 +467,7 @@ export function TotemPage() {
     setIsExiting(true);
     try {
       await api.totem.deactivate(exitPin);
-      toast.success("Modo totem desativado");
-      localStorage.removeItem("@viggo:totem");
-      localStorage.removeItem("@viggo:totem:expiresAt");
-      window.location.href = "/totem";
+      encerrarSessaoTotem("Modo totem desativado com sucesso");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "PIN incorreto.";
       setError(msg);
@@ -357,14 +476,63 @@ export function TotemPage() {
     }
   }
 
-  function handleShowRecover() {
-    setShowRecover(true);
+  async function handleSendRecoveryCode() {
     setError(null);
+    setIsSendingCode(true);
+    try {
+      const res = await api.totem.sendRecoveryCode();
+      setRecoveryEmailMasked(res.emailMasked);
+      setCodeCountdown(60);
+      toast.success(res.message);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erro ao enviar código de recuperação.";
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setIsSendingCode(false);
+    }
   }
 
-  function handleBackToPin() {
-    setShowRecover(false);
+  async function handleVerifyRecoveryCode() {
+    if (recoveryCode.length !== 6) {
+      setError("O código deve conter exatamente 6 dígitos.");
+      return;
+    }
     setError(null);
+    setIsVerifyingCode(true);
+    try {
+      const res = await api.totem.verifyRecoveryCode(recoveryCode);
+      encerrarSessaoTotem(res.message);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Código incorreto ou expirado.";
+      setError(msg);
+      toast.error(msg);
+      setIsVerifyingCode(false);
+    }
+  }
+
+  async function handleAdminFaceVerified(descriptor: Float32Array) {
+    setIsVerifyingAdminFace(true);
+    try {
+      const res = await api.totem.recoverWithAdminFace(Array.from(descriptor));
+      if (res.success) {
+        stopCamera();
+        encerrarSessaoTotem(res.message);
+      } else {
+        toast.error(res.message || "Rosto não reconhecido como administrador da empresa.");
+        setIsVerifyingAdminFace(false);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erro ao validar biometria de administrador.";
+      toast.error(msg);
+      setIsVerifyingAdminFace(false);
+    }
+  }
+
+  function handleAdminFaceCancel() {
+    stopCamera();
+    setScreen({ name: "exit" });
+    setExitTab("face");
   }
 
   async function handleRecover() {
@@ -378,10 +546,7 @@ export function TotemPage() {
     setIsRecovering(true);
     try {
       await api.totem.recover(recoverEmail.trim(), recoverPassword);
-      toast.success("Acesso recuperado com sucesso");
-      localStorage.removeItem("@viggo:totem");
-      localStorage.removeItem("@viggo:totem:expiresAt");
-      window.location.href = "/totem";
+      encerrarSessaoTotem("Acesso recuperado com sucesso");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Não foi possível recuperar o acesso.";
       setError(msg);
@@ -751,6 +916,62 @@ export function TotemPage() {
           </div>
         )}
 
+        {screen.name === "recover-face" && (
+          <div className="fixed inset-0 w-full h-full bg-black z-50 overflow-hidden flex flex-col items-center justify-center">
+            {/* Barra superior de instruções em roxo/índigo */}
+            <div className="absolute top-0 left-0 right-0 z-[100] bg-indigo-600 w-full shadow-lg p-3 flex items-center justify-center">
+              <p className="text-white text-sm md:text-lg font-bold text-center uppercase tracking-wider">
+                {message}
+              </p>
+            </div>
+
+            {/* Vídeo em tela cheia */}
+            <video
+              ref={handleVideoRef}
+              autoPlay
+              muted
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover"
+              style={{ transform: "scaleX(-1)" }}
+            />
+
+            {/* Máscara oval de centralização */}
+            <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
+              <div
+                className="md:w-[360px] md:h-[460px] w-[80%] h-[60%] shadow-[0_0_0_9999px_rgba(0,0,0,0.7)] border-4 border-dashed border-indigo-400/60"
+                style={{ borderRadius: "50% / 40%" }}
+              />
+            </div>
+
+            <LivenessChallenge
+              videoRef={videoRef}
+              facialMode="FRONTAL_ONLY"
+              onComplete={handleAdminFaceVerified}
+              onCancel={handleAdminFaceCancel}
+              onModelsLoaded={() => setMessage("Centralize seu rosto para autenticar como Administrador")}
+              onStepChange={(msg) => setMessage(msg)}
+            />
+
+            {/* Botão de Cancelar no rodapé da câmera */}
+            <div className="absolute bottom-6 left-0 right-0 z-[100] flex justify-center px-4 pointer-events-auto">
+              <button
+                onClick={handleAdminFaceCancel}
+                className="px-6 py-3 bg-slate-900/80 hover:bg-slate-900 border border-white/20 text-white rounded-full font-bold transition-all active:scale-95 text-sm cursor-pointer shadow-xl backdrop-blur-sm"
+              >
+                Voltar à Tela de Saída
+              </button>
+            </div>
+
+            {isVerifyingAdminFace && (
+              <div className="absolute inset-0 z-[110] bg-indigo-600/95 flex flex-col items-center justify-center">
+                <Loader2 size={48} className="animate-spin text-white mb-4" />
+                <h2 className="text-white text-2xl font-bold">Autenticando Administrador...</h2>
+                <p className="text-indigo-200 mt-2">Comparando biometria facial...</p>
+              </div>
+            )}
+          </div>
+        )}
+
         {screen.name === "success" && (
           <div className="flex-1 flex flex-col items-center justify-center gap-6 p-8">
             <div className="bg-white rounded-2xl p-6 shadow-xl max-w-5xl w-full">
@@ -776,46 +997,38 @@ export function TotemPage() {
                     <div className="flex justify-between py-1 border-b border-slate-200/60">
                       <span className="text-slate-500">Tipo de Ponto:</span>
                       <span className="font-bold text-slate-800">
-                        {screen.offlineRecord.type === "ENTRY"
-                          ? "Entrada"
-                          : screen.offlineRecord.type === "LUNCH_START"
-                          ? "Início Almoço"
-                          : screen.offlineRecord.type === "LUNCH_END"
-                          ? "Retorno Almoço"
-                          : "Saída"}
+                        {CHECKIN_OPTIONS.find((opt) => opt.type === screen.offlineRecord?.type)?.label ||
+                          screen.offlineRecord?.type}
                       </span>
                     </div>
                     <div className="flex justify-between py-1 border-b border-slate-200/60">
-                      <span className="text-slate-500">Horário Gravado:</span>
+                      <span className="text-slate-500">Data e Hora:</span>
                       <span className="font-bold text-slate-800">
-                        {new Date(screen.offlineRecord.timestamp).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          second: "2-digit",
-                        })}
+                        {new Date(screen.offlineRecord.timestamp).toLocaleString("pt-BR")}
                       </span>
                     </div>
                     <div className="flex justify-between py-1">
-                      <span className="text-slate-500">Biometria:</span>
-                      <span className="font-semibold text-emerald-600">Validada com Vivacidade ✅</span>
+                      <span className="text-slate-500">Status:</span>
+                      <span className="font-bold text-amber-600">Pendente de Sincronização</span>
                     </div>
                   </div>
 
-                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 my-2 text-xs text-amber-800 flex items-start gap-2">
-                    <WifiOff size={16} className="shrink-0 mt-0.5 text-amber-500" />
-                    <p className="leading-relaxed">
-                      O comprovante fiscal definitivo com o número de registro (NSR) será gerado e disponibilizado para consulta assim que o totem restabelecer a conexão com a internet.
-                    </p>
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 flex items-start gap-2 text-xs text-amber-800">
+                    <WifiOff size={16} className="text-amber-500 shrink-0 mt-0.5" />
+                    <span>
+                      O comprovante oficial com assinatura digital será gerado assim que o terminal restabelecer a conexão com a internet.
+                    </span>
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="flex items-center justify-center gap-2 mb-4">
-                    <span className="text-3xl">✅</span>
-                    <h2 className="text-emerald-700 text-lg font-bold text-center">Ponto Registrado!</h2>
+                  <div className="flex items-center justify-center gap-3 mb-4">
+                    <ShieldCheck className="text-emerald-500" size={32} />
+                    <h2 className="text-emerald-500 text-xl font-bold">Ponto Registrado com Sucesso!</h2>
                   </div>
+
                   {screen.comprovante && (
-                    <pre className="text-[10px] sm:text-xs text-slate-700 bg-slate-50 rounded-lg p-3 whitespace-pre-wrap font-mono leading-relaxed border border-slate-200 max-h-[280px] overflow-y-auto">
+                    <pre className="bg-slate-50 rounded-xl p-4 my-4 font-mono text-[11px] leading-relaxed border border-slate-200 overflow-x-auto text-slate-800 whitespace-pre">
                       {screen.comprovante}
                     </pre>
                   )}
@@ -832,18 +1045,78 @@ export function TotemPage() {
         )}
 
         {screen.name === "exit" && (
-          <div className="flex-1 flex flex-col items-center justify-center gap-8 p-8">
+          <div className="flex-1 flex flex-col items-center justify-center gap-6 p-4 sm:p-8 max-w-2xl mx-auto w-full">
             <div className="text-center space-y-2">
-              <ShieldCheck className="w-14 h-14 text-emerald-400 mx-auto mb-3" />
-              <h2 className="text-3xl font-bold">Sair do modo totem</h2>
-              <p className="text-slate-400">
-                {showRecover ? "Informe email e senha de um administrador" : "Digite o PIN de administrador para sair"}
+              <ShieldCheck className="w-14 h-14 text-emerald-400 mx-auto mb-2" />
+              <h2 className="text-2xl sm:text-3xl font-bold">Sair do Modo Totem</h2>
+              <p className="text-slate-400 text-sm">
+                {exitTab === "pin" && "Digite o PIN de administrador para encerrar o terminal"}
+                {exitTab === "face" && "Posicione o rosto na câmera para autenticar como Administrador"}
+                {exitTab === "email-code" && "Informe o código de 6 dígitos enviado para seu e-mail"}
+                {exitTab === "credentials" && "Informe e-mail e senha de um administrador da empresa"}
               </p>
             </div>
 
-            <div className="w-full max-w-2xl space-y-4">
-              {!showRecover ? (
-                <>
+            {/* Abas de Navegação / Métodos de Saída */}
+            <div className="w-full grid grid-cols-2 sm:grid-cols-4 gap-2 p-1.5 bg-slate-900/80 border border-slate-800 rounded-2xl">
+              <button
+                type="button"
+                onClick={() => { setExitTab("pin"); setError(null); }}
+                className={`py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  exitTab === "pin"
+                    ? "bg-emerald-500 text-white shadow-sm"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                }`}
+              >
+                <KeyRound size={15} />
+                PIN
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setExitTab("face"); setError(null); }}
+                className={`py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  exitTab === "face"
+                    ? "bg-emerald-500 text-white shadow-sm"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                }`}
+              >
+                <ScanFace size={15} />
+                Facial
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setExitTab("email-code"); setError(null); }}
+                className={`py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  exitTab === "email-code"
+                    ? "bg-emerald-500 text-white shadow-sm"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                }`}
+              >
+                <Mail size={15} />
+                Código
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setExitTab("credentials"); setError(null); }}
+                className={`py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  exitTab === "credentials"
+                    ? "bg-emerald-500 text-white shadow-sm"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                }`}
+              >
+                <UserCheck size={15} />
+                Senha
+              </button>
+            </div>
+
+            {/* Conteúdo de cada Aba */}
+            <div className="w-full space-y-4">
+              {/* 1. ABA PIN */}
+              {exitTab === "pin" && (
+                <div className="space-y-4">
                   <input
                     type="password"
                     inputMode="numeric"
@@ -855,7 +1128,7 @@ export function TotemPage() {
                   />
 
                   {error && (
-                    <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-xl p-3">
+                    <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-xl p-3 text-center">
                       {error}
                     </div>
                   )}
@@ -863,7 +1136,7 @@ export function TotemPage() {
                   <button
                     onClick={confirmExit}
                     disabled={isExiting || !exitPin}
-                    className="w-full py-4 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="w-full py-4 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
                   >
                     {isExiting ? (
                       <>
@@ -871,37 +1144,178 @@ export function TotemPage() {
                         Saindo...
                       </>
                     ) : (
-                      "Confirmar saída"
+                      "Confirmar Saída com PIN"
                     )}
                   </button>
 
+                  <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-slate-400 pt-1">
+                    <span>Esqueceu seu PIN?</span>
+                    <button
+                      type="button"
+                      onClick={() => { setExitTab("face"); setError(null); }}
+                      className="text-emerald-400 hover:underline cursor-pointer font-semibold"
+                    >
+                      Usar Reconhecimento Facial
+                    </button>
+                    <span>•</span>
+                    <button
+                      type="button"
+                      onClick={() => { setExitTab("email-code"); setError(null); }}
+                      className="text-emerald-400 hover:underline cursor-pointer font-semibold"
+                    >
+                      Receber código por e-mail
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* 2. ABA FACIAL */}
+              {exitTab === "face" && (
+                <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 text-center space-y-4">
+                  <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 flex items-center justify-center mx-auto">
+                    <ScanFace size={32} />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-lg font-bold text-white">Validação Facial de Administrador</h3>
+                    <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto">
+                      Aproxime seu rosto da câmera. O sistema reconhecerá automaticamente qualquer administrador cadastrado da empresa para liberar o terminal.
+                    </p>
+                  </div>
+
+                  {error && (
+                    <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-xl p-3 text-center">
+                      {error}
+                    </div>
+                  )}
+
                   <button
-                    onClick={handleShowRecover}
-                    className="w-full text-slate-400 hover:text-white transition-colors text-sm py-2"
+                    type="button"
+                    onClick={() => startCamera("recover-face")}
+                    className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-indigo-600/20"
                   >
-                    Esqueceu seu PIN?
+                    <Camera size={20} />
+                    Abrir Câmera e Escanear Rosto
                   </button>
-                </>
-              ) : (
-                <>
+                </div>
+              )}
+
+              {/* 3. ABA CÓDIGO POR E-MAIL */}
+              {exitTab === "email-code" && (
+                <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-4">
+                  {!recoveryEmailMasked ? (
+                    <div className="text-center space-y-4">
+                      <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto">
+                        <Mail size={32} />
+                      </div>
+                      <div className="space-y-1">
+                        <h3 className="text-lg font-bold text-white">Código de Verificação por E-mail</h3>
+                        <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto">
+                          Enviaremos um código numérico de 6 dígitos para o e-mail cadastrado dos administradores desta empresa para confirmar a liberação.
+                        </p>
+                      </div>
+
+                      {error && (
+                        <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-xl p-3 text-center">
+                          {error}
+                        </div>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={handleSendRecoveryCode}
+                        disabled={isSendingCode}
+                        className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 shadow-lg shadow-emerald-600/20"
+                      >
+                        {isSendingCode ? (
+                          <>
+                            <Loader2 size={20} className="animate-spin" />
+                            Disparando e-mail...
+                          </>
+                        ) : (
+                          <>
+                            <Send size={18} />
+                            Enviar Código para o E-mail
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="text-center space-y-1">
+                        <p className="text-xs text-slate-400">Código de 6 dígitos enviado para:</p>
+                        <p className="text-sm font-semibold text-emerald-400 font-mono">{recoveryEmailMasked}</p>
+                      </div>
+
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={6}
+                        value={recoveryCode}
+                        onChange={(e) => setRecoveryCode(e.target.value.replace(/\D/g, ""))}
+                        placeholder="000000"
+                        className="w-full px-4 py-4 rounded-xl bg-slate-950 border border-slate-700 focus:border-emerald-400 focus:outline-none text-center text-3xl tracking-[0.5em] font-bold placeholder:text-slate-700 font-mono"
+                      />
+
+                      {error && (
+                        <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-xl p-3 text-center">
+                          {error}
+                        </div>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={handleVerifyRecoveryCode}
+                        disabled={isVerifyingCode || recoveryCode.length !== 6}
+                        className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-600/20"
+                      >
+                        {isVerifyingCode ? (
+                          <>
+                            <Loader2 size={20} className="animate-spin" />
+                            Validando Código...
+                          </>
+                        ) : (
+                          "Validar Código e Desativar Totem"
+                        )}
+                      </button>
+
+                      <div className="text-center pt-2">
+                        <button
+                          type="button"
+                          onClick={handleSendRecoveryCode}
+                          disabled={isSendingCode || codeCountdown > 0}
+                          className="text-xs text-slate-400 hover:text-emerald-400 transition-colors disabled:opacity-50 cursor-pointer"
+                        >
+                          {codeCountdown > 0
+                            ? `Reenviar código em ${codeCountdown}s`
+                            : "Não recebeu? Clique para reenviar"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 4. ABA CREDENCIAIS DE ADMIN */}
+              {exitTab === "credentials" && (
+                <div className="space-y-3">
                   <input
                     type="email"
                     value={recoverEmail}
                     onChange={(e) => setRecoverEmail(e.target.value)}
-                    placeholder="Email do administrador"
-                    className="w-full px-4 py-4 rounded-xl bg-slate-900 border border-slate-700 focus:border-emerald-400 focus:outline-none text-lg placeholder:text-slate-600"
+                    placeholder="E-mail do administrador"
+                    className="w-full px-4 py-3.5 rounded-xl bg-slate-900 border border-slate-700 focus:border-emerald-400 focus:outline-none text-base placeholder:text-slate-600"
                   />
 
                   <input
                     type="password"
                     value={recoverPassword}
                     onChange={(e) => setRecoverPassword(e.target.value)}
-                    placeholder="Senha"
-                    className="w-full px-4 py-4 rounded-xl bg-slate-900 border border-slate-700 focus:border-emerald-400 focus:outline-none text-lg placeholder:text-slate-600"
+                    placeholder="Senha do administrador"
+                    className="w-full px-4 py-3.5 rounded-xl bg-slate-900 border border-slate-700 focus:border-emerald-400 focus:outline-none text-base placeholder:text-slate-600"
                   />
 
                   {error && (
-                    <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-xl p-3">
+                    <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-xl p-3 text-center">
                       {error}
                     </div>
                   )}
@@ -909,32 +1323,26 @@ export function TotemPage() {
                   <button
                     onClick={handleRecover}
                     disabled={isRecovering || !recoverEmail.trim() || !recoverPassword}
-                    className="w-full py-4 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="w-full py-4 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
                   >
                     {isRecovering ? (
                       <>
                         <Loader2 size={20} className="animate-spin" />
-                        Recuperando...
+                        Autenticando...
                       </>
                     ) : (
-                      "Recuperar acesso"
+                      "Confirmar com E-mail e Senha"
                     )}
                   </button>
-
-                  <button
-                    onClick={handleBackToPin}
-                    className="w-full text-slate-400 hover:text-white transition-colors text-sm py-2"
-                  >
-                    Voltar ao PIN
-                  </button>
-                </>
+                </div>
               )}
 
               <button
+                type="button"
                 onClick={resetToIdle}
-                className="w-full text-slate-400 hover:text-white transition-colors text-sm py-2"
+                className="w-full text-slate-400 hover:text-white transition-colors text-sm py-2 cursor-pointer text-center"
               >
-                Cancelar
+                Cancelar e Voltar ao Totem
               </button>
             </div>
           </div>

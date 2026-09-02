@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 const mockExtendedPrisma = vi.hoisted(() => ({
-  user: { findUnique: vi.fn(), update: vi.fn() },
+  user: { findUnique: vi.fn(), findMany: vi.fn(), update: vi.fn() },
   company: { findUnique: vi.fn(), update: vi.fn() },
   checkIn: { findFirst: vi.fn() },
   $transaction: vi.fn(),
@@ -9,6 +9,10 @@ const mockExtendedPrisma = vi.hoisted(() => ({
 
 vi.mock("../../../database/prisma-extensions.js", () => ({
   extendedPrisma: mockExtendedPrisma,
+}));
+
+vi.mock("../../../services/email/emailService.js", () => ({
+  sendTotemRecoveryCode: vi.fn().mockResolvedValue({ id: "mock-email-id" }),
 }));
 
 vi.mock("../../../utils/environment.js", () => ({
@@ -55,6 +59,7 @@ vi.mock("jsonwebtoken", () => ({
 }));
 
 import { TotemController } from "../../../controller/TotemController.js";
+import { sendTotemRecoveryCode } from "../../../services/email/emailService.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import crypto from "node:crypto";
@@ -859,6 +864,262 @@ describe("TotemController", () => {
 
       expect(res.status).toHaveBeenCalledWith(403);
       expect(mockExtendedPrisma.user.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("recoverWithAdminFace", () => {
+    const validDescriptor = new Array(128).fill(0.1);
+
+    it("deve encerrar o totem com sucesso quando o descritor facial corresponder a um administrador (distância < 0.5)", async () => {
+      mockExtendedPrisma.user.findMany.mockResolvedValue([
+        {
+          id: "admin-1",
+          name: "Admin João",
+          faceDescriptor: "encrypted-face-admin",
+        },
+      ]);
+      (decryptFaceDescriptor as any).mockReturnValue(new Float32Array(128).fill(0.1));
+
+      req = {
+        totemContext: { companyId: COMPANY_ID },
+        body: { descriptor: validDescriptor },
+      };
+
+      await controller.recoverWithAdminFace(req, res);
+
+      expect(mockExtendedPrisma.company.update).toHaveBeenCalledWith({
+        where: { id: COMPANY_ID },
+        data: { totemActive: false },
+      });
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: true,
+          adminName: "Admin João",
+          message: expect.stringContaining("Admin João"),
+        })
+      );
+    });
+
+    it("deve retornar 200 com success: false quando a face não for de administrador da empresa", async () => {
+      mockExtendedPrisma.user.findMany.mockResolvedValue([
+        {
+          id: "admin-1",
+          name: "Admin João",
+          faceDescriptor: "encrypted-face-admin",
+        },
+      ]);
+      (decryptFaceDescriptor as any).mockReturnValue(new Float32Array(128).fill(1.5));
+
+      req = {
+        totemContext: { companyId: COMPANY_ID },
+        body: { descriptor: new Array(128).fill(0.0) },
+      };
+
+      await controller.recoverWithAdminFace(req, res);
+
+      expect(mockExtendedPrisma.company.update).not.toHaveBeenCalled();
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: "Rosto não reconhecido como administrador da empresa.",
+        })
+      );
+    });
+
+    it("deve retornar 400 quando nenhum administrador da empresa possuir biometria cadastrada", async () => {
+      mockExtendedPrisma.user.findMany.mockResolvedValue([]);
+
+      req = {
+        totemContext: { companyId: COMPANY_ID },
+        body: { descriptor: validDescriptor },
+      };
+
+      await controller.recoverWithAdminFace(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expect.stringContaining("Nenhum administrador desta empresa possui biometria"),
+        })
+      );
+      expect(mockExtendedPrisma.company.update).not.toHaveBeenCalled();
+    });
+
+    it("deve retornar 400 com descriptor de tamanho inválido", async () => {
+      req = {
+        totemContext: { companyId: COMPANY_ID },
+        body: { descriptor: [1, 2, 3] },
+      };
+
+      await controller.recoverWithAdminFace(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({ message: "Descriptor facial inválido" })
+      );
+    });
+
+    it("deve retornar 403 sem contexto de totem", async () => {
+      req = {
+        body: { descriptor: validDescriptor },
+      };
+
+      await controller.recoverWithAdminFace(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(res.json).toHaveBeenCalledWith({ message: "Contexto de totem inválido" });
+    });
+  });
+
+  describe("sendRecoveryCode", () => {
+    it("deve gerar código OTP, salvar no store e disparar e-mail com máscara para os administradores", async () => {
+      mockExtendedPrisma.company.findUnique.mockResolvedValue({ name: "Empresa XPTO" });
+      mockExtendedPrisma.user.findMany.mockResolvedValue([
+        { id: "admin-1", name: "Admin Maria", email: "maria.admin@empresa.com" },
+      ]);
+      (bcrypt.hash as any).mockResolvedValue("hashed-otp-code");
+
+      req = {
+        totemContext: { companyId: COMPANY_ID },
+      };
+
+      await controller.sendRecoveryCode(req, res);
+
+      expect(sendTotemRecoveryCode).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: ["maria.admin@empresa.com"],
+          companyName: "Empresa XPTO",
+          adminName: "Admin Maria",
+          code: expect.stringMatching(/^\d{6}$/),
+        })
+      );
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expect.stringContaining("Código de desbloqueio enviado com sucesso"),
+          emailMasked: expect.stringContaining("mar***@empresa.com"),
+        })
+      );
+    });
+
+    it("deve retornar 404 quando a empresa não possuir administradores ativos", async () => {
+      mockExtendedPrisma.company.findUnique.mockResolvedValue({ name: "Empresa XPTO" });
+      mockExtendedPrisma.user.findMany.mockResolvedValue([]);
+
+      req = {
+        totemContext: { companyId: COMPANY_ID },
+      };
+
+      await controller.sendRecoveryCode(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith({ message: "Nenhum administrador encontrado para esta empresa." });
+    });
+
+    it("deve retornar 403 sem contexto de totem", async () => {
+      req = {};
+
+      await controller.sendRecoveryCode(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(res.json).toHaveBeenCalledWith({ message: "Contexto de totem inválido" });
+    });
+  });
+
+  describe("verifyRecoveryCode", () => {
+    it("deve validar com sucesso o código correto de 6 dígitos e desativar o totem", async () => {
+      mockExtendedPrisma.company.findUnique.mockResolvedValue({ name: "Empresa XPTO" });
+      mockExtendedPrisma.user.findMany.mockResolvedValue([
+        { id: "admin-1", name: "Admin Maria", email: "maria@empresa.com" },
+      ]);
+      (bcrypt.hash as any).mockResolvedValue("hashed-valid-code");
+      (bcrypt.compare as any).mockResolvedValue(true);
+
+      const sendReq: any = { totemContext: { companyId: COMPANY_ID } };
+      const sendRes: any = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+      await controller.sendRecoveryCode(sendReq, sendRes);
+
+      req = {
+        totemContext: { companyId: COMPANY_ID },
+        body: { code: "123456" },
+      };
+
+      await controller.verifyRecoveryCode(req, res);
+
+      expect(mockExtendedPrisma.company.update).toHaveBeenCalledWith({
+        where: { id: COMPANY_ID },
+        data: { totemActive: false },
+      });
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        message: "Código validado com sucesso! Modo totem encerrado.",
+      });
+    });
+
+    it("deve retornar 400 e incrementar contador de tentativas quando o código for incorreto", async () => {
+      mockExtendedPrisma.company.findUnique.mockResolvedValue({ name: "Empresa XPTO" });
+      mockExtendedPrisma.user.findMany.mockResolvedValue([
+        { id: "admin-1", name: "Admin Maria", email: "maria@empresa.com" },
+      ]);
+      (bcrypt.hash as any).mockResolvedValue("hashed-valid-code");
+      (bcrypt.compare as any).mockResolvedValue(false);
+
+      const sendReq: any = { totemContext: { companyId: COMPANY_ID } };
+      const sendRes: any = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+      await controller.sendRecoveryCode(sendReq, sendRes);
+
+      req = {
+        totemContext: { companyId: COMPANY_ID },
+        body: { code: "999999" },
+      };
+
+      await controller.verifyRecoveryCode(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Código incorreto. Tentativa 1 de 5.",
+      });
+      expect(mockExtendedPrisma.company.update).not.toHaveBeenCalled();
+    });
+
+    it("deve retornar 400 quando nenhum código foi solicitado previamente ou estiver expirado", async () => {
+      req = {
+        totemContext: { companyId: "empresa-sem-codigo-solicitado" },
+        body: { code: "123456" },
+      };
+
+      await controller.verifyRecoveryCode(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expect.stringContaining("Código expirado ou não solicitado"),
+        })
+      );
+    });
+
+    it("deve retornar 400 com código inválido (diferente de 6 dígitos numéricos)", async () => {
+      req = {
+        totemContext: { companyId: COMPANY_ID },
+        body: { code: "abc" },
+      };
+
+      await controller.verifyRecoveryCode(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({ message: "Código inválido" })
+      );
+    });
+
+    it("deve retornar 403 sem contexto de totem", async () => {
+      req = {
+        body: { code: "123456" },
+      };
+
+      await controller.verifyRecoveryCode(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(res.json).toHaveBeenCalledWith({ message: "Contexto de totem inválido" });
     });
   });
 });

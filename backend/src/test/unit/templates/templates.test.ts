@@ -20,6 +20,7 @@ import { renderEmployeeWelcome } from "../../../templates/employeeWelcome.js";
 import { renderBiometricPurged } from "../../../templates/biometricPurged.js";
 import { renderPaymentUpcoming } from "../../../templates/paymentUpcoming.js";
 import { renderSubscriptionCancelled } from "../../../templates/subscriptionCancelled.js";
+import { renderTotemRecoveryCode } from "../../../templates/totemRecoveryCode.js";
 import { baseLayout } from "../../../templates/layout.js";
 
 // helper structural asserts
@@ -234,5 +235,30 @@ describe("templates - structural asserts (sem snapshot)", () => {
     expect(html).toContain("Acme");
     expect(text).toContain("Acme");
     assertBaseStructure(html);
+  });
+
+  it("totemRecoveryCode — contém código de 6 dígitos, companyName, adminName e alerta de 10 minutos", () => {
+    const { subject, html, text } = renderTotemRecoveryCode({
+      code: "839201",
+      companyName: "Tech Corp",
+      adminName: "Carlos Silva",
+    });
+    expect(subject).toContain("Código de Desbloqueio do Totem");
+    expect(subject).toContain("Tech Corp");
+    expect(html).toContain("839201");
+    expect(html).toContain("Tech Corp");
+    expect(html).toContain("Carlos Silva");
+    expect(html).toContain("10 minutos");
+    expect(text).toContain("839201");
+    expect(text).toContain("Tech Corp");
+    assertBaseStructure(html);
+
+    // Sem adminName informado
+    const semAdmin = renderTotemRecoveryCode({
+      code: "112233",
+      companyName: "Acme",
+    });
+    expect(semAdmin.html).toContain("Olá!");
+    expect(semAdmin.html).toContain("112233");
   });
 });

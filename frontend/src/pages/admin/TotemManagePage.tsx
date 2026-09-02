@@ -64,11 +64,11 @@ export function TotemManagePage() {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
+    <div className="w-full max-w-full overflow-x-hidden space-y-6">
       <PageHeader
         title="Terminal Totem"
         subtitle="Configuração e ativação do terminal fixo de autoatendimento"
-        helpText="O Modo Totem transforma qualquer tablet, celular ou computador da recepção em um relógio de ponto compartilhado protegido por PIN."
+        helpText="O Modo Totem transforma qualquer tablet ou computador da recepção em um relógio de ponto compartilhado em Modo Kiosk (tela cheia permanente, sem suspensão de tela e protegido por PIN)."
       />
 
       {/* Status da Sessão Ativa */}

@@ -11,6 +11,7 @@ import { gerarComprovante } from "../utils/comprovanteGenerator.js";
 import { getNextNSR, currentYear, NsrLimitExceededError } from "../utils/nsrGenerator.js";
 import { parseISO, startOfDay, endOfDay } from "date-fns";
 import { avaliarLocalizacaoCheckin } from "../services/geofenceService.js";
+import { sendTotemRecoveryCode } from "../services/email/emailService.js";
 
 interface FaceToken {
     descriptor: Float32Array;
@@ -18,9 +19,25 @@ interface FaceToken {
     userId: string;
 }
 
+interface TotemRecoveryOtp {
+    codeHash: string;
+    expiresAt: Date;
+    attempts: number;
+}
+
 const TOTEM_TOKEN_TTL_SECONDS = 8 * 60 * 60;
 
 const faceTokens = new Map<string, FaceToken>();
+const totemRecoveryStore = new Map<string, TotemRecoveryOtp>();
+
+function mascararEmail(email: string): string {
+    const partes = email.split("@");
+    if (partes.length !== 2) return email;
+    const usuario = partes[0]!;
+    const dominio = partes[1]!;
+    if (usuario.length <= 2) return `${usuario[0]}***@${dominio}`;
+    return `${usuario.slice(0, 2)}${"*".repeat(Math.min(5, usuario.length - 2))}@${dominio}`;
+}
 
 export class TotemController {
 
@@ -495,6 +512,200 @@ export class TotemController {
             }
             console.error("Erro ao registrar face no totem:", error);
             return res.status(500).json({ message: "Erro ao registrar face" });
+        }
+    }
+
+    /**
+     * POST /totem/recover/face
+     * Valida o descriptor facial contra os administradores (ENTERPRISE_ADMIN e MASTER)
+     * vinculados à empresa do totem. Em caso de match (distância < 0.5), encerra o modo totem.
+     */
+    async recoverWithAdminFace(req: Request, res: Response) {
+        const bodySchema = z.object({
+            descriptor: z.array(z.number()).min(128).max(128),
+        });
+
+        try {
+            const { descriptor } = bodySchema.parse(req.body);
+            const companyId = req.totemContext?.companyId;
+            if (!companyId) {
+                return res.status(403).json({ message: "Contexto de totem inválido" });
+            }
+
+            const admins = await extendedPrisma.user.findMany({
+                where: {
+                    companyId,
+                    role: { in: ["ENTERPRISE_ADMIN", "MASTER"] },
+                    faceDescriptor: { not: null as any },
+                },
+                select: { id: true, name: true, faceDescriptor: true },
+            });
+
+            if (admins.length === 0) {
+                return res.status(400).json({
+                    message: "Nenhum administrador desta empresa possui biometria facial cadastrada. Utilize o PIN ou suas credenciais de e-mail e senha.",
+                });
+            }
+
+            const inputDescriptor = new Float32Array(descriptor);
+            let matchedAdmin: { id: string; name: string } | null = null;
+            let menorDistancia = Infinity;
+
+            for (const admin of admins) {
+                try {
+                    const storedDescriptor = decryptFaceDescriptor(admin.faceDescriptor as any);
+                    const dist = euclideanDistanceCalc(inputDescriptor, storedDescriptor);
+                    if (dist < menorDistancia) {
+                        menorDistancia = dist;
+                    }
+                    if (dist < 0.5) {
+                        matchedAdmin = { id: admin.id, name: admin.name };
+                        break;
+                    }
+                } catch (err) {
+                    console.error("Erro ao decifrar biometria facial de administrador:", err);
+                }
+            }
+
+            if (!matchedAdmin) {
+                return res.status(200).json({
+                    success: false,
+                    distance: menorDistancia,
+                    message: "Rosto não reconhecido como administrador da empresa.",
+                });
+            }
+
+            await extendedPrisma.company.update({
+                where: { id: companyId },
+                data: { totemActive: false },
+            });
+
+            return res.json({
+                success: true,
+                adminName: matchedAdmin.name,
+                message: `Modo totem encerrado com sucesso pelo administrador ${matchedAdmin.name}.`,
+            });
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                return res.status(400).json({ message: "Descriptor facial inválido", errors: error.issues });
+            }
+            console.error("Erro ao recuperar totem por biometria facial:", error);
+            return res.status(500).json({ message: "Erro ao processar validação facial" });
+        }
+    }
+
+    /**
+     * POST /totem/recover/code/send
+     * Gera código OTP numérico de 6 dígitos válido por 10 minutos e envia para o e-mail dos administradores da empresa.
+     */
+    async sendRecoveryCode(req: Request, res: Response) {
+        try {
+            const companyId = req.totemContext?.companyId;
+            if (!companyId) {
+                return res.status(403).json({ message: "Contexto de totem inválido" });
+            }
+
+            const company = await extendedPrisma.company.findUnique({
+                where: { id: companyId },
+                select: { name: true },
+            });
+
+            const admins = await extendedPrisma.user.findMany({
+                where: {
+                    companyId,
+                    role: { in: ["ENTERPRISE_ADMIN", "MASTER"] },
+                },
+                select: { id: true, name: true, email: true },
+            });
+
+            if (admins.length === 0) {
+                return res.status(404).json({ message: "Nenhum administrador encontrado para esta empresa." });
+            }
+
+            const codigo = crypto.randomInt(100000, 1000000).toString();
+            const codigoHash = await bcrypt.hash(codigo, 8);
+            const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+            totemRecoveryStore.set(companyId, {
+                codeHash: codigoHash,
+                expiresAt,
+                attempts: 0,
+            });
+
+            const emails = admins.map((a) => a.email);
+            await sendTotemRecoveryCode({
+                to: emails,
+                code: codigo,
+                companyName: company?.name || "Sua Empresa",
+                adminName: admins[0]?.name,
+            });
+
+            return res.json({
+                message: "Código de desbloqueio enviado com sucesso para o e-mail do administrador.",
+                emailMasked: admins.map((a) => mascararEmail(a.email)).join(", "),
+            });
+        } catch (error) {
+            console.error("Erro ao enviar código de recuperação do totem:", error);
+            return res.status(500).json({ message: "Erro ao enviar código de recuperação" });
+        }
+    }
+
+    /**
+     * POST /totem/recover/code/verify
+     * Valida o código OTP de 6 dígitos enviado por e-mail e desativa o modo totem.
+     */
+    async verifyRecoveryCode(req: Request, res: Response) {
+        const bodySchema = z.object({
+            code: z.string().length(6, "O código deve conter 6 dígitos").regex(/^\d+$/, "Código numérico"),
+        });
+
+        try {
+            const { code } = bodySchema.parse(req.body);
+            const companyId = req.totemContext?.companyId;
+            if (!companyId) {
+                return res.status(403).json({ message: "Contexto de totem inválido" });
+            }
+
+            const registro = totemRecoveryStore.get(companyId);
+            if (!registro || registro.expiresAt.getTime() < Date.now()) {
+                totemRecoveryStore.delete(companyId);
+                return res.status(400).json({
+                    message: "Código expirado ou não solicitado. Solicite um novo código de verificação.",
+                });
+            }
+
+            if (registro.attempts >= 5) {
+                totemRecoveryStore.delete(companyId);
+                return res.status(403).json({
+                    message: "Limite de 5 tentativas excedido. Solicite um novo código.",
+                });
+            }
+
+            const valido = await bcrypt.compare(code, registro.codeHash);
+            if (!valido) {
+                registro.attempts += 1;
+                return res.status(400).json({
+                    message: `Código incorreto. Tentativa ${registro.attempts} de 5.`,
+                });
+            }
+
+            totemRecoveryStore.delete(companyId);
+
+            await extendedPrisma.company.update({
+                where: { id: companyId },
+                data: { totemActive: false },
+            });
+
+            return res.json({
+                success: true,
+                message: "Código validado com sucesso! Modo totem encerrado.",
+            });
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                return res.status(400).json({ message: "Código inválido", errors: error.issues });
+            }
+            console.error("Erro ao verificar código de recuperação do totem:", error);
+            return res.status(500).json({ message: "Erro ao verificar código" });
         }
     }
 }

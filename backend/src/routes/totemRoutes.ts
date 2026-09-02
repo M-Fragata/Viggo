@@ -31,6 +31,9 @@ totemRoutes.post("/checkin", totemAuthMiddleware, totemCheckinLimiter, totemCont
 totemRoutes.post("/face/verify", totemAuthMiddleware, totemController.verifyFace);
 totemRoutes.post("/face/register", totemAuthMiddleware, totemController.registerFace);
 totemRoutes.post("/recover", totemAuthMiddleware, totemPinLimiter, totemController.recover);
+totemRoutes.post("/recover/face", totemAuthMiddleware, totemPinLimiter, totemController.recoverWithAdminFace);
+totemRoutes.post("/recover/code/send", totemAuthMiddleware, totemPinLimiter, totemController.sendRecoveryCode);
+totemRoutes.post("/recover/code/verify", totemAuthMiddleware, totemPinLimiter, totemController.verifyRecoveryCode);
 
 totemRoutes.post("/companies/me/totem/activate", authMiddleware, requireEnterpriseAdmin, totemController.activate);
 totemRoutes.post("/companies/me/totem/deactivate", authMiddleware, requireEnterpriseAdmin, totemPinLimiter, totemController.deactivate);

@@ -518,6 +518,32 @@ export const api = {
         requiresAuth: false,
         totemToken: true,
       }),
+
+    recoverWithAdminFace: (descriptor: number[]) =>
+      fetchApi<{ success: boolean; adminName?: string; message: string; distance?: number }>("/totem/recover/face", {
+        method: "POST",
+        body: JSON.stringify({ descriptor }),
+        requiresAuth: false,
+        totemToken: true,
+        skipAuthRedirect: true,
+      }),
+
+    sendRecoveryCode: () =>
+      fetchApi<{ message: string; emailMasked: string }>("/totem/recover/code/send", {
+        method: "POST",
+        requiresAuth: false,
+        totemToken: true,
+        skipAuthRedirect: true,
+      }),
+
+    verifyRecoveryCode: (code: string) =>
+      fetchApi<{ success: boolean; message: string }>("/totem/recover/code/verify", {
+        method: "POST",
+        body: JSON.stringify({ code }),
+        requiresAuth: false,
+        totemToken: true,
+        skipAuthRedirect: true,
+      }),
   },
 
   espelhos: {

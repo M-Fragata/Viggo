@@ -334,6 +334,23 @@ export const api = {
         body: JSON.stringify({ userId, descriptor }),
       });
     },
+
+    async sendRecoveryCode(): Promise<{ message: string; emailMasked: string }> {
+      return request<{ message: string; emailMasked: string }>('/totem/recover/code/send', {
+        method: 'POST',
+        useTotemToken: true,
+      });
+    },
+
+    async verifyRecoveryCode(code: string): Promise<{ success: boolean; message: string }> {
+      const data = await request<{ success: boolean; message: string }>('/totem/recover/code/verify', {
+        method: 'POST',
+        useTotemToken: true,
+        body: JSON.stringify({ code }),
+      });
+      await removeStoredTotemToken();
+      return data;
+    },
   },
 
   espelhos: {

@@ -15,6 +15,7 @@ import { renderEmployeeWelcome } from "../../templates/employeeWelcome.js";
 import { renderBiometricPurged } from "../../templates/biometricPurged.js";
 import { renderPaymentUpcoming } from "../../templates/paymentUpcoming.js";
 import { renderSubscriptionCancelled } from "../../templates/subscriptionCancelled.js";
+import { renderTotemRecoveryCode } from "../../templates/totemRecoveryCode.js";
 
 let provider: EmailProvider | null = null;
 
@@ -196,3 +197,14 @@ export async function sendSubscriptionCancelled(props: { to: string | string[]; 
   const { subject, html, text } = renderSubscriptionCancelled(props);
   return sendRaw(buildOpts({ from: Env.EMAIL_FROM, to: props.to, subject, html, text }));
 }
+
+export async function sendTotemRecoveryCode(props: {
+  to: string | string[];
+  code: string;
+  companyName: string;
+  adminName?: string | undefined;
+}) {
+  const { subject, html, text } = renderTotemRecoveryCode(props);
+  return sendRaw(buildOpts({ from: Env.EMAIL_FROM, to: props.to, subject, html, text }));
+}
+

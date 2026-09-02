@@ -9,6 +9,7 @@ import {
   Alert,
   Dimensions,
   ScrollView,
+  BackHandler,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
@@ -42,6 +43,7 @@ import {
   WifiOff,
   Radio,
   ScanFace,
+  Mail,
 } from 'lucide-react-native';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -98,6 +100,10 @@ export default function TotemScreen() {
   const [recoverEmail, setRecoverEmail] = useState('');
   const [recoverPassword, setRecoverPassword] = useState('');
   const [loadingRecover, setLoadingRecover] = useState(false);
+  const [recoverOtpCode, setRecoverOtpCode] = useState('');
+  const [loadingSendOtp, setLoadingSendOtp] = useState(false);
+  const [loadingVerifyOtp, setLoadingVerifyOtp] = useState(false);
+  const [otpSentMasked, setOtpSentMasked] = useState<string | null>(null);
 
   // Camera & Checkin
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
@@ -125,6 +131,18 @@ export default function TotemScreen() {
     }
     checkToken();
   }, []);
+
+  // Bloqueio do botão físico de voltar no Android durante o modo Totem
+  useEffect(() => {
+    if (screenState.name === 'activation') return;
+
+    const backAction = () => {
+      return true;
+    };
+
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+    return () => backHandler.remove();
+  }, [screenState.name]);
 
   // Auto-sincronização de marcações pendentes do Totem
   const trySyncTotemOffline = useCallback(async () => {
@@ -421,6 +439,39 @@ export default function TotemScreen() {
       Alert.alert('Erro na Recuperação', err.message || 'Credenciais de administrador inválidas.');
     } finally {
       setLoadingRecover(false);
+    }
+  }
+
+  // 8. Recuperar por Código OTP enviado ao E-mail
+  async function handleSendOtpCode() {
+    setLoadingSendOtp(true);
+    try {
+      const res = await api.totem.sendRecoveryCode();
+      setOtpSentMasked(res.emailMasked);
+      Alert.alert('Código Enviado', `Código enviado para o e-mail: ${res.emailMasked}`);
+    } catch (err: any) {
+      Alert.alert('Erro ao enviar código', err.message || 'Não foi possível enviar o código para o e-mail.');
+    } finally {
+      setLoadingSendOtp(false);
+    }
+  }
+
+  async function handleVerifyOtpCode() {
+    if (recoverOtpCode.length !== 6) {
+      Alert.alert('Código Inválido', 'Digite os 6 dígitos do código.');
+      return;
+    }
+    setLoadingVerifyOtp(true);
+    try {
+      await api.totem.verifyRecoveryCode(recoverOtpCode);
+      setRecoverOtpCode('');
+      setOtpSentMasked(null);
+      Alert.alert('Terminal Liberado', 'Modo totem desativado com sucesso.');
+      setScreenState({ name: 'activation' });
+    } catch (err: any) {
+      Alert.alert('Erro na Verificação', err.message || 'Código incorreto ou expirado.');
+    } finally {
+      setLoadingVerifyOtp(false);
     }
   }
 
@@ -884,9 +935,70 @@ export default function TotemScreen() {
             {loadingRecover ? (
               <ActivityIndicator color={Colors.textDark} />
             ) : (
-              <Text style={styles.primaryButtonText}>Forçar Desativação</Text>
+              <Text style={styles.primaryButtonText}>Forçar Desativação com Senha</Text>
             )}
           </TouchableOpacity>
+        </View>
+
+        {/* Opção Alternativa: Código OTP enviado por E-mail */}
+        <View style={[styles.card, { marginTop: Spacing.lg }]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <Mail size={20} color={Colors.primary} />
+            <Text style={[styles.label, { marginTop: 0 }]}>Recuperação via Código por E-mail</Text>
+          </View>
+          <Text style={{ fontSize: 12, color: Colors.textMuted, marginBottom: Spacing.md }}>
+            {otpSentMasked
+              ? `Código enviado para: ${otpSentMasked}`
+              : 'Enviaremos um código numérico de 6 dígitos aos e-mails dos administradores cadastrados.'}
+          </Text>
+
+          {!otpSentMasked ? (
+            <TouchableOpacity
+              style={[styles.primaryButton, loadingSendOtp && { opacity: 0.7 }]}
+              onPress={handleSendOtpCode}
+              disabled={loadingSendOtp}
+            >
+              {loadingSendOtp ? (
+                <ActivityIndicator color={Colors.textDark} />
+              ) : (
+                <Text style={styles.primaryButtonText}>Enviar Código para o E-mail</Text>
+              )}
+            </TouchableOpacity>
+          ) : (
+            <View>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="000000"
+                  placeholderTextColor={Colors.textMuted}
+                  value={recoverOtpCode}
+                  onChangeText={(t) => setRecoverOtpCode(t.replace(/\D/g, ''))}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                />
+              </View>
+
+              <TouchableOpacity
+                style={[styles.primaryButton, (loadingVerifyOtp || recoverOtpCode.length !== 6) && { opacity: 0.7 }]}
+                onPress={handleVerifyOtpCode}
+                disabled={loadingVerifyOtp || recoverOtpCode.length !== 6}
+              >
+                {loadingVerifyOtp ? (
+                  <ActivityIndicator color={Colors.textDark} />
+                ) : (
+                  <Text style={styles.primaryButtonText}>Validar Código e Desativar</Text>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={{ marginTop: Spacing.sm, alignItems: 'center' }}
+                onPress={handleSendOtpCode}
+                disabled={loadingSendOtp}
+              >
+                <Text style={{ fontSize: 12, color: Colors.primary }}>Reenviar código</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </ScrollView>
     );
