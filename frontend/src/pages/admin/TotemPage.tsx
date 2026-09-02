@@ -502,7 +502,7 @@ export function TotemPage() {
         )}
 
         {screen.name === "login" && (
-          <div className="flex-1 flex flex-col items-center justify-center gap-8 p-6 md:p-8 max-w-xl mx-auto w-full">
+          <div className="flex-1 flex flex-col items-center justify-center gap-8 p-6 md:p-8 max-w-5xl mx-auto w-full">
             <div className="text-center space-y-2">
               <div className="w-14 h-14 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto mb-2">
                 <User size={28} />
@@ -753,7 +753,7 @@ export function TotemPage() {
 
         {screen.name === "success" && (
           <div className="flex-1 flex flex-col items-center justify-center gap-6 p-8">
-            <div className="bg-white rounded-2xl p-6 shadow-xl max-w-sm w-full">
+            <div className="bg-white rounded-2xl p-6 shadow-xl max-w-5xl w-full">
               {screen.isOffline && screen.offlineRecord ? (
                 <>
                   <div className="flex items-center justify-center gap-3 mb-4">
