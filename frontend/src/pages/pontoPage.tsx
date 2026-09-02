@@ -507,8 +507,8 @@ export function PontoPage() {
                         )}
 
                         {isSuccess && (
-                            <div className="absolute inset-0 z-[120] bg-emerald-600/95 backdrop-blur-sm flex flex-col items-center justify-center animate-in zoom-in duration-300 p-4 sm:p-6">
-                                <div className="bg-white dark:bg-[#111113] rounded-3xl p-5 md:p-6 shadow-2xl max-w-md w-full border border-slate-200 dark:border-white/10 flex flex-col max-h-[85vh]">
+                            <div className="absolute inset-0 z-[120] bg-emerald-600/95 backdrop-blur-sm flex flex-col justify-center animate-in zoom-in duration-300 p-4 sm:p-6 overflow-y-auto">
+                                <div className="bg-white dark:bg-[#111113] rounded-3xl p-5 md:p-6 shadow-2xl w-full max-w-lg sm:max-w-xl mx-auto border border-slate-200 dark:border-white/10 flex flex-col max-h-[85vh] sm:max-h-[90vh]">
                                     {isOfflineSuccess && offlineRecord ? (
                                         <>
                                             <div className="flex items-center justify-center gap-3 mb-3">
@@ -582,8 +582,8 @@ export function PontoPage() {
                                                 </div>
                                             </div>
                                             {comprovanteText && (
-                                                <div className="relative flex-1 min-h-0 my-2">
-                                                    <pre className="text-[10px] sm:text-xs text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-black/40 rounded-xl p-3 sm:p-4 whitespace-pre-wrap font-mono leading-relaxed border border-slate-200 dark:border-white/10 max-h-[300px] overflow-y-auto select-all">
+                                                <div className="relative flex-1 min-h-0 my-2 w-full">
+                                                    <pre className="w-full text-[10px] sm:text-xs text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-black/40 rounded-xl p-3 sm:p-4 whitespace-pre-wrap break-all font-mono leading-relaxed border border-slate-200 dark:border-white/10 max-h-[300px] overflow-y-auto select-all">
                                                         {comprovanteText}
                                                     </pre>
                                                 </div>

@@ -113,7 +113,7 @@ export function FaceAuth({ onAuthenticate }: { onAuthenticate: (descriptor: Floa
                     autoPlay
                     muted
                     playsInline
-                    className="w-full max-w-sm"
+                    className="w-full max-w-md sm:max-w-lg aspect-[4/3] object-cover mx-auto"
                     style={{ transform: 'scaleX(-1)' }}
                 />
                 {(isLoadingModels || !modelsLoaded) && (
