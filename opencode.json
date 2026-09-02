@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "asaas": {
-      "type": "http",
-      "url": "https://docs.asaas.com/mcp"
-    }
-  }
-}
