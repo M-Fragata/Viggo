@@ -24,7 +24,7 @@ const MONTHS = [
 
 export function FolhaMensalPage() {
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-10">
+    <div className="w-full max-w-full overflow-x-hidden space-y-8 sm:space-y-10">
       <PageHeader
         title="Folha Mensal & Espelho MTE"
         subtitle="Ciclo de fechamento, assinaturas eletrônicas e arquivos fiscais obrigatórios (Portaria 671/2021 MTE / Lei 14.063/2020)"
@@ -177,11 +177,11 @@ function FolhaMensalSection() {
           </select>
         </div>
 
-        <div className="flex flex-wrap gap-2.5 items-center sm:ml-auto">
+        <div className="flex flex-col sm:flex-row flex-wrap gap-2.5 items-stretch sm:items-center sm:ml-auto w-full sm:w-auto">
           <button
             onClick={() => handleGenerate("csv")}
             disabled={isGenerating}
-            className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-sm shadow-xs active:scale-[0.98]"
+            className="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-sm shadow-xs active:scale-[0.98]"
           >
             {isGenerating ? (
               <Loader2 size={16} className="animate-spin" />
@@ -194,7 +194,7 @@ function FolhaMensalSection() {
           <button
             onClick={() => handleGenerate("pdf")}
             disabled={isGenerating}
-            className="px-5 py-2.5 bg-white dark:bg-white/5 border border-emerald-600 text-emerald-700 dark:text-emerald-400 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-all font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-sm shadow-xs active:scale-[0.98]"
+            className="w-full sm:w-auto px-5 py-2.5 bg-white dark:bg-white/5 border border-emerald-600 text-emerald-700 dark:text-emerald-400 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-all font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-sm shadow-xs active:scale-[0.98]"
           >
             {isGenerating ? (
               <Loader2 size={16} className="animate-spin" />

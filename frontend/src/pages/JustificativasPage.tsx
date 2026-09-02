@@ -55,7 +55,7 @@ const LIMITE_ARQUIVO_BYTES = 4 * 1024 * 1024; // 4 MB
 
 export function JustificativasPage() {
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full max-w-full overflow-x-hidden space-y-6">
       <JustificativasContent />
     </div>
   );
@@ -578,7 +578,7 @@ export function JustificativasContent() {
       )}
 
       {/* STATS CARDS */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-2xl p-4 shadow-xs">
           <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase">Total</p>
           <p className="text-2xl font-bold text-slate-800 dark:text-white mt-1">{stats.total}</p>
@@ -604,7 +604,7 @@ export function JustificativasContent() {
       </div>
 
       {/* FILTROS */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none w-full max-w-full">
         <Filter size={16} className="text-slate-400 shrink-0" />
         {(["TODOS", "PENDENTE", "APROVADO", "REJEITADO"] as const).map((st) => (
           <button
@@ -723,14 +723,14 @@ export function JustificativasContent() {
 
                 {/* Ações do Administrador / Gestor */}
                 {isAdmin && j.aprovado === null && (
-                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-white/5">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-white/5 w-full">
                     <button
                       onClick={() => {
                         setModalRecusaId(j.id);
                         setMotivoRecusa("");
                       }}
                       disabled={actionPending === j.id}
-                      className="px-4 py-2 border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-300 rounded-xl hover:bg-red-100 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                      className="w-full sm:w-auto px-4 py-2 border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-300 rounded-xl hover:bg-red-100 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <X size={14} />
                       Recusar com Motivo
@@ -739,7 +739,7 @@ export function JustificativasContent() {
                     <button
                       onClick={() => handleAprovar(j.id)}
                       disabled={actionPending === j.id}
-                      className="px-5 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs shadow-emerald-600/30"
+                      className="w-full sm:w-auto px-5 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs shadow-emerald-600/30"
                     >
                       {actionPending === j.id ? (
                         <Loader2 size={14} className="animate-spin" />

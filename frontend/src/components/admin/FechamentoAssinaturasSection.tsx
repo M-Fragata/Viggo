@@ -121,11 +121,11 @@ export function FechamentoAssinaturasSection() {
         </div>
 
         {/* Seletores de Mês/Ano e Botão de Ação */}
-        <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+        <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2.5 w-full lg:w-auto">
           <select
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(Number(e.target.value))}
-            className="px-3.5 py-2.5 border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-[#18181b] text-slate-800 dark:text-white text-sm font-medium cursor-pointer shadow-xs focus:ring-2 focus:ring-emerald-500"
+            className="w-full sm:w-auto px-3.5 py-2.5 border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-[#18181b] text-slate-800 dark:text-white text-sm font-medium cursor-pointer shadow-xs focus:ring-2 focus:ring-emerald-500"
           >
             {MESES.map((nome, idx) => (
               <option key={idx + 1} value={idx + 1}>
@@ -137,7 +137,7 @@ export function FechamentoAssinaturasSection() {
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(Number(e.target.value))}
-            className="px-3.5 py-2.5 border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-[#18181b] text-slate-800 dark:text-white text-sm font-medium cursor-pointer shadow-xs focus:ring-2 focus:ring-emerald-500"
+            className="w-full sm:w-auto px-3.5 py-2.5 border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-[#18181b] text-slate-800 dark:text-white text-sm font-medium cursor-pointer shadow-xs focus:ring-2 focus:ring-emerald-500"
           >
             {years.map((y) => (
               <option key={y} value={y}>
@@ -149,7 +149,7 @@ export function FechamentoAssinaturasSection() {
           <button
             onClick={handleLiberarFechamento}
             disabled={liberando}
-            className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-sm flex items-center gap-2 shadow-sm shadow-emerald-600/30 transition-all cursor-pointer shrink-0"
+            className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-sm shadow-emerald-600/30 transition-all cursor-pointer shrink-0"
           >
             {liberando ? (
               <>
@@ -168,7 +168,7 @@ export function FechamentoAssinaturasSection() {
 
       {/* Cards de Métricas em Tempo Real */}
       {dados && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <div className="p-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/5 space-y-1">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
               Total de Colaboradores
@@ -231,7 +231,7 @@ export function FechamentoAssinaturasSection() {
       {/* Filtros e Tabela de Colaboradores */}
       <div className="space-y-4 pt-2">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="relative flex-1 max-w-md">
+          <div className="relative flex-1 max-w-md w-full">
             <input
               type="text"
               value={filtroTexto}
@@ -242,7 +242,7 @@ export function FechamentoAssinaturasSection() {
             <Search size={15} className="absolute left-3 top-2.5 text-slate-400" />
           </div>
 
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 p-1 rounded-xl text-xs overflow-x-auto">
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 p-1 rounded-xl text-xs overflow-x-auto scrollbar-none w-full sm:w-auto">
             {(["TODOS", "LIBERADO", "ASSINADO", "CONTESTADO", "NAO_GERADO"] as const).map((st) => (
               <button
                 key={st}

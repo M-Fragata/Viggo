@@ -28,11 +28,11 @@ export function MasterLayout() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col overflow-hidden bg-slate-50 dark:bg-[#0a0a0a] text-slate-800 dark:text-slate-100 transition-colors duration-200 relative">
+    <div className="min-h-screen flex flex-col w-full max-w-full overflow-x-hidden bg-slate-50 dark:bg-[#0a0a0a] text-slate-800 dark:text-slate-100 transition-colors duration-200 relative">
       <ImpersonationBanner />
 
-      <header className="bg-white/95 dark:bg-[#111113]/95 backdrop-blur-md border-b border-slate-200 dark:border-white/10 py-3 px-4 sm:px-6 shadow-xs sticky top-0 z-[45]">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
+      <header className="bg-white/95 dark:bg-[#111113]/95 backdrop-blur-md border-b border-slate-200 dark:border-white/10 py-3 px-4 sm:px-6 shadow-xs sticky top-0 z-[45] w-full max-w-full">
+        <div className="max-w-7xl mx-auto flex justify-between items-center w-full">
           {/* LOGO */}
           <Link to="/master" className="flex items-center gap-2">
             <img className="w-24 sm:w-28 h-auto" src={logo} alt="Viggo Master" />
@@ -58,7 +58,7 @@ export function MasterLayout() {
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col w-full max-w-7xl mx-auto p-4 sm:p-6 overflow-y-auto">
+      <main className="flex-1 flex flex-col w-full max-w-7xl mx-auto p-3.5 sm:p-6 overflow-x-hidden">
         <Outlet />
       </main>
 

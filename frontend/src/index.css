@@ -37,7 +37,35 @@
   --color-on-dark: #ffffff;
   --color-on-dark-muted: #b3b3b3;
 
-  /* Spacing from DESIGN.md */
+  /* Border radius from DESIGN.md */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-xxl: 24px;
+  --radius-full: 9999px;
+
+  /* Escala de max-width no Tailwind v4 */
+  --max-width-xs: 20rem;
+  --max-width-sm: 24rem;
+  --max-width-md: 28rem;
+  --max-width-lg: 32rem;
+  --max-width-xl: 36rem;
+  --max-width-2xl: 42rem;
+  --max-width-3xl: 48rem;
+  --max-width-4xl: 56rem;
+  --max-width-5xl: 64rem;
+  --max-width-6xl: 72rem;
+  --max-width-7xl: 80rem;
+}
+
+/* ==========================================================================
+   Root & Dynamic Dark/Light Theme Settings
+   ========================================================================== */
+
+:root {
+  /* Spacing tokens from DESIGN.md */
   --spacing-xxs: 4px;
   --spacing-xs: 8px;
   --spacing-sm: 12px;
@@ -51,21 +79,6 @@
   --spacing-section-lg: 96px;
   --spacing-hero: 120px;
 
-  /* Border radius from DESIGN.md */
-  --radius-xs: 4px;
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-  --radius-xxl: 24px;
-  --radius-full: 9999px;
-}
-
-/* ==========================================================================
-   Root & Dynamic Dark/Light Theme Settings
-   ========================================================================== */
-
-:root {
   color-scheme: light;
 }
 

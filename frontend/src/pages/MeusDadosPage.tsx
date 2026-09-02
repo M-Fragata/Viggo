@@ -30,6 +30,10 @@ export function MeusDadosPage() {
   const [isDeletingFace, setIsDeletingFace] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [logsPage, setLogsPage] = useState(1);
+  const [pontosPage, setPontosPage] = useState(1);
+  const LOGS_POR_PAGINA = 8;
+  const PONTOS_POR_PAGINA = 8;
 
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState("");
@@ -328,40 +332,74 @@ export function MeusDadosPage() {
 
       {/* REGISTROS DE PONTO */}
       <section className="bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-3xl shadow-sm p-6 transition-colors">
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-10 h-10 bg-blue-100 dark:bg-blue-950/60 rounded-xl flex items-center justify-center">
-            <Clock className="text-blue-600 dark:text-blue-400" size={20} />
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-950/60 rounded-xl flex items-center justify-center shrink-0">
+              <Clock className="text-blue-600 dark:text-blue-400" size={20} />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-slate-800 dark:text-white">Registros de Ponto</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Histórico pessoal das suas marcações</p>
+            </div>
           </div>
-          <h2 className="text-lg font-bold text-slate-800 dark:text-white">Registros de Ponto</h2>
-          <span className="ml-auto text-sm text-slate-400 dark:text-slate-500">
+          <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 rounded-lg">
             {data.registrosPonto.length} {data.registrosPonto.length === 1 ? "registro" : "registros"}
-            {data.registrosPonto.length === 100 && " (últimos 100)"}
           </span>
         </div>
         {data.registrosPonto.length === 0 ? (
           <p className="text-slate-400 dark:text-slate-500 text-sm text-center py-8">Nenhum registro de ponto encontrado.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[600px]">
-              <thead>
-                <tr className="bg-slate-50 dark:bg-white/[0.02] border-b border-slate-100 dark:border-white/10 text-slate-400 dark:text-slate-500 text-xs font-bold uppercase tracking-wider">
-                  <th className="p-3">Data/Hora</th>
-                  <th className="p-3">NSR</th>
-                  <th className="p-3">Tipo</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-white/10 text-sm text-slate-600 dark:text-slate-300">
-                {data.registrosPonto.map((reg) => (
-                  <tr key={reg.id} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors">
-                    <td className="p-3 font-medium">{formatDate(reg.createdAt)}</td>
-                    <td className="p-3 font-mono">{reg.nsr}</td>
-                    <td className="p-3">
-                      <CheckinTypeBadge type={reg.type} />
-                    </td>
+          <div className="space-y-3">
+            <div className="overflow-x-auto border border-slate-100 dark:border-white/5 rounded-2xl">
+              <table className="w-full text-left border-collapse min-w-[320px]">
+                <thead>
+                  <tr className="bg-slate-50 dark:bg-white/[0.02] border-b border-slate-100 dark:border-white/10 text-slate-400 dark:text-slate-500 text-xs font-bold uppercase tracking-wider">
+                    <th className="p-3">Data/Hora</th>
+                    <th className="p-3">NSR</th>
+                    <th className="p-3">Tipo</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-white/5 text-sm text-slate-600 dark:text-slate-300">
+                  {data.registrosPonto
+                    .slice((pontosPage - 1) * PONTOS_POR_PAGINA, pontosPage * PONTOS_POR_PAGINA)
+                    .map((reg) => (
+                      <tr key={reg.id} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors">
+                        <td className="p-3 font-medium whitespace-nowrap">{formatDate(reg.createdAt)}</td>
+                        <td className="p-3 font-mono">{reg.nsr}</td>
+                        <td className="p-3">
+                          <CheckinTypeBadge type={reg.type} />
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+
+            {Math.ceil(data.registrosPonto.length / PONTOS_POR_PAGINA) > 1 && (
+              <div className="flex items-center justify-between pt-2 text-xs text-slate-500 dark:text-slate-400">
+                <span>
+                  Página <strong>{pontosPage}</strong> de <strong>{Math.ceil(data.registrosPonto.length / PONTOS_POR_PAGINA)}</strong>
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    disabled={pontosPage <= 1}
+                    onClick={() => setPontosPage((p) => Math.max(p - 1, 1))}
+                    className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer font-medium transition-colors"
+                  >
+                    Anterior
+                  </button>
+                  <button
+                    type="button"
+                    disabled={pontosPage >= Math.ceil(data.registrosPonto.length / PONTOS_POR_PAGINA)}
+                    onClick={() => setPontosPage((p) => Math.min(p + 1, Math.ceil(data.registrosPonto.length / PONTOS_POR_PAGINA)))}
+                    className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer font-medium transition-colors"
+                  >
+                    Próximo
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </section>
@@ -381,7 +419,7 @@ export function MeusDadosPage() {
             {data.consentimentos.map((consent, i) => {
               const url = consentUrl(consent.tipo);
               return (
-                <div key={i} className="flex items-center justify-between bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 rounded-2xl p-4">
+                <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 rounded-2xl p-4">
                   <div>
                     {url ? (
                       <Link
@@ -398,7 +436,7 @@ export function MeusDadosPage() {
                       Versão {consent.versao} • Aceito em {formatDate(consent.createdAt)}
                     </p>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${consent.aceite ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300" : "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300"}`}>
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold self-start sm:self-center ${consent.aceite ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300" : "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300"}`}>
                     {consent.aceite ? "Aceito" : "Revogado"}
                   </span>
                 </div>
@@ -410,37 +448,74 @@ export function MeusDadosPage() {
 
       {/* LOGS DE ACESSO */}
       <section className="bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-3xl shadow-sm p-6 transition-colors">
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-10 h-10 bg-slate-100 dark:bg-white/5 rounded-xl flex items-center justify-center">
-            <FileText className="text-slate-600 dark:text-slate-400" size={20} />
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-slate-100 dark:bg-white/5 rounded-xl flex items-center justify-center shrink-0">
+              <FileText className="text-slate-600 dark:text-slate-400" size={20} />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-slate-800 dark:text-white">Logs de Acesso</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Histórico auditado de acessos e operações realizadas
+              </p>
+            </div>
           </div>
-          <h2 className="text-lg font-bold text-slate-800 dark:text-white">Logs de Acesso</h2>
-          <span className="ml-auto text-sm text-slate-400 dark:text-slate-500">
+          <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 rounded-lg">
             {logs.length} {logs.length === 1 ? "registro" : "registros"}
-            {logs.length === 50 && " (últimos 50)"}
           </span>
         </div>
         {logs.length === 0 ? (
           <p className="text-slate-400 dark:text-slate-500 text-sm text-center py-8">Nenhum log de acesso encontrado.</p>
         ) : (
-          <div className="space-y-2">
-            {logs.map((log, i) => (
-              <div key={i} className="border border-slate-100 dark:border-white/5 rounded-xl p-3 hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors">
-                <div className="flex items-center justify-between gap-2 mb-1">
-                  <span className="font-mono text-sm font-semibold text-slate-700 dark:text-slate-200">{log.action}</span>
-                  <span className="text-xs text-slate-400 dark:text-slate-500">{formatDate(log.createdAt)}</span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs text-slate-500 dark:text-slate-400">
-                  {log.entity && <span>Entidade: <strong className="font-mono text-slate-700 dark:text-slate-300">{log.entity}</strong></span>}
-                  {log.ip && <span>IP: <strong className="font-mono text-slate-700 dark:text-slate-300">{log.ip}</strong></span>}
-                  {log.legalBasis && <span className="text-emerald-600 dark:text-emerald-400">Base legal: {log.legalBasis}</span>}
-                  {log.purpose && <span className="text-slate-600 dark:text-slate-300">Finalidade: {log.purpose}</span>}
-                  {log.personalDataCategories && log.personalDataCategories.length > 0 && (
-                    <span>Categorias: {log.personalDataCategories.join(", ")}</span>
-                  )}
+          <div className="space-y-4">
+            <div className="max-h-[420px] overflow-y-auto pr-1.5 space-y-2">
+              {logs
+                .slice((logsPage - 1) * LOGS_POR_PAGINA, logsPage * LOGS_POR_PAGINA)
+                .map((log, i) => (
+                  <div key={i} className="border border-slate-100 dark:border-white/5 rounded-xl p-3 hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="font-mono text-xs font-semibold text-slate-700 dark:text-slate-200">{log.action}</span>
+                      <span className="text-[11px] text-slate-400 dark:text-slate-500">{formatDate(log.createdAt)}</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs text-slate-500 dark:text-slate-400">
+                      {log.entity && <span>Entidade: <strong className="font-mono text-slate-700 dark:text-slate-300">{log.entity}</strong></span>}
+                      {log.ip && <span>IP: <strong className="font-mono text-slate-700 dark:text-slate-300">{log.ip}</strong></span>}
+                      {log.legalBasis && <span className="text-emerald-600 dark:text-emerald-400">Base legal: {log.legalBasis}</span>}
+                      {log.purpose && <span className="text-slate-600 dark:text-slate-300">Finalidade: {log.purpose}</span>}
+                      {log.personalDataCategories && log.personalDataCategories.length > 0 && (
+                        <span className="sm:col-span-2">Categorias: {log.personalDataCategories.join(", ")}</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+            </div>
+
+            {/* Paginação de Logs */}
+            {Math.ceil(logs.length / LOGS_POR_PAGINA) > 1 && (
+              <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-white/5 text-xs text-slate-500 dark:text-slate-400">
+                <span>
+                  Página <strong>{logsPage}</strong> de <strong>{Math.ceil(logs.length / LOGS_POR_PAGINA)}</strong>
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    disabled={logsPage <= 1}
+                    onClick={() => setLogsPage((p) => Math.max(p - 1, 1))}
+                    className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer font-medium transition-colors"
+                  >
+                    Anterior
+                  </button>
+                  <button
+                    type="button"
+                    disabled={logsPage >= Math.ceil(logs.length / LOGS_POR_PAGINA)}
+                    onClick={() => setLogsPage((p) => Math.min(p + 1, Math.ceil(logs.length / LOGS_POR_PAGINA)))}
+                    className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer font-medium transition-colors"
+                  >
+                    Próximo
+                  </button>
                 </div>
               </div>
-            ))}
+            )}
           </div>
         )}
       </section>

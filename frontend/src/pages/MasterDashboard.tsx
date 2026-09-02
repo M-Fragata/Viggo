@@ -119,13 +119,13 @@ export function MasterDashboard() {
   ];
 
   return (
-    <div className="space-y-6 p-4 mx-auto">
+    <div className="space-y-6 w-full max-w-full">
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Dashboard Master</h1>
           <p className="text-slate-500 dark:text-slate-400 text-sm">Visão geral de todas as empresas</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs text-slate-500 dark:text-slate-400 mr-1">Período:</span>
           {([7, 30, 90] as Range[]).map((r) => (
             <button
@@ -191,7 +191,7 @@ export function MasterDashboard() {
       <RiskAlertsSection riskAlerts={metrics?.riskAlerts} />
 
       {/* Funnel */}
-      <div className="bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 rounded-3xl shadow-sm p-6">
+      <div className="bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 rounded-3xl shadow-sm p-4 sm:p-6 w-full overflow-hidden">
         <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-1">Funil</h2>
         <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Visita → CTA → Signup view → Empresa criada</p>
         {funnel.length === 0 || funnel.every((f) => f.count === 0) ? (
@@ -206,17 +206,17 @@ export function MasterDashboard() {
               const max = Math.max(...funnel.map((f) => f.count), 1);
               const pct = Math.round((step.count / max) * 100);
               return (
-                <div key={step.step} className="flex items-center gap-3">
-                  <span className="w-32 text-xs font-semibold text-slate-600 dark:text-slate-300 shrink-0">{step.label}</span>
-                  <div className="flex-1 h-8 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden relative">
+                <div key={step.step} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                  <span className="w-full sm:w-32 text-xs font-semibold text-slate-600 dark:text-slate-300 shrink-0">{step.label}</span>
+                  <div className="flex-1 h-7 sm:h-8 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden relative">
                     <div
                       className="h-full bg-emerald-500 dark:bg-emerald-500 rounded-full transition-all duration-700 flex items-center justify-end pr-3"
-                      style={{ width: `${pct}%` }}
+                      style={{ width: `${Math.max(pct, 8)}%` }}
                     >
                       <span className="text-xs font-bold text-white">{step.count}</span>
                     </div>
                   </div>
-                  <span className="w-16 text-xs text-slate-500 dark:text-slate-400 text-right">
+                  <span className="text-xs text-slate-500 dark:text-slate-400 sm:text-right shrink-0">
                     {dropoff !== null ? `-${dropoff}%` : "—"}
                   </span>
                 </div>
@@ -227,7 +227,7 @@ export function MasterDashboard() {
       </div>
 
       {/* Gráfico linha dupla */}
-      <div className="bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 rounded-3xl shadow-sm p-6">
+      <div className="bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 rounded-3xl shadow-sm p-4 sm:p-6 w-full overflow-hidden">
         <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Visitas vs Empresas por dia</h2>
         {chartData.length === 0 ? (
           <p className="text-sm text-slate-400 dark:text-slate-500 text-center py-12">Sem dados para exibir no período.</p>
