@@ -37,7 +37,16 @@ export function PontoPage() {
     const [isLoadingCheckins, setIsLoadingCheckins] = useState(true)
     const hasFaceRegistered = Boolean(user?.hasFaceDescriptor)
 
-    const videoRef = useRef<HTMLVideoElement>(null)
+    const videoRef = useRef<HTMLVideoElement | null>(null)
+    const streamRef = useRef<MediaStream | null>(null)
+
+    const handleVideoRef = useCallback((el: HTMLVideoElement | null) => {
+        videoRef.current = el;
+        if (el && streamRef.current && el.srcObject !== streamRef.current) {
+            el.srcObject = streamRef.current;
+            el.play().catch((err) => console.error("Erro ao reproduzir stream da webcam:", err));
+        }
+    }, []);
 
     const [isSuccess, setIsSuccess] = useState(false);
     const [isRegistering, setIsRegistering] = useState(false);
@@ -194,22 +203,15 @@ export function PontoPage() {
                     }
                 });
 
+                streamRef.current = stream;
                 setVideoOpen(true);
                 setShowLiveness(true);
                 setHeaderIsError(false);
                 setMessage("Centralize seu rosto");
 
-                if (videoRef.current) {
+                if (videoRef.current && videoRef.current.srcObject !== stream) {
                     videoRef.current.srcObject = stream;
-
-                    await new Promise((resolve) => {
-                        if (videoRef.current) {
-                            videoRef.current.onloadedmetadata = () => {
-                                videoRef.current?.play();
-                                resolve(true);
-                            };
-                        }
-                    });
+                    videoRef.current.play().catch((err) => console.error("Erro ao reproduzir vídeo:", err));
                 }
             } catch (err) {
                 console.error("Erro ao acessar a webcam:", err);
@@ -231,6 +233,10 @@ export function PontoPage() {
     }
 
     function stopCamera() {
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach((track) => track.stop());
+            streamRef.current = null;
+        }
         if (videoRef.current && videoRef.current.srcObject) {
             const stream = videoRef.current.srcObject as MediaStream;
             stream.getTracks().forEach((track) => track.stop());
@@ -419,6 +425,12 @@ export function PontoPage() {
     }, [handleGetCheckin, user?.id, token]);
 
     useEffect(() => {
+        return () => {
+            stopCamera();
+        };
+    }, []);
+
+    useEffect(() => {
         if (videoOpen) {
             document.body.style.overflow = 'hidden';
         } else {
@@ -443,7 +455,7 @@ export function PontoPage() {
 
                         {/* O VÍDEO (CORREÇÃO 2: w-full h-full object-cover para preencher o bloco inteiro centralizado) */}
                         <video
-                            ref={videoRef}
+                            ref={handleVideoRef}
                             autoPlay
                             muted
                             playsInline

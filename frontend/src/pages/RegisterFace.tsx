@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router";
 import { LivenessChallenge } from "../components/LivenessChallenge";
 import { api } from "../services/api";
@@ -11,10 +11,31 @@ export function RegisterFace() {
     const [message, setMessage] = useState("Iniciando cadastro facial...");
     const [isSuccess, setIsSuccess] = useState(false);
     const [isRegistering, setIsRegistering] = useState(false);
-    const videoRef = useRef<HTMLVideoElement>(null);
+    const videoRef = useRef<HTMLVideoElement | null>(null);
+    const streamRef = useRef<MediaStream | null>(null);
     const { user, token, refreshUser } = useAuth();
     const [check, setCheck] = useState<boolean>(false);
     const navigate = useNavigate();
+
+    const stopCamera = useCallback(() => {
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach((track) => track.stop());
+            streamRef.current = null;
+        }
+        if (videoRef.current && videoRef.current.srcObject) {
+            const stream = videoRef.current.srcObject as MediaStream;
+            stream.getTracks().forEach((track) => track.stop());
+            videoRef.current.srcObject = null;
+        }
+    }, []);
+
+    const handleVideoRef = useCallback((el: HTMLVideoElement | null) => {
+        videoRef.current = el;
+        if (el && streamRef.current && el.srcObject !== streamRef.current) {
+            el.srcObject = streamRef.current;
+            el.play().catch((err) => console.error("Erro ao reproduzir câmera no cadastro:", err));
+        }
+    }, []);
 
     useEffect(() => {
         // Inicia o carregamento dos modelos em background imediatamente
@@ -36,23 +57,14 @@ export function RegisterFace() {
                     }
                 });
 
+                streamRef.current = stream;
                 setVideoOpen(true);
                 setShowLiveness(true);
                 setMessage("Centralize seu rosto");
 
-                if (videoRef.current) {
+                if (videoRef.current && videoRef.current.srcObject !== stream) {
                     videoRef.current.srcObject = stream;
-
-                    await new Promise((resolve) => {
-                        if (videoRef.current) {
-                            videoRef.current.onloadedmetadata = () => {
-                                videoRef.current?.play();
-                                resolve(true);
-                            };
-                        }
-                    });
-
-                    await new Promise(resolve => setTimeout(resolve, 300));
+                    videoRef.current.play().catch((err) => console.error("Erro ao reproduzir câmera no cadastro:", err));
                 }
             } catch (err) {
                 console.error("Erro ao acessar a câmera:", err);
@@ -63,23 +75,14 @@ export function RegisterFace() {
 
         if (!check) initCamera();
 
-        const currentVideo = videoRef.current;
         return () => {
-            if (currentVideo && currentVideo.srcObject) {
-                const stream = currentVideo.srcObject as MediaStream;
-                stream.getTracks().forEach(track => track.stop());
-            }
+            stopCamera();
         };
-    }, [check]);
+    }, [check, stopCamera]);
 
     const handleLivenessComplete = async (descriptor: Float32Array) => {
         setShowLiveness(false);
-
-        if (videoRef.current && videoRef.current.srcObject) {
-            const stream = videoRef.current.srcObject as MediaStream;
-            stream.getTracks().forEach(track => track.stop());
-            videoRef.current.srcObject = null;
-        }
+        stopCamera();
         setVideoOpen(false);
         setCheck(true)
         setIsRegistering(true);
@@ -110,6 +113,7 @@ export function RegisterFace() {
     };
 
     const handleLivenessCancel = () => {
+        stopCamera();
         setShowLiveness(false);
         setVideoOpen(false);
         window.location.href = "/ponto";
@@ -135,7 +139,7 @@ export function RegisterFace() {
                 </div>
 
                 <video
-                    ref={videoRef}
+                    ref={handleVideoRef}
                     autoPlay
                     muted
                     playsInline
