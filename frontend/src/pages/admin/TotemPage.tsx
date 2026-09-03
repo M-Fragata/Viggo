@@ -369,6 +369,17 @@ export function TotemPage() {
     } catch (err) {
       console.error("Erro ao registrar ponto no totem:", err);
 
+      // 1. Resposta real do servidor HTTP (ApiError)
+      if (err instanceof ApiError) {
+        const msg = err.message || "Erro ao registrar ponto. Tente novamente.";
+        setError(msg);
+        toast.error(msg, { duration: 6000 });
+        setIsRegistering(false);
+        resetToIdle();
+        return;
+      }
+
+      // 2. Falha de rede nativa (sem resposta HTTP)
       const isNetworkError =
         !navigator.onLine ||
         (err instanceof Error &&

@@ -4,6 +4,8 @@ const mockExtendedPrisma = vi.hoisted(() => ({
   user: { findUnique: vi.fn(), findMany: vi.fn() },
   company: { findUnique: vi.fn() },
   checkIn: { findFirst: vi.fn(), findMany: vi.fn() },
+  workLocation: { findMany: vi.fn().mockResolvedValue([]) },
+  justificativa: { create: vi.fn() },
   $transaction: vi.fn(),
 }));
 

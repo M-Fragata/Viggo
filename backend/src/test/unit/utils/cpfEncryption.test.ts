@@ -45,6 +45,18 @@ describe("cpfEncryption", () => {
         expect(decryptCpf(encrypted)).toBe(VALID_CPF);
       }
     });
+
+    it("deve retornar string vazia para CPF vazio, null ou undefined sem estourar exceção", () => {
+      expect(decryptCpf("")).toBe("");
+      expect(decryptCpf("   ")).toBe("");
+      expect(decryptCpf(null as unknown as string)).toBe("");
+      expect(decryptCpf(undefined as unknown as string)).toBe("");
+    });
+
+    it("deve retornar o próprio texto se o CPF já for texto limpo não criptografado", () => {
+      expect(decryptCpf("52998224725")).toBe("52998224725");
+      expect(decryptCpf("529.982.247-25")).toBe("529.982.247-25");
+    });
   });
 
   describe("hashCpf", () => {

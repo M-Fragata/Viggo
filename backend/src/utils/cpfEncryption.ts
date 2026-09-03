@@ -63,8 +63,12 @@ export function encryptCpf(cpfDigits: string): string {
  * @param input - JSON string { v, ct, iv, tag } ou hex legado
  * @returns CPF em texto limpo (11 dígitos)
  */
-export function decryptCpf(input: string): string {
-  // Compatibilidade: hex puro (legado CBC)
+export function decryptCpf(input: string | null | undefined): string {
+  if (!input || typeof input !== "string" || input.trim() === "") {
+    return "";
+  }
+
+  // Compatibilidade: hex puro (legado CBC) ou texto puro
   if (!input.startsWith("{")) {
     return decryptLegacyCbc(input);
   }
@@ -99,13 +103,27 @@ export function decryptCpf(input: string): string {
 
 /**
  * Descriptografa formato legado CBC (hex puro) para transição.
+ * Se o input não for um hexadecimal de bloco CBC válido (mínimo 32 hex chars),
+ * trata como texto puro (ex: CPF já descriptografado ou não formatado).
  */
 function decryptLegacyCbc(encryptedHex: string): string {
+  if (!encryptedHex || typeof encryptedHex !== "string" || encryptedHex.trim() === "") {
+    return "";
+  }
+
+  const cleanHex = encryptedHex.trim();
+
+  // Se não for hexadecimal válido ou não tiver múltiplos de bloco AES (16 bytes = 32 hex chars),
+  // retorna como texto limpo (ex: "52998224725")
+  if (!/^[0-9a-fA-F]+$/.test(cleanHex) || cleanHex.length < 32 || cleanHex.length % 32 !== 0) {
+    return cleanHex;
+  }
+
   const key = getEncryptionKey();
-  const iv = crypto.createHash("sha256").update(encryptedHex).digest().subarray(0, 16);
+  const iv = crypto.createHash("sha256").update(cleanHex).digest().subarray(0, 16);
   const decipher = crypto.createDecipheriv("aes-256-cbc", key, iv);
   const decrypted = Buffer.concat([
-    decipher.update(Buffer.from(encryptedHex, "hex")),
+    decipher.update(Buffer.from(cleanHex, "hex")),
     decipher.final(),
   ]);
   return decrypted.toString("utf8");

@@ -17,6 +17,7 @@ app.use(cors({
   origin: Env.FRONTEND_URL,
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
+  exposedHeaders: ["X-Hash-SHA256", "X-Signature", "X-Signature-Error", "X-Fora-Da-Escala"],
   credentials: true,
   maxAge: 86400,
 }))

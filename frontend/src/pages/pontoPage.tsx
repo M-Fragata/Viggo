@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { useNavigate } from "react-router"
 import { toast } from "sonner"
 
-import { api } from "../services/api"
+import { api, ApiError } from "../services/api"
 import { LivenessChallenge } from "../components/LivenessChallenge"
 import { useAuth } from "../hooks/useAuth"
 import { useCompany } from "../hooks/useCompany"
@@ -285,13 +285,25 @@ export function PontoPage() {
                     return [...filtered, newCheckin];
                 });
             }
-
-            // Sincroniza estado com o backend
-            await handleGetCheckin();
         } catch (error) {
             console.error("Erro ao registrar o ponto:", error);
 
-            // Detecção de falha de conexão ou rede indisponível
+            // 1. Resposta real do servidor HTTP (ApiError)
+            // Se o servidor respondeu com status (400, 401, 403, 409, 500), NUNCA é falta de internet!
+            if (error instanceof ApiError) {
+                setIsRegistering(false);
+                setVideoOpen(false);
+                setPendingCheckin(null);
+                setFaceToken(null);
+                setComprovanteText(null);
+
+                const errorMsg = error.message || "Erro ao registrar o ponto. Tente novamente.";
+                setMessage(errorMsg);
+                toast.error(errorMsg);
+                return;
+            }
+
+            // 2. Falha de rede nativa no navegador (sem resposta HTTP)
             const isNetworkError =
                 !navigator.onLine ||
                 (error instanceof Error &&
@@ -337,6 +349,11 @@ export function PontoPage() {
             const errorMsg = error instanceof Error ? error.message : "Erro ao registrar o ponto. Tente novamente.";
             setMessage(errorMsg);
             toast.error(errorMsg);
+        } finally {
+            // Sincroniza sempre o estado dos pontos com o backend.
+            // Garante que, se o ponto foi gravado no banco mesmo com erro posterior de resposta,
+            // a tela seja atualizada e o botão trave como 'Ponto Registrado', prevenindo duplicidade.
+            await handleGetCheckin();
         }
     }
 
