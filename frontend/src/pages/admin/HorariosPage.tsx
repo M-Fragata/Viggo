@@ -8,7 +8,7 @@ import { formatMinutes, parseTimeToMinutes, formatDays } from "../../utils/sched
 
 export function HorariosPage() {
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
+    <div className="w-full space-y-6 min-w-0">
       <PageHeader
         title="Escalas & Horários"
         subtitle="Configuração de jornadas de trabalho e tolerâncias"

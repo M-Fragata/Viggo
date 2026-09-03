@@ -12,7 +12,7 @@ export function PresentesPage() {
   const { checkins, isLoading } = useCheckins(selectedDate);
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
+    <div className="w-full space-y-6 min-w-0">
       <PageHeader
         title="Quem está Presente"
         subtitle="Colaboradores que registraram ponto hoje"

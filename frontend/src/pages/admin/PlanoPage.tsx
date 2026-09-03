@@ -32,7 +32,7 @@ export function PlanoPage() {
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
+    <div className="w-full space-y-6 min-w-0">
       <PageHeader
         title="Assinatura & Plano"
         subtitle="Gerenciamento de limites de colaboradores e faturamento"
