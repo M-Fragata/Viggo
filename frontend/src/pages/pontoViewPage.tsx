@@ -113,7 +113,7 @@ export function PontoViewPage() {
     printWindow.document.write(`
     <html>
         <head>
-            <title>Frequencia ${dataRelatorio} - Viggo</title>
+            <title>Frequencia ${dataRelatorio} - Ponto Fragata</title>
             <style>
                 body { font-family: 'Segoe UI', sans-serif; padding: 40px; color: #333; }
                 .report-container { 
@@ -141,7 +141,7 @@ export function PontoViewPage() {
         <body>
             <div class="report-container">
                 <div class="header">
-                    <h2>Viggo</h2>
+                    <h2>Ponto Fragata</h2>
                     <p style="margin: 5px 0 0; color: #666;">Relatório de Frequência Individual</p>
                 </div>
                 
@@ -175,7 +175,7 @@ export function PontoViewPage() {
 
                 <div class="footer">
                     <p>Documento gerado digitalmente em ${new Date().toLocaleString("pt-BR")}</p>
-                    <p>Viggo - Maricá, RJ</p>
+                    <p>Ponto Fragata - Maricá, RJ</p>
                 </div>
             </div>
             <script>

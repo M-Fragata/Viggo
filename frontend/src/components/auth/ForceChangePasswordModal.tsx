@@ -27,8 +27,13 @@ export function ForceChangePasswordModal() {
       return;
     }
 
-    if (newPassword.toLowerCase().endsWith("@viggo") || newPassword.toLowerCase().endsWith("viggo")) {
-      setError("A sua senha definitiva não pode terminar com @viggo.");
+    if (
+      newPassword.toLowerCase().endsWith("@viggo") ||
+      newPassword.toLowerCase().endsWith("viggo") ||
+      newPassword.toLowerCase().endsWith("@fragata") ||
+      newPassword.toLowerCase().endsWith("fragata")
+    ) {
+      setError("A sua senha definitiva não pode conter o padrão da senha provisória.");
       return;
     }
 

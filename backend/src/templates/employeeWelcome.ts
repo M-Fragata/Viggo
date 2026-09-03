@@ -5,15 +5,15 @@ export function renderEmployeeWelcome(props: {
   employeeName: string;
   companyName: string;
 }): { subject: string; html: string; text: string } {
-  const subject = `Bem-vindo à ${props.companyName} — seu acesso Viggo está pronto`;
-  const preheader = `Seu acesso à ${props.companyName} na Viggo foi criado.`;
-  const frontendUrl = Env.FRONTEND_URL || "https://viggo.com.br";
+  const subject = `Bem-vindo à ${props.companyName} — seu acesso Ponto Fragata está pronto`;
+  const preheader = `Seu acesso à ${props.companyName} no Ponto Fragata foi criado.`;
+  const frontendUrl = Env.FRONTEND_URL || "https://viggo.fragata.me";
   const html = baseLayout({
     preheader,
     title: `Bem-vindo, ${props.employeeName}! 👋`,
-    subtitle: `Você agora faz parte da ${props.companyName} na Viggo.`,
+    subtitle: `Você agora faz parte da ${props.companyName} no Ponto Fragata.`,
     ctaUrl: `${frontendUrl}/`,
-    ctaLabel: "Acessar Viggo",
+    ctaLabel: "Acessar Ponto Fragata",
     children: `
       <p style="margin:0 0 12px 0; color:#1c1c1e; font-size:14px; line-height:22px;">
         Seu cadastro foi concluído. Você já pode bater ponto com reconhecimento facial e acompanhar seus registros.
@@ -27,6 +27,6 @@ export function renderEmployeeWelcome(props: {
       </p>
     `,
   });
-  const text = `Bem-vindo, ${props.employeeName}! Você faz parte da ${props.companyName} na Viggo. Acesse: ${frontendUrl}/`;
+  const text = `Bem-vindo, ${props.employeeName}! Você faz parte da ${props.companyName} no Ponto Fragata. Acesse: ${frontendUrl}/`;
   return { subject, html, text };
 }

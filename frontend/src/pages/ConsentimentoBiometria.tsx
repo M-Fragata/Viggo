@@ -27,7 +27,7 @@ export function ConsentimentoBiometria() {
           <section>
             <h2 className="text-xl font-bold text-slate-800 mb-2">1. Dados Coletados</h2>
             <p>
-              O sistema <strong>Viggo</strong> coleta e armazena exclusivamente o{" "}
+              O sistema <strong>Ponto Fragata</strong> coleta e armazena exclusivamente o{" "}
               <strong>vetor matemático facial</strong> (descriptor de 128 dimensões numéricas),
               que é gerado a partir da imagem capturada pela câmera do dispositivo no momento
               do cadastro biométrico.
@@ -121,7 +121,7 @@ export function ConsentimentoBiometria() {
             <h2 className="text-xl font-bold text-slate-800 mb-2">7. Transferência a Terceiros</h2>
             <p>
               Os dados biométricos <strong>não são transferidos</strong> a terceiros. O único
-              tratamento realizado é a comparação vetorial no servidor do Viggo para validação
+              tratamento realizado é a comparação vetorial no servidor do Ponto Fragata para validação
               de identidade no momento da marcação de ponto.
             </p>
           </section>

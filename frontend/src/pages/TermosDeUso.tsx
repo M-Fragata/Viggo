@@ -27,12 +27,12 @@ export function TermosDeUso() {
           <section>
             <h2 className="text-xl font-bold text-slate-800 mb-2">1. Objeto</h2>
             <p>
-              Estes Termos de Uso regulam o acesso e utilização do software <strong>Viggo</strong>,
+              Estes Termos de Uso regulam o acesso e utilização do software <strong>Ponto Fragata</strong>,
               plataforma SaaS de registro de ponto eletrônico com reconhecimento facial, desenvolvido
-              pela empresa desenvolvedora (doravante "Viggo").
+              pela empresa desenvolvedora (doravante "Ponto Fragata").
             </p>
             <p>
-              O Viggo é classificado como <strong>REP-P</strong> (Registrador Eletrônico de Ponto
+              O Ponto Fragata é classificado como <strong>REP-P</strong> (Registrador Eletrônico de Ponto
               por Programa) conforme Portaria MTE nº 671/2021.
             </p>
           </section>
@@ -40,7 +40,7 @@ export function TermosDeUso() {
           <section>
             <h2 className="text-xl font-bold text-slate-800 mb-2">2. Aceitação dos Termos</h2>
             <p>
-              Ao cadastrar uma empresa ou utilizar o Viggo, o Usuário declara que leu, compreendeu
+              Ao cadastrar uma empresa ou utilizar o Ponto Fragata, o Usuário declara que leu, compreendeu
               e aceita integralmente estes Termos de Uso. O uso continuado do sistema após a
               publicação de alterações constitui aceitação das mudanças.
             </p>
@@ -48,7 +48,7 @@ export function TermosDeUso() {
 
           <section>
             <h2 className="text-xl font-bold text-slate-800 mb-2">3. Descrição do Serviço</h2>
-            <p>O Viggo disponibiliza:</p>
+            <p>O Ponto Fragata disponibiliza:</p>
             <ul className="list-disc pl-6 space-y-1">
               <li>Registro de ponto eletrônico via reconhecimento facial;</li>
               <li>Geolocalização pontual no momento da marcação;</li>
@@ -73,7 +73,7 @@ export function TermosDeUso() {
           <section>
             <h2 className="text-xl font-bold text-slate-800 mb-2">5. Propriedade Intelectual</h2>
             <p>
-              Todo o código-fonte, design, marca e documentação do Viggo são de propriedade
+              Todo o código-fonte, design, marca e documentação do Ponto Fragata são de propriedade
               exclusiva do desenvolvedor. É vedada a reprodução, distribuição ou engenharia
               reversa sem autorização expressa por escrito.
             </p>
@@ -82,7 +82,7 @@ export function TermosDeUso() {
           <section>
             <h2 className="text-xl font-bold text-slate-800 mb-2">6. Disponibilidade e Suporte</h2>
             <p>
-              O Viggo é fornecido "como está" (AS IS). O desenvolvedor empenha-se em manter
+              O Ponto Fragata é fornecido "como está" (AS IS). O desenvolvedor empenha-se em manter
               disponibilidade de 99,5% mensal, mas não garante interrupções ininterrompidas.
               Manutenções programadas serão comunicadas com antecedência mínima de 48h.
             </p>
@@ -91,7 +91,7 @@ export function TermosDeUso() {
           <section>
             <h2 className="text-xl font-bold text-slate-800 mb-2">7. Limitação de Responsabilidade</h2>
             <p>
-              O Viggo é ferramenta auxiliar ao controle de ponto. A responsabilidade pela
+              O Ponto Fragata é ferramenta auxiliar ao controle de ponto. A responsabilidade pela
               conformidade trabalhista e envio ao eSocial é exclusiva da empresa empregadora.
               O desenvolvedor não se responsabiliza por multas decorrentes de uso inadequado.
             </p>

@@ -27,9 +27,9 @@ async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promis
   const { requiresAuth = true, totemToken = false, responseType = "json", skipAuthRedirect = false, headers = {}, ...restOptions } = options;
 
   const token = totemToken
-    ? localStorage.getItem("@viggo:totem")
+    ? localStorage.getItem("@fragata:totem")
     : requiresAuth
-      ? localStorage.getItem("@viggo:token")
+      ? localStorage.getItem("@fragata:token")
       : null;
 
   const response = await fetch(`${API_URL}${endpoint}`, {
@@ -47,11 +47,11 @@ async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promis
       throw new ApiError(error.message || "Token inválido ou expirado", error.code, 401, error);
     }
     if (totemToken) {
-      localStorage.removeItem("@viggo:totem");
+      localStorage.removeItem("@fragata:totem");
       window.location.href = "/";
       return new Promise<T>(() => { }) as Promise<T>;
     }
-    localStorage.removeItem("@viggo:token");
+    localStorage.removeItem("@fragata:token");
     window.location.href = "/";
     return new Promise<T>(() => { }) as Promise<T>;
   }

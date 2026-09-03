@@ -27,7 +27,7 @@ export interface PlanData {
 
 export const DYNAMIC_PLAN: PlanData = {
   id: "DYNAMIC",
-  name: "Viggo",
+  name: "Padrão",
   price: PRICING.BASE_PRICE,
   period: "/mês",
   maxEmployees: 10,
@@ -53,7 +53,7 @@ export const ENTERPRISE_PLAN: PlanData = {
   features: [
     { text: "Acima de 50 funcionários", included: true },
     { text: "Plano personalizado", included: true },
-    { text: "Tudo do plano Viggo", included: true },
+    { text: "Tudo do plano Padrão", included: true },
   ],
   highlighted: false,
   ctaText: CUSTOM_PLAN_CTA,

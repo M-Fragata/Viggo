@@ -184,7 +184,7 @@ export function BentoGrid() {
             className="inline-flex items-center gap-1.5 rounded-full bg-brand-green/10 border border-brand-green/20 px-3.5 py-1 text-xs font-medium text-brand-green mb-4 opacity-0"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            Por que empresas escolhem o Viggo
+            Por que empresas escolhem o Ponto Fragata
           </span>
           <h2 
             ref={titleRef}
@@ -196,7 +196,7 @@ export function BentoGrid() {
             ref={paragraphRef}
             className="mt-4 text-base sm:text-lg text-slate-600 dark:text-on-dark-muted leading-relaxed opacity-0"
           >
-            Elimine relógios de ponto caros que quebram com frequência. O Viggo transforma qualquer smartphone ou tablet em um sistema de ponto seguro, moderno e auditável.
+            Elimine relógios de ponto caros que quebram com frequência. O Ponto Fragata transforma qualquer smartphone ou tablet em um sistema de ponto seguro, moderno e auditável.
           </p>
         </div>
 

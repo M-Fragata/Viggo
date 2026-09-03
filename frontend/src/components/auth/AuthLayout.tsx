@@ -1,12 +1,11 @@
 import React from "react";
 import { Link, useLocation } from "react-router";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
-import logo from "../../assets/logo.png";
 
 export interface AuthLayoutProps {
   children: React.ReactNode;
   side?: "left" | "right";
-  panelTitle: string;
+  panelTitle: React.ReactNode;
   panelDescription: string;
   panelButton?: {
     text: string;
@@ -45,9 +44,14 @@ export function AuthLayout({
         <header className="relative z-20 w-full max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between animate-in fade-in duration-300">
           <Link to="/page" className="flex items-center gap-2 group">
             <img
-              src={logo}
-              alt="Viggo Logo"
-              className="w-24 sm:w-28 h-auto drop-shadow-md rounded-xl transition-transform duration-300 group-hover:scale-105"
+              src="/images/LOGOVERDE.png"
+              alt="Ponto Fragata Logo"
+              className="w-28 sm:w-32 h-auto drop-shadow-md transition-transform duration-300 group-hover:scale-105 dark:hidden"
+            />
+            <img
+              src="/images/LOGOBRANCA.png"
+              alt="Ponto Fragata Logo"
+              className="w-28 sm:w-32 h-auto drop-shadow-md transition-transform duration-300 group-hover:scale-105 hidden dark:block"
             />
           </Link>
 
@@ -76,10 +80,10 @@ export function AuthLayout({
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.2)_0%,transparent_70%)] pointer-events-none" />
 
             <div className="relative z-10 flex flex-col items-center w-full space-y-4">
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-black leading-snug">
+              <div className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white leading-snug">
                 {panelTitle}
-              </h2>
-              <p className="text-xs sm:text-sm font-medium text-black/85 leading-relaxed">
+              </div>
+              <p className="text-xs sm:text-sm font-medium text-white/85 leading-relaxed">
                 {panelDescription}
               </p>
 
@@ -94,7 +98,7 @@ export function AuthLayout({
                 </div>
               ) : (
                 <div className="pt-2 flex flex-col items-center gap-2">
-                  <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black/15 text-black text-xs font-semibold">
+                  <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black/15 text-white text-xs font-semibold">
                     <ShieldCheck className="w-4 h-4" />
                     <span>Reconhecimento Facial Seguro</span>
                   </div>
@@ -129,7 +133,7 @@ export function AuthLayout({
 
       {/* Footer */}
       <footer className="relative z-20 w-full max-w-6xl mx-auto px-4 sm:px-6 py-4 border-t border-slate-200 dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-500 dark:text-on-dark-muted">
-        <p>© {new Date().getFullYear()} Viggo Tecnologia. Todos os direitos reservados.</p>
+        <p>© {new Date().getFullYear()} Ponto Fragata. Todos os direitos reservados.</p>
         <div className="flex items-center gap-4">
           <Link to="/termos-de-uso" className="hover:text-brand-green transition-colors">Termos de Uso</Link>
           <Link to="/politica-privacidade" className="hover:text-brand-green transition-colors">Privacidade</Link>

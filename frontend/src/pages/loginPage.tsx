@@ -13,13 +13,14 @@ const loginSchema = z.object({
   password: z.string().min(6, "A senha deve conter no mínimo 6 caracteres"),
 });
 
+
 export function LoginPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  const [email, setEmail] = useState(() => localStorage.getItem("@viggo:saved_email") || "");
+  const [email, setEmail] = useState(() => localStorage.getItem("@fragata:saved_email") || "");
   const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(() => Boolean(localStorage.getItem("@viggo:saved_email")));
+  const [rememberMe, setRememberMe] = useState(() => Boolean(localStorage.getItem("@fragata:saved_email")));
   const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -41,9 +42,9 @@ export function LoginPage() {
     try {
       setIsSubmitting(true);
       if (rememberMe) {
-        localStorage.setItem("@viggo:saved_email", email.trim());
+        localStorage.setItem("@fragata:saved_email", email.trim());
       } else {
-        localStorage.removeItem("@viggo:saved_email");
+        localStorage.removeItem("@fragata:saved_email");
       }
 
       const user = await login(email.trim(), password);
@@ -69,7 +70,13 @@ export function LoginPage() {
   return (
     <AuthLayout
       side="left"
-      panelTitle="VIGGO"
+      panelTitle={
+        <img
+          src="/images/LOGOBRANCA.png"
+          alt="Ponto Fragata"
+          className="w-40 sm:w-52 h-auto drop-shadow-md mx-auto"
+        />
+      }
       panelDescription="Bem vindo de volta!"
       formTitle="Acesso ao Sistema"
       formSubtitle="Informe seu e-mail e senha cadastrados"

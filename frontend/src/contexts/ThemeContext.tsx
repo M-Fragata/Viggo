@@ -3,7 +3,7 @@ import { ThemeContext, type ThemeMode, type ThemeContextType } from "./themeCont
 
 export type { ThemeMode, ThemeContextType };
 
-const THEME_STORAGE_KEY = "@viggo:theme";
+const THEME_STORAGE_KEY = "@fragata:theme";
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [mode, setModeState] = useState<ThemeMode>(() => {

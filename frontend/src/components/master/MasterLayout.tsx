@@ -1,7 +1,6 @@
 import { Outlet, Link, NavLink } from "react-router";
 import { useState, useEffect, useRef } from "react";
 import { LogOut, Menu, X, BarChart3, Building2, ShieldCheck } from "lucide-react";
-import logo from "../../assets/logo.png";
 import { useAuth } from "../../hooks/useAuth";
 import { ImpersonationBanner } from "./ImpersonationBanner";
 import { ThemeToggle } from "../common/ThemeToggle";
@@ -35,7 +34,8 @@ export function MasterLayout() {
         <div className="max-w-7xl mx-auto flex justify-between items-center w-full">
           {/* LOGO */}
           <Link to="/master" className="flex items-center gap-2">
-            <img className="w-24 sm:w-28 h-auto" src={logo} alt="Viggo Master" />
+            <img className="w-28 sm:w-32 h-auto dark:hidden" src="/images/LOGOVERDE.png" alt="Ponto Fragata Master" />
+            <img className="w-28 sm:w-32 h-auto hidden dark:block" src="/images/LOGOBRANCA.png" alt="Ponto Fragata Master" />
             <span className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 rounded-md">
               Master
             </span>
@@ -65,7 +65,7 @@ export function MasterLayout() {
       <footer className="bg-white dark:bg-[#111113] border-t border-slate-200 dark:border-white/10 py-3 px-6 mt-auto z-30 transition-colors">
         <div className="max-w-7xl mx-auto">
           <p className="text-slate-400 dark:text-slate-500 text-xs text-center">
-            © {new Date().getFullYear()} Viggo Master. Todos os direitos reservados.
+            © {new Date().getFullYear()} Ponto Fragata Master. Todos os direitos reservados.
           </p>
         </div>
       </footer>
@@ -88,7 +88,8 @@ export function MasterLayout() {
       >
         <div className="p-5 border-b border-slate-100 dark:border-white/10 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src={logo} alt="Viggo" className="h-6 w-auto" />
+            <img src="/images/ICONEVERDE.png" alt="Ponto Fragata" className="h-7 w-auto dark:hidden" />
+            <img src="/images/ICONEBRANCA.png" alt="Ponto Fragata" className="h-7 w-auto hidden dark:block" />
             <span className="px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 rounded">
               Master
             </span>

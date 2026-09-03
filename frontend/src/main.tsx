@@ -6,7 +6,7 @@ import { App } from './App.tsx'
 // Captura falhas de download de chunks do Vite (ex: novos deploys no servidor ou oscilação 4G)
 window.addEventListener('vite:preloadError', (event) => {
   event.preventDefault();
-  const chaveRecarregamento = '@viggo:last-chunk-reload';
+  const chaveRecarregamento = '@fragata:last-chunk-reload';
   const ultimoRecarregamento = Number(sessionStorage.getItem(chaveRecarregamento) || '0');
   const agora = Date.now();
 

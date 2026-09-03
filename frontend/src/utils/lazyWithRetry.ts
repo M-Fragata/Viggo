@@ -23,7 +23,7 @@ export function lazyWithRetry<T extends ComponentType<unknown>>(
         retentativa++;
         if (retentativa >= maxRetentativas) {
           // Registra para depuração e propaga para o ErrorBoundary capturar
-          console.error(`[Viggo] Falha ao carregar módulo após ${maxRetentativas} tentativas:`, erro);
+          console.error(`[Ponto Fragata] Falha ao carregar módulo após ${maxRetentativas} tentativas:`, erro);
           throw erro;
         }
         // Aguarda antes da próxima tentativa para a rede se restabelecer

@@ -25,7 +25,7 @@ function generateFriendlyPassword(name: string): string {
     .replace(/[^a-z0-9]/g, "");
 
   const base = firstName.length > 0 ? firstName : "usuario";
-  const suffix = "@viggo";
+  const suffix = "@fragata";
 
   if (base.length + suffix.length < 8) {
     return `${base}123${suffix}`;
@@ -96,7 +96,7 @@ export function ManualEmployeeForm({ onEmployeeCreated }: { onEmployeeCreated?: 
 
   const handleCopyCredentials = () => {
     if (!createdData) return;
-    const text = `👋 Olá, ${createdData.name}!\nSeu acesso ao sistema de ponto Viggo foi criado com sucesso.\n\n🔗 Link de Acesso: ${window.location.origin}/login\n📧 E-mail: ${createdData.email}\n🔑 Senha Provisória: ${createdData.temporaryPassword}\n\nNo primeiro acesso, o sistema solicitará a criação da sua senha definitiva.`;
+    const text = `👋 Olá, ${createdData.name}!\nSeu acesso ao sistema Ponto Fragata foi criado com sucesso.\n\n🔗 Link de Acesso: ${window.location.origin}/login\n📧 E-mail: ${createdData.email}\n🔑 Senha Provisória: ${createdData.temporaryPassword}\n\nNo primeiro acesso, o sistema solicitará a criação da sua senha definitiva.`;
     navigator.clipboard.writeText(text);
     setCopied(true);
     toast.success("Dados de acesso copiados para a área de transferência!");

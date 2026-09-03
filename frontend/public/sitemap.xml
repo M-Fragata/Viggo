@@ -6,7 +6,7 @@
   
   <!-- Página Principal / Landing Page Oficial -->
   <url>
-    <loc>https://viggo.com.br/page</loc>
+    <loc>https://viggo.fragata.me/page</loc>
     <lastmod>2026-08-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
@@ -14,7 +14,7 @@
 
   <!-- Cadastro de Empresa / Trial 30 Dias -->
   <url>
-    <loc>https://viggo.com.br/company/signup</loc>
+    <loc>https://viggo.fragata.me/company/signup</loc>
     <lastmod>2026-08-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
@@ -22,7 +22,7 @@
 
   <!-- Login da Plataforma -->
   <url>
-    <loc>https://viggo.com.br/</loc>
+    <loc>https://viggo.fragata.me/</loc>
     <lastmod>2026-08-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -30,7 +30,7 @@
 
   <!-- Planos e Orçamento Customizado -->
   <url>
-    <loc>https://viggo.com.br/planos/custom</loc>
+    <loc>https://viggo.fragata.me/planos/custom</loc>
     <lastmod>2026-08-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -38,28 +38,28 @@
 
   <!-- Páginas Jurídicas, Conformidade & LGPD -->
   <url>
-    <loc>https://viggo.com.br/termos-de-uso</loc>
+    <loc>https://viggo.fragata.me/termos-de-uso</loc>
     <lastmod>2026-08-23</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
 
   <url>
-    <loc>https://viggo.com.br/politica-privacidade</loc>
+    <loc>https://viggo.fragata.me/politica-privacidade</loc>
     <lastmod>2026-08-23</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
 
   <url>
-    <loc>https://viggo.com.br/contrato-de-tratamento-de-dados</loc>
+    <loc>https://viggo.fragata.me/contrato-de-tratamento-de-dados</loc>
     <lastmod>2026-08-23</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
 
   <url>
-    <loc>https://viggo.com.br/consentimento-biometria</loc>
+    <loc>https://viggo.fragata.me/consentimento-biometria</loc>
     <lastmod>2026-08-23</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>

@@ -35,8 +35,8 @@ function getInitialSession(): {
   if (typeof window === "undefined") {
     return { user: null, company: null, name: null, token: null, isImpersonated: false, impersonatedCompanyName: null };
   }
-  const storedToken = localStorage.getItem("@viggo:token");
-  const storedMasterToken = localStorage.getItem("@viggo:masterToken");
+  const storedToken = localStorage.getItem("@fragata:token");
+  const storedMasterToken = localStorage.getItem("@fragata:masterToken");
 
   if (!storedToken) {
     return { user: null, company: null, name: null, token: null, isImpersonated: false, impersonatedCompanyName: null };
@@ -44,8 +44,8 @@ function getInitialSession(): {
 
   const decoded = decodeJWT(storedToken);
   if (!decoded || decoded.exp < Math.floor(Date.now() / 1000)) {
-    localStorage.removeItem("@viggo:token");
-    localStorage.removeItem("@viggo:masterToken");
+    localStorage.removeItem("@fragata:token");
+    localStorage.removeItem("@fragata:masterToken");
     return { user: null, company: null, name: null, token: null, isImpersonated: false, impersonatedCompanyName: null };
   }
 
@@ -82,8 +82,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [impersonatedCompanyName, setImpersonatedCompanyName] = useState<string | null>(initialSession.impersonatedCompanyName);
 
   const clearSession = useCallback(() => {
-    localStorage.removeItem("@viggo:token");
-    localStorage.removeItem("@viggo:masterToken");
+    localStorage.removeItem("@fragata:token");
+    localStorage.removeItem("@fragata:masterToken");
     setUser(null);
     setName(null);
     setToken(null);
@@ -103,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(
     async (email: string, password: string) => {
       const { user: apiUser, token: newToken, mustChangePassword } = await api.auth.login(email, password);
-      localStorage.setItem("@viggo:token", newToken);
+      localStorage.setItem("@fragata:token", newToken);
 
       const decoded = decodeJWT(newToken);
       const jwtUser = decoded ? userFromJWT(decoded) : apiUser;
@@ -122,7 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const setSession = useCallback((newUser: User, newToken: string, newCompany?: string) => {
-    localStorage.setItem("@viggo:token", newToken);
+    localStorage.setItem("@fragata:token", newToken);
 
     const decoded = decodeJWT(newToken);
     const jwtUser = decoded ? userFromJWT(decoded) : newUser;
@@ -133,7 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem("@viggo:token");
+    localStorage.removeItem("@fragata:token");
     setUser(null);
     setToken(null);
     setCompany(null);
@@ -145,7 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { user: freshUser } = await api.auth.me();
       setUser(prev => prev ? { ...prev, hasFaceDescriptor: freshUser.hasFaceDescriptor } : prev);
     } catch {
-      const storedToken = localStorage.getItem("@viggo:token");
+      const storedToken = localStorage.getItem("@fragata:token");
       if (storedToken) {
         const decoded = decodeJWT(storedToken);
         if (decoded) setUser(userFromJWT(decoded));
@@ -158,12 +158,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const startImpersonation = useCallback((newToken: string, _newUser: User, companyName: string) => {
-    const currentToken = localStorage.getItem("@viggo:token");
+    const currentToken = localStorage.getItem("@fragata:token");
     if (currentToken) {
-      localStorage.setItem("@viggo:masterToken", currentToken);
+      localStorage.setItem("@fragata:masterToken", currentToken);
     }
 
-    localStorage.setItem("@viggo:token", newToken);
+    localStorage.setItem("@fragata:token", newToken);
 
     const decoded = decodeJWT(newToken);
     const jwtUser = decoded ? userFromJWT(decoded) : _newUser;
@@ -176,12 +176,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const stopImpersonation = useCallback(() => {
-    const masterToken = localStorage.getItem("@viggo:masterToken");
+    const masterToken = localStorage.getItem("@fragata:masterToken");
     if (masterToken) {
       const decoded = decodeJWT(masterToken);
       if (decoded) {
-        localStorage.setItem("@viggo:token", masterToken);
-        localStorage.removeItem("@viggo:masterToken");
+        localStorage.setItem("@fragata:token", masterToken);
+        localStorage.removeItem("@fragata:masterToken");
         setUser(userFromJWT(decoded));
         setToken(masterToken);
         setCompany(decoded.companyName || null);

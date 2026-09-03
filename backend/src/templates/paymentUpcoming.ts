@@ -16,10 +16,10 @@ export function renderPaymentUpcoming(props: {
 }): { subject: string; html: string; text: string } {
   const isUrgent = props.daysRemaining === 1;
   const subject = isUrgent
-    ? `Vencimento amanhã — Viggo ${formatBRL(props.amount)}`
-    : `Lembrete: pagamento Viggo em 3 dias — ${formatBRL(props.amount)}`;
+    ? `Vencimento amanhã — Ponto Fragata ${formatBRL(props.amount)}`
+    : `Lembrete: pagamento Ponto Fragata em 3 dias — ${formatBRL(props.amount)}`;
   const preheader = `Seu pagamento de ${formatBRL(props.amount)} vence em ${formatDate(props.dueDate)}.`;
-  const frontendUrl = Env.FRONTEND_URL || "https://viggo.com.br";
+  const frontendUrl = Env.FRONTEND_URL || "https://viggo.fragata.me";
   const badgeColor = isUrgent ? "#d45656" : "#c37d0d";
   const badgeBg = isUrgent ? "#fdecea" : "#fef3e2";
   const html = baseLayout({

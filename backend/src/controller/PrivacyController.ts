@@ -206,7 +206,7 @@ export class PrivacyController {
       const exportData = {
         meta: {
           exportadoEm: new Date().toISOString(),
-          fonte: "Viggo — Sistema de Registro de Ponto Eletrônico",
+          fonte: "Ponto Fragata — Sistema de Registro de Ponto Eletrônico",
           baseLegal: "Art. 18, V da Lei nº 13.709/2018 (LGPD) — Portabilidade",
         },
         dadosPessoais: {

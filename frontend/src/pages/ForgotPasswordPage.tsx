@@ -172,7 +172,7 @@ export function ForgotPasswordPage() {
     <AuthLayout
       side="left"
       panelTitle="Recupere seu acesso"
-      panelDescription="Não se preocupe, acontece com todos. Vamos te ajudar a voltar ao Viggo."
+      panelDescription="Não se preocupe, acontece com todos. Vamos te ajudar a voltar ao Ponto Fragata."
       formTitle={
         step === "email"
           ? "Esqueceu a senha?"

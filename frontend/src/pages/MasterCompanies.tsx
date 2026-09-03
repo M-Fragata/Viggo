@@ -125,7 +125,7 @@ export function MasterCompanies() {
               className="w-full sm:w-auto px-4 py-2.5 bg-white dark:bg-[#121212] border border-slate-200 dark:border-white/10 rounded-xl text-slate-800 dark:text-white focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 dark:focus:ring-emerald-500/20 outline-none transition-colors cursor-pointer text-sm"
             >
               <option value="" className="dark:bg-[#121212]">Todos os planos</option>
-              <option value="DYNAMIC" className="dark:bg-[#121212]">Viggo</option>
+              <option value="DYNAMIC" className="dark:bg-[#121212]">Ponto Fragata</option>
               <option value="ENTERPRISE_CUSTOM" className="dark:bg-[#121212]">Enterprise</option>
             </select>
           </div>

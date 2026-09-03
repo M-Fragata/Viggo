@@ -29,9 +29,9 @@ function assertBaseStructure(html: string) {
   expect(html).toContain('lang="pt-BR"');
   expect(html).toContain("#0a0a0a"); // header
   expect(html).toContain("#00d4a4"); // brand
-  expect(html).toContain("Viggo");
-  expect(html).toContain("suporte@viggo.com.br");
-  expect(html).toContain("dpo@viggo.com.br");
+  expect(html).toContain("Ponto Fragata");
+  expect(html).toContain("suporte@fragata.me");
+  expect(html).toContain("dpo@fragata.me");
 }
 
 describe("templates - structural asserts (sem snapshot)", () => {

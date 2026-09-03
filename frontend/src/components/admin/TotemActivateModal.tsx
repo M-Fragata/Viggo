@@ -32,8 +32,8 @@ export function TotemActivateModal({ isOpen, onClose, onActivated }: TotemActiva
     setIsLoading(true);
     try {
       const result = await api.totem.activate(pin);
-      localStorage.setItem("@viggo:totem", result.totemToken);
-      localStorage.setItem("@viggo:totem:expiresAt", String(Date.now() + result.expiresIn * 1000));
+      localStorage.setItem("@fragata:totem", result.totemToken);
+      localStorage.setItem("@fragata:totem:expiresAt", String(Date.now() + result.expiresIn * 1000));
       onActivated?.(result.totemToken, result.expiresIn);
       setPin("");
       setConfirmPin("");

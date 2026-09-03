@@ -6,7 +6,7 @@ export function FloatingWhatsApp() {
 
 
   const whatsappUrl =
-    "https://wa.me/5521966921215?text=Ol%C3%A1!%20Estou%20no%20site%20do%20Viggo%20e%20gostaria%20de%20falar%20com%20um%20consultor.";
+    "https://wa.me/5521966921215?text=Ol%C3%A1!%20Estou%20no%20site%20do%20Ponto%20Fragata%20e%20gostaria%20de%20falar%20com%20um%20consultor.";
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex items-end gap-3 pointer-events-auto">

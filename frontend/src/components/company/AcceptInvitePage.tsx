@@ -8,7 +8,6 @@ import { usePublicInvite } from "../../hooks/useInviteTokens";
 import type { AcceptInviteDto } from "../../services/api";
 import { useToast } from "../../hooks/useToast";
 import { useAuth } from "../../hooks/useAuth";
-import logo from "../../assets/logo.png";
 
 const acceptInviteSchema = z.object({
   email: z.email("Email inválido"),
@@ -89,7 +88,8 @@ export function AcceptInvitePage() {
     return (
       <div className="flex items-center justify-center w-dvw h-dvh px-2 py-2">
         <div className="flex flex-col items-center gap-4">
-          <img src={logo} alt="Viggo Logo" className="w-32 h-auto" />
+          <img src="/images/LOGOVERDE.png" alt="Ponto Fragata Logo" className="w-32 h-auto dark:hidden" />
+          <img src="/images/LOGOBRANCA.png" alt="Ponto Fragata Logo" className="w-32 h-auto hidden dark:block" />
           <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
           <p className="text-slate-500">Validando convite...</p>
         </div>
@@ -148,7 +148,7 @@ export function AcceptInvitePage() {
       <div className="flex flex-col md:flex-row w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden h-full md:h-[600px]">
         {/* LADO ESQUERDO: Info da empresa */}
         <section className="flex flex-col items-center justify-center bg-emerald-400 w-full md:w-1/2 h-24 md:h-full p-4 md:p-8 transition-all duration-500 md:rounded-l-2xl md:rounded-t-none rounded-t-2xl">
-          <img src={logo} alt="Viggo Logo" className="w-32 md:w-56 h-auto drop-shadow-xl rounded-2xl" />
+          <img src="/images/LOGOBRANCA.png" alt="Ponto Fragata Logo" className="w-32 md:w-56 h-auto drop-shadow-xl rounded-2xl" />
         </section>
 
         {/* LADO DIREITO: Form de cadastro */}

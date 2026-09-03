@@ -23,7 +23,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   public override componentDidCatch(erro: Error, infoErro: ErrorInfo): void {
-    console.error("[Viggo] Erro interceptado pelo ErrorBoundary:", erro, infoErro);
+    console.error("[Ponto Fragata] Erro interceptado pelo ErrorBoundary:", erro, infoErro);
   }
 
   private handleTentarNovamente = (): void => {

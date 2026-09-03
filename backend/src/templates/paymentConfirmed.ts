@@ -23,9 +23,9 @@ export function renderPaymentConfirmed(props: {
   paidAt: Date;
   nfseUrl?: string | null;
 }): { subject: string; html: string; text: string } {
-  const subject = `Pagamento confirmado — Viggo ${formatBRL(props.amount)}`;
+  const subject = `Pagamento confirmado — Ponto Fragata ${formatBRL(props.amount)}`;
   const preheader = `Recebemos seu pagamento de ${formatBRL(props.amount)}. Sua assinatura está ativa.`;
-  const frontendUrl = Env.FRONTEND_URL || "https://viggo.com.br";
+  const frontendUrl = Env.FRONTEND_URL || "https://viggo.fragata.me";
 
   const nfseBlock = props.nfseUrl
     ? `<p style="margin:12px 0 0 0; font-size:13px;"><a href="${props.nfseUrl}" target="_blank" style="color:#00b48a; text-decoration:underline;">Baixar NFSe</a></p>`
@@ -49,7 +49,7 @@ export function renderPaymentConfirmed(props: {
       </table>
       ${nfseBlock}
       <p style="margin:16px 0 0 0; color:#5a5a5c; font-size:13px; line-height:20px;">
-        Sua assinatura foi renovada por mais 30 dias. Obrigado por confiar na Viggo!
+        Sua assinatura foi renovada por mais 30 dias. Obrigado por confiar no Ponto Fragata!
       </p>
     `,
   });

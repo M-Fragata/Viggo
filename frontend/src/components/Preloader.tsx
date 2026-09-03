@@ -74,9 +74,9 @@ export function Preloader({ onComplete }: PreloaderProps) {
     >
       <h1
         ref={titleRef}
-        className="text-5xl md:text-7xl font-bold tracking-widest text-white opacity-0"
+        className="text-3xl sm:text-5xl md:text-6xl font-black tracking-widest text-white opacity-0 text-center px-4"
       >
-        VIGGO
+        PONTO FRAGATA
       </h1>
     </div>
   );

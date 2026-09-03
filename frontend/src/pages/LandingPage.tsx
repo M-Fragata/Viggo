@@ -19,7 +19,6 @@ import { FloatingWhatsApp } from "../components/FloatingWhatsApp";
 import { useTheme } from "../hooks/useTheme";
 import { trackPageView, trackEvent } from "../utils/metrics";
 
-import logo from "../assets/logo.png";
 import "../scroll-animations.css";
 
 export function LandingPage() {
@@ -67,7 +66,8 @@ export function LandingPage() {
           <div className="flex h-20 items-center justify-between">
             <div className="flex items-center gap-8">
               <Link to="/page" className="flex items-center gap-2">
-                <img src={logo} alt="Viggo Logo" className="w-24 md:w-28 h-auto drop-shadow-xl rounded-xl" />
+                <img src="/images/LOGOVERDE.png" alt="Ponto Fragata Logo" className="w-28 md:w-32 h-auto drop-shadow-xl dark:hidden" />
+                <img src="/images/LOGOBRANCA.png" alt="Ponto Fragata Logo" className="w-28 md:w-32 h-auto drop-shadow-xl hidden dark:block" />
               </Link>
 
               <div className="hidden lg:flex items-center gap-7 text-sm text-slate-600 dark:text-on-dark-muted font-medium">
@@ -191,7 +191,8 @@ export function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
             <div className="md:col-span-1 space-y-4">
-              <img src={logo} alt="Viggo Logo" className="w-24 h-auto drop-shadow-md rounded-xl" />
+              <img src="/images/LOGOVERDE.png" alt="Ponto Fragata Logo" className="w-28 h-auto drop-shadow-md rounded-xl dark:hidden" />
+              <img src="/images/LOGOBRANCA.png" alt="Ponto Fragata Logo" className="w-28 h-auto drop-shadow-md rounded-xl hidden dark:block" />
               <p className="text-xs text-slate-500 dark:text-on-dark-muted leading-relaxed">
                 Plataforma inteligente de ponto eletrônico com reconhecimento facial, geolocalização e 100% de conformidade com a Portaria 671 do MTE.
               </p>
@@ -234,7 +235,7 @@ export function LandingPage() {
           </div>
 
           <div className="pt-8 border-t border-slate-200 dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-on-dark-muted">
-            <p>© {new Date().getFullYear()} Viggo Tecnologia. Todos os direitos reservados.</p>
+            <p>© {new Date().getFullYear()} Ponto Fragata. Todos os direitos reservados.</p>
             <p>Em conformidade com a Portaria 671/2021 MTE e LGPD.</p>
           </div>
         </div>

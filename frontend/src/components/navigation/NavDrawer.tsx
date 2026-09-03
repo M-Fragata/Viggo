@@ -19,7 +19,6 @@ import {
   Building2,
   MapPin,
 } from "lucide-react";
-import logo from "../../assets/logo.png";
 import { useAuth } from "../../hooks/useAuth";
 import { ThemeToggle } from "../common/ThemeToggle";
 
@@ -111,7 +110,8 @@ export function NavDrawer({ isOpen, onClose }: NavDrawerProps) {
         {/* Drawer Header */}
         <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-white/10 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src={logo} alt="Viggo" className="h-7 w-auto" />
+            <img src="/images/ICONEVERDE.png" alt="Ponto Fragata" className="h-8 w-auto dark:hidden" />
+            <img src="/images/ICONEBRANCA.png" alt="Ponto Fragata" className="h-8 w-auto hidden dark:block" />
           </div>
           <button
             type="button"

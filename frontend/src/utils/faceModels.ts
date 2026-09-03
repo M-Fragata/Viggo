@@ -3,7 +3,7 @@ import * as faceapi from 'face-api.js';
 /** Nome da partição no Cache Storage do navegador */
 const CACHE_NAME = 'viggo-face-models-v1';
 
-/** Lista de arquivos obrigatórios que compõem os 3 modelos de IA usados no Viggo */
+/** Lista de arquivos obrigatórios que compõem os 3 modelos de IA usados no Ponto Fragata */
 const REQUIRED_MODEL_FILES = [
   '/models/tiny_face_detector_model-weights_manifest.json',
   '/models/tiny_face_detector_model-shard1',

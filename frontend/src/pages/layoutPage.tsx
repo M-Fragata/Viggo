@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link, Outlet } from "react-router";
 import { Menu, X } from "lucide-react";
 
-import logo from "../assets/logo.png";
 import { useAuth } from "../hooks/useAuth";
 import { ImpersonationBanner } from "../components/master/ImpersonationBanner";
 import { MobileNav } from "../components/MobileNav";
@@ -26,7 +25,8 @@ export function LayoutPage() {
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           {/* LOGO */}
           <Link to="/" className="flex items-center gap-2">
-            <img className="w-24 sm:w-28 h-auto" src={logo} alt="Viggo" />
+            <img className="w-28 sm:w-32 h-auto dark:hidden" src="/images/LOGOVERDE.png" alt="Ponto Fragata" />
+            <img className="w-28 sm:w-32 h-auto hidden dark:block" src="/images/LOGOBRANCA.png" alt="Ponto Fragata" />
           </Link>
 
           <div className="flex items-center gap-3">
@@ -61,7 +61,7 @@ export function LayoutPage() {
       {/* FOOTER */}
       <footer className="bg-white dark:bg-[#111113] border-t border-slate-200 dark:border-white/10 py-3 px-6 mt-auto z-30 hidden md:block transition-colors">
         <div className="max-w-7xl mx-auto flex justify-between items-center text-xs text-slate-400 dark:text-slate-500">
-          <p>© {new Date().getFullYear()} Viggo Tecnologia. Todos os direitos reservados.</p>
+          <p>© {new Date().getFullYear()} Ponto Fragata. Todos os direitos reservados.</p>
           <p>Conforme Portaria 671/2021 MTE & LGPD</p>
         </div>
       </footer>

@@ -12,8 +12,8 @@ interface FAQItem {
 
 const FAQS: FAQItem[] = [
   {
-    question: "O Viggo é homologado pelo Ministério do Trabalho (Portaria 671)?",
-    answer: "Sim! O Viggo é um sistema REP-P (Registrador Eletrônico de Ponto em Programa) totalmente alinhado às exigências da Portaria 671/2021 do MTE. Ele gera comprovantes fiscais com assinatura digital inviolável, emite arquivos AFD/AFDT e protege sua empresa contra qualquer passivo trabalhista formal."
+    question: "O Ponto Fragata é homologado pelo Ministério do Trabalho (Portaria 671)?",
+    answer: "Sim! O Ponto Fragata é um sistema REP-P (Registrador Eletrônico de Ponto em Programa) totalmente alinhado às exigências da Portaria 671/2021 do MTE. Ele gera comprovantes fiscais com assinatura digital inviolável, emite arquivos AFD/AFDT e protege sua empresa contra qualquer passivo trabalhista formal."
   },
   {
     question: "Posso migrar os dados e o saldo de banco de horas do meu sistema antigo?",
@@ -21,7 +21,7 @@ const FAQS: FAQItem[] = [
   },
   {
     question: "Preciso comprar aparelhos de ponto caros ou pagar manutenção mecânica?",
-    answer: "Não! Você elimina custos com manutenção de relógios físicos caros e bobinas térmicas. O Viggo funciona em qualquer smartphone (Android e iOS) ou em um tablet/computador fixado na recepção em 'Modo Totem' com reconhecimento facial."
+    answer: "Não! Você elimina custos com manutenção de relógios físicos caros e bobinas térmicas. O Ponto Fragata funciona em qualquer smartphone (Android e iOS) ou em um tablet/computador fixado na recepção em 'Modo Totem' com reconhecimento facial."
   },
   {
     question: "Que tipo de suporte e treinamento minha empresa recebe?",
@@ -165,7 +165,7 @@ export function FAQ() {
             ref={paragraphRef}
             className="mt-4 text-base sm:text-lg text-slate-600 dark:text-on-dark-muted opacity-0"
           >
-            Tudo o que você precisa saber sobre a segurança jurídica e operacional do Viggo.
+            Tudo o que você precisa saber sobre a segurança jurídica e operacional do Ponto Fragata.
           </p>
         </div>
 

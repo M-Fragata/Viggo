@@ -12,10 +12,10 @@ export function renderTrialEnding(props: {
 }): { subject: string; html: string; text: string } {
   const isUrgent = props.daysRemaining === 1;
   const subject = isUrgent
-    ? `Último dia do seu trial Viggo — ative agora e não perca seus dados`
-    : `Seu trial Viggo termina em 3 dias — ative seu plano`;
+    ? `Último dia do seu trial Ponto Fragata — ative agora e não perca seus dados`
+    : `Seu trial Ponto Fragata termina em 3 dias — ative seu plano`;
   const preheader = `Faltam ${props.daysRemaining} ${props.daysRemaining === 1 ? "dia" : "dias"} para o fim do trial da ${props.companyName}.`;
-  const frontendUrl = Env.FRONTEND_URL || "https://viggo.com.br";
+  const frontendUrl = Env.FRONTEND_URL || "https://viggo.fragata.me";
   const badgeColor = isUrgent ? "#d45656" : "#c37d0d";
   const badgeBg = isUrgent ? "#fdecea" : "#fef3e2";
 

@@ -12,7 +12,7 @@ const planColors: Record<PlanTier, string> = {
 };
 
 const planLabels: Record<PlanTier, string> = {
-  DYNAMIC: "Viggo",
+  DYNAMIC: "Ponto Fragata",
   ENTERPRISE_CUSTOM: "Enterprise",
 };
 

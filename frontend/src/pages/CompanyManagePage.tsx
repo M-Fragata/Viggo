@@ -83,7 +83,7 @@ export function CompanyManagePage() {
       await updatePlan(company.id, "DYNAMIC");
       fetchCompany();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao alterar para plano Viggo");
+      toast.error(err instanceof Error ? err.message : "Erro ao alterar para plano Ponto Fragata");
     } finally {
       setPlanLoading(null);
     }
@@ -529,7 +529,7 @@ export function CompanyManagePage() {
                     : "bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10"
                 }`}
               >
-                {planLoading === "DYNAMIC" ? <Loader2 size={16} className="animate-spin" /> : "Viggo (Dinâmico)"}
+                {planLoading === "DYNAMIC" ? <Loader2 size={16} className="animate-spin" /> : "Ponto Fragata (Dinâmico)"}
               </button>
 
               <button

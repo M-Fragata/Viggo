@@ -131,7 +131,7 @@ export function useMasterActions() {
     ) => {
       const result = await api.master.updatePlan(companyId, data);
       const planName = typeof data === "string" ? data : data.plan;
-      const label = planName === "DYNAMIC" ? "Viggo" : "Enterprise Personalizado";
+      const label = planName === "DYNAMIC" ? "Ponto Fragata" : "Enterprise Personalizado";
       toast.success("Plano alterado", { description: `Plano atualizado para ${label}` });
       return result;
     },
@@ -172,7 +172,7 @@ export function useMasterActions() {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `empresas_viggo_${new Date().toISOString().slice(0, 10)}.csv`;
+        a.download = `empresas_pontofragata_${new Date().toISOString().slice(0, 10)}.csv`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);

@@ -51,7 +51,7 @@ export function BulkImportTab({ onImportComplete }: { onImportComplete?: () => v
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "modelo_importacao_colaboradores_viggo.csv";
+    link.download = "modelo_importacao_colaboradores_pontofragata.csv";
     link.click();
     URL.revokeObjectURL(url);
     toast.success("Modelo baixado! Preencha e faça o upload abaixo.");
@@ -174,7 +174,7 @@ export function BulkImportTab({ onImportComplete }: { onImportComplete?: () => v
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `relatorio_acessos_viggo_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.download = `relatorio_acessos_pontofragata_${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
     toast.success("Relatório de credenciais baixado com sucesso!");

@@ -72,7 +72,7 @@ export function usePublicInvite() {
   const acceptInvite = useCallback(
     async (data: AcceptInviteDto) => {
       const result = await api.company.public.acceptInvite(data);
-      toast.success("Conta criada!", { description: "Bem-vindo ao Viggo" });
+      toast.success("Conta criada!", { description: "Bem-vindo ao Ponto Fragata" });
       return result;
     },
     [toast]

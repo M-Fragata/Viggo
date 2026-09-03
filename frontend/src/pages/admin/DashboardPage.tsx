@@ -80,7 +80,7 @@ export function DashboardOverviewPage() {
           </div>
           <div>
             <h3 className="font-bold text-red-800 dark:text-red-200 text-sm">Trial expirado</h3>
-            <p className="text-red-600 dark:text-red-400 text-xs">Ative seu plano para continuar usando o Viggo</p>
+            <p className="text-red-600 dark:text-red-400 text-xs">Ative seu plano para continuar usando o Ponto Fragata</p>
           </div>
           <Link to="/plano" className="ml-auto px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors font-bold text-xs cursor-pointer">
             Ativar plano

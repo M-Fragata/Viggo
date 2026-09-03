@@ -62,7 +62,7 @@ export function HeroMedia({ className = "" }: HeroMediaProps) {
         />
         <img
           src="/celular na mao.webp"
-          alt="Viggo - Controle de ponto com reconhecimento facial"
+          alt="Ponto Fragata - Controle de ponto com reconhecimento facial"
           className="w-full h-auto object-cover rounded-2xl shadow-xl"
           loading="eager"
           fetchPriority="high"
@@ -95,12 +95,12 @@ export function HeroMedia({ className = "" }: HeroMediaProps) {
         className={`w-full h-auto object-cover rounded-2xl shadow-xl transition-opacity duration-500 ${
           showVideo ? "opacity-100" : "opacity-0"
         }`}
-        aria-label="Demonstração do reconhecimento facial do Viggo em dispositivo móvel"
+        aria-label="Demonstração do reconhecimento facial do Ponto Fragata em dispositivo móvel"
       >
         <source src="/Gemini-Video.webm" type="video/webm" />
         <img
           src="/celular na mao.webp"
-          alt="Viggo - Controle de ponto com reconhecimento facial"
+          alt="Ponto Fragata - Controle de ponto com reconhecimento facial"
           className="w-full h-auto object-cover rounded-2xl shadow-xl"
           loading="eager"
           fetchPriority="high"

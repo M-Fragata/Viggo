@@ -18,7 +18,7 @@ function esc(str: string): string {
 }
 
 export function baseLayout(props: BaseLayoutProps): string {
-  const frontendUrl = Env.FRONTEND_URL || "https://viggo.com.br";
+  const frontendUrl = Env.FRONTEND_URL || "https://viggo.fragata.me";
   const ctaBlock = props.ctaUrl && props.ctaLabel
     ? `
       <tr>
@@ -58,7 +58,7 @@ export function baseLayout(props: BaseLayoutProps): string {
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
                   <td style="font-size:22px; font-weight:800; color:#ffffff; letter-spacing:-0.5px; font-family:Inter, system-ui, sans-serif;">
-                    <span style="color:#00d4a4;">●</span> Viggo
+                    <span style="color:#00d4a4;">●</span> Ponto Fragata
                   </td>
                   <td align="right" style="font-size:11px; color:#888888; letter-spacing:0.8px; text-transform:uppercase; font-family:Inter, system-ui, sans-serif;">
                     Ponto Inteligente
@@ -102,7 +102,7 @@ export function baseLayout(props: BaseLayoutProps): string {
           <tr>
             <td style="padding:20px 32px 24px 32px; text-align:center;">
               <p style="margin:0; color:#888888; font-size:12px; line-height:18px; font-family:Inter, system-ui, sans-serif;">
-                Viggo — Ponto eletrônico com reconhecimento facial<br/>
+                Ponto Fragata — Ponto eletrônico com reconhecimento facial<br/>
                 <a href="${esc(frontendUrl)}/termos-de-uso" style="color:#00b48a; text-decoration:none;">Termos</a>
                 &nbsp;•&nbsp;
                 <a href="${esc(frontendUrl)}/politica-privacidade" style="color:#00b48a; text-decoration:none;">Privacidade</a>
@@ -110,7 +110,7 @@ export function baseLayout(props: BaseLayoutProps): string {
                 <a href="${esc(frontendUrl)}/contrato-tratamento-dados" style="color:#00b48a; text-decoration:none;">DPA</a>
               </p>
               <p style="margin:8px 0 0 0; color:#a8a8aa; font-size:11px; line-height:16px; font-family:Inter, system-ui, sans-serif;">
-                Dúvidas? <a href="mailto:suporte@viggo.com.br" style="color:#888888; text-decoration:underline;">suporte@viggo.com.br</a> &nbsp;•&nbsp; DPO: dpo@viggo.com.br
+                Dúvidas? <a href="mailto:suporte@fragata.me" style="color:#888888; text-decoration:underline;">suporte@fragata.me</a> &nbsp;•&nbsp; DPO: dpo@fragata.me
               </p>
               <p style="margin:8px 0 0 0; color:#a8a8aa; font-size:11px; line-height:16px; font-family:Inter, system-ui, sans-serif;">
                 Este é um e-mail automático, por favor não responda diretamente.
@@ -121,7 +121,7 @@ export function baseLayout(props: BaseLayoutProps): string {
 
         <!-- Extra footer outside card -->
         <p style="margin:16px 0 0 0; color:#a8a8aa; font-size:11px; font-family:Inter, system-ui, sans-serif;">
-          © ${new Date().getFullYear()} Viggo. Todos os direitos reservados.
+          © ${new Date().getFullYear()} Ponto Fragata. Todos os direitos reservados.
         </p>
       </td>
     </tr>

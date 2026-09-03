@@ -36,7 +36,7 @@ export function PlanoPage() {
       <PageHeader
         title="Assinatura & Plano"
         subtitle="Gerenciamento de limites de colaboradores e faturamento"
-        helpText="Gerencie a assinatura do Viggo, visualize limites de colaboradores ativos e consulte o status do seu plano."
+        helpText="Gerencie a assinatura do Ponto Fragata, visualize limites de colaboradores ativos e consulte o status do seu plano."
       />
 
       {company && (

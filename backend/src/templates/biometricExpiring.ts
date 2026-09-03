@@ -11,7 +11,7 @@ export function renderBiometricExpiring(props: {
 }): { subject: string; html: string; text: string } {
   const subject = `Sua biometria facial expira em 30 dias — revalide seu acesso`;
   const preheader = `Por segurança (LGPD), sua biometria precisa ser revalidada até ${formatDate(props.expiresAt)}.`;
-  const frontendUrl = Env.FRONTEND_URL || "https://viggo.com.br";
+  const frontendUrl = Env.FRONTEND_URL || "https://viggo.fragata.me";
 
   const html = baseLayout({
     preheader,

@@ -17,7 +17,7 @@ export interface OfflineCheckin {
   createdAt: string;
 }
 
-const DB_NAME = "viggo_offline_db";
+const DB_NAME = "fragata_offline_db";
 const DB_VERSION = 1;
 const STORE_NAME = "offline_checkins";
 

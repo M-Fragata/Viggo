@@ -5,8 +5,8 @@ export function renderSubscriptionCancelled(props: {
   companyName: string;
 }): { subject: string; html: string; text: string } {
   const subject = `Assinatura cancelada — ${props.companyName}`;
-  const preheader = `Sua assinatura Viggo foi cancelada.`;
-  const frontendUrl = Env.FRONTEND_URL || "https://viggo.com.br";
+  const preheader = `Sua assinatura Ponto Fragata foi cancelada.`;
+  const frontendUrl = Env.FRONTEND_URL || "https://viggo.fragata.me";
   const html = baseLayout({
     preheader,
     title: "Assinatura cancelada",
@@ -22,7 +22,7 @@ export function renderSubscriptionCancelled(props: {
         <span style="font-size:12px; color:#888;">Para reativar, escolha novamente PIX ou Cartão em “Plano”.</span>
       </div>
       <p style="margin:12px 0 0 0; color:#5a5a5c; font-size:13px;">
-        Dúvidas? <a href="mailto:suporte@viggo.com.br" style="color:#00b48a;">suporte@viggo.com.br</a>
+        Dúvidas? <a href="mailto:suporte@fragata.me" style="color:#00b48a;">suporte@fragata.me</a>
       </p>
     `,
   });

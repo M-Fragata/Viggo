@@ -2,7 +2,7 @@ import { useNavigate } from "react-router";
 
 const VERSAO = "1.0";
 const DATA_VIGENCIA = "23 de julho de 2026";
-const EMAIL_DPO = "dpo@viggo.com.br";
+const EMAIL_DPO = "dpo@fragata.me";
 
 export function PoliticaPrivacidade() {
   const navigate = useNavigate();
@@ -28,15 +28,15 @@ export function PoliticaPrivacidade() {
           <section>
             <h2 className="text-xl font-bold text-slate-800 mb-2">1. Controlador dos Dados</h2>
             <p>
-              A empresa que utiliza o Viggo (empregadora) é a <strong>Controladora</strong> dos
-              dados pessoais de seus funcionários. O Viggo atua como <strong>Operador</strong>,
+              A empresa que utiliza o Ponto Fragata (empregadora) é a <strong>Controladora</strong> dos
+              dados pessoais de seus funcionários. O Ponto Fragata atua como <strong>Operador</strong>,
               processando dados em nome da Controladora, conforme Art. 39 da LGPD.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-slate-800 mb-2">2. Dados Coletados</h2>
-            <p>O Viggo coleta e trata os seguintes dados pessoais:</p>
+            <p>O Ponto Fragata coleta e trata os seguintes dados pessoais:</p>
             <ul className="list-disc pl-6 space-y-1">
               <li><strong>Dados cadastrais:</strong> nome, e-mail, CPF, CNPJ da empresa;</li>
               <li><strong>Dados biométricos:</strong> vetor matemático facial (128 floats) — nenhuma imagem é armazenada;</li>
@@ -129,7 +129,7 @@ export function PoliticaPrivacidade() {
           <section>
             <h2 className="text-xl font-bold text-slate-800 mb-2">10. Incidentes de Segurança</h2>
             <p>
-              Em caso de incidente de segurança que possa acarretar risco aos titulares, o Viggo
+              Em caso de incidente de segurança que possa acarretar risco aos titulares, o Ponto Fragata
               notificará a Controladora em até 24h. A Controladora é responsável por comunicar
               a ANPD em até 72h (Art. 48 da LGPD) e os titulares afetados.
             </p>

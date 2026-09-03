@@ -1,7 +1,7 @@
 import { baseLayout } from "./layout.js";
 
 export function renderResetPassword(props: { code: string }): { subject: string; html: string; text: string } {
-  const subject = `Código de redefinição de senha - Viggo`;
+  const subject = `Código de redefinição de senha - Ponto Fragata`;
   const preheader = `Seu código é ${props.code}. Expira em 10 minutos.`;
   const html = baseLayout({
     preheader,

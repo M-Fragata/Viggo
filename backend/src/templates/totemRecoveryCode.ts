@@ -5,7 +5,7 @@ export function renderTotemRecoveryCode(props: {
   companyName: string;
   adminName?: string | undefined;
 }): { subject: string; html: string; text: string } {
-  const subject = `Código de Desbloqueio do Totem - ${props.companyName} | Viggo`;
+  const subject = `Código de Desbloqueio do Totem - ${props.companyName} | Ponto Fragata`;
   const preheader = `Seu código de desbloqueio do Totem é ${props.code}. Expira em 10 minutos.`;
   const saudacao = props.adminName ? `Olá, <strong>${props.adminName}</strong>!` : "Olá!";
 

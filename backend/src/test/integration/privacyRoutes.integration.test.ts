@@ -53,7 +53,7 @@ describe("privacyRoutes (integração)", () => {
       expect(res.body).toHaveProperty("dadosPessoais");
       expect(res.body).toHaveProperty("registrosPonto");
       expect(res.body).toHaveProperty("consentimentos");
-      expect(res.body.meta.fonte).toContain("Viggo");
+      expect(res.body.meta.fonte).toContain("Ponto Fragata");
     });
   });
 

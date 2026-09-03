@@ -173,7 +173,7 @@ export function HowItWorks() {
             ref={titleRef}
             className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-slate-900 dark:text-on-dark leading-tight opacity-0"
           >
-            Comece a rodar o Viggo em <span className="text-brand-green">3 passos simples</span>
+            Comece a rodar o Ponto Fragata em <span className="text-brand-green">3 passos simples</span>
           </h2>
           <p
             ref={paragraphRef}

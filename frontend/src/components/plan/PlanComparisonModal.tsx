@@ -11,7 +11,7 @@ interface PlanComparisonModalProps {
 
 const planFeatures = {
   DYNAMIC: {
-    name: "Viggo",
+    name: "Ponto Fragata",
     price: 54.90,
     maxEmployees: null,
     features: [
@@ -33,7 +33,7 @@ const planFeatures = {
     features: [
       "Acima de 50 funcionários",
       "Plano personalizado",
-      "Tudo do plano Viggo",
+      "Tudo do plano Ponto Fragata",
       "SLA garantido 99.9%",
       "Gerente de conta dedicado",
       "Suporte prioritário 24/7",

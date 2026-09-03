@@ -107,7 +107,7 @@ export function usePlanLimits() {
   const getPlanLabel = (plan: keyof typeof limits) => {
     switch (plan) {
       case "DYNAMIC":
-        return "Viggo";
+        return "Ponto Fragata";
       case "ENTERPRISE_CUSTOM":
         return "Enterprise";
       default:

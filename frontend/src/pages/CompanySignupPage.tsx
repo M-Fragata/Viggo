@@ -198,7 +198,7 @@ export function CompanySignupPage() {
         aceiteContratos: formData.aceiteContratos,
       });
 
-      toast.success("Empresa cadastrada com sucesso! Bem-vindo ao Viggo.");
+      toast.success("Empresa cadastrada com sucesso! Bem-vindo ao Ponto Fragata.");
       trackEvent("signup_success", { path: "/company/signup", companyId: response.company.id });
       setSession(response.user, response.token, response.company.name);
       navigate("/");

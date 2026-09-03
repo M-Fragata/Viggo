@@ -29,13 +29,13 @@ export function ContratoTratamentoDados() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 not-prose">
               <div className="bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-xl p-4">
                 <p className="text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Controladora</p>
-                <p className="text-sm text-slate-900 dark:text-slate-200 font-medium">Empresa contratante do Viggo</p>
+                <p className="text-sm text-slate-900 dark:text-slate-200 font-medium">Empresa contratante do Ponto Fragata</p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Dados preenchidos no cadastro</p>
               </div>
               <div className="bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-xl p-4">
                 <p className="text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Operadora</p>
-                <p className="text-sm text-slate-900 dark:text-slate-200 font-medium">Viggo Tecnologia em Ponto Eletrônico Ltda.</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">DPO: dpo@viggo.com.br</p>
+                <p className="text-sm text-slate-900 dark:text-slate-200 font-medium">Ponto Fragata Tecnologia em Ponto Eletrônico Ltda.</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">DPO: dpo@fragata.me</p>
               </div>
             </div>
           </section>
@@ -133,7 +133,7 @@ export function ContratoTratamentoDados() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-slate-800 mb-2">5. Obrigações do Operador (Viggo)</h2>
+            <h2 className="text-xl font-bold text-slate-800 mb-2">5. Obrigações do Operador (Ponto Fragata)</h2>
             <ul className="list-disc pl-6 space-y-1">
               <li>Implementar medidas técnicas e organizacionais adequadas ao risco;</li>
               <li>Utilizar criptografia para proteção de dados em repouso e em trânsito;</li>

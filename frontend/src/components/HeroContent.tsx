@@ -167,7 +167,7 @@ export function HeroContent({ startAnimation = true }: HeroContentProps) {
           </SpecularButton>
         </Link>
         <a
-          href="https://wa.me/5521966921215?text=Ol%C3%A1!%20Gostaria%20de%20agendar%20uma%20demonstra%C3%A7%C3%A3o%20do%20Viggo%20e%20tirar%20algumas%20d%C3%BAvidas."
+          href="https://wa.me/5521966921215?text=Ol%C3%A1!%20Gostaria%20de%20agendar%20uma%20demonstra%C3%A7%C3%A3o%20do%20Ponto%20Fragata%20e%20tirar%20algumas%20d%C3%BAvidas."
           target="_blank"
           rel="noopener noreferrer"
           className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 rounded-full border border-slate-300 dark:border-white/15 bg-white/20 dark:bg-white/[0.04] backdrop-blur-md px-6 sm:px-7 py-3.5 text-sm font-semibold text-slate-800 dark:text-on-dark hover:bg-slate-900 hover:text-white hover:border-slate-900 dark:hover:bg-white/[0.08] dark:hover:border-brand-green/50 dark:hover:text-brand-green transition-all shadow-sm dark:shadow-none group"

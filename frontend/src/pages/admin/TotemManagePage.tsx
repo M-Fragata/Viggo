@@ -23,8 +23,8 @@ export function TotemManagePage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [hasActiveTotem, setHasActiveTotem] = useState(() => {
-    const token = localStorage.getItem("@viggo:totem");
-    const expiresAt = localStorage.getItem("@viggo:totem:expiresAt");
+    const token = localStorage.getItem("@fragata:totem");
+    const expiresAt = localStorage.getItem("@fragata:totem:expiresAt");
     return Boolean(token && (!expiresAt || Number(expiresAt) > Date.now()));
   });
 
@@ -45,8 +45,8 @@ export function TotemManagePage() {
     setIsLoading(true);
     try {
       const result = await api.totem.activate(pin);
-      localStorage.setItem("@viggo:totem", result.totemToken);
-      localStorage.setItem("@viggo:totem:expiresAt", String(Date.now() + result.expiresIn * 1000));
+      localStorage.setItem("@fragata:totem", result.totemToken);
+      localStorage.setItem("@fragata:totem:expiresAt", String(Date.now() + result.expiresIn * 1000));
       setPin("");
       setConfirmPin("");
       navigate("/totem-app");
@@ -58,8 +58,8 @@ export function TotemManagePage() {
   };
 
   const handleDeactivate = () => {
-    localStorage.removeItem("@viggo:totem");
-    localStorage.removeItem("@viggo:totem:expiresAt");
+    localStorage.removeItem("@fragata:totem");
+    localStorage.removeItem("@fragata:totem:expiresAt");
     setHasActiveTotem(false);
   };
 

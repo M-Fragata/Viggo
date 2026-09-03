@@ -10,9 +10,9 @@ export function renderWelcomeCompany(props: {
   companyName: string;
   trialExpiresAt: Date;
 }): { subject: string; html: string; text: string } {
-  const subject = `Bem-vindo à Viggo, ${props.companyName} — seu trial de 30 dias começou`;
+  const subject = `Bem-vindo ao Ponto Fragata, ${props.companyName} — seu trial de 30 dias começou`;
   const preheader = `Sua empresa já está pronta para bater ponto com reconhecimento facial.`;
-  const frontendUrl = Env.FRONTEND_URL || "https://viggo.com.br";
+  const frontendUrl = Env.FRONTEND_URL || "https://viggo.fragata.me";
 
   const html = baseLayout({
     preheader,
@@ -59,7 +59,7 @@ O que você já pode fazer:
 
 Acesse: ${frontendUrl}/
 
-Equipe Viggo`;
+Equipe Ponto Fragata`;
 
   return { subject, html, text };
 }

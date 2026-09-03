@@ -102,8 +102,8 @@ export function TotemPage() {
     } catch (err) {
       console.warn("Erro ao liberar recursos do terminal:", err);
     }
-    localStorage.removeItem("@viggo:totem");
-    localStorage.removeItem("@viggo:totem:expiresAt");
+    localStorage.removeItem("@fragata:totem");
+    localStorage.removeItem("@fragata:totem:expiresAt");
     toast.success(mensagemSucesso || "Modo totem encerrado com sucesso");
     navigate("/totem");
   }
@@ -115,8 +115,8 @@ export function TotemPage() {
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem("@viggo:totem");
-    const expiresAt = localStorage.getItem("@viggo:totem:expiresAt");
+    const token = localStorage.getItem("@fragata:totem");
+    const expiresAt = localStorage.getItem("@fragata:totem:expiresAt");
 
     if (!token) {
       navigate("/totem");
@@ -124,8 +124,8 @@ export function TotemPage() {
     }
 
     if (expiresAt && Number(expiresAt) < Date.now()) {
-      localStorage.removeItem("@viggo:totem");
-      localStorage.removeItem("@viggo:totem:expiresAt");
+      localStorage.removeItem("@fragata:totem");
+      localStorage.removeItem("@fragata:totem:expiresAt");
       navigate("/totem");
       return;
     }

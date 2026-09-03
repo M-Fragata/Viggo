@@ -1,7 +1,7 @@
 import { API_URL } from "./api";
 
-const STORAGE_KEY = "viggo:vid";
-const SESSION_PREFIX = "viggo:metrics:session:";
+const STORAGE_KEY = "fragata:vid";
+const SESSION_PREFIX = "fragata:metrics:session:";
 
 function getVisitorId(): string {
   try {

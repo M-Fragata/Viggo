@@ -14,9 +14,9 @@ export function renderPaymentOverdue(props: {
   amount: number;
   dueDate: Date;
 }): { subject: string; html: string; text: string } {
-  const subject = `Pagamento em atraso — regularize sua assinatura Viggo`;
+  const subject = `Pagamento em atraso — regularize sua assinatura Ponto Fragata`;
   const preheader = `Sua empresa ${props.companyName} está com pagamento em atraso de ${formatBRL(props.amount)}.`;
-  const frontendUrl = Env.FRONTEND_URL || "https://viggo.com.br";
+  const frontendUrl = Env.FRONTEND_URL || "https://viggo.fragata.me";
 
   const html = baseLayout({
     preheader,
@@ -37,7 +37,7 @@ export function renderPaymentOverdue(props: {
         <tr><td style="padding:12px 16px; font-size:13px; color:#5a5a5c;"><strong style="color:#0a0a0a;">Vencimento:</strong> ${formatDate(props.dueDate)}</td></tr>
       </table>
       <p style="margin:16px 0 0 0; color:#5a5a5c; font-size:13px; line-height:20px;">
-        Após a confirmação do pagamento, o acesso é liberado automaticamente. Em caso de dúvidas, fale com <a href="mailto:suporte@viggo.com.br" style="color:#00b48a;">suporte@viggo.com.br</a>.
+        Após a confirmação do pagamento, o acesso é liberado automaticamente. Em caso de dúvidas, fale com <a href="mailto:suporte@fragata.me" style="color:#00b48a;">suporte@fragata.me</a>.
       </p>
     `,
   });
