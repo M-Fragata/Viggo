@@ -7,7 +7,7 @@ import { LivenessChallenge } from "../components/LivenessChallenge"
 import { useAuth } from "../hooks/useAuth"
 import { useCompany } from "../hooks/useCompany"
 
-import { LogIn, Utensils, Coffee, LogOut, ScanFace, Copy, Check, Radio, WifiOff } from "lucide-react"
+import { LogIn, Utensils, Coffee, LogOut, ScanFace, Copy, Check, Radio, WifiOff, MapPinOff, Navigation, X } from "lucide-react"
 import { PontoPageSkeleton } from "../components/PontoPageSkeleton"
 import { z } from "zod"
 import { Button } from "../components/Button"
@@ -65,73 +65,134 @@ export function PontoPage() {
         geolocationDenied?: boolean;
         geolocationConsent?: boolean | null;
     } | null>(null);
+    const [geoPrompt, setGeoPrompt] = useState<{
+        open: boolean;
+        type: string;
+        reason?: string;
+        isDenied?: boolean;
+    } | null>(null);
+
+    async function startFacialCheckin(checkinData: {
+        type: string;
+        latitude: number | null;
+        longitude: number | null;
+        accuracy?: number | null;
+        geolocationDenied: boolean;
+        geolocationConsent: boolean;
+    }) {
+        setPendingCheckin(checkinData);
+
+        const verifyFacial = await handleGetEmployee();
+        if (verifyFacial?.success !== true) {
+            setPendingCheckin(null);
+            setIsPreparingCheckin(false);
+            return;
+        }
+        setIsPreparingCheckin(false);
+    }
 
     async function handlePostCheckin(type: string) {
         setIsPreparingCheckin(true);
-        navigator.geolocation.getCurrentPosition(async (position) => {
-            const { latitude, longitude, accuracy } = position.coords;
 
-            const bodySchema = z.object({
-                type: z.enum(["ENTRY", "LUNCH_START", "LUNCH_END", "EXIT"]),
-                latitude: z.number().finite().min(-90).max(90),
-                longitude: z.number().finite().min(-180).max(180),
-                accuracy: z.number().finite().min(0).max(100000).optional(),
-            })
+        if (!navigator.geolocation) {
+            setIsPreparingCheckin(false);
+            setGeoPrompt({
+                open: true,
+                type,
+                reason: "Seu dispositivo ou navegador não possui suporte à geolocalização.",
+                isDenied: true,
+            });
+            return;
+        }
 
-            try {
-                bodySchema.parse({ type, latitude, longitude, accuracy })
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const { latitude, longitude, accuracy } = position.coords;
 
-                setPendingCheckin({ type, latitude, longitude, accuracy, geolocationDenied: false, geolocationConsent: true });
+                const bodySchema = z.object({
+                    type: z.enum(["ENTRY", "LUNCH_START", "LUNCH_END", "EXIT"]),
+                    latitude: z.number().finite().min(-90).max(90),
+                    longitude: z.number().finite().min(-180).max(180),
+                    accuracy: z.number().finite().min(0).max(100000).optional(),
+                });
 
-                const verifyFacial = await handleGetEmployee()
-                if (verifyFacial?.success !== true) {
+                try {
+                    bodySchema.parse({ type, latitude, longitude, accuracy });
+                    await startFacialCheckin({
+                        type,
+                        latitude,
+                        longitude,
+                        accuracy,
+                        geolocationDenied: false,
+                        geolocationConsent: true,
+                    });
+                } catch (error) {
+                    if (error instanceof z.ZodError) {
+                        console.error("Erro de validação:", error.issues);
+                    } else {
+                        console.error("Erro ao preparar check-in:", error);
+                        alert(error instanceof Error ? error.message : "Erro ao preparar check-in. Tente novamente.");
+                    }
                     setPendingCheckin(null);
                     setIsPreparingCheckin(false);
-                    return
                 }
+            },
+            (error) => {
+                console.warn("Geolocalização não obtida:", error);
                 setIsPreparingCheckin(false);
-            } catch (error) {
-                if (error instanceof z.ZodError) {
-                    console.error("Erro de validação:", error.issues);
-                } else {
-                    console.error("Erro ao preparar check-in:", error);
-                    alert(error instanceof Error ? error.message : "Erro ao preparar check-in. Tente novamente.");
+
+                let reason = "Não foi possível obter a sua localização GPS.";
+                const isDenied = error.code === 1; // PERMISSION_DENIED
+
+                if (error.code === 1) {
+                    reason = "A permissão de localização foi negada ou está desativada no navegador. Recomendamos permitir o acesso para registrar as coordenadas do ponto.";
+                } else if (error.code === 2) {
+                    reason = "O GPS do seu aparelho está desligado ou o sinal está indisponível. Ative a localização nas configurações do dispositivo.";
+                } else if (error.code === 3) {
+                    reason = "Tempo limite para obter a localização GPS foi excedido (sinal fraco).";
                 }
-                setPendingCheckin(null);
-                setIsPreparingCheckin(false);
+
+                setGeoPrompt({
+                    open: true,
+                    type,
+                    reason,
+                    isDenied,
+                });
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 8000,
+                maximumAge: 0
             }
-        }, async (error) => {
-            console.error("Erro ao obter localização:", error);
-            // A4: CLT não permite negar registro — flag para admin analisar depois
-            const isDenied = error.code === 1; // PERMISSION_DENIED
-            setPendingCheckin({
-                type,
-                latitude: null,
-                longitude: null,
-                accuracy: null,
-                geolocationDenied: true,
-                geolocationConsent: false,
-            });
-            // prossegue para validação facial mesmo sem GPS
-            try {
-                const verifyFacial = await handleGetEmployee()
-                if (verifyFacial?.success !== true) {
-                    setPendingCheckin(null);
-                }
-            } catch (e) {
-                console.error("Erro após GPS negado:", e);
-                setPendingCheckin(null);
-            } finally {
-                setIsPreparingCheckin(false);
-            }
-            if (isDenied) {
-                console.warn("Ponto será registrado sem localização e ficará pendente de justificativa para o admin.");
-            }
-        }, {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
+        );
+    }
+
+    async function handleProceedWithoutLocation() {
+        if (!geoPrompt?.type) return;
+        const type = geoPrompt.type;
+        setGeoPrompt(null);
+        setIsPreparingCheckin(true);
+
+        await startFacialCheckin({
+            type,
+            latitude: null,
+            longitude: null,
+            accuracy: null,
+            geolocationDenied: true,
+            geolocationConsent: false,
         });
+    }
+
+    function handleRetryLocation() {
+        if (!geoPrompt?.type) return;
+        const type = geoPrompt.type;
+        setGeoPrompt(null);
+        handlePostCheckin(type);
+    }
+
+    function handleCancelLocationPrompt() {
+        setGeoPrompt(null);
+        setIsPreparingCheckin(false);
     }
 
     async function handleRetryFaceToken(): Promise<string | null> {
@@ -661,6 +722,70 @@ export function PontoPage() {
                                 </button>
                             </div>
                         )}
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL DE SOLICITAÇÃO / ATIVAÇÃO DE GEOLOCALIZAÇÃO */}
+            {geoPrompt && geoPrompt.open && (
+                <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl space-y-6 animate-in zoom-in-95 duration-200">
+                        {/* Header do Modal */}
+                        <div className="flex items-start justify-between gap-4">
+                            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 shrink-0">
+                                <MapPinOff size={24} />
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleCancelLocationPrompt}
+                                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all cursor-pointer"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div>
+                            <h3 className="text-xl font-bold text-slate-800 dark:text-white">
+                                Ativar Localização do Dispositivo
+                            </h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+                                {geoPrompt.reason || "Não foi possível obter a sua localização GPS."}
+                            </p>
+                        </div>
+
+                        {/* Card com orientações / Portaria 671 */}
+                        <div className="bg-slate-50 dark:bg-black/30 border border-slate-200/80 dark:border-white/5 rounded-2xl p-4 space-y-2 text-xs">
+                            <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold">
+                                <Navigation size={15} />
+                                <span>Por que ativar a localização?</span>
+                            </div>
+                            <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                                A Portaria 671/MTE requer o registro das coordenadas geográficas para auditoria e conferência do polo de trabalho.
+                            </p>
+                            <div className="pt-2 border-t border-slate-200/60 dark:border-white/5 text-[11px] text-slate-500 dark:text-slate-400">
+                                💡 <strong>Dica:</strong> Certifique-se de que o GPS do seu aparelho está ligado e permita o acesso à localização no ícone de cadeado do navegador.
+                            </div>
+                        </div>
+
+                        {/* Ações */}
+                        <div className="flex flex-col gap-2.5 pt-2">
+                            <button
+                                type="button"
+                                onClick={handleRetryLocation}
+                                className="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-bold transition-all shadow-md shadow-emerald-900/20 active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+                            >
+                                <Navigation size={16} />
+                                Tentar Ativar / Conceder Localização
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handleProceedWithoutLocation}
+                                className="w-full py-3 px-4 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-slate-200 rounded-2xl text-xs font-semibold transition-all active:scale-95 cursor-pointer text-center"
+                            >
+                                Prosseguir sem Localização (Conforme CLT)
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
