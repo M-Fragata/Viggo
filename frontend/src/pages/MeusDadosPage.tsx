@@ -170,7 +170,7 @@ export function MeusDadosPage() {
   const cargoLabel = roleLabels[data.dadosPessoais.cargo] ?? data.dadosPessoais.cargo;
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-6 min-w-0">
       <PageHeader
         title="Meus Dados & Privacidade (LGPD)"
         subtitle="Gerenciamento de perfil, biometria e direitos do titular"

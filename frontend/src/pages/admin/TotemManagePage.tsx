@@ -64,7 +64,7 @@ export function TotemManagePage() {
   };
 
   return (
-    <div className="w-full max-w-full overflow-x-hidden space-y-6">
+    <div className="w-full space-y-6 min-w-0">
       <PageHeader
         title="Terminal Totem"
         subtitle="Configuração e ativação do terminal fixo de autoatendimento"

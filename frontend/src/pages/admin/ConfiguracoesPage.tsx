@@ -61,7 +61,7 @@ export function ConfiguracoesPage() {
   }
 
   return (
-    <div className="w-full max-w-full overflow-x-hidden space-y-8">
+    <div className="w-full space-y-6 min-w-0">
       <PageHeader
         title="Configurações do Ponto & Totem"
         subtitle="Personalize as regras de validação facial e a forma de registro dos colaboradores"

@@ -791,7 +791,7 @@ export function PontoPage() {
             )}
 
             {/* CONTEÚDO PRINCIPAL */}
-            <div className="w-full space-y-6">
+            <div className="w-full space-y-6 min-w-0">
                 <PageHeader
                     title="Bater Ponto"
                     subtitle="Registro biométrico facial com validação de vivacidade e GPS"

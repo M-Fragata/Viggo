@@ -171,7 +171,7 @@ export function CompanyManagePage() {
 
   if (error || !company) {
     return (
-      <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
+      <div className="w-full space-y-6 min-w-0">
         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer">
           <ArrowLeft size={20} />
           <span>Voltar</span>
@@ -184,7 +184,7 @@ export function CompanyManagePage() {
   }
 
   return (
-    <div className="space-y-6 w-full max-w-full">
+    <div className="w-full space-y-6 min-w-0">
       <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer text-sm">
         <ArrowLeft size={18} />
         <span>Voltar para Empresas</span>

@@ -191,7 +191,7 @@ export function PontoViewPage() {
   }
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-6 min-w-0">
       {isLoadingCheckins ? (
         <PontoViewPageSkeleton />
       ) : (

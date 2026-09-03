@@ -1,10 +1,10 @@
 export function MeusEspelhosSkeleton() {
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-pulse">
+    <div className="w-full space-y-6 min-w-0 animate-pulse">
       {/* Header Skeleton */}
-      <div className="bg-white dark:bg-[#111113] p-6 rounded-3xl border border-slate-200 dark:border-white/10 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="bg-white dark:bg-[#111113] p-4 sm:p-6 rounded-3xl border border-slate-200 dark:border-white/10 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="space-y-2">
-          <div className="h-7 w-64 bg-slate-200 dark:bg-white/10 rounded-xl shimmer" />
+          <div className="h-7 w-64 max-w-full bg-slate-200 dark:bg-white/10 rounded-xl shimmer" />
           <div className="h-4 w-96 max-w-full bg-slate-200 dark:bg-white/10 rounded-lg shimmer" />
         </div>
         <div className="h-10 w-10 bg-slate-200 dark:bg-white/10 rounded-xl shimmer" />
@@ -12,7 +12,7 @@ export function MeusEspelhosSkeleton() {
 
       {/* Seletor de Meses Skeleton */}
       <div className="bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-2xl p-4 shadow-sm space-y-3">
-        <div className="h-4 w-40 bg-slate-200 dark:bg-white/10 rounded shimmer" />
+        <div className="h-4 w-40 max-w-full bg-slate-200 dark:bg-white/10 rounded shimmer" />
         <div className="flex gap-2.5 overflow-x-auto pb-1">
           {Array.from({ length: 4 }).map((_, i) => (
             <div
@@ -24,11 +24,11 @@ export function MeusEspelhosSkeleton() {
       </div>
 
       {/* Banner de Status & Ações */}
-      <div className="bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-2xl p-4 sm:p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 rounded-full bg-slate-200 dark:bg-white/10 shimmer" />
-            <div className="h-6 w-56 bg-slate-200 dark:bg-white/10 rounded-lg shimmer" />
+            <div className="h-6 w-56 max-w-full bg-slate-200 dark:bg-white/10 rounded-lg shimmer" />
           </div>
           <div className="h-4 w-80 max-w-full bg-slate-200 dark:bg-white/10 rounded shimmer" />
         </div>
@@ -43,7 +43,7 @@ export function MeusEspelhosSkeleton() {
         {Array.from({ length: 3 }).map((_, i) => (
           <div
             key={i}
-            className="bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-2xl p-5 shadow-sm space-y-2"
+            className="bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-sm space-y-2"
           >
             <div className="h-3 w-28 bg-slate-200 dark:bg-white/10 rounded shimmer" />
             <div className="h-7 w-20 bg-slate-200 dark:bg-white/10 rounded-lg shimmer" />
@@ -58,7 +58,7 @@ export function MeusEspelhosSkeleton() {
           <div className="h-4 w-24 bg-slate-200 dark:bg-white/10 rounded shimmer" />
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full text-left text-xs min-w-[600px]">
             <thead className="bg-slate-50 dark:bg-white/[0.02] border-b border-slate-200 dark:border-white/10">
               <tr>
                 <th className="py-3 px-4"><div className="h-4 w-12 bg-slate-200 dark:bg-white/10 rounded shimmer" /></th>

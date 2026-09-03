@@ -1,10 +1,10 @@
 export function MasterCompaniesSkeleton() {
   return (
-    <div className="space-y-6 p-4 mx-auto">
+    <div className="w-full space-y-6 min-w-0">
       {/* Header Skeleton */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="space-y-1.5">
-          <div className="h-8 w-36 bg-slate-200 dark:bg-white/10 rounded-xl shimmer" />
+          <div className="h-8 w-36 max-w-full bg-slate-200 dark:bg-white/10 rounded-xl shimmer" />
           <div className="h-4 w-72 max-w-full bg-slate-200 dark:bg-white/10 rounded-lg shimmer" />
         </div>
         <div className="flex gap-3 items-center">
@@ -17,9 +17,9 @@ export function MasterCompaniesSkeleton() {
       <div className="bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 rounded-3xl shadow-sm p-4">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="h-11 flex-1 bg-slate-100 dark:bg-white/5 rounded-xl shimmer" />
-          <div className="flex gap-2">
-            <div className="h-11 w-40 bg-slate-100 dark:bg-white/5 rounded-xl shimmer" />
-            <div className="h-11 w-40 bg-slate-100 dark:bg-white/5 rounded-xl shimmer" />
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <div className="h-11 w-full sm:w-40 bg-slate-100 dark:bg-white/5 rounded-xl shimmer" />
+            <div className="h-11 w-full sm:w-40 bg-slate-100 dark:bg-white/5 rounded-xl shimmer" />
           </div>
         </div>
       </div>

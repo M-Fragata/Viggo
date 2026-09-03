@@ -24,7 +24,7 @@ const MONTHS = [
 
 export function FolhaMensalPage() {
   return (
-    <div className="w-full max-w-full overflow-x-hidden space-y-8 sm:space-y-10">
+    <div className="w-full space-y-6 min-w-0">
       <PageHeader
         title="Folha Mensal & Espelho MTE"
         subtitle="Ciclo de fechamento, assinaturas eletrônicas e arquivos fiscais obrigatórios (Portaria 671/2021 MTE / Lei 14.063/2020)"

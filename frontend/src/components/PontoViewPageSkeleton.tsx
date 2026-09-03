@@ -1,13 +1,13 @@
 export function PontoViewPageSkeleton() {
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-6 min-w-0">
       {/* Header Skeleton (1:1 com PageHeader) */}
       <header className="flex flex-col sm:flex-row justify-between items-start gap-4 sm:items-center bg-white dark:bg-[#111113] p-4 sm:p-6 rounded-3xl border border-slate-200 dark:border-white/10 shadow-sm transition-colors">
         <div className="space-y-2">
-          <div className="h-7 w-56 bg-slate-200 dark:bg-white/10 rounded-xl shimmer" />
-          <div className="h-4 w-72 bg-slate-200 dark:bg-white/10 rounded-lg shimmer" />
+          <div className="h-7 w-56 max-w-full bg-slate-200 dark:bg-white/10 rounded-xl shimmer" />
+          <div className="h-4 w-72 max-w-full bg-slate-200 dark:bg-white/10 rounded-lg shimmer" />
         </div>
-        <div className="h-10 w-44 bg-slate-200 dark:bg-white/10 rounded-2xl shimmer" />
+        <div className="h-10 w-44 max-w-full bg-slate-200 dark:bg-white/10 rounded-2xl shimmer" />
       </header>
 
       {/* Main Grid Skeleton */}

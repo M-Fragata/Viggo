@@ -119,7 +119,7 @@ export function MasterDashboard() {
   ];
 
   return (
-    <div className="space-y-6 w-full max-w-full">
+    <div className="w-full space-y-6 min-w-0">
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Dashboard Master</h1>

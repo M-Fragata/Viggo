@@ -1,14 +1,14 @@
 export function ConfiguracoesSkeleton() {
   return (
-    <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-8 animate-pulse">
+    <div className="w-full space-y-6 min-w-0 animate-pulse">
       {/* Header Skeleton */}
-      <div className="space-y-2">
-        <div className="h-8 w-60 bg-slate-200 dark:bg-white/10 rounded-xl shimmer" />
+      <div className="bg-white dark:bg-[#111113] p-4 sm:p-6 rounded-3xl border border-slate-200 dark:border-white/10 shadow-sm space-y-2">
+        <div className="h-7 w-60 max-w-full bg-slate-200 dark:bg-white/10 rounded-xl shimmer" />
         <div className="h-4 w-96 max-w-full bg-slate-200 dark:bg-white/10 rounded-lg shimmer" />
       </div>
 
       {/* Seção 1: Validação Facial */}
-      <div className="bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-3xl p-6 sm:p-7 shadow-sm space-y-6">
+      <div className="bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 rounded-3xl p-4 sm:p-7 shadow-sm space-y-6">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-slate-200 dark:bg-white/10 shimmer" />
           <div className="space-y-1.5">

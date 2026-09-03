@@ -55,7 +55,7 @@ const LIMITE_ARQUIVO_BYTES = 4 * 1024 * 1024; // 4 MB
 
 export function JustificativasPage() {
   return (
-    <div className="w-full max-w-full overflow-x-hidden space-y-6">
+    <div className="w-full space-y-6 min-w-0">
       <JustificativasContent />
     </div>
   );

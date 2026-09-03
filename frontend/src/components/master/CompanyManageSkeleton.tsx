@@ -1,17 +1,17 @@
 export function CompanyManageSkeleton() {
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
+    <div className="w-full space-y-6 min-w-0">
       {/* Back Button */}
       <div className="h-6 w-20 bg-slate-200 dark:bg-white/10 rounded-lg shimmer" />
 
       {/* Header Card Skeleton */}
-      <div className="bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 rounded-3xl shadow-sm p-6">
+      <div className="bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 rounded-3xl shadow-sm p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 bg-slate-200 dark:bg-white/10 rounded-2xl shimmer" />
             <div className="space-y-2">
-              <div className="h-7 w-52 bg-slate-200 dark:bg-white/10 rounded-xl shimmer" />
-              <div className="h-4 w-36 bg-slate-200 dark:bg-white/10 rounded-lg shimmer" />
+              <div className="h-7 w-52 max-w-full bg-slate-200 dark:bg-white/10 rounded-xl shimmer" />
+              <div className="h-4 w-36 max-w-full bg-slate-200 dark:bg-white/10 rounded-lg shimmer" />
             </div>
           </div>
           <div className="flex items-center gap-3">

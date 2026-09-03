@@ -172,7 +172,7 @@ export function MeusEspelhosPage() {
   }
 
   return (
-    <div className="w-full max-w-full overflow-x-hidden space-y-8">
+    <div className="w-full space-y-6 min-w-0">
       <PageHeader
         title="Meus Espelhos de Ponto"
         subtitle="Conferência mensal, histórico e assinatura eletrônica avançada (Portaria 671/2021 MTE e Lei 14.063/2020)"

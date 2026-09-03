@@ -141,7 +141,7 @@ export function PolosTrabalhoPage() {
   }
 
   return (
-    <div className="w-full max-w-full overflow-x-hidden space-y-6">
+    <div className="w-full space-y-6 min-w-0">
       <PageHeader
         title="Polos de Trabalho & Cercas Virtuais (Geofencing)"
         subtitle="Cadastre sedes, filiais e canteiros de obras para cálculo automático de menor distância e auditoria de pontos"
