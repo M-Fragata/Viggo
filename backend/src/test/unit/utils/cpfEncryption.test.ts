@@ -57,6 +57,16 @@ describe("cpfEncryption", () => {
       expect(decryptCpf("52998224725")).toBe("52998224725");
       expect(decryptCpf("529.982.247-25")).toBe("529.982.247-25");
     });
+
+    it("deve retornar string vazia sem lançar erro se o payload GCM tiver tag/chave incompatível", () => {
+      const corruptedGcm = JSON.stringify({
+        v: 1,
+        ct: "a0efd53fa192dbf0a7b893fb2b97",
+        iv: "151ac4cefeb9e85032437894",
+        tag: "c81049306acab56c2095e0720fa6c7b9",
+      });
+      expect(decryptCpf(corruptedGcm)).toBe("");
+    });
   });
 
   describe("hashCpf", () => {
@@ -120,12 +130,10 @@ describe("cpfEncryption", () => {
   });
 
   describe("compatibilidade legado (CBC)", () => {
-    it("deve descriptografar formato legado hex CBC", () => {
-      // Este teste verifica compatibilidade com dados criptografados
-      // no formato antigo (AES-256-CBC com IV derivado do hash)
-      // Se não houver dados legados, pulamos
-      const legacyHex = "0".repeat(32); // Formato inválido mas testa o path
-      expect(() => decryptCpf(legacyHex)).toThrow();
+    it("deve lidar com formato legado hex CBC sem estourar exceção fatal", () => {
+      const legacyHex = "0".repeat(32);
+      expect(() => decryptCpf(legacyHex)).not.toThrow();
+      expect(typeof decryptCpf(legacyHex)).toBe("string");
     });
   });
 });

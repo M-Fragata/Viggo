@@ -68,37 +68,42 @@ export function decryptCpf(input: string | null | undefined): string {
     return "";
   }
 
-  // Compatibilidade: hex puro (legado CBC) ou texto puro
-  if (!input.startsWith("{")) {
-    return decryptLegacyCbc(input);
+  try {
+    // Compatibilidade: hex puro (legado CBC) ou texto puro
+    if (!input.startsWith("{")) {
+      return decryptLegacyCbc(input);
+    }
+
+    const payload = JSON.parse(input) as {
+      v: number;
+      ct: string;
+      iv: string;
+      tag: string;
+    };
+
+    if (payload.v !== FORMAT_VERSION) {
+      return "";
+    }
+
+    const key = getEncryptionKey();
+    const decipher = crypto.createDecipheriv(
+      ALGORITHM,
+      key,
+      Buffer.from(payload.iv, "hex"),
+      { authTagLength: AUTH_TAG_LENGTH }
+    );
+    decipher.setAuthTag(Buffer.from(payload.tag, "hex"));
+
+    const decrypted = Buffer.concat([
+      decipher.update(Buffer.from(payload.ct, "hex")),
+      decipher.final(),
+    ]);
+
+    return decrypted.toString("utf8");
+  } catch {
+    // Falha de autenticação GCM (chave trocada ou payload corrompido) — fallback seguro
+    return "";
   }
-
-  const payload = JSON.parse(input) as {
-    v: number;
-    ct: string;
-    iv: string;
-    tag: string;
-  };
-
-  if (payload.v !== FORMAT_VERSION) {
-    throw new Error(`CPF versão desconhecida: ${payload.v}`);
-  }
-
-  const key = getEncryptionKey();
-  const decipher = crypto.createDecipheriv(
-    ALGORITHM,
-    key,
-    Buffer.from(payload.iv, "hex"),
-    { authTagLength: AUTH_TAG_LENGTH }
-  );
-  decipher.setAuthTag(Buffer.from(payload.tag, "hex"));
-
-  const decrypted = Buffer.concat([
-    decipher.update(Buffer.from(payload.ct, "hex")),
-    decipher.final(),
-  ]);
-
-  return decrypted.toString("utf8");
 }
 
 /**
@@ -119,14 +124,18 @@ function decryptLegacyCbc(encryptedHex: string): string {
     return cleanHex;
   }
 
-  const key = getEncryptionKey();
-  const iv = crypto.createHash("sha256").update(cleanHex).digest().subarray(0, 16);
-  const decipher = crypto.createDecipheriv("aes-256-cbc", key, iv);
-  const decrypted = Buffer.concat([
-    decipher.update(Buffer.from(cleanHex, "hex")),
-    decipher.final(),
-  ]);
-  return decrypted.toString("utf8");
+  try {
+    const key = getEncryptionKey();
+    const iv = crypto.createHash("sha256").update(cleanHex).digest().subarray(0, 16);
+    const decipher = crypto.createDecipheriv("aes-256-cbc", key, iv);
+    const decrypted = Buffer.concat([
+      decipher.update(Buffer.from(cleanHex, "hex")),
+      decipher.final(),
+    ]);
+    return decrypted.toString("utf8");
+  } catch {
+    return cleanHex;
+  }
 }
 
 /**
