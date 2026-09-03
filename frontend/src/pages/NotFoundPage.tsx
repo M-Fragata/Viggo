@@ -10,7 +10,7 @@ export function NotFoundPage() {
       <p className="text-2xl font-bold text-slate-800 dark:text-on-dark">Página não encontrada</p>
       <Button
         title="Voltar ao Início"
-        onClick={() => navigate("/page")}
+        onClick={() => navigate("/")}
         className="mt-4 bg-brand-green hover:bg-brand-green-deep text-black font-bold py-3.5 px-8 rounded-full shadow-lg shadow-brand-green/20 transition-all active:scale-[0.98] uppercase tracking-wider text-xs cursor-pointer"
       />
     </div>
