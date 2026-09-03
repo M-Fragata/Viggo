@@ -1,8 +1,8 @@
 import * as SecureStore from 'expo-secure-store';
 import { api } from './api';
 
-const OFFLINE_QUEUE_KEY = '@viggo:offline_checkins_queue';
-const TOTEM_OFFLINE_QUEUE_KEY = '@viggo:totem:offline_queue';
+const OFFLINE_QUEUE_KEY = '@fragata:offline_checkins_queue';
+const TOTEM_OFFLINE_QUEUE_KEY = '@fragata:totem:offline_queue';
 
 export type CheckinType = 'ENTRY' | 'LUNCH_START' | 'LUNCH_END' | 'EXIT';
 

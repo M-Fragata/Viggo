@@ -12,7 +12,7 @@ import { router } from 'expo-router';
 import { Colors, Spacing, BorderRadius } from '../../constants/theme';
 import { ArrowLeft, ChevronDown, ChevronUp, MessageCircle, HelpCircle } from 'lucide-react-native';
 
-const WHATSAPP_URL = 'https://wa.me/5521966921215?text=Ol%C3%A1!%20Estava%20lendo%20as%20d%C3%BAvidas%20no%20app%20do%20Viggo%20e%20gostaria%20de%20falar%20com%20um%20especialista.';
+const WHATSAPP_URL = 'https://wa.me/5521966921215?text=Ol%C3%A1!%20Estava%20lendo%20as%20d%C3%BAvidas%20no%20app%20do%20Ponto%20Fragata%20e%20gostaria%20de%20falar%20com%20um%20especialista.';
 
 interface FAQItem {
   id: number;
@@ -29,9 +29,9 @@ const FAQS: FAQItem[] = [
   },
   {
     id: 2,
-    question: 'O Viggo é homologado pelo Ministério do Trabalho (Portaria 671)?',
+    question: 'O Ponto Fragata é homologado pelo Ministério do Trabalho (Portaria 671)?',
     answer:
-      'Sim! O Viggo é um sistema REP-P (Registrador Eletrônico de Ponto em Programa) totalmente alinhado às exigências da Portaria 671/2021 do MTE. Ele gera comprovantes fiscais com assinatura digital inviolável, emite arquivos AFD/AFDT e protege sua empresa contra qualquer passivo trabalhista formal.',
+      'Sim! O Ponto Fragata é um sistema REP-P (Registrador Eletrônico de Ponto em Programa) totalmente alinhado às exigências da Portaria 671/2021 do MTE. Ele gera comprovantes fiscais com assinatura digital inviolável, emite arquivos AFD/AFDT e protege sua empresa contra qualquer passivo trabalhista formal.',
   },
   {
     id: 3,
@@ -49,7 +49,7 @@ const FAQS: FAQItem[] = [
     id: 5,
     question: 'Preciso comprar aparelhos de ponto caros ou pagar manutenção?',
     answer:
-      'Não! Você elimina custos com manutenção de relógios físicos caros e bobinas térmicas. O Viggo funciona em qualquer smartphone (Android e iOS) ou em um tablet/computador fixado na recepção em "Modo Totem" com reconhecimento facial contínuo.',
+      'Não! Você elimina custos com manutenção de relógios físicos caros e bobinas térmicas. O Ponto Fragata funciona em qualquer smartphone (Android e iOS) ou em um tablet/computador fixado na recepção em "Modo Totem" com reconhecimento facial contínuo.',
   },
   {
     id: 6,
@@ -104,7 +104,7 @@ export default function FAQScreen() {
         <View style={styles.header}>
           <Text style={styles.title}>Dúvidas Frequentes</Text>
           <Text style={styles.subtitle}>
-            Tudo o que você precisa saber sobre o funcionamento e segurança do Viggo
+            Tudo o que você precisa saber sobre o funcionamento e segurança do Ponto Fragata
           </Text>
         </View>
 

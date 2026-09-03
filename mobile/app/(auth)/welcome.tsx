@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import { Colors, Spacing, BorderRadius } from '../../constants/theme';
 import { UserCheck, Building2, ChevronRight, MessageCircle, HelpCircle } from 'lucide-react-native';
 
-const WHATSAPP_URL = 'https://wa.me/5521966921215?text=Ol%C3%A1!%20Estou%20no%20app%20do%20Viggo%20e%20gostaria%20de%20tirar%20uma%20d%C3%BAvida.';
+const WHATSAPP_URL = 'https://wa.me/5521966921215?text=Ol%C3%A1!%20Estou%20no%20app%20do%20Ponto%20Fragata%20e%20gostaria%20de%20tirar%20uma%20d%C3%BAvida.';
 
 export default function WelcomeScreen() {
   function handleOpenWhatsApp() {
@@ -15,9 +15,9 @@ export default function WelcomeScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.brandTitle}>
-          Viggo<Text style={{ color: Colors.primary }}>.</Text>
+          Ponto Fragata<Text style={{ color: Colors.primary }}>.</Text>
         </Text>
-        <Text style={styles.welcomeTitle}>Bem-vindo ao Viggo</Text>
+        <Text style={styles.welcomeTitle}>Bem-vindo ao Ponto Fragata</Text>
         <Text style={styles.subtitle}>
           Selecione como deseja acessar a plataforma
         </Text>

@@ -17,7 +17,7 @@ import { Colors, Spacing, BorderRadius } from '../../constants/theme';
 import { router } from 'expo-router';
 import { ArrowLeft, Lock, Mail, Sparkles, MessageCircle, HelpCircle, ArrowRight } from 'lucide-react-native';
 
-const WHATSAPP_URL = 'https://wa.me/5521966921215?text=Ol%C3%A1!%20Sou%20gestor%20de%20empresa%20e%20gostaria%20de%20tirar%20d%C3%BAvidas%20sobre%20o%20Viggo.';
+const WHATSAPP_URL = 'https://wa.me/5521966921215?text=Ol%C3%A1!%20Sou%20gestor%20de%20empresa%20e%20gostaria%20de%20tirar%20d%C3%BAvidas%20sobre%20o%20Ponto%20Fragata.';
 
 export default function CompanyLoginScreen() {
   const [identifier, setIdentifier] = useState('');

@@ -31,6 +31,7 @@ export default function AdminScreen() {
   const injectedJavaScript = token
     ? `
       try {
+        localStorage.setItem('@fragata:token', '${token}');
         localStorage.setItem('@viggo:token', '${token}');
       } catch (e) {}
       true;

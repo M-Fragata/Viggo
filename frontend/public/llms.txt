@@ -1,9 +1,9 @@
-# Viggo — Plataforma Inteligente de Controle de Ponto com Reconhecimento Facial
+# Ponto Fragata — Plataforma Inteligente de Controle de Ponto com Reconhecimento Facial
 
 > Sistema moderno de registro e gestão de ponto eletrônico corporativo (REP-P) com reconhecimento facial biométrico, detecção de vivacidade (Liveness AI), geolocalização e 100% de conformidade com a Portaria 671/2021 do MTE e a LGPD.
 
-## O que é o Viggo?
-O **Viggo** é uma solução B2B SaaS desenvolvida para empresas brasileiras que buscam modernizar a gestão de jornada de trabalho, eliminar fraudes no registro de ponto e automatizar o fechamento da folha de pagamento.
+## O que é o Ponto Fragata?
+O **Ponto Fragata** é uma solução B2B SaaS desenvolvida para empresas brasileiras que buscam modernizar a gestão de jornada de trabalho, eliminar fraudes no registro de ponto e automatizar o fechamento da folha de pagamento.
 
 ## Principais Funcionalidades
 - **Reconhecimento Facial Ultrarrápido (<1s):** Registro de ponto biométrico no celular do colaborador ou em modo Totem compartilhado (tablet/smartphone na recepção).
@@ -22,10 +22,10 @@ O **Viggo** é uma solução B2B SaaS desenvolvida para empresas brasileiras que
 - Empresas de Logística, Frotas e Home Office / Trabalho Híbrido
 
 ## Links Oficiais
-- **Página Oficial:** https://viggo.com.br/page
-- **Criar Conta / Teste Grátis 30 Dias:** https://viggo.com.br/company/signup
-- **Acesso ao Sistema:** https://viggo.com.br/
-- **Planos Personalizados (Enterprise):** https://viggo.com.br/planos/custom
-- **Termos de Uso:** https://viggo.com.br/termos-de-uso
-- **Política de Privacidade & LGPD:** https://viggo.com.br/politica-privacidade
-- **Contrato de Tratamento de Dados (DPA):** https://viggo.com.br/contrato-de-tratamento-de-dados
+- **Página Oficial:** https://viggo.fragata.me/page
+- **Criar Conta / Teste Grátis 30 Dias:** https://viggo.fragata.me/company/signup
+- **Acesso ao Sistema:** https://viggo.fragata.me/
+- **Planos Personalizados (Enterprise):** https://viggo.fragata.me/planos/custom
+- **Termos de Uso:** https://viggo.fragata.me/termos-de-uso
+- **Política de Privacidade & LGPD:** https://viggo.fragata.me/politica-privacidade
+- **Contrato de Tratamento de Dados (DPA):** https://viggo.fragata.me/contrato-de-tratamento-de-dados

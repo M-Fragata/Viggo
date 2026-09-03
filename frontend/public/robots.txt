@@ -1,5 +1,5 @@
 # ==============================================================================
-# Viggo - Robots.txt
+# Ponto Fragata - Robots.txt
 # Permissões de indexação para motores de busca e crawlers de IA (SEO & GEO)
 # ==============================================================================
 
@@ -59,4 +59,4 @@ Allow: /llms.txt
 Allow: /llms-full.txt
 
 # Mapa do site oficial
-Sitemap: https://viggo.com.br/sitemap.xml
+Sitemap: https://viggo.fragata.me/sitemap.xml

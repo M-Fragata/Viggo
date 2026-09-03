@@ -2,10 +2,10 @@ import * as SecureStore from 'expo-secure-store';
 
 export const API_URL = 'https://viggoapi.fragata.me';
 
-const TOKEN_KEY = '@viggo:token';
-const USER_KEY = '@viggo:user';
-const TOTEM_KEY = '@viggo:totem';
-const TOTEM_EXP_KEY = '@viggo:totem:expiresAt';
+const TOKEN_KEY = '@fragata:token';
+const USER_KEY = '@fragata:user';
+const TOTEM_KEY = '@fragata:totem';
+const TOTEM_EXP_KEY = '@fragata:totem:expiresAt';
 
 export interface UserSession {
   id: string;

@@ -12,7 +12,7 @@ describe("environment", () => {
   });
 
   it("deve exportar objeto Env com variáveis válidas", async () => {
-    process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/viggo_test";
+    process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/fragata_test";
     process.env.JWT_SECRET = "test-secret";
     process.env.FRONTEND_URL = "http://localhost:3000";
     process.env.CPF_ENCRYPTION_KEY = "a".repeat(64);
@@ -22,7 +22,7 @@ describe("environment", () => {
     const { Env } = await import("../../../utils/environment.js");
 
     expect(Env).toBeDefined();
-    expect(Env.DATABASE_URL).toBe("postgresql://test:test@localhost:5432/viggo_test");
+    expect(Env.DATABASE_URL).toBe("postgresql://test:test@localhost:5432/fragata_test");
     expect(Env.JWT_SECRET).toBe("test-secret");
     expect(Env.FRONTEND_URL).toBe("http://localhost:3000");
     expect(Env.CPF_ENCRYPTION_KEY).toBe("a".repeat(64));
@@ -32,7 +32,7 @@ describe("environment", () => {
 
   it("deve ter PORT com valor padrão 3333", async () => {
     delete process.env.PORT;
-    process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/viggo_test";
+    process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/fragata_test";
     process.env.JWT_SECRET = "test-secret";
     process.env.FRONTEND_URL = "http://localhost:3000";
     process.env.CPF_ENCRYPTION_KEY = "a".repeat(64);
@@ -45,7 +45,7 @@ describe("environment", () => {
   });
 
   it("deve aceitar NODE_ENV = DEV", async () => {
-    process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/viggo_test";
+    process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/fragata_test";
     process.env.JWT_SECRET = "test-secret";
     process.env.FRONTEND_URL = "http://localhost:3000";
     process.env.CPF_ENCRYPTION_KEY = "a".repeat(64);
@@ -58,7 +58,7 @@ describe("environment", () => {
   });
 
   it("deve aceitar NODE_ENV = PROD", async () => {
-    process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/viggo_test";
+    process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/fragata_test";
     process.env.JWT_SECRET = "test-secret";
     process.env.FRONTEND_URL = "http://localhost:3000";
     process.env.CPF_ENCRYPTION_KEY = "a".repeat(64);
@@ -71,7 +71,7 @@ describe("environment", () => {
   });
 
   it("deve ter ASAAS_ENVIRONMENT com default 'sandbox'", async () => {
-    process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/viggo_test";
+    process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/fragata_test";
     process.env.JWT_SECRET = "test-secret";
     process.env.FRONTEND_URL = "http://localhost:3000";
     process.env.CPF_ENCRYPTION_KEY = "a".repeat(64);
@@ -85,7 +85,7 @@ describe("environment", () => {
   });
 
   it("deve rejeitar CPF_ENCRYPTION_KEY com tamanho inválido", async () => {
-    process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/viggo_test";
+    process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/fragata_test";
     process.env.JWT_SECRET = "test-secret";
     process.env.FRONTEND_URL = "http://localhost:3000";
     process.env.CPF_ENCRYPTION_KEY = "short-key";
@@ -101,7 +101,7 @@ describe("environment", () => {
   });
 
   it("deve rejeitar FACE_ENCRYPTION_KEY com caracteres inválidos", async () => {
-    process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/viggo_test";
+    process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/fragata_test";
     process.env.JWT_SECRET = "test-secret";
     process.env.FRONTEND_URL = "http://localhost:3000";
     process.env.CPF_ENCRYPTION_KEY = "a".repeat(64);
@@ -117,7 +117,7 @@ describe("environment", () => {
   });
 
   it("deve rejeitar NODE_ENV inválido", async () => {
-    process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/viggo_test";
+    process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/fragata_test";
     process.env.JWT_SECRET = "test-secret";
     process.env.FRONTEND_URL = "http://localhost:3000";
     process.env.CPF_ENCRYPTION_KEY = "a".repeat(64);
@@ -149,7 +149,7 @@ describe("environment", () => {
   });
 
   it("deve rejeitar quando JWT_SECRET está faltando", async () => {
-    process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/viggo_test";
+    process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/fragata_test";
     delete process.env.JWT_SECRET;
     process.env.FRONTEND_URL = "http://localhost:3000";
     process.env.CPF_ENCRYPTION_KEY = "a".repeat(64);

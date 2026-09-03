@@ -17,7 +17,7 @@ import { Colors, Spacing, BorderRadius } from '../../constants/theme';
 import { router } from 'expo-router';
 import { ArrowLeft, Lock, Mail, Info, MessageCircle, HelpCircle } from 'lucide-react-native';
 
-const WHATSAPP_URL = 'https://wa.me/5521966921215?text=Ol%C3%A1!%20Sou%20colaborador%20e%20preciso%20de%20ajuda%20para%20acessar%20minha%20conta%20no%20Viggo.';
+const WHATSAPP_URL = 'https://wa.me/5521966921215?text=Ol%C3%A1!%20Sou%20colaborador%20e%20preciso%20de%20ajuda%20para%20acessar%20minha%20conta%20no%20Ponto%20Fragata.';
 
 export default function EmployeeLoginScreen() {
   const [identifier, setIdentifier] = useState('');
@@ -123,7 +123,7 @@ export default function EmployeeLoginScreen() {
             {loading ? (
               <ActivityIndicator color={Colors.textDark} />
             ) : (
-              <Text style={styles.loginButtonText}>Entrar no Viggo</Text>
+              <Text style={styles.loginButtonText}>Entrar no Ponto Fragata</Text>
             )}
           </TouchableOpacity>
         </View>

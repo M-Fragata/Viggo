@@ -1,8 +1,8 @@
-# AGENTS.md - Guia Definitivo para IAs no Projeto Viggo
+# AGENTS.md - Guia Definitivo para IAs no Projeto Ponto Fragata
 
 ## Visão Geral do Projeto
 
-**Viggo** - Aplicação full-stack com reconhecimento facial
+**Ponto Fragata** - Aplicação full-stack com reconhecimento facial
 
 ### Backend (`backend/`)
 - **Express 5** - Framework web

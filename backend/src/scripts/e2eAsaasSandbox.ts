@@ -62,36 +62,37 @@ function webhookHeaders() {
 async function main() {
   console.log("=== E2E Asaas Sandbox Viggo ===");
   console.log(`Env: ASAAS_ENVIRONMENT=${Env.ASAAS_ENVIRONMENT} ASAAS_API_KEY=${Env.ASAAS_API_KEY ? `${String(Env.ASAAS_API_KEY).slice(0, 8)}...` : "MISSING"} MASTER_CNPJ=${Env.MASTER_CNPJ || "none"}`);
-  console.log(`DB: ${String(Env.DATABASE_URL).slice(0, 30)}...`);
-  console.log(`Pricing: 54.90 até 10 +5 extra (base=${PRICING.BASE_PRICE})`);
-  console.log(`Mock mode: ${isMock}`);
-  console.log("");
+  console.log("=== E2E Asaas Sandbox Ponto Fragata ===");
+  console.log(`ASAAS_ENVIRONMENT=${Env.ASAAS_ENVIRONMENT}`);
+  console.log(`ASAAS_API_KEY=${Env.ASAAS_API_KEY ? `${Env.ASAAS_API_KEY.slice(0, 15)}...` : "MISSING!"}`);
+  console.log(`MASTER_CNPJ=${Env.MASTER_CNPJ ?? "não configurado"}`);
 
-  if (Env.ASAAS_ENVIRONMENT !== "sandbox" && !isMock) {
-    console.error("❌ Aborta: ASAAS_ENVIRONMENT deve ser sandbox para E2E (evita produção)");
+  if (!Env.ASAAS_API_KEY) {
+    console.error("❌ ASAAS_API_KEY não configurada no .env — abortando.");
     process.exit(1);
   }
 
-  // Pre-flight ping Asaas se real
-  if (!isMock) {
-    try {
-      const ping = await fetch(`${Env.ASAAS_ENVIRONMENT === "production" ? "https://api.asaas.com/v3" : "https://api-sandbox.asaas.com/v3"}/customers?limit=1`, {
-        headers: { access_token: Env.ASAAS_API_KEY! },
-      });
-      console.log(`[Asaas] ping ${ping.status} ${ping.ok ? "ok" : "fail"}`);
-      if (!ping.ok) {
-        const txt = await ping.text();
-        console.warn("[Asaas] ping body:", txt.slice(0, 200));
-      }
-    } catch (e) {
-      console.warn("[Asaas] ping exception:", e instanceof Error ? e.message : String(e));
+  // Quick health check — ping na API do Asaas para confirmar conectividade/chave válida
+  console.log("\n[0/10] Verificando conectividade com API do Asaas...");
+  try {
+    const pingRes = await fetch(
+      `${Env.ASAAS_ENVIRONMENT === "production" ? "https://api.asaas.com" : "https://sandbox.asaas.com"}/v3/customers?limit=1`,
+      { headers: { access_token: Env.ASAAS_API_KEY } }
+    );
+    if (!pingRes.ok) {
+      const errBody = await pingRes.text();
+      console.warn(`⚠️  Asaas API respondeu HTTP ${pingRes.status}: ${errBody.slice(0, 200)}`);
+    } else {
+      console.log("✓ Conectividade com Asaas OK (chave válida)");
     }
+  } catch (e) {
+    console.warn("[Asaas] ping exception:", e instanceof Error ? e.message : String(e));
   }
 
   const ts = Date.now();
   const e2ePrefix = `e2e-${ts}`;
-  const companyName = `E2E Viggo ${ts}`;
-  const adminEmail = `e2e-admin-${ts}@viggo-test.com.br`;
+  const companyName = `E2E Ponto Fragata ${ts}`;
+  const adminEmail = `e2e-admin-${ts}@fragata-test.com.br`;
   const adminName = "E2E Admin";
   const cnpj = generateValidCnpj();
   const cpf = generateValidCpf();
@@ -109,7 +110,7 @@ async function main() {
   try {
     const staleCompanies = await prisma.company.findMany({ where: { cnpj: { startsWith: "99" } }, select: { id: true } });
     // Também limpa por email e2e
-    const e2eUsers = await prisma.user.findMany({ where: { email: { contains: "@viggo-test.com.br" } }, select: { companyId: true } });
+    const e2eUsers = await prisma.user.findMany({ where: { email: { contains: "@fragata-test.com.br" } }, select: { companyId: true } });
     const staleIds = new Set([...staleCompanies.map(c => c.id), ...e2eUsers.map(u => u.companyId)]);
     for (const id of staleIds) {
       try {
@@ -241,7 +242,7 @@ async function main() {
 
     // Criar 9 employees -> total 10 (paid 9) ainda 54.90
     for (let i = 0; i < 9; i++) {
-      const email = `e2e-emp-${ts}-${i}@viggo-test.com.br`;
+      const email = `e2e-emp-${ts}-${i}@fragata-test.com.br`;
       await fetch(`${BASE_URL}/employees`, {
         method: "POST",
         headers: authHeaders(adminToken),
@@ -256,7 +257,7 @@ async function main() {
     // 11º user (total 11, paid 10) ainda 54.90 borda
     await fetch(`${BASE_URL}/employees`, {
       method: "POST", headers: authHeaders(adminToken),
-      body: JSON.stringify({ name: "Emp borda", email: `e2e-borda-${ts}@viggo-test.com.br`, role: "EMPLOYEE" }),
+      body: JSON.stringify({ name: "Emp borda", email: `e2e-borda-${ts}@fragata-test.com.br`, role: "EMPLOYEE" }),
     });
     await sleep(800);
     sub = await prisma.subscription.findFirst({ where: { companyId, status: "ACTIVE" } });
@@ -265,14 +266,14 @@ async function main() {
     // 12º user (total 12, paid 11) -> 59.90
     await fetch(`${BASE_URL}/employees`, {
       method: "POST", headers: authHeaders(adminToken),
-      body: JSON.stringify({ name: "Emp extra", email: `e2e-extra-${ts}@viggo-test.com.br`, role: "EMPLOYEE" }),
+      body: JSON.stringify({ name: "Emp extra", email: `e2e-extra-${ts}@fragata-test.com.br`, role: "EMPLOYEE" }),
     });
     await sleep(1000);
     sub = await prisma.subscription.findFirst({ where: { companyId, status: "ACTIVE" } });
     log("Extra 12 users (paid 11) -> 59.90", Number(sub?.price) === 59.9, `price=${sub?.price} extra=${sub?.extraEmployees}`);
 
     // Bulk 3 (total 15, paid 14 -> 74.90)
-    const bulkEmails = [1, 2, 3].map(i => ({ name: `Bulk ${i}`, email: `e2e-bulk-${ts}-${i}@viggo-test.com.br`, role: "EMPLOYEE" as const }));
+    const bulkEmails = [1, 2, 3].map(i => ({ name: `Bulk ${i}`, email: `e2e-bulk-${ts}-${i}@fragata-test.com.br`, role: "EMPLOYEE" as const }));
     await fetch(`${BASE_URL}/employees/bulk-import`, {
       method: "POST", headers: authHeaders(adminToken),
       body: JSON.stringify({ employees: bulkEmails }),

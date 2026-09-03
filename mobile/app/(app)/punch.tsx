@@ -169,7 +169,7 @@ export default function PunchScreen() {
       <View style={styles.topBar}>
         <View>
           <Text style={styles.greeting}>Olá, {user?.name?.split(' ')[0] || 'Colaborador'}</Text>
-          <Text style={styles.companyName}>{user?.companyName || 'Viggo'}</Text>
+          <Text style={styles.companyName}>{user?.companyName || 'Ponto Fragata'}</Text>
         </View>
 
         <TouchableOpacity onPress={logout} style={styles.logoutButton}>

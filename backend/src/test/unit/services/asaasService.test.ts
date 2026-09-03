@@ -80,7 +80,7 @@ describe("asaasService", () => {
         customerId: "cust_123",
         billingType: "PIX",
         value: 54.9,
-        description: "Plano Viggo",
+        description: "Plano Ponto Fragata",
       });
 
       expect(result).toEqual(subData);

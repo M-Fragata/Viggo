@@ -11,7 +11,7 @@ import { Env } from "../utils/environment.js";
 import * as emailService from "../services/email/emailService.js";
 
 const DEFAULT_TEST_TO = "matheusdemoraes2@gmail.com";
-const TEMP_FROM = "Viggo <onboarding@resend.dev>";
+const TEMP_FROM = "Ponto Fragata <onboarding@resend.dev>";
 
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
@@ -52,15 +52,15 @@ async function main() {
   const finalTo = DEFAULT_TEST_TO;
   (Env as Record<string, unknown>).EMAIL_TEST_TO = toArg ? toArg : finalTo;
   (Env as Record<string, unknown>).EMAIL_FROM = TEMP_FROM;
-  (Env as Record<string, unknown>).EMAIL_REPLY_TO = "suporte@viggo.com.br";
+  (Env as Record<string, unknown>).EMAIL_REPLY_TO = "suporte@fragata.me";
 
   // Garantir provider real (não mock)
   emailService.resetEmailProvider();
 
-  console.log("=== Viggo Email Test Real (Opção A) ===");
+  console.log("=== Ponto Fragata Email Test Real (Opção A) ===");
   console.log(`Env overrides: NODE_ENV=DEV, EMAIL_ENABLED=true, EMAIL_PREVIEW=${dry ? "true (dry)" : "false"}`);
   console.log(`EMAIL_TEST_TO=${(Env as Record<string, unknown>).EMAIL_TEST_TO} (todos os envios redirecionados)`);
-  console.log(`EMAIL_FROM=${Env.EMAIL_FROM} (temporário onboarding@resend.dev até verificar viggo.com.br)`);
+  console.log(`EMAIL_FROM=${Env.EMAIL_FROM} (temporário onboarding@resend.dev até verificar fragata.me)`);
   console.log(`RESEND_API_KEY=${Env.RESEND_API_KEY ? `${String(Env.RESEND_API_KEY).slice(0, 8)}...` : "MISSING!"}`);
   if (!Env.RESEND_API_KEY) {
     console.error("❌ RESEND_API_KEY ausente no .env — abortando.");

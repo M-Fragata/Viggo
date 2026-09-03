@@ -34,7 +34,7 @@ import {
 import { formatCpf, formatCnpj, validateCpf, validateCnpj } from '../../utils/validators';
 import { lookupCnpj } from '../../utils/cnpjLookup';
 
-const WHATSAPP_URL = 'https://wa.me/5521966921215?text=Ol%C3%A1!%20Estou%20criando%20a%20conta%20da%20minha%20empresa%20no%20Viggo%20e%20gostaria%20de%20ajuda.';
+const WHATSAPP_URL = 'https://wa.me/5521966921215?text=Ol%C3%A1!%20Estou%20criando%20a%20conta%20da%20minha%20empresa%20no%20Ponto%20Fragata%20e%20gostaria%20de%20ajuda.';
 
 export default function CompanySignupScreen() {
   const [step, setStep] = useState<1 | 2 | 3>(1);

@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Viggo",
-    "slug": "viggo-mobile",
+    "name": "Ponto Fragata",
+    "slug": "ponto-fragata",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "viggo",
+    "scheme": "pontofragata",
     "userInterfaceStyle": "dark",
     "newArchEnabled": false,
     "web": {
@@ -18,10 +18,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.viggo.app",
+      "bundleIdentifier": "com.pontofragata.app",
       "infoPlist": {
-        "NSCameraUsageDescription": "O Viggo precisa de acesso à câmera para reconhecimento facial no registro de ponto.",
-        "NSLocationWhenInUseUsageDescription": "O Viggo precisa da sua localização para validar o local do registro de ponto."
+        "NSCameraUsageDescription": "O Ponto Fragata precisa de acesso à câmera para reconhecimento facial no registro de ponto.",
+        "NSLocationWhenInUseUsageDescription": "O Ponto Fragata precisa da sua localização para validar o local do registro de ponto."
       }
     },
     "android": {
@@ -29,7 +29,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0A0A0A"
       },
-      "package": "com.viggo.app",
+      "package": "com.pontofragata.app",
       "permissions": [
         "CAMERA",
         "ACCESS_FINE_LOCATION",
@@ -41,13 +41,13 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "O Viggo precisa de acesso à câmera para reconhecimento facial no registro de ponto."
+          "cameraPermission": "O Ponto Fragata precisa de acesso à câmera para reconhecimento facial no registro de ponto."
         }
       ],
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "O Viggo precisa da sua localização para validar o local do registro de ponto."
+          "locationAlwaysAndWhenInUsePermission": "O Ponto Fragata precisa da sua localização para validar o local do registro de ponto."
         }
       ]
     ],

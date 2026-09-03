@@ -13,7 +13,7 @@ export interface SignatureResult {
 /**
  * Gera hash SHA-256 do conteúdo e, se CERT_A1 configurado, assina com ICP-Brasil A1 (PKCS#7 detached).
  * Plug-and-play: sem certificado → apenas hash (assinado:false). Com .p12 → PKCS#7 base64 em `assinatura`.
- * Suporta CERT_A1_PATH (./certs/viggo-a1.p12) ou CERT_A1_BASE64 (base64 do .p12 para Docker/K8s).
+ * Suporta CERT_A1_PATH (./certs/fragata-certs.pfx) ou CERT_A1_BASE64 (base64 do .p12 para Docker/K8s).
  */
 export function signContent(content: string): SignatureResult {
   const hash = createHash("sha256").update(content).digest("hex");
