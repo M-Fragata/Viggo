@@ -200,6 +200,12 @@ export function TotemPage() {
     }
   }
 
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, []);
+
   function resetToIdle() {
     stopCamera();
     setScreen({ name: "idle" });
@@ -291,13 +297,13 @@ export function TotemPage() {
     }
   }
 
-  const handleVideoRef = (el: HTMLVideoElement | null) => {
+  const handleVideoRef = useCallback((el: HTMLVideoElement | null) => {
     videoRef.current = el;
     if (el && streamRef.current && el.srcObject !== streamRef.current) {
       el.srcObject = streamRef.current;
       el.play().catch((err) => console.error("Erro ao reproduzir stream da câmera no Totem:", err));
     }
-  };
+  }, []);
 
   async function handleStartFaceRegister() {
     setError(null);
