@@ -20,7 +20,7 @@ import {
   Send,
 } from "lucide-react";
 import { toast } from "sonner";
-import { api, ApiError, type TotemVerifyResponse } from "../../services/api";
+import { api, ApiError, isApiError, type TotemVerifyResponse } from "../../services/api";
 import { LivenessChallenge } from "../../components/LivenessChallenge";
 import { preloadFaceModels, areFaceModelsLoaded } from "../../utils/faceModels";
 import { saveOfflineCheckin, getPendingOfflineCheckins, removeOfflineCheckin, type OfflineCheckin } from "../../utils/offlineQueue";
@@ -370,7 +370,7 @@ export function TotemPage() {
       console.error("Erro ao registrar ponto no totem:", err);
 
       // 1. Resposta real do servidor HTTP (ApiError)
-      if (err instanceof ApiError) {
+      if (isApiError(err) || err instanceof ApiError) {
         const msg = err.message || "Erro ao registrar ponto. Tente novamente.";
         setError(msg);
         toast.error(msg, { duration: 6000 });
@@ -380,13 +380,17 @@ export function TotemPage() {
       }
 
       // 2. Falha de rede nativa (sem resposta HTTP)
-      const isNetworkError =
-        !navigator.onLine ||
+      const isFetchNetworkError =
+        err instanceof TypeError ||
         (err instanceof Error &&
-          (err.message.includes("fetch") ||
-           err.message.includes("Network") ||
-           err.message.includes("Failed") ||
-           err.message.includes("conexão")));
+          (err.message.toLowerCase().includes("failed to fetch") ||
+           err.message.toLowerCase().includes("networkerror") ||
+           err.message.toLowerCase().includes("network request failed") ||
+           err.message.toLowerCase().includes("load failed") ||
+           err.message.toLowerCase().includes("net::err") ||
+           err.message.toLowerCase().includes("conexão")));
+
+      const isNetworkError = isFetchNetworkError;
 
       if (isNetworkError && userId && pendingType) {
         try {

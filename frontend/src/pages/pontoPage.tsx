@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { useNavigate } from "react-router"
 import { toast } from "sonner"
 
-import { api, ApiError } from "../services/api"
+import { api, ApiError, isApiError } from "../services/api"
 import { LivenessChallenge } from "../components/LivenessChallenge"
 import { useAuth } from "../hooks/useAuth"
 import { useCompany } from "../hooks/useCompany"
@@ -350,8 +350,8 @@ export function PontoPage() {
             console.error("Erro ao registrar o ponto:", error);
 
             // 1. Resposta real do servidor HTTP (ApiError)
-            // Se o servidor respondeu com status (400, 401, 403, 409, 500), NUNCA é falta de internet!
-            if (error instanceof ApiError) {
+            // Se o servidor respondeu com status (400, 401, 403, 409, 429, 500, etc.), NUNCA é falta de internet!
+            if (isApiError(error) || error instanceof ApiError) {
                 setIsRegistering(false);
                 setVideoOpen(false);
                 setPendingCheckin(null);
@@ -365,13 +365,19 @@ export function PontoPage() {
             }
 
             // 2. Falha de rede nativa no navegador (sem resposta HTTP)
-            const isNetworkError =
-                !navigator.onLine ||
+            // TypeError é lançado nativamente pelo fetch() quando a conexão não pode ser estabelecida
+            const isFetchNetworkError =
+                error instanceof TypeError ||
                 (error instanceof Error &&
-                    (error.message.includes("fetch") ||
-                     error.message.includes("Network") ||
-                     error.message.includes("Failed") ||
-                     error.message.includes("conexão")));
+                    (error.message.toLowerCase().includes("failed to fetch") ||
+                     error.message.toLowerCase().includes("networkerror") ||
+                     error.message.toLowerCase().includes("network request failed") ||
+                     error.message.toLowerCase().includes("load failed") ||
+                     error.message.toLowerCase().includes("net::err") ||
+                     error.message.toLowerCase().includes("conexão")));
+
+            // Só entra em contingência offline se a requisição fetch tiver falhado genuinamente por rede
+            const isNetworkError = isFetchNetworkError;
 
             if (isNetworkError && user?.id && pendingCheckin?.type) {
                 try {

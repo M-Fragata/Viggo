@@ -20,7 +20,17 @@ export class ApiError extends Error {
     this.code = code;
     this.status = status;
     this.data = data;
+    Object.setPrototypeOf(this, ApiError.prototype);
   }
+}
+
+export function isApiError(err: unknown): err is ApiError {
+  return (
+    err instanceof ApiError ||
+    (typeof err === "object" &&
+      err !== null &&
+      ((err as any).name === "ApiError" || typeof (err as any).status === "number"))
+  );
 }
 
 async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {
