@@ -32,7 +32,7 @@ export function LayoutPage() {
           <div className="flex items-center gap-3">
             {name && (
               <p className="hidden sm:block text-xs text-slate-500 dark:text-slate-400 font-medium">
-                Olá, <strong className="text-slate-800 dark:text-white font-bold">{name}</strong>
+                Olá, <strong className="text-emerald-900 dark:text-white font-bold">{name}</strong>
               </p>
             )}
 

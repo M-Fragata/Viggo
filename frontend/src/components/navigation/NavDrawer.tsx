@@ -223,7 +223,7 @@ export function NavDrawer({ isOpen, onClose }: NavDrawerProps) {
                 {name ? name.slice(0, 2).toUpperCase() : "U"}
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-bold text-slate-800 dark:text-white truncate">
+                <p className="text-xs font-bold text-emerald-900 dark:text-white truncate">
                   {name || "Usuário"}
                 </p>
                 {company && (
