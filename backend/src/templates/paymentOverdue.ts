@@ -37,7 +37,7 @@ export function renderPaymentOverdue(props: {
         <tr><td style="padding:12px 16px; font-size:13px; color:#5a5a5c;"><strong style="color:#0a0a0a;">Vencimento:</strong> ${formatDate(props.dueDate)}</td></tr>
       </table>
       <p style="margin:16px 0 0 0; color:#5a5a5c; font-size:13px; line-height:20px;">
-        Após a confirmação do pagamento, o acesso é liberado automaticamente. Em caso de dúvidas, fale com <a href="mailto:suporte@fragata.me" style="color:#00b48a;">suporte@fragata.me</a>.
+        Após a confirmação do pagamento, o acesso é liberado automaticamente. Em caso de dúvidas, fale com <a href="mailto:matheus@fragata.me" style="color:#00b48a;">matheus@fragata.me</a>.
       </p>
     `,
   });
@@ -48,7 +48,9 @@ Empresa: ${props.companyName}
 Valor: ${formatBRL(props.amount)}
 Vencimento: ${formatDate(props.dueDate)}
 
-Sua empresa foi suspensa. Regularize em: ${frontendUrl}/plano`;
+Sua empresa foi suspensa. Regularize em: ${frontendUrl}/plano
+ 
+Em caso de dúvidas, entre em contato com matheus@fragata.me.`;
 
   return { subject, html, text };
 }

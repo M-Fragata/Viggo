@@ -30,7 +30,7 @@ function assertBaseStructure(html: string) {
   expect(html).toContain("#0a0a0a"); // header
   expect(html).toContain("#00d4a4"); // brand
   expect(html).toContain("Ponto Fragata");
-  expect(html).toContain("suporte@fragata.me");
+  expect(html).toContain("matheus@fragata.me");
   expect(html).toContain("dpo@fragata.me");
 }
 

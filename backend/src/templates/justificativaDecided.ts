@@ -57,7 +57,9 @@ Tipo: ${label}
 Data: ${formatDate(props.dataInicio)}
 Resultado: ${props.aprovado ? "Aprovada" : "Não aprovada"}
 
-Ver: ${frontendUrl}/justificativas`;
+Ver: ${frontendUrl}/justificativas
+ 
+Em caso de dúvidas, entre em contato com matheus@fragata.me.`;
 
   return { subject, html, text };
 }

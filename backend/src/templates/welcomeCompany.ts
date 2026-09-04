@@ -59,6 +59,8 @@ O que você já pode fazer:
 
 Acesse: ${frontendUrl}/
 
+Em caso de dúvidas, entre em contato com matheus@fragata.me.
+
 Equipe Ponto Fragata`;
 
   return { subject, html, text };

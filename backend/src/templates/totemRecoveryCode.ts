@@ -29,6 +29,6 @@ export function renderTotemRecoveryCode(props: {
     `,
   });
 
-  const text = `Código de desbloqueio do Totem: ${props.code}\nEmpresa: ${props.companyName}\nExpira em 10 minutos. Se não foi você, verifique o terminal físico.`;
+  const text = `Código de desbloqueio do Totem: ${props.code}\nEmpresa: ${props.companyName}\nExpira em 10 minutos. Se não foi você, verifique o terminal físico.\n\nEm caso de dúvidas, entre em contato com matheus@fragata.me.`;
   return { subject, html, text };
 }

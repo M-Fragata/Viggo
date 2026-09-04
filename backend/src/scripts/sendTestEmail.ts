@@ -52,7 +52,7 @@ async function main() {
   const finalTo = DEFAULT_TEST_TO;
   (Env as Record<string, unknown>).EMAIL_TEST_TO = toArg ? toArg : finalTo;
   (Env as Record<string, unknown>).EMAIL_FROM = TEMP_FROM;
-  (Env as Record<string, unknown>).EMAIL_REPLY_TO = "suporte@fragata.me";
+  (Env as Record<string, unknown>).EMAIL_REPLY_TO = "matheus@fragata.me";
 
   // Garantir provider real (não mock)
   emailService.resetEmailProvider();

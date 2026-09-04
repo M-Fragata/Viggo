@@ -52,7 +52,9 @@ Tipo: ${label}
 Período: ${periodo}
 Descrição: ${props.descricao}
 
-Avaliar: ${frontendUrl}/justificativas`;
+Avaliar: ${frontendUrl}/justificativas
+ 
+Em caso de dúvidas, entre em contato com matheus@fragata.me.`;
 
   return { subject, html, text };
 }

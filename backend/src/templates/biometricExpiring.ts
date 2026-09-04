@@ -42,7 +42,9 @@ Sua biometria expira em ${formatDate(props.expiresAt)}.
 
 Revalide em: ${frontendUrl}/register
 
-Se não revalidar, seu acesso por reconhecimento facial será removido.`;
+Se não revalidar, seu acesso por reconhecimento facial será removido.
+ 
+Em caso de dúvidas, entre em contato com matheus@fragata.me.`;
 
   return { subject, html, text };
 }

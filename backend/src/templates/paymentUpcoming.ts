@@ -42,6 +42,6 @@ export function renderPaymentUpcoming(props: {
       </p>
     `,
   });
-  const text = `${subject}\nEmpresa: ${props.companyName}\nValor: ${formatBRL(props.amount)}\nVencimento: ${formatDate(props.dueDate)}\n${frontendUrl}/plano`;
+  const text = `${subject}\nEmpresa: ${props.companyName}\nValor: ${formatBRL(props.amount)}\nVencimento: ${formatDate(props.dueDate)}\n${frontendUrl}/plano\n\nEm caso de dúvidas, entre em contato com matheus@fragata.me.`;
   return { subject, html, text };
 }

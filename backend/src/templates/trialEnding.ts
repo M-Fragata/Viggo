@@ -52,7 +52,9 @@ export function renderTrialEnding(props: {
 
 O trial da ${props.companyName} termina em ${formatDate(props.planExpiresAt)} (faltam ${props.daysRemaining} dias).
 
-Ative seu plano em: ${frontendUrl}/plano`;
+Ative seu plano em: ${frontendUrl}/plano
+ 
+Em caso de dúvidas, entre em contato com matheus@fragata.me.`;
 
   return { subject, html, text };
 }

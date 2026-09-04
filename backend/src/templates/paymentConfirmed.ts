@@ -62,7 +62,9 @@ Forma: ${billingLabel(props.billingType)}
 Data: ${formatDate(props.paidAt)}
 ${props.nfseUrl ? `NFSe: ${props.nfseUrl}` : ""}
 
-Ver histórico: ${frontendUrl}/plano`;
+Ver histórico: ${frontendUrl}/plano
+ 
+Em caso de dúvidas, entre em contato com matheus@fragata.me.`;
 
   return { subject, html, text };
 }

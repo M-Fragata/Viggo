@@ -25,6 +25,6 @@ export function renderBiometricPurged(props: {
       </p>
     `,
   });
-  const text = `Olá, ${props.userName}. Sua biometria foi removida por expirar (24 meses, LGPD). Cadastre novamente em: ${frontendUrl}/register`;
+  const text = `Olá, ${props.userName}. Sua biometria foi removida por expirar (24 meses, LGPD). Cadastre novamente em: ${frontendUrl}/register\n\nEm caso de dúvidas, entre em contato com matheus@fragata.me.`;
   return { subject, html, text };
 }

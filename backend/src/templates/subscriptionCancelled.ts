@@ -22,10 +22,10 @@ export function renderSubscriptionCancelled(props: {
         <span style="font-size:12px; color:#888;">Para reativar, escolha novamente PIX ou Cartão em “Plano”.</span>
       </div>
       <p style="margin:12px 0 0 0; color:#5a5a5c; font-size:13px;">
-        Dúvidas? <a href="mailto:suporte@fragata.me" style="color:#00b48a;">suporte@fragata.me</a>
+        Em caso de dúvidas, entre em contato com <a href="mailto:matheus@fragata.me" style="color:#00b48a;">matheus@fragata.me</a>
       </p>
     `,
   });
-  const text = `Assinatura cancelada — ${props.companyName}\nReative em: ${frontendUrl}/plano`;
+  const text = `Assinatura cancelada — ${props.companyName}\nReative em: ${frontendUrl}/plano\n\nEm caso de dúvidas, entre em contato com matheus@fragata.me.`;
   return { subject, html, text };
 }

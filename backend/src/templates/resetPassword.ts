@@ -22,6 +22,6 @@ export function renderResetPassword(props: { code: string }): { subject: string;
       </p>
     `,
   });
-  const text = `Código de redefinição: ${props.code}\nExpira em 10 minutos. Se não solicitou, ignore.`;
+  const text = `Código de redefinição: ${props.code}\nExpira em 10 minutos. Se não solicitou, ignore.\n\nEm caso de dúvidas, entre em contato com matheus@fragata.me.`;
   return { subject, html, text };
 }

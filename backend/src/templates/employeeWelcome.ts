@@ -27,6 +27,6 @@ export function renderEmployeeWelcome(props: {
       </p>
     `,
   });
-  const text = `Bem-vindo, ${props.employeeName}! Você faz parte da ${props.companyName} no Ponto Fragata. Acesse: ${frontendUrl}/`;
+  const text = `Bem-vindo, ${props.employeeName}! Você faz parte da ${props.companyName} no Ponto Fragata. Acesse: ${frontendUrl}/\n\nEm caso de dúvidas, entre em contato com matheus@fragata.me.`;
   return { subject, html, text };
 }
