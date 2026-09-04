@@ -188,10 +188,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setName(formatName(decoded.name));
         setIsImpersonated(false);
         setImpersonatedCompanyName(null);
+        window.location.href = "/master";
         return;
       }
     }
     clearSession();
+    window.location.href = "/";
   }, [clearSession]);
 
   const isMaster = user?.role === "MASTER";
