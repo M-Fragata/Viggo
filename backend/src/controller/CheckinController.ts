@@ -223,8 +223,6 @@ export class CheckinController {
 
             // Headers para clientes que validam via header (espelha AEJ/AFD)
             res.setHeader("X-Hash-SHA256", sig.hash);
-            if (sig.assinado && sig.assinatura) res.setHeader("X-Signature", sig.assinatura);
-            if (sig.erro) res.setHeader("X-Signature-Error", sig.erro);
 
             if (foraDaEscala && escalaMotivo) {
                 res.setHeader("X-Fora-Da-Escala", "true");

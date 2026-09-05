@@ -392,6 +392,36 @@ export function TotemPage() {
 
       const isNetworkError = isFetchNetworkError;
 
+      // Se o dispositivo indica que está online, faz verificação de recuperação:
+      // se o ponto foi gravado no banco antes de eventual erro de gateway (ex: 502),
+      // recupera o estado de sucesso sem registrar ponto offline duplicado
+      if (navigator.onLine && userId && pendingType) {
+        try {
+          const checkinsHoje = await api.checkins.list();
+          const existing = checkinsHoje.find(
+            (c) =>
+              c.type === pendingType &&
+              Math.abs(new Date(c.createdAt).getTime() - Date.now()) < 3 * 60 * 1000
+          );
+          if (existing) {
+            const existingComprovante =
+              "comprovante" in existing && typeof (existing as { comprovante?: unknown }).comprovante === "string"
+                ? (existing as { comprovante: string }).comprovante
+                : undefined;
+            setScreen({
+              name: "success",
+              comprovante: existingComprovante,
+              isOffline: false,
+            });
+            setIsRegistering(false);
+            toast.success("Ponto registrado com sucesso!");
+            return;
+          }
+        } catch {
+          // Servidor realmente inacessível
+        }
+      }
+
       if (isNetworkError && userId && pendingType) {
         try {
           const offlineItem = await saveOfflineCheckin({

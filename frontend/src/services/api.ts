@@ -29,7 +29,8 @@ export function isApiError(err: unknown): err is ApiError {
     err instanceof ApiError ||
     (typeof err === "object" &&
       err !== null &&
-      ((err as any).name === "ApiError" || typeof (err as any).status === "number"))
+      ("name" in err && (err as Record<string, unknown>).name === "ApiError" ||
+       "status" in err && typeof (err as Record<string, unknown>).status === "number"))
   );
 }
 

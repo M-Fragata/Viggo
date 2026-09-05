@@ -22,6 +22,7 @@ type ChekinProps = {
     type: "ENTRY" | "LUNCH_START" | "LUNCH_END" | "EXIT",
     latitude: number | null,
     longitude: number | null,
+    comprovante?: string,
 }
 
 export function PontoPage() {
@@ -378,6 +379,42 @@ export function PontoPage() {
 
             // Só entra em contingência offline se a requisição fetch tiver falhado genuinamente por rede
             const isNetworkError = isFetchNetworkError;
+
+            // Se o navegador indica que está online, fazemos uma verificação de recuperação imediata:
+            // pode ter ocorrido uma falha de gateway/proxy (ex: 502 Bad Gateway) APÓS o ponto
+            // já ter sido salvo com sucesso no banco de dados!
+            if (navigator.onLine && pendingCheckin?.type) {
+                try {
+                    const checkinsHoje = await api.checkins.list();
+                    const existing = checkinsHoje.find(
+                        (c) =>
+                            c.type === pendingCheckin.type &&
+                            Math.abs(new Date(c.createdAt).getTime() - Date.now()) < 3 * 60 * 1000
+                    );
+
+                    if (existing) {
+                        // O ponto foi gravado no banco com sucesso antes da falha no gateway!
+                        setIsRegistering(false);
+                        setVideoOpen(false);
+                        setIsSuccess(true);
+                        setMessage("Ponto registrado com sucesso!");
+                        setPendingCheckin(null);
+                        setFaceToken(null);
+                        const existingComprovante = "comprovante" in existing && typeof (existing as { comprovante?: unknown }).comprovante === "string"
+                            ? (existing as { comprovante: string }).comprovante
+                            : null;
+                        setComprovanteText(existingComprovante);
+                        setCheckins((prev) => {
+                            const filtered = prev.filter((c) => c.type !== existing.type);
+                            return [...filtered, existing as ChekinProps];
+                        });
+                        toast.success("Ponto registrado com sucesso!");
+                        return;
+                    }
+                } catch {
+                    // Falha ao listar checkins confirma que a rede/servidor está inacessível
+                }
+            }
 
             if (isNetworkError && user?.id && pendingCheckin?.type) {
                 try {
