@@ -1,6 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 
-export const API_URL = 'https://viggoapi.fragata.me';
+export const API_URL = 'https://pontofragata.com.br';
 
 const TOKEN_KEY = '@fragata:token';
 const USER_KEY = '@fragata:user';
