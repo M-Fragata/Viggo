@@ -22,7 +22,7 @@ export function renderJustificativaCreated(props: {
   const label = tipoLabel[props.tipo] || props.tipo;
   const subject = `Nova justificativa: ${label} — ${props.employeeName}`;
   const preheader = `${props.employeeName} enviou uma justificativa do tipo ${label}.`;
-  const frontendUrl = Env.FRONTEND_URL || "https://viggo.fragata.me";
+  const frontendUrl = Env.FRONTEND_URL;
   const periodo = props.dataFim
     ? `${formatDate(props.dataInicio)} até ${formatDate(props.dataFim)}`
     : formatDate(props.dataInicio);

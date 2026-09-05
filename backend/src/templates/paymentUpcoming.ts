@@ -19,7 +19,7 @@ export function renderPaymentUpcoming(props: {
     ? `Vencimento amanhã — Ponto Fragata ${formatBRL(props.amount)}`
     : `Lembrete: pagamento Ponto Fragata em 3 dias — ${formatBRL(props.amount)}`;
   const preheader = `Seu pagamento de ${formatBRL(props.amount)} vence em ${formatDate(props.dueDate)}.`;
-  const frontendUrl = Env.FRONTEND_URL || "https://viggo.fragata.me";
+  const frontendUrl = Env.FRONTEND_URL;
   const badgeColor = isUrgent ? "#d45656" : "#c37d0d";
   const badgeBg = isUrgent ? "#fdecea" : "#fef3e2";
   const html = baseLayout({

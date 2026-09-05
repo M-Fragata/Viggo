@@ -7,7 +7,7 @@ export function renderEmployeeWelcome(props: {
 }): { subject: string; html: string; text: string } {
   const subject = `Bem-vindo à ${props.companyName} — seu acesso Ponto Fragata está pronto`;
   const preheader = `Seu acesso à ${props.companyName} no Ponto Fragata foi criado.`;
-  const frontendUrl = Env.FRONTEND_URL || "https://viggo.fragata.me";
+  const frontendUrl = Env.FRONTEND_URL;
   const html = baseLayout({
     preheader,
     title: `Bem-vindo, ${props.employeeName}! 👋`,

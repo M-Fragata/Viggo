@@ -6,7 +6,7 @@ export function renderSubscriptionCancelled(props: {
 }): { subject: string; html: string; text: string } {
   const subject = `Assinatura cancelada — ${props.companyName}`;
   const preheader = `Sua assinatura Ponto Fragata foi cancelada.`;
-  const frontendUrl = Env.FRONTEND_URL || "https://viggo.fragata.me";
+  const frontendUrl = Env.FRONTEND_URL;
   const html = baseLayout({
     preheader,
     title: "Assinatura cancelada",

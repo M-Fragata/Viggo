@@ -7,7 +7,7 @@ const mockEnv = vi.hoisted(() => ({
   EMAIL_PREVIEW: false,
   EMAIL_TEST_TO: undefined as unknown,
   RESEND_API_KEY: "test-resend-key",
-  EMAIL_FROM: "Ponto Fragata <noreply@fragata.me>",
+  EMAIL_FROM: "Ponto Fragata <matheus@fragata.me>",
   EMAIL_REPLY_TO: undefined as unknown,
   FRONTEND_URL: "http://localhost:3000",
 }) as Record<string, unknown>);
@@ -74,7 +74,7 @@ describe("emailService", () => {
     mockEnv.EMAIL_PREVIEW = false;
     mockEnv.EMAIL_TEST_TO = undefined;
     mockEnv.RESEND_API_KEY = "test-resend-key";
-    mockEnv.EMAIL_FROM = "Ponto Fragata <noreply@fragata.me>";
+    mockEnv.EMAIL_FROM = "Ponto Fragata <matheus@fragata.me>";
     mockEnv.EMAIL_REPLY_TO = undefined;
     mockProvider = createMockProvider();
     emailService.setEmailProvider(mockProvider);
@@ -210,10 +210,10 @@ describe("emailService", () => {
 
   describe("buildOpts / replyTo", () => {
     it("deve injetar replyTo quando EMAIL_REPLY_TO definido", async () => {
-      mockEnv.EMAIL_REPLY_TO = "suporte@fragata.me";
+      mockEnv.EMAIL_REPLY_TO = "matheus@fragata.me";
       await emailService.sendResetPassword({ to: "a@test.com", code: "123456" });
       expect(mockProvider.send).toHaveBeenCalledWith(
-        expect.objectContaining({ replyTo: "suporte@fragata.me" })
+        expect.objectContaining({ replyTo: "matheus@fragata.me" })
       );
     });
 
@@ -256,7 +256,7 @@ describe("emailService", () => {
 
   describe("métodos públicos — sanitários", () => {
     it("sendWelcomeCompany deve usar EMAIL_FROM e render", async () => {
-      mockEnv.EMAIL_FROM = "Ponto Fragata <noreply@fragata.me>";
+      mockEnv.EMAIL_FROM = "Ponto Fragata <matheus@fragata.me>";
       await emailService.sendWelcomeCompany({
         to: "admin@test.com",
         adminName: "João",
@@ -265,7 +265,7 @@ describe("emailService", () => {
       });
       expect(mockProvider.send).toHaveBeenCalledWith(
         expect.objectContaining({
-          from: "Ponto Fragata <noreply@fragata.me>",
+          from: "Ponto Fragata <matheus@fragata.me>",
           to: ["admin@test.com"],
           subject: "Bem-vindo",
           html: "<html>welcome</html>",

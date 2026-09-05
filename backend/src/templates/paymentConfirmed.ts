@@ -25,7 +25,7 @@ export function renderPaymentConfirmed(props: {
 }): { subject: string; html: string; text: string } {
   const subject = `Pagamento confirmado — Ponto Fragata ${formatBRL(props.amount)}`;
   const preheader = `Recebemos seu pagamento de ${formatBRL(props.amount)}. Sua assinatura está ativa.`;
-  const frontendUrl = Env.FRONTEND_URL || "https://viggo.fragata.me";
+  const frontendUrl = Env.FRONTEND_URL;
 
   const nfseBlock = props.nfseUrl
     ? `<p style="margin:12px 0 0 0; font-size:13px;"><a href="${props.nfseUrl}" target="_blank" style="color:#00b48a; text-decoration:underline;">Baixar NFSe</a></p>`

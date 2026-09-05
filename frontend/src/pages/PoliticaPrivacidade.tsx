@@ -2,7 +2,7 @@ import { useNavigate } from "react-router";
 
 const VERSAO = "1.0";
 const DATA_VIGENCIA = "23 de julho de 2026";
-const EMAIL_DPO = "dpo@fragata.me";
+const EMAIL_DPO = "matheus@fragata.me";
 
 export function PoliticaPrivacidade() {
   const navigate = useNavigate();

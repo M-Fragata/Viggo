@@ -740,10 +740,10 @@ export function AppShowcase() {
 
                         <div className="divide-y divide-white/5">
                           {[
-                            { initials: "MF", name: "Matheus Fragata", email: "matheus.fragata@fragata.me", role: "ADMIN", schedule: "Comercial 44h", face: true },
-                            { initials: "CS", name: "Carolina Silva", email: "carolina.silva@fragata.me", role: "FUNCIONÁRIO", schedule: "Flexível 40h", face: true },
-                            { initials: "RA", name: "Rodrigo Alves", email: "rodrigo.alves@fragata.me", role: "FUNCIONÁRIO", schedule: "Escala 12x36", face: true },
-                            { initials: "LM", name: "Lucas Mendonça", email: "lucas.mendonca@fragata.me", role: "FUNCIONÁRIO", schedule: "Comercial 44h", face: false },
+                            { initials: "MF", name: "Matheus Fragata", email: "matheus@fragata.me", role: "ADMIN", schedule: "Comercial 44h", face: true },
+                            { initials: "CS", name: "Carolina Silva", email: "carolina.silva@empresa.com", role: "FUNCIONÁRIO", schedule: "Flexível 40h", face: true },
+                            { initials: "RA", name: "Rodrigo Alves", email: "rodrigo.alves@empresa.com", role: "FUNCIONÁRIO", schedule: "Escala 12x36", face: true },
+                            { initials: "LM", name: "Lucas Mendonça", email: "lucas.mendonca@empresa.com", role: "FUNCIONÁRIO", schedule: "Comercial 44h", face: false },
                           ].map((emp, i) => (
                             <div key={i} className={`p-3 flex items-center justify-between gap-3 transition-colors ${
                               isDark ? "hover:bg-white/[0.02]" : "hover:bg-slate-50"
@@ -1059,7 +1059,7 @@ export function AppShowcase() {
                             <input
                               type="text"
                               readOnly
-                              value="carlos.mendes@fragata.me"
+                              value="carlos.mendes@empresa.com"
                               className={`w-full px-3 py-2 rounded-xl border font-medium ${
                                 isDark ? "bg-white/5 border-white/10 text-slate-300" : "bg-slate-50 border-slate-200 text-slate-700"
                               }`}

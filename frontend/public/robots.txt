@@ -59,4 +59,4 @@ Allow: /llms.txt
 Allow: /llms-full.txt
 
 # Mapa do site oficial
-Sitemap: https://viggo.fragata.me/sitemap.xml
+Sitemap: https://pontofragata.com.br/sitemap.xml

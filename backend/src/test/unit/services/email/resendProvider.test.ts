@@ -33,7 +33,7 @@ describe("ResendProvider", () => {
     mockSend.mockResolvedValue({ data: { id: "resend-id-1" }, error: null });
     const provider = new ResendProvider();
     const result = await provider.send({
-      from: "Ponto Fragata <noreply@fragata.me>",
+      from: "Ponto Fragata <matheus@fragata.me>",
       to: "user@test.com",
       subject: "Teste",
       html: "<html>hello</html>",
@@ -41,7 +41,7 @@ describe("ResendProvider", () => {
     expect(result).toEqual({ id: "resend-id-1" });
     expect(mockSend).toHaveBeenCalledWith(
       expect.objectContaining({
-        from: "Ponto Fragata <noreply@fragata.me>",
+        from: "Ponto Fragata <matheus@fragata.me>",
         to: ["user@test.com"],
         subject: "Teste",
         html: "<html>hello</html>",
@@ -99,10 +99,10 @@ describe("ResendProvider", () => {
       to: "u@test.com",
       subject: "s",
       html: "<p>hi</p>",
-      replyTo: "suporte@fragata.me",
+      replyTo: "matheus@fragata.me",
     });
     const payload = mockSend.mock.calls[0]![0] as Record<string, unknown>;
-    expect(payload.replyTo).toBe("suporte@fragata.me");
+    expect(payload.replyTo).toBe("matheus@fragata.me");
   });
 
   it("deve incluir text e replyTo simultaneamente", async () => {

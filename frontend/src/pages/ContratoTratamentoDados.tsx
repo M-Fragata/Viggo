@@ -35,7 +35,7 @@ export function ContratoTratamentoDados() {
               <div className="bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-xl p-4">
                 <p className="text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Operadora</p>
                 <p className="text-sm text-slate-900 dark:text-slate-200 font-medium">Ponto Fragata Tecnologia em Ponto Eletrônico Ltda.</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">DPO: dpo@fragata.me</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">DPO: matheus@fragata.me</p>
               </div>
             </div>
           </section>

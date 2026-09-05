@@ -18,7 +18,7 @@ function esc(str: string): string {
 }
 
 export function baseLayout(props: BaseLayoutProps): string {
-  const frontendUrl = Env.FRONTEND_URL || "https://viggo.fragata.me";
+  const frontendUrl = Env.FRONTEND_URL;
   const ctaBlock = props.ctaUrl && props.ctaLabel
     ? `
       <tr>
@@ -110,7 +110,7 @@ export function baseLayout(props: BaseLayoutProps): string {
                 <a href="${esc(frontendUrl)}/contrato-tratamento-dados" style="color:#00b48a; text-decoration:none;">DPA</a>
               </p>
               <p style="margin:8px 0 0 0; color:#a8a8aa; font-size:11px; line-height:16px; font-family:Inter, system-ui, sans-serif;">
-                Em caso de dúvidas, entre em contato: <a href="mailto:matheus@fragata.me" style="color:#888888; text-decoration:underline;">matheus@fragata.me</a> &nbsp;•&nbsp; DPO: dpo@fragata.me
+                Em caso de dúvidas, entre em contato: <a href="mailto:matheus@fragata.me" style="color:#888888; text-decoration:underline;">matheus@fragata.me</a>
               </p>
               <p style="margin:8px 0 0 0; color:#a8a8aa; font-size:11px; line-height:16px; font-family:Inter, system-ui, sans-serif;">
                 Este é um e-mail automático, por favor não responda diretamente.

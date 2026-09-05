@@ -76,7 +76,7 @@ export default function AdminScreen() {
       {token && (
         <WebView
           ref={webViewRef}
-          source={{ uri: 'https://viggo.fragata.me/admin/dashboard' }}
+          source={{ uri: 'https://pontofragata.com.br/admin/dashboard' }}
           injectedJavaScriptBeforeContentLoaded={injectedJavaScript}
           style={styles.webview}
           onLoadEnd={() => setLoading(false)}

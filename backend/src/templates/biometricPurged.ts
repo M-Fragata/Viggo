@@ -6,7 +6,7 @@ export function renderBiometricPurged(props: {
 }): { subject: string; html: string; text: string } {
   const subject = `Sua biometria foi removida — revalidação necessária`;
   const preheader = `Sua biometria expirou e foi removida por segurança (LGPD).`;
-  const frontendUrl = Env.FRONTEND_URL || "https://viggo.fragata.me";
+  const frontendUrl = Env.FRONTEND_URL;
   const html = baseLayout({
     preheader,
     title: "Biometria removida 🔒",

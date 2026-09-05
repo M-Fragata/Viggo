@@ -12,7 +12,7 @@ export function renderWelcomeCompany(props: {
 }): { subject: string; html: string; text: string } {
   const subject = `Bem-vindo ao Ponto Fragata, ${props.companyName} — seu trial de 30 dias começou`;
   const preheader = `Sua empresa já está pronta para bater ponto com reconhecimento facial.`;
-  const frontendUrl = Env.FRONTEND_URL || "https://viggo.fragata.me";
+  const frontendUrl = Env.FRONTEND_URL;
 
   const html = baseLayout({
     preheader,

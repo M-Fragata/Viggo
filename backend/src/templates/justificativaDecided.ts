@@ -25,7 +25,7 @@ export function renderJustificativaDecided(props: {
   const preheader = props.aprovado
     ? `Sua justificativa do tipo ${label} foi aprovada.`
     : `Sua justificativa do tipo ${label} não foi aprovada.`;
-  const frontendUrl = Env.FRONTEND_URL || "https://viggo.fragata.me";
+  const frontendUrl = Env.FRONTEND_URL;
 
   const badge = props.aprovado
     ? `<div style="display:inline-block; padding:6px 12px; background:#e6f9f3; border:1px solid #00d4a4; color:#1ba673; border-radius:9999px; font-size:12px; font-weight:700; margin-bottom:12px;">✓ Aprovada</div>`

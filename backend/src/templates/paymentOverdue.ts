@@ -16,7 +16,7 @@ export function renderPaymentOverdue(props: {
 }): { subject: string; html: string; text: string } {
   const subject = `Pagamento em atraso — regularize sua assinatura Ponto Fragata`;
   const preheader = `Sua empresa ${props.companyName} está com pagamento em atraso de ${formatBRL(props.amount)}.`;
-  const frontendUrl = Env.FRONTEND_URL || "https://viggo.fragata.me";
+  const frontendUrl = Env.FRONTEND_URL;
 
   const html = baseLayout({
     preheader,

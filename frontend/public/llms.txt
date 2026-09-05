@@ -22,10 +22,10 @@ O **Ponto Fragata** é uma solução B2B SaaS desenvolvida para empresas brasile
 - Empresas de Logística, Frotas e Home Office / Trabalho Híbrido
 
 ## Links Oficiais
-- **Página Oficial:** https://viggo.fragata.me/page
-- **Criar Conta / Teste Grátis 30 Dias:** https://viggo.fragata.me/company/signup
-- **Acesso ao Sistema:** https://viggo.fragata.me/
-- **Planos Personalizados (Enterprise):** https://viggo.fragata.me/planos/custom
-- **Termos de Uso:** https://viggo.fragata.me/termos-de-uso
-- **Política de Privacidade & LGPD:** https://viggo.fragata.me/politica-privacidade
-- **Contrato de Tratamento de Dados (DPA):** https://viggo.fragata.me/contrato-de-tratamento-de-dados
+- **Página Oficial:** https://pontofragata.com.br/page
+- **Criar Conta / Teste Grátis 30 Dias:** https://pontofragata.com.br/company/signup
+- **Acesso ao Sistema:** https://pontofragata.com.br/
+- **Planos Personalizados (Enterprise):** https://pontofragata.com.br/planos/custom
+- **Termos de Uso:** https://pontofragata.com.br/termos-de-uso
+- **Política de Privacidade & LGPD:** https://pontofragata.com.br/politica-privacidade
+- **Contrato de Tratamento de Dados (DPA):** https://pontofragata.com.br/contrato-de-tratamento-de-dados

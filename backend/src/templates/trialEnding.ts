@@ -15,7 +15,7 @@ export function renderTrialEnding(props: {
     ? `Último dia do seu trial Ponto Fragata — ative agora e não perca seus dados`
     : `Seu trial Ponto Fragata termina em 3 dias — ative seu plano`;
   const preheader = `Faltam ${props.daysRemaining} ${props.daysRemaining === 1 ? "dia" : "dias"} para o fim do trial da ${props.companyName}.`;
-  const frontendUrl = Env.FRONTEND_URL || "https://viggo.fragata.me";
+  const frontendUrl = Env.FRONTEND_URL;
   const badgeColor = isUrgent ? "#d45656" : "#c37d0d";
   const badgeBg = isUrgent ? "#fdecea" : "#fef3e2";
 
