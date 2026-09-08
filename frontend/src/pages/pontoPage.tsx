@@ -769,7 +769,7 @@ export function PontoPage() {
                                                     ) : (
                                                         <Download size={16} />
                                                     )}
-                                                    <span>{isDownloadingPdf ? "Baixando..." : "Baixar Comprovante"}</span>
+                                                    <span>{isDownloadingPdf ? "Baixando..." : "Baixar"}</span>
                                                 </button>
                                                 <button
                                                     type="button"
