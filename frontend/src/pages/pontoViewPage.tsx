@@ -1,12 +1,14 @@
 import { useState, useEffect, useMemo } from "react";
+import { toast } from "sonner";
 
 import { useAuth } from "../hooks/useAuth";
-import { api } from "../services/api";
+import { api, type ComprovanteDados } from "../services/api";
 
 import { Button } from "../components/Button";
 import { PageHeader } from "../components/common/PageHeader";
 import { PontoViewPageSkeleton } from "../components/PontoViewPageSkeleton";
-import { Clock, MapPin, Calendar } from "lucide-react";
+import { ComprovanteTicket } from "../components/ComprovanteTicket";
+import { Clock, Calendar, SquareText, Download, Loader2, X, MapPin, MapPinOff } from "lucide-react";
 
 type Checkin = {
   id: string;
@@ -21,6 +23,13 @@ export function PontoViewPage() {
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [checkins, setCheckins] = useState<Checkin[]>([]);
   const [isLoadingCheckins, setIsLoadingCheckins] = useState(true);
+  const [selectedComprovante, setSelectedComprovante] = useState<{
+    id: string;
+    dados?: ComprovanteDados;
+    text?: string;
+  } | null>(null);
+  const [isLoadingComprovante, setIsLoadingComprovante] = useState(false);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -83,6 +92,44 @@ export function PontoViewPage() {
     const m = String(minutes).padStart(2, "0");
     return `${h}:${m}h`;
   }, [checkins]);
+
+  async function handleOpenComprovante(checkinId: string) {
+    try {
+      setIsLoadingComprovante(true);
+      const res = await api.checkins.getComprovante(checkinId);
+      setSelectedComprovante({
+        id: checkinId,
+        dados: res.comprovanteDados,
+        text: res.comprovante,
+      });
+    } catch (error) {
+      console.error("Erro ao carregar comprovante:", error);
+      toast.error("Não foi possível carregar o comprovante deste ponto.");
+    } finally {
+      setIsLoadingComprovante(false);
+    }
+  }
+
+  async function handleDownloadPdf(checkinId: string, nsr?: string) {
+    try {
+      setIsDownloadingPdf(true);
+      const blob = await api.checkins.downloadComprovantePdf(checkinId);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `comprovante-ponto-${nsr || "ponto"}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      toast.success("Comprovante baixado com sucesso!");
+    } catch (error) {
+      console.error("Erro ao baixar PDF:", error);
+      toast.error("Erro ao baixar comprovante em PDF.");
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  }
 
   async function handleGetComprovantes(pontos: Checkin[]) {
     const printWindow = window.open("", "_blank");
@@ -233,37 +280,52 @@ export function PontoViewPage() {
               ) : (
                 <div className="relative border-l-2 border-slate-200 dark:border-white/10 ml-4 pl-8 space-y-8">
                   {checkins.map((ponto) => (
-                    <div key={ponto.id} className="relative">
-                      {/* Bolinha da Timeline */}
-                      <div className="absolute -left-[41px] top-1 w-4 h-4 rounded-full border-2 border-emerald-600 dark:border-emerald-400 bg-white dark:bg-[#111113]" />
+                    <div key={ponto.id} className="relative flex items-center justify-between">
+                      {/* Bolinha da Timeline centralizada na vertical */}
+                      <div className="absolute -left-[41px] top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-emerald-600 dark:border-emerald-400 bg-white dark:bg-[#111113]" />
 
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-bold text-slate-800 dark:text-white text-lg">
-                            {formatTime(ponto.createdAt)}
-                          </p>
-                          <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium uppercase tracking-wider">
-                            {formatType(ponto.type)}
-                          </p>
-                        </div>
-                        <div>
-                          {ponto.latitude != null && ponto.longitude != null ? (
-                            <a
-                              className="flex items-center gap-1 text-slate-400 dark:text-slate-500 text-xs hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-                              href={`https://www.google.com/maps/search/?api=1&query=${ponto.latitude},${ponto.longitude}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <MapPin size={12} />
-                              <Button
-                                title="Ver no mapa"
-                                className="hover:text-emerald-600 cursor-pointer text-xs"
-                              />
-                            </a>
-                          ) : (
-                            <span className="text-xs text-amber-600 dark:text-amber-400">Sem GPS</span>
-                          )}
-                        </div>
+                      {/* Coluna: Horário em cima / Tipo embaixo */}
+                      <div className="flex flex-col">
+                        <p className="font-bold text-slate-800 dark:text-white text-lg leading-tight">
+                          {formatTime(ponto.createdAt)}
+                        </p>
+                        <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold uppercase tracking-wider leading-tight mt-0.5">
+                          {formatType(ponto.type)}
+                        </p>
+                      </div>
+
+                      {/* Botões apenas com ícones centralizados na vertical */}
+                      <div className="flex items-center gap-2">
+                        {/* Botão de Comprovante (SquareText) */}
+                        <button
+                          type="button"
+                          onClick={() => handleOpenComprovante(ponto.id)}
+                          disabled={isLoadingComprovante}
+                          className="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-300 dark:hover:border-emerald-700/50 hover:bg-emerald-50/60 dark:hover:bg-emerald-950/20 transition-all cursor-pointer shadow-sm active:scale-95 disabled:opacity-50"
+                          title="Abrir Comprovante de Ponto"
+                        >
+                          <SquareText size={17} className="text-emerald-600 dark:text-emerald-400" />
+                        </button>
+
+                        {/* Botão de Localização (MapPin) */}
+                        {ponto.latitude != null && ponto.longitude != null ? (
+                          <a
+                            href={`https://www.google.com/maps/search/?api=1&query=${ponto.latitude},${ponto.longitude}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-300 dark:hover:border-emerald-700/50 hover:bg-emerald-50/60 dark:hover:bg-emerald-950/20 transition-all cursor-pointer shadow-sm active:scale-95"
+                            title="Ver localização no mapa"
+                          >
+                            <MapPin size={17} />
+                          </a>
+                        ) : (
+                          <span
+                            className="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200/50 dark:border-white/5 text-slate-300 dark:text-slate-600 cursor-not-allowed"
+                            title="Localização não informada (GPS negado)"
+                          >
+                            <MapPinOff size={16} />
+                          </span>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -302,6 +364,52 @@ export function PontoViewPage() {
               </div>
             </div>
           </main>
+
+          {/* Modal de Visualização do Comprovante Específico */}
+          {selectedComprovante && (
+            <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+              <div className="bg-white dark:bg-[#111113] rounded-3xl p-5 md:p-6 shadow-2xl w-full max-w-md border border-slate-200 dark:border-white/10 relative flex flex-col max-h-[90vh]">
+                <button
+                  type="button"
+                  onClick={() => setSelectedComprovante(null)}
+                  className="absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                  title="Fechar"
+                >
+                  <X size={20} />
+                </button>
+
+                <div className="flex-1 overflow-y-auto pr-1 my-2">
+                  <ComprovanteTicket
+                    dados={selectedComprovante.dados}
+                    rawText={selectedComprovante.text}
+                  />
+                </div>
+
+                <div className="flex items-center gap-3 mt-4 pt-3 border-t border-slate-100 dark:border-white/10">
+                  <button
+                    type="button"
+                    disabled={isDownloadingPdf}
+                    onClick={() => handleDownloadPdf(selectedComprovante.id, selectedComprovante.dados?.nsr)}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold transition-all shadow-md shadow-emerald-900/20 cursor-pointer uppercase tracking-wider disabled:opacity-50"
+                  >
+                    {isDownloadingPdf ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                      <Download size={16} />
+                    )}
+                    <span>{isDownloadingPdf ? "Baixando..." : "Baixar Comprovante"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedComprovante(null)}
+                    className="flex-1 py-3 px-4 rounded-xl border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 text-xs font-semibold transition-all cursor-pointer uppercase tracking-wider text-center"
+                  >
+                    Fechar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>

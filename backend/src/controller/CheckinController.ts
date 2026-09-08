@@ -5,6 +5,7 @@ import { getNextNSR, currentYear, NsrLimitExceededError } from "../utils/nsrGene
 import { decryptCpf, formatCpfDigits } from "../utils/cpfEncryption.js"
 import { gerarComprovante } from "../utils/comprovanteGenerator.js";
 import { gerarRelatorioMensal, gerarRelatorioMensalPdf } from "../services/relatorioMensalService.js";
+import { gerarComprovantePdf } from "../services/comprovantePdfService.js";
 import { signContent } from "../utils/afSignature.js";
 
 import { parseISO, startOfDay, endOfDay, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from "date-fns"
@@ -231,6 +232,7 @@ export class CheckinController {
             return res.status(201).json({
                 checkin: { checkin },
                 comprovante: comprovante.texto,
+                comprovanteDados: comprovante.dados,
                 hashVerificacao: comprovante.hashVerificacao,
                 assinatura: sig.assinado ? sig.assinatura : undefined,
                 assinado: sig.assinado,
@@ -601,6 +603,130 @@ export class CheckinController {
             }
             console.error("Erro na sincronização offline:", error);
             return res.status(500).json({ message: "Erro ao sincronizar pontos offline" });
+        }
+    }
+
+    /**
+     * GET /checkins/:id/comprovante
+     * Retorna os dados estruturados e o texto do comprovante fiscal de um registro de ponto específico.
+     */
+    async getComprovante(req: Request, res: Response) {
+        try {
+            const idParam = req.params.id;
+            const id = typeof idParam === "string" ? idParam : Array.isArray(idParam) ? (idParam[0] as string) : "";
+            const companyId = req.user?.companyId;
+            const userId = req.user?.id;
+            const userRole = req.user?.role;
+
+            if (!companyId || !userId || !id) {
+                return res.status(401).json({ message: "Não autorizado" });
+            }
+
+            const checkin = await extendedPrisma.checkIn.findFirst({
+                where: {
+                    id,
+                    companyId,
+                    ...(userRole === "EMPLOYEE" ? { userId } : {}),
+                },
+            });
+
+            if (!checkin) {
+                return res.status(404).json({ message: "Registro de ponto não encontrado" });
+            }
+
+            const [user, company] = await Promise.all([
+                extendedPrisma.user.findUnique({ where: { id: checkin.userId } }),
+                extendedPrisma.company.findUnique({ where: { id: checkin.companyId } }),
+            ]);
+
+            if (!user || !company) {
+                return res.status(404).json({ message: "Dados do colaborador ou empresa não encontrados" });
+            }
+
+            const comprovante = gerarComprovante({
+                nsr: checkin.nsr,
+                companyName: company.name,
+                companyCnpj: company.cnpj,
+                employeeName: user.name,
+                employeeCpf: formatCpfDigits(decryptCpf(user.cpf ?? "")),
+                checkinType: checkin.type,
+                checkinDate: checkin.createdAt,
+                latitude: checkin.latitude ?? null,
+                longitude: checkin.longitude ?? null,
+            });
+
+            return res.status(200).json({
+                comprovante: comprovante.texto,
+                comprovanteDados: comprovante.dados,
+                hashVerificacao: comprovante.hashVerificacao,
+            });
+        } catch (error) {
+            console.error("Erro ao obter comprovante:", error);
+            return res.status(500).json({ message: "Erro ao obter comprovante" });
+        }
+    }
+
+    /**
+     * GET /checkins/:id/comprovante/pdf
+     * Gera e faz streaming do comprovante de registro de ponto no formato ticket/recibo PDF.
+     */
+    async downloadComprovantePdf(req: Request, res: Response) {
+        try {
+            const idParam = req.params.id;
+            const id = typeof idParam === "string" ? idParam : Array.isArray(idParam) ? (idParam[0] as string) : "";
+            const companyId = req.user?.companyId;
+            const userId = req.user?.id;
+            const userRole = req.user?.role;
+
+            if (!companyId || !userId || !id) {
+                return res.status(401).json({ message: "Não autorizado" });
+            }
+
+            const checkin = await extendedPrisma.checkIn.findFirst({
+                where: {
+                    id,
+                    companyId,
+                    ...(userRole === "EMPLOYEE" ? { userId } : {}),
+                },
+            });
+
+            if (!checkin) {
+                return res.status(404).json({ message: "Registro de ponto não encontrado" });
+            }
+
+            const [user, company] = await Promise.all([
+                extendedPrisma.user.findUnique({ where: { id: checkin.userId } }),
+                extendedPrisma.company.findUnique({ where: { id: checkin.companyId } }),
+            ]);
+
+            if (!user || !company) {
+                return res.status(404).json({ message: "Dados do colaborador ou empresa não encontrados" });
+            }
+
+            const comprovante = gerarComprovante({
+                nsr: checkin.nsr,
+                companyName: company.name,
+                companyCnpj: company.cnpj,
+                employeeName: user.name,
+                employeeCpf: formatCpfDigits(decryptCpf(user.cpf ?? "")),
+                checkinType: checkin.type,
+                checkinDate: checkin.createdAt,
+                latitude: checkin.latitude ?? null,
+                longitude: checkin.longitude ?? null,
+            });
+
+            const pdfBuffer = await gerarComprovantePdf(comprovante.dados);
+
+            res.setHeader("Content-Type", "application/pdf");
+            res.setHeader(
+                "Content-Disposition",
+                `attachment; filename="comprovante-ponto-${comprovante.dados.nsr}.pdf"`
+            );
+            res.setHeader("Content-Length", pdfBuffer.length);
+            return res.send(pdfBuffer);
+        } catch (error) {
+            console.error("Erro ao gerar PDF do comprovante:", error);
+            return res.status(500).json({ message: "Erro ao gerar PDF do comprovante" });
         }
     }
 }

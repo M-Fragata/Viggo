@@ -266,6 +266,16 @@ export const api = {
       fetchApi<Blob>(`/checkins/export/relatorio-mensal?year=${year}&month=${month}&format=${format}`, {
         responseType: "blob",
       }),
+    getComprovante: (checkinId: string) =>
+      fetchApi<{
+        comprovante: string;
+        comprovanteDados: ComprovanteDados;
+        hashVerificacao: string;
+      }>(`/checkins/${checkinId}/comprovante`),
+    downloadComprovantePdf: (checkinId: string) =>
+      fetchApi<Blob>(`/checkins/${checkinId}/comprovante/pdf`, {
+        responseType: "blob",
+      }),
   },
 
   master: {
@@ -1187,11 +1197,31 @@ export interface CheckinResponse {
   companyId: string;
 }
 
+export interface ComprovanteDados {
+  softwareName: string;
+  nsr: string;
+  data: string;
+  hora: string;
+  tipo: string;
+  employeeName: string;
+  employeeCpf: string;
+  companyName: string;
+  companyCnpj: string;
+  inpi: string | null;
+  hash: string;
+  hashLinha1: string;
+  hashLinha2: string;
+  assinadoPor: string;
+  dataHoraEmissao: string;
+  localizacao: string;
+}
+
 export interface CheckinCreateResponse {
   checkin: {
     checkin: CheckinResponse;
   };
   comprovante: string;
+  comprovanteDados?: ComprovanteDados;
   hashVerificacao: string;
 }
 

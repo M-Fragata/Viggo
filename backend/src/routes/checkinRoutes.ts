@@ -19,6 +19,8 @@ checkinRoutes.get("/export/aej", authMiddleware, requireEnterpriseAdmin, aejCont
 checkinRoutes.get("/export/relatorio-mensal", authMiddleware, requireEnterpriseAdmin, checkinController.exportRelatorioMensal);
 checkinRoutes.get("/company", authMiddleware, checkinController.listByCompany);
 checkinRoutes.get("/month", authMiddleware, checkinController.listMonthly);
+checkinRoutes.get("/:id/comprovante", authMiddleware, checkinController.getComprovante);
+checkinRoutes.get("/:id/comprovante/pdf", authMiddleware, checkinController.downloadComprovantePdf);
 checkinRoutes.get("/", authMiddleware, checkinController.index);
 
 export { checkinRoutes }

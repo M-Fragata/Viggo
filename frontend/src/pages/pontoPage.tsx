@@ -7,12 +7,13 @@ import { LivenessChallenge } from "../components/LivenessChallenge"
 import { useAuth } from "../hooks/useAuth"
 import { useCompany } from "../hooks/useCompany"
 
-import { LogIn, Utensils, Coffee, LogOut, ScanFace, Copy, Check, Radio, WifiOff, MapPinOff, Navigation, X } from "lucide-react"
+import { LogIn, Utensils, Coffee, LogOut, ScanFace, Radio, WifiOff, MapPinOff, Navigation, X, Download, Loader2 } from "lucide-react"
 import { PontoPageSkeleton } from "../components/PontoPageSkeleton"
 import { z } from "zod"
 import { Button } from "../components/Button"
 import { PageHeader } from "../components/common/PageHeader"
-import type { CheckinCreateDto } from "../services/api"
+import type { CheckinCreateDto, ComprovanteDados } from "../services/api"
+import { ComprovanteTicket } from "../components/ComprovanteTicket"
 import { preloadFaceModels, areFaceModelsLoaded } from "../utils/faceModels"
 import { saveOfflineCheckin, getPendingOfflineCheckins, removeOfflineCheckin, type OfflineCheckin } from "../utils/offlineQueue"
 
@@ -55,7 +56,9 @@ export function PontoPage() {
     const [showLiveness, setShowLiveness] = useState(false);
     const [isPreparingCheckin, setIsPreparingCheckin] = useState(false);
     const [comprovanteText, setComprovanteText] = useState<string | null>(null);
-    const [copiedComprovante, setCopiedComprovante] = useState(false);
+    const [comprovanteDados, setComprovanteDados] = useState<ComprovanteDados | null>(null);
+    const [lastCheckinId, setLastCheckinId] = useState<string | null>(null);
+    const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
     const [offlineRecord, setOfflineRecord] = useState<OfflineCheckin | null>(null);
     const [isOfflineSuccess, setIsOfflineSuccess] = useState(false);
     const [pendingCheckin, setPendingCheckin] = useState<{
@@ -334,6 +337,10 @@ export function PontoPage() {
             // Desativa o spinner de registro para que o modal de sucesso com comprovante fique visível
             setIsRegistering(false);
             setComprovanteText(response.comprovante);
+            setComprovanteDados(response.comprovanteDados || null);
+            if (response.checkin?.checkin?.id) {
+                setLastCheckinId(response.checkin.checkin.id);
+            }
             setIsSuccess(true);
             setMessage("Ponto registrado com sucesso!");
             setPendingCheckin(null);
@@ -358,6 +365,8 @@ export function PontoPage() {
                 setPendingCheckin(null);
                 setFaceToken(null);
                 setComprovanteText(null);
+                setComprovanteDados(null);
+                setLastCheckinId(null);
 
                 const errorMsg = error.message || "Erro ao registrar o ponto. Tente novamente.";
                 setMessage(errorMsg);
@@ -450,6 +459,8 @@ export function PontoPage() {
             setPendingCheckin(null);
             setFaceToken(null);
             setComprovanteText(null);
+            setComprovanteDados(null);
+            setLastCheckinId(null);
             const errorMsg = error instanceof Error ? error.message : "Erro ao registrar o ponto. Tente novamente.";
             setMessage(errorMsg);
             toast.error(errorMsg);
@@ -458,6 +469,33 @@ export function PontoPage() {
             // Garante que, se o ponto foi gravado no banco mesmo com erro posterior de resposta,
             // a tela seja atualizada e o botão trave como 'Ponto Registrado', prevenindo duplicidade.
             await handleGetCheckin();
+        }
+    }
+
+    async function handleDownloadPdf() {
+        if (!lastCheckinId) {
+            toast.error("Identificador do ponto indisponível para download.");
+            return;
+        }
+
+        try {
+            setIsDownloadingPdf(true);
+            const blob = await api.checkins.downloadComprovantePdf(lastCheckinId);
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            const nsr = comprovanteDados?.nsr || "comprovante";
+            a.download = `comprovante-ponto-${nsr}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            toast.success("Comprovante baixado com sucesso!");
+        } catch (error) {
+            console.error("Erro ao baixar PDF do comprovante:", error);
+            toast.error("Erro ao baixar comprovante em PDF.");
+        } finally {
+            setIsDownloadingPdf(false);
         }
     }
 
@@ -714,37 +752,35 @@ export function PontoPage() {
                                                     <p className="text-xs text-slate-500 dark:text-slate-400">Comprovante emitido (Portaria 671/MTP)</p>
                                                 </div>
                                             </div>
-                                            {comprovanteText && (
-                                                <div className="relative flex-1 min-h-0 my-2 w-full">
-                                                    <pre className="w-full text-[10px] sm:text-xs text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-black/40 rounded-xl p-3 sm:p-4 whitespace-pre-wrap break-all font-mono leading-relaxed border border-slate-200 dark:border-white/10 max-h-[300px] overflow-y-auto select-all">
-                                                        {comprovanteText}
-                                                    </pre>
+                                            {(comprovanteDados || comprovanteText) && (
+                                                <div className="relative flex-1 min-h-0 my-2 w-full max-h-[380px] overflow-y-auto pr-1">
+                                                    <ComprovanteTicket dados={comprovanteDados} rawText={comprovanteText} />
                                                 </div>
                                             )}
                                             <div className="flex items-center gap-3 mt-4 pt-2 border-t border-slate-100 dark:border-white/10">
-                                                {comprovanteText && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            navigator.clipboard.writeText(comprovanteText);
-                                                            setCopiedComprovante(true);
-                                                            setTimeout(() => setCopiedComprovante(false), 2000);
-                                                        }}
-                                                        className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 text-xs font-semibold transition-all cursor-pointer"
-                                                    >
-                                                        {copiedComprovante ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
-                                                        <span>{copiedComprovante ? "Copiado!" : "Copiar Comprovante"}</span>
-                                                    </button>
-                                                )}
+                                                <button
+                                                    type="button"
+                                                    disabled={isDownloadingPdf || !lastCheckinId}
+                                                    onClick={handleDownloadPdf}
+                                                    className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold transition-all shadow-md shadow-emerald-900/20 cursor-pointer uppercase tracking-wider disabled:opacity-50"
+                                                >
+                                                    {isDownloadingPdf ? (
+                                                        <Loader2 size={16} className="animate-spin" />
+                                                    ) : (
+                                                        <Download size={16} />
+                                                    )}
+                                                    <span>{isDownloadingPdf ? "Baixando..." : "Baixar Comprovante"}</span>
+                                                </button>
                                                 <button
                                                     type="button"
                                                     onClick={() => {
                                                         setVideoOpen(false);
                                                         setIsSuccess(false);
                                                         setComprovanteText(null);
-                                                        setCopiedComprovante(false);
+                                                        setComprovanteDados(null);
+                                                        setLastCheckinId(null);
                                                     }}
-                                                    className="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-900/20 active:scale-95 cursor-pointer uppercase tracking-wider text-center"
+                                                    className="flex-1 py-3 px-4 rounded-xl border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 text-xs font-semibold transition-all cursor-pointer uppercase tracking-wider text-center"
                                                 >
                                                     Concluir
                                                 </button>

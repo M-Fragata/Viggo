@@ -31,6 +31,11 @@ const environmentSchema = z.object({
     CERT_A1_PATH: z.string().optional(),
     CERT_A1_PASSWORD: z.string().optional(),
     CERT_A1_BASE64: z.string().optional(),
+    // Identificação REP-P / Software House (Portaria 671 Anexo III)
+    INPI: z.string().optional(),
+    SOFTWARE_HOUSE_NAME: z.string().default("Fragata Soluções Digitais LTDA"),
+    SOFTWARE_HOUSE_CNPJ: z.string().optional(),
+    SOFTWARE_NAME: z.string().default("Ponto Fragata"),
     // B2: Backup AFD/AEJ mensal — plug-and-play (local criptografado, pronto p/ S3 futuro)
     AFD_BACKUP_KEY: z
         .string()
