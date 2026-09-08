@@ -7,7 +7,7 @@ import { LivenessChallenge } from "../components/LivenessChallenge"
 import { useAuth } from "../hooks/useAuth"
 import { useCompany } from "../hooks/useCompany"
 
-import { LogIn, Utensils, Coffee, LogOut, ScanFace, Radio, WifiOff, MapPinOff, Navigation, X, Download, Loader2 } from "lucide-react"
+import { LogIn, Utensils, Coffee, LogOut, ScanFace, MapPinOff, Navigation, X, Download, Loader2 } from "lucide-react"
 import { PontoPageSkeleton } from "../components/PontoPageSkeleton"
 import { z } from "zod"
 import { Button } from "../components/Button"
@@ -15,7 +15,7 @@ import { PageHeader } from "../components/common/PageHeader"
 import type { CheckinCreateDto, ComprovanteDados } from "../services/api"
 import { ComprovanteTicket } from "../components/ComprovanteTicket"
 import { preloadFaceModels, areFaceModelsLoaded } from "../utils/faceModels"
-import { saveOfflineCheckin, getPendingOfflineCheckins, removeOfflineCheckin, type OfflineCheckin } from "../utils/offlineQueue"
+import { saveOfflineCheckin, getPendingOfflineCheckins, removeOfflineCheckin } from "../utils/offlineQueue"
 
 type ChekinProps = {
     id: string,
@@ -59,7 +59,6 @@ export function PontoPage() {
     const [comprovanteDados, setComprovanteDados] = useState<ComprovanteDados | null>(null);
     const [lastCheckinId, setLastCheckinId] = useState<string | null>(null);
     const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
-    const [offlineRecord, setOfflineRecord] = useState<OfflineCheckin | null>(null);
     const [isOfflineSuccess, setIsOfflineSuccess] = useState(false);
     const [pendingCheckin, setPendingCheckin] = useState<{
         type: string;
@@ -476,6 +475,46 @@ export function PontoPage() {
                         duration: 6000,
                     });
 
+                    const dateObj = new Date(offlineItem.timestamp);
+                    const dataStr = dateObj.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+                    const horaStr = dateObj.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+                    const fullHash = (offlineItem.hash || "").toUpperCase();
+                    const hashLinha1 = fullHash.substring(0, 32);
+                    const hashLinha2 = fullHash.substring(32, 64);
+
+                    const formatTipo = (t: string) => {
+                        switch (t) {
+                            case "ENTRY": return "Entrada";
+                            case "LUNCH_START": return "Início de Almoço";
+                            case "LUNCH_END": return "Retorno de Almoço";
+                            case "EXIT": return "Saída";
+                            default: return t;
+                        }
+                    };
+
+                    const offlineComprovante: ComprovanteDados = {
+                        softwareName: "Ponto Fragata",
+                        nsr: "PENDENTE",
+                        data: dataStr,
+                        hora: horaStr,
+                        tipo: formatTipo(offlineItem.type),
+                        employeeName: user?.name || offlineItem.userName || "Colaborador",
+                        employeeCpf: user?.cpf || "",
+                        companyName: (typeof company === "string" ? company : "") || "Empresa",
+                        companyCnpj: "",
+                        inpi: null,
+                        hash: fullHash,
+                        hashLinha1,
+                        hashLinha2,
+                        assinadoPor: "Fragata Soluções Digitais LTDA",
+                        dataHoraEmissao: `${dataStr} ${horaStr}`,
+                        localizacao: offlineItem.latitude != null && offlineItem.longitude != null
+                            ? `${offlineItem.latitude.toFixed(4)}, ${offlineItem.longitude.toFixed(4)}`
+                            : "Não informada",
+                    };
+
+                    setComprovanteDados(offlineComprovante);
+
                     // Atualiza otimisticamente a lista de pontos para os botões refletirem o registro mesmo offline
                     setCheckins((prev) => {
                         const filtered = prev.filter((c) => c.type !== offlineItem.type);
@@ -492,7 +531,6 @@ export function PontoPage() {
                     });
 
                     setIsRegistering(false);
-                    setOfflineRecord(offlineItem);
                     setIsOfflineSuccess(true);
                     setIsSuccess(true);
                     setPendingCheckin(null);
@@ -751,113 +789,57 @@ export function PontoPage() {
                         {isSuccess && (
                             <div className="absolute inset-0 z-[120] bg-emerald-600/95 backdrop-blur-sm flex flex-col justify-center animate-in zoom-in duration-300 p-4 sm:p-6 overflow-y-auto">
                                 <div className="bg-white dark:bg-[#111113] rounded-3xl p-5 md:p-6 shadow-2xl w-full max-w-lg sm:max-w-xl mx-auto border border-slate-200 dark:border-white/10 flex flex-col max-h-[85vh] sm:max-h-[90vh]">
-                                    {isOfflineSuccess && offlineRecord ? (
-                                        <>
-                                            <div className="flex items-center justify-center gap-3 mb-3">
-                                                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
-                                                    <Radio size={24} className="animate-pulse" />
-                                                </div>
-                                                <div>
-                                                    <div className="flex items-center gap-2">
-                                                        <h2 className="text-amber-600 dark:text-amber-400 text-lg font-bold">Ponto Registrado Offline!</h2>
-                                                    </div>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400">Gravado localmente com integridade SHA-256</p>
-                                                </div>
-                                            </div>
-
-                                            <div className="bg-slate-50 dark:bg-black/40 rounded-2xl p-4 my-2 border border-slate-200 dark:border-white/10 space-y-2 text-xs">
-                                                <div className="flex justify-between py-1 border-b border-slate-200/60 dark:border-white/5">
-                                                    <span className="text-slate-500">Tipo de Marcação:</span>
-                                                    <span className="font-bold text-slate-800 dark:text-slate-200">
-                                                        {offlineRecord.type === "ENTRY" ? "Entrada" : offlineRecord.type === "LUNCH_START" ? "Início Almoço" : offlineRecord.type === "LUNCH_END" ? "Retorno Almoço" : "Saída"}
-                                                    </span>
-                                                </div>
-                                                <div className="flex justify-between py-1 border-b border-slate-200/60 dark:border-white/5">
-                                                    <span className="text-slate-500">Horário Gravado:</span>
-                                                    <span className="font-bold text-slate-800 dark:text-slate-200">
-                                                        {new Date(offlineRecord.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
-                                                    </span>
-                                                </div>
-                                                <div className="flex justify-between py-1 border-b border-slate-200/60 dark:border-white/5">
-                                                    <span className="text-slate-500">Biometria Facial:</span>
-                                                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">Validada com Vivacidade ✅</span>
-                                                </div>
-                                                {offlineRecord.latitude != null && (
-                                                    <div className="flex justify-between py-1">
-                                                        <span className="text-slate-500">Geolocalização:</span>
-                                                        <span className="text-slate-700 dark:text-slate-300 font-mono text-[11px]">
-                                                            {offlineRecord.latitude.toFixed(4)}, {offlineRecord.longitude?.toFixed(4)}
-                                                        </span>
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 my-2 text-xs text-amber-800 dark:text-amber-200 flex items-start gap-2">
-                                                <WifiOff size={16} className="shrink-0 mt-0.5 text-amber-500" />
-                                                <p className="leading-relaxed">
-                                                    O comprovante fiscal definitivo com o número de registro (NSR) será gerado e ficará disponível para consulta e download assim que a conexão com a internet retornar.
-                                                </p>
-                                            </div>
-
-                                            <div className="mt-3 pt-2 border-t border-slate-100 dark:border-white/10">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setVideoOpen(false);
-                                                        setIsSuccess(false);
-                                                        setIsOfflineSuccess(false);
-                                                        setOfflineRecord(null);
-                                                    }}
-                                                    className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-900/20 active:scale-95 cursor-pointer uppercase tracking-wider text-center"
-                                                >
-                                                    Entendido / Concluir
-                                                </button>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <div className="flex items-center justify-center gap-3 mb-3">
-                                                <span className="text-3xl">✅</span>
-                                                <div>
-                                                    <h2 className="text-emerald-700 dark:text-emerald-400 text-lg font-bold">Ponto Registrado com Sucesso!</h2>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400">Comprovante emitido (Portaria 671/MTP)</p>
-                                                </div>
-                                            </div>
-                                            {(comprovanteDados || comprovanteText) && (
-                                                <div className="relative flex-1 min-h-0 my-2 w-full max-h-[380px] overflow-y-auto pr-1">
-                                                    <ComprovanteTicket dados={comprovanteDados} rawText={comprovanteText} />
-                                                </div>
-                                            )}
-                                            <div className="flex items-center gap-3 mt-4 pt-2 border-t border-slate-100 dark:border-white/10">
-                                                <button
-                                                    type="button"
-                                                    disabled={isDownloadingPdf || !lastCheckinId}
-                                                    onClick={handleDownloadPdf}
-                                                    className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold transition-all shadow-md shadow-emerald-900/20 cursor-pointer uppercase tracking-wider disabled:opacity-50"
-                                                >
-                                                    {isDownloadingPdf ? (
-                                                        <Loader2 size={16} className="animate-spin" />
-                                                    ) : (
-                                                        <Download size={16} />
-                                                    )}
-                                                    <span>{isDownloadingPdf ? "Baixando..." : "Baixar"}</span>
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setVideoOpen(false);
-                                                        setIsSuccess(false);
-                                                        setComprovanteText(null);
-                                                        setComprovanteDados(null);
-                                                        setLastCheckinId(null);
-                                                    }}
-                                                    className="flex-1 py-3 px-4 rounded-xl border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 text-xs font-semibold transition-all cursor-pointer uppercase tracking-wider text-center"
-                                                >
-                                                    Concluir
-                                                </button>
-                                            </div>
-                                        </>
+                                    <div className="flex items-center justify-center gap-3 mb-3">
+                                        <span className="text-3xl">{isOfflineSuccess ? "📡" : "✅"}</span>
+                                        <div>
+                                            <h2 className={`${isOfflineSuccess ? "text-amber-600 dark:text-amber-400" : "text-emerald-700 dark:text-emerald-400"} text-lg font-bold`}>
+                                                {isOfflineSuccess ? "Ponto Registrado Offline!" : "Ponto Registrado com Sucesso!"}
+                                            </h2>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                                                {isOfflineSuccess ? "Comprovante provisório emitido (Portaria 671)" : "Comprovante emitido (Portaria 671/MTP)"}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    {(comprovanteDados || comprovanteText) && (
+                                        <div className="relative flex-1 min-h-0 my-2 w-full max-h-[380px] overflow-y-auto pr-1">
+                                            <ComprovanteTicket
+                                                dados={comprovanteDados}
+                                                rawText={comprovanteText}
+                                                isOffline={isOfflineSuccess}
+                                            />
+                                        </div>
                                     )}
+                                    <div className="flex items-center gap-3 mt-4 pt-2 border-t border-slate-100 dark:border-white/10">
+                                        {!isOfflineSuccess && (
+                                            <button
+                                                type="button"
+                                                disabled={isDownloadingPdf || !lastCheckinId}
+                                                onClick={handleDownloadPdf}
+                                                className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold transition-all shadow-md shadow-emerald-900/20 cursor-pointer uppercase tracking-wider disabled:opacity-50"
+                                            >
+                                                {isDownloadingPdf ? (
+                                                    <Loader2 size={16} className="animate-spin" />
+                                                ) : (
+                                                    <Download size={16} />
+                                                )}
+                                                <span>{isDownloadingPdf ? "Baixando..." : "Baixar"}</span>
+                                            </button>
+                                        )}
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setVideoOpen(false);
+                                                setIsSuccess(false);
+                                                setIsOfflineSuccess(false);
+                                                setComprovanteText(null);
+                                                setComprovanteDados(null);
+                                                setLastCheckinId(null);
+                                            }}
+                                            className={`${isOfflineSuccess ? "w-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-900/20 active:scale-95" : "flex-1 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5"} py-3 px-4 rounded-xl text-xs font-semibold transition-all cursor-pointer uppercase tracking-wider text-center`}
+                                        >
+                                            Concluir
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         )}

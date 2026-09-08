@@ -5,6 +5,7 @@ import type { ComprovanteDados } from "../services/api";
 interface ComprovanteTicketProps {
   dados?: ComprovanteDados | null;
   rawText?: string | null;
+  isOffline?: boolean;
 }
 
 import logoFragata from '../../public/images/ICONEVERDE.png'
@@ -64,27 +65,29 @@ function parseRawComprovante(text: string): Partial<ComprovanteDados> {
   };
 }
 
-export const ComprovanteTicket: React.FC<ComprovanteTicketProps> = ({ dados, rawText }) => {
+export const ComprovanteTicket: React.FC<ComprovanteTicketProps> = ({ dados, rawText, isOffline = false }) => {
   const parsed = dados || (rawText ? parseRawComprovante(rawText) : null);
 
   if (!parsed) return null;
 
+  const isProvisorio = isOffline || parsed.nsr === "PENDENTE";
+
   return (
     <div className="w-full max-w-sm mx-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl text-slate-800 dark:text-slate-100 font-sans relative overflow-hidden transition-all">
       {/* Detalhe estético no topo / Brand Accent */}
-      <div className="absolute -top-10 -right-10 w-28 h-28 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+      <div className={`absolute -top-10 -right-10 w-28 h-28 ${isProvisorio ? "bg-amber-500/10" : "bg-emerald-500/10"} rounded-full blur-2xl pointer-events-none`} />
 
       {/* Cabeçalho */}
       <div className="flex items-start gap-3 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800/80">
-        <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
+        <div className={`p-2 rounded-xl ${isProvisorio ? "bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400" : "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400"}`}>
           <img src={logoFragata} alt="Fragata" className="w-6 h-6" />
         </div>
         <div>
-          <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-600 dark:text-emerald-400 block leading-tight">
+          <span className={`text-[10px] font-extrabold uppercase tracking-widest ${isProvisorio ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"} block leading-tight`}>
             {parsed.softwareName || "PONTO FRAGATA"}
           </span>
           <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-snug">
-            Comprovante do Registro de Ponto
+            {isProvisorio ? "Comprovante Provisório" : "Comprovante do Registro de Ponto"}
           </h3>
         </div>
       </div>
@@ -95,8 +98,8 @@ export const ComprovanteTicket: React.FC<ComprovanteTicketProps> = ({ dados, raw
         <div className="bg-slate-50 dark:bg-slate-950/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 space-y-1">
           <div className="flex items-center justify-between">
             <span className="font-bold text-slate-600 dark:text-slate-400">NSR:</span>
-            <span className="font-mono font-bold text-slate-900 dark:text-emerald-400 text-sm tracking-wide">
-              {parsed.nsr}
+            <span className={`font-mono font-bold text-sm tracking-wide ${isProvisorio ? "text-amber-600 dark:text-amber-400" : "text-slate-900 dark:text-emerald-400"}`}>
+              {isProvisorio ? "PENDENTE" : parsed.nsr}
             </span>
           </div>
           <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
@@ -109,6 +112,14 @@ export const ComprovanteTicket: React.FC<ComprovanteTicketProps> = ({ dados, raw
               <span className="font-medium">{parsed.hora}</span>
             </div>
           </div>
+          {parsed.tipo && (
+            <div className="flex items-center justify-between text-[11px] sm:text-xs pt-1 border-t border-slate-200/50 dark:border-slate-800/60">
+              <span className="font-bold text-slate-600 dark:text-slate-400">Tipo:</span>
+              <span className={`font-semibold uppercase tracking-wider ${isProvisorio ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+                {parsed.tipo}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Dados do Empregado */}
@@ -117,10 +128,12 @@ export const ComprovanteTicket: React.FC<ComprovanteTicketProps> = ({ dados, raw
             <span className="font-bold text-slate-600 dark:text-slate-400 w-12 shrink-0">Nome:</span>
             <span className="font-medium text-slate-900 dark:text-white truncate">{parsed.employeeName}</span>
           </div>
-          <div className="flex items-baseline gap-1.5">
-            <span className="font-bold text-slate-600 dark:text-slate-400 w-12 shrink-0">CPF:</span>
-            <span className="font-mono font-medium text-slate-800 dark:text-slate-200">{parsed.employeeCpf}</span>
-          </div>
+          {parsed.employeeCpf ? (
+            <div className="flex items-baseline gap-1.5">
+              <span className="font-bold text-slate-600 dark:text-slate-400 w-12 shrink-0">CPF:</span>
+              <span className="font-mono font-medium text-slate-800 dark:text-slate-200">{parsed.employeeCpf}</span>
+            </div>
+          ) : null}
         </div>
 
         {/* Dados do Empregador */}
@@ -128,10 +141,12 @@ export const ComprovanteTicket: React.FC<ComprovanteTicketProps> = ({ dados, raw
           <p className="font-bold text-slate-900 dark:text-white text-xs truncate">
             {parsed.companyName}
           </p>
-          <div className="flex items-baseline gap-1 text-[11px] sm:text-xs text-slate-600 dark:text-slate-400">
-            <span className="font-bold">CNPJ:</span>
-            <span className="font-mono">{parsed.companyCnpj}</span>
-          </div>
+          {parsed.companyCnpj ? (
+            <div className="flex items-baseline gap-1 text-[11px] sm:text-xs text-slate-600 dark:text-slate-400">
+              <span className="font-bold">CNPJ:</span>
+              <span className="font-mono">{parsed.companyCnpj}</span>
+            </div>
+          ) : null}
         </div>
 
         {/* Registro INPI (Condicional) */}
@@ -162,30 +177,44 @@ export const ComprovanteTicket: React.FC<ComprovanteTicketProps> = ({ dados, raw
         {/* Assinatura e Emissão */}
         <div className="pt-1 text-[11px] text-slate-600 dark:text-slate-400 space-y-0.5">
           <p className="font-bold text-slate-700 dark:text-slate-300">
-            Assinado digitalmente por:
+            {isProvisorio ? "Integridade do Registro:" : "Assinado digitalmente por:"}
           </p>
           <p className="font-semibold text-slate-900 dark:text-slate-100 text-xs">
-            {parsed.assinadoPor}
+            {isProvisorio ? "Gravado em contingência local (SHA-256)" : parsed.assinadoPor}
           </p>
           <p className="pt-1 text-[10px]">
-            <span className="font-bold">Data e Hora da emissão:</span> {parsed.dataHoraEmissao}
+            <span className="font-bold">{isProvisorio ? "Data e Hora da gravação:" : "Data e Hora da emissão:"}</span> {parsed.dataHoraEmissao}
           </p>
         </div>
       </div>
 
-      {/* Selo Visual de Conformidade ICP-Brasil / Portaria 671 */}
+      {/* Selo Visual de Conformidade */}
       <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80">
-        <div className="flex items-center gap-2.5 p-2 bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/40 rounded-xl">
-          <ShieldCheck size={20} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-          <div className="text-[9.5px] leading-tight">
-            <span className="font-bold text-emerald-800 dark:text-emerald-300 block">
-              ASSINADO DIGITALMENTE • ICP-BRASIL
-            </span>
-            <span className="text-slate-500 dark:text-slate-400">
-              Conformidade Portaria MTE 671/2021 (REP-P)
-            </span>
+        {isProvisorio ? (
+          <div className="flex items-center gap-2.5 p-2 bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-800/40 rounded-xl">
+            <ShieldCheck size={20} className="text-amber-600 dark:text-amber-400 shrink-0" />
+            <div className="text-[9.5px] leading-tight">
+              <span className="font-bold text-amber-800 dark:text-amber-300 block">
+                REGISTRO EM CONTINGÊNCIA • PORTARIA 671
+              </span>
+              <span className="text-slate-500 dark:text-slate-400">
+                Sincronização e NSR emitidos automaticamente ao reconectar
+              </span>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center gap-2.5 p-2 bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/40 rounded-xl">
+            <ShieldCheck size={20} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <div className="text-[9.5px] leading-tight">
+              <span className="font-bold text-emerald-800 dark:text-emerald-300 block">
+                ASSINADO DIGITALMENTE • ICP-BRASIL
+              </span>
+              <span className="text-slate-500 dark:text-slate-400">
+                Conformidade Portaria MTE 671/2021 (REP-P)
+              </span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
