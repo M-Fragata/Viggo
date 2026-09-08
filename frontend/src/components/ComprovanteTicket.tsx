@@ -1,11 +1,13 @@
 import React from "react";
-import { ShieldCheck, Anchor } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import type { ComprovanteDados } from "../services/api";
 
 interface ComprovanteTicketProps {
   dados?: ComprovanteDados | null;
   rawText?: string | null;
 }
+
+import logoFragata from '../../public/images/ICONEVERDE.png'
 
 /**
  * Utilitário de fallback para parsear texto de comprovante caso os dados estruturados não venham
@@ -75,7 +77,7 @@ export const ComprovanteTicket: React.FC<ComprovanteTicketProps> = ({ dados, raw
       {/* Cabeçalho */}
       <div className="flex items-start gap-3 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800/80">
         <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
-          <Anchor size={22} className="stroke-[2.5]" />
+          <img src={logoFragata} alt="Fragata" className="w-6 h-6" />
         </div>
         <div>
           <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-600 dark:text-emerald-400 block leading-tight">
