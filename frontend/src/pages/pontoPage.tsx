@@ -135,7 +135,7 @@ export function PontoPage() {
                         console.error("Erro de validação:", error.issues);
                     } else {
                         console.error("Erro ao preparar check-in:", error);
-                        alert(error instanceof Error ? error.message : "Erro ao preparar check-in. Tente novamente.");
+                        toast.error(error instanceof Error ? error.message : "Erro ao preparar check-in. Tente novamente.");
                     }
                     setPendingCheckin(null);
                     setIsPreparingCheckin(false);
@@ -230,33 +230,61 @@ export function PontoPage() {
 
             if (!user?.hasFaceDescriptor) {
                 setPendingCheckin(null);
-                alert("Registro facial pendente. Por favor, cadastre sua face antes de bater o ponto.");
+                toast.error("Registro facial pendente. Por favor, cadastre sua face antes de bater o ponto.");
                 navigate("/register");
                 return { success: false };
             }
 
-            let data;
-            try {
-                data = await api.employees.issueFaceToken();
-            } catch (err: unknown) {
-                console.error("Erro ao emitir token facial:", err);
-                stopCamera();
-                setVideoOpen(false);
-                setPendingCheckin(null);
-                const errorObj = err as { code?: string; message?: string };
-                if (errorObj?.code === "FACE_NOT_REGISTERED") {
-                    navigate("/register");
-                } else {
-                    alert(errorObj?.message || "Erro ao iniciar validação facial. Tente novamente.");
-                }
-                return { success: false };
-            }
+            // Tenta obter o token facial no backend caso esteja online.
+            // Se estiver em modo avião / offline, prossegue em contingência local sem o token efêmero.
+            if (navigator.onLine) {
+                try {
+                    const data = await api.employees.issueFaceToken();
+                    setFaceToken(data.token);
+                } catch (err: unknown) {
+                    console.warn("Não foi possível emitir token facial no servidor:", err);
+                    const errorObj = err as { code?: string; message?: string };
+                    if (errorObj?.code === "FACE_NOT_REGISTERED") {
+                        stopCamera();
+                        setVideoOpen(false);
+                        setPendingCheckin(null);
+                        navigate("/register");
+                        return { success: false };
+                    }
 
-            setFaceToken(data.token);
+                    const isNetwork =
+                        !navigator.onLine ||
+                        err instanceof TypeError ||
+                        (err instanceof Error &&
+                            (err.message.toLowerCase().includes("failed to fetch") ||
+                             err.message.toLowerCase().includes("networkerror") ||
+                             err.message.toLowerCase().includes("network request failed") ||
+                             err.message.toLowerCase().includes("load failed") ||
+                             err.message.toLowerCase().includes("net::err") ||
+                             err.message.toLowerCase().includes("conexão")));
+
+                    if (!isNetwork) {
+                        stopCamera();
+                        setVideoOpen(false);
+                        setPendingCheckin(null);
+                        toast.error(errorObj?.message || "Erro ao iniciar validação facial. Tente novamente.");
+                        return { success: false };
+                    }
+
+                    // Se for falha de rede/offline, segue em contingência sem emitir alert
+                    setFaceToken(null);
+                }
+            } else {
+                setFaceToken(null);
+            }
 
             // Garante que os modelos de IA estejam 100% carregados antes de abrir a câmera
             if (!areFaceModelsLoaded()) {
-                await preloadFaceModels();
+                try {
+                    await preloadFaceModels();
+                } catch (loadErr) {
+                    console.warn("Modelos de IA não puderam ser baixados offline:", loadErr);
+                }
             }
 
             try {
@@ -283,7 +311,7 @@ export function PontoPage() {
                 stopCamera();
                 setVideoOpen(false);
                 setPendingCheckin(null);
-                alert("Não foi possível acessar a câmera. Verifique as permissões do navegador.");
+                toast.error("Não foi possível acessar a câmera. Verifique as permissões do navegador.");
                 return { success: false };
             }
 
@@ -332,6 +360,11 @@ export function PontoPage() {
                 return;
             }
 
+            // Se o navegador estiver sem conectividade, pula a tentativa remota imediatamente
+            if (!navigator.onLine) {
+                throw new TypeError("Failed to fetch (offline)");
+            }
+
             const response = await api.checkins.create(pendingCheckin as CheckinCreateDto);
 
             // Desativa o spinner de registro para que o modal de sucesso com comprovante fique visível
@@ -377,6 +410,7 @@ export function PontoPage() {
             // 2. Falha de rede nativa no navegador (sem resposta HTTP)
             // TypeError é lançado nativamente pelo fetch() quando a conexão não pode ser estabelecida
             const isFetchNetworkError =
+                !navigator.onLine ||
                 error instanceof TypeError ||
                 (error instanceof Error &&
                     (error.message.toLowerCase().includes("failed to fetch") ||
@@ -440,6 +474,21 @@ export function PontoPage() {
                     toast.info("Ponto registrado offline!", {
                         description: "Sua marcação foi salva com segurança no aparelho e será sincronizada automaticamente assim que a conexão retornar.",
                         duration: 6000,
+                    });
+
+                    // Atualiza otimisticamente a lista de pontos para os botões refletirem o registro mesmo offline
+                    setCheckins((prev) => {
+                        const filtered = prev.filter((c) => c.type !== offlineItem.type);
+                        return [
+                            ...filtered,
+                            {
+                                id: offlineItem.id,
+                                type: offlineItem.type,
+                                createdAt: offlineItem.createdAt,
+                                latitude: offlineItem.latitude,
+                                longitude: offlineItem.longitude,
+                            } as ChekinProps,
+                        ];
                     });
 
                     setIsRegistering(false);
@@ -527,9 +576,31 @@ export function PontoPage() {
                 toast.error(error instanceof Error ? error.message : "Erro ao buscar os pontos. Tente novamente.");
             }
         } finally {
+            if (user?.id) {
+                try {
+                    const pendingOffline = await getPendingOfflineCheckins(user.id);
+                    if (pendingOffline.length > 0) {
+                        setCheckins((prev) => {
+                            const existingTypes = new Set(prev.map((c) => c.type));
+                            const newOfflineItems = pendingOffline
+                                .filter((item) => !existingTypes.has(item.type))
+                                .map((item) => ({
+                                    id: item.id,
+                                    type: item.type,
+                                    createdAt: item.createdAt,
+                                    latitude: item.latitude,
+                                    longitude: item.longitude,
+                                } as ChekinProps));
+                            return [...prev, ...newOfflineItems];
+                        });
+                    }
+                } catch (offlineErr) {
+                    console.warn("Erro ao carregar fila offline:", offlineErr);
+                }
+            }
             setIsLoadingCheckins(false);
         }
-    }, [navigate, token]);
+    }, [navigate, token, user?.id]);
 
     const handleGetCheckinRef = useRef(handleGetCheckin);
     useEffect(() => {
@@ -630,10 +701,10 @@ export function PontoPage() {
                             />
                         </div>
 
-                        {showLiveness && faceToken && (
+                        {showLiveness && (
                             <LivenessChallenge
                                 videoRef={videoRef}
-                                faceToken={faceToken}
+                                faceToken={faceToken || undefined}
                                 facialMode={company?.settings?.ponto?.facialMode || 'FRONTAL_ONLY'}
                                 onComplete={handleLivenessComplete}
                                 onCancel={handleLivenessCancel}

@@ -50,6 +50,10 @@ function getInitialSession(): {
   }
 
   const jwtUser = userFromJWT(decoded);
+  const storedHasFace = localStorage.getItem("@fragata:hasFace");
+  if (storedHasFace !== null) {
+    jwtUser.hasFaceDescriptor = storedHasFace === "true";
+  }
   let isImpersonated = false;
   let impersonatedCompanyName: string | null = null;
 
@@ -84,6 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const clearSession = useCallback(() => {
     localStorage.removeItem("@fragata:token");
     localStorage.removeItem("@fragata:masterToken");
+    localStorage.removeItem("@fragata:hasFace");
     setUser(null);
     setName(null);
     setToken(null);
@@ -95,6 +100,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (token) {
       api.auth.me().then(({ user: freshUser }) => {
+        if (freshUser.hasFaceDescriptor !== undefined) {
+          localStorage.setItem("@fragata:hasFace", String(Boolean(freshUser.hasFaceDescriptor)));
+        }
         setUser(prev => prev ? { ...prev, hasFaceDescriptor: freshUser.hasFaceDescriptor } : prev);
       }).catch(() => {});
     }
@@ -107,6 +115,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const decoded = decodeJWT(newToken);
       const jwtUser = decoded ? userFromJWT(decoded) : apiUser;
+      if (apiUser.hasFaceDescriptor !== undefined) {
+        localStorage.setItem("@fragata:hasFace", String(Boolean(apiUser.hasFaceDescriptor)));
+      }
       const finalUser = {
         ...jwtUser,
         hasFaceDescriptor: apiUser.hasFaceDescriptor,
@@ -123,6 +134,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const setSession = useCallback((newUser: User, newToken: string, newCompany?: string) => {
     localStorage.setItem("@fragata:token", newToken);
+    if (newUser.hasFaceDescriptor !== undefined) {
+      localStorage.setItem("@fragata:hasFace", String(Boolean(newUser.hasFaceDescriptor)));
+    }
 
     const decoded = decodeJWT(newToken);
     const jwtUser = decoded ? userFromJWT(decoded) : newUser;
@@ -134,6 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     localStorage.removeItem("@fragata:token");
+    localStorage.removeItem("@fragata:hasFace");
     setUser(null);
     setToken(null);
     setCompany(null);
