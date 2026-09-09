@@ -250,6 +250,7 @@ export function LivenessChallenge({
   const activeFaceTokenRef = useRef<string | undefined>(faceToken);
   const onRetryRef = useRef(onRetry);
   const onCancelRef = useRef(onCancel);
+  const isDetectingRef = useRef(false);
 
   useEffect(() => {
     activeFaceTokenRef.current = faceToken;
@@ -430,7 +431,8 @@ export function LivenessChallenge({
       return;
     }
 
-    if (isTransitioning || isFailing || isCompletedRef.current) return;
+    if (isTransitioning || isFailing || isCompletedRef.current || isDetectingRef.current) return;
+    isDetectingRef.current = true;
 
     try {
       const detection = await faceapi
@@ -591,6 +593,8 @@ export function LivenessChallenge({
       }
     } catch (err) {
       console.error('Erro na detecção:', err);
+    } finally {
+      isDetectingRef.current = false;
     }
   }, [
     videoRef,

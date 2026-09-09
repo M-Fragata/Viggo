@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, type ReactNode } from "react";
+import { useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 import { api, type User } from "../services/api";
 import { decodeJWT, type JWTPayload } from "../utils/jwt";
 import { AuthContext, type AuthContextType } from "./authContextBase";
@@ -84,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading] = useState(false);
   const [isImpersonated, setIsImpersonated] = useState(initialSession.isImpersonated);
   const [impersonatedCompanyName, setImpersonatedCompanyName] = useState<string | null>(initialSession.impersonatedCompanyName);
+  const justLoggedInRef = useRef(false);
 
   const clearSession = useCallback(() => {
     localStorage.removeItem("@fragata:token");
@@ -98,14 +99,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (token) {
-      api.auth.me().then(({ user: freshUser }) => {
-        if (freshUser.hasFaceDescriptor !== undefined) {
-          localStorage.setItem("@fragata:hasFace", String(Boolean(freshUser.hasFaceDescriptor)));
-        }
-        setUser(prev => prev ? { ...prev, hasFaceDescriptor: freshUser.hasFaceDescriptor } : prev);
-      }).catch(() => {});
+    if (!token) return;
+    if (justLoggedInRef.current) {
+      justLoggedInRef.current = false;
+      return;
     }
+    api.auth.me().then(({ user: freshUser }) => {
+      if (freshUser.hasFaceDescriptor !== undefined) {
+        localStorage.setItem("@fragata:hasFace", String(Boolean(freshUser.hasFaceDescriptor)));
+      }
+      setUser(prev => prev ? { ...prev, hasFaceDescriptor: freshUser.hasFaceDescriptor } : prev);
+    }).catch(() => {});
   }, [token]);
 
   const login = useCallback(
@@ -123,6 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         hasFaceDescriptor: apiUser.hasFaceDescriptor,
         mustChangePassword: mustChangePassword ?? decoded?.mustChangePassword,
       };
+      justLoggedInRef.current = true;
       setUser(finalUser);
       setToken(newToken);
       setCompany(decoded?.companyName || null);
@@ -140,6 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const decoded = decodeJWT(newToken);
     const jwtUser = decoded ? userFromJWT(decoded) : newUser;
+    justLoggedInRef.current = true;
     setUser({ ...jwtUser, hasFaceDescriptor: newUser.hasFaceDescriptor });
     setToken(newToken);
     setCompany(newCompany || decoded?.companyName || null);

@@ -43,10 +43,13 @@ async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promis
       ? localStorage.getItem("@fragata:token")
       : null;
 
+  const hasBody = restOptions.body !== undefined && restOptions.body !== null;
+  const isFormData = hasBody && typeof FormData !== "undefined" && restOptions.body instanceof FormData;
+
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...restOptions,
     headers: {
-      "Content-Type": "application/json",
+      ...(hasBody && !isFormData && { "Content-Type": "application/json" }),
       ...(token && { Authorization: `Bearer ${token}` }),
       ...headers,
     },

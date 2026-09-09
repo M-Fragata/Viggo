@@ -62,6 +62,10 @@ model User {
   consentimentos             Consentimento[]
   justificativas             Justificativa[]
   espelhosPonto              EspelhoPonto[]
+
+  @@index([companyId])
+  @@index([companyId, status])
+  @@index([companyId, role])
 }
 
 model CheckIn {

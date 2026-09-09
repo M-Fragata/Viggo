@@ -59,8 +59,6 @@ function setupModelsFetchCacheInterceptor() {
   };
 }
 
-// Inicializa o interceptor assim que o módulo for carregado
-setupModelsFetchCacheInterceptor();
 
 /**
  * Retorna true se os três modelos já estão carregados na memória do TensorFlow.

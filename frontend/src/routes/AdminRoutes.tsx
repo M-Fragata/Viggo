@@ -1,23 +1,30 @@
-import { Routes, Route, Navigate } from "react-router";
 import { Suspense } from "react";
+import { Routes, Route, Navigate } from "react-router";
 import { LayoutPage } from "../pages/layoutPage";
-import { PontoPage } from "../pages/pontoPage";
-import { PontoViewPage } from "../pages/pontoViewPage";
-import { RegisterFace } from "../pages/RegisterFace";
-import { MeusDadosPage } from "../pages/MeusDadosPage";
+import { DashboardOverviewPage } from "../pages/admin/DashboardPage";
 import { useAuth } from "../hooks/useAuth";
 import { NotFoundPage } from "../pages/NotFoundPage";
-import { Loading } from "../components/Loading";
 import { ErrorBoundary } from "../components/common/ErrorBoundary";
 import { lazyWithRetry } from "../utils/lazyWithRetry";
 
-const LandingPage = lazyWithRetry(() => import("../pages/LandingPage").then((m) => ({ default: m.LandingPage })));
-const TermosDeUso = lazyWithRetry(() => import("../pages/TermosDeUso").then((m) => ({ default: m.TermosDeUso })));
-const PoliticaPrivacidade = lazyWithRetry(() => import("../pages/PoliticaPrivacidade").then((m) => ({ default: m.PoliticaPrivacidade })));
-const ConsentimentoBiometria = lazyWithRetry(() => import("../pages/ConsentimentoBiometria").then((m) => ({ default: m.ConsentimentoBiometria })));
-const ContratoTratamentoDados = lazyWithRetry(() => import("../pages/ContratoTratamentoDados").then((m) => ({ default: m.ContratoTratamentoDados })));
+// Skeletons para fallback visual
+import { FuncionariosSkeleton } from "../components/admin/FuncionariosSkeleton";
+import { PresentesSkeleton } from "../components/admin/PresentesSkeleton";
+import { FolhaMensalSkeleton } from "../components/admin/FolhaMensalSkeleton";
+import { HorariosSkeleton } from "../components/schedule/HorariosSkeleton";
+import { PolosTrabalhoSkeleton } from "../components/admin/PolosTrabalhoSkeleton";
+import { PlanoSkeleton } from "../components/plan/PlanoSkeleton";
+import { ConvitesSkeleton } from "../components/admin/ConvitesSkeleton";
+import { JustificativasSkeleton } from "../components/justificativas/JustificativasSkeleton";
+import { ConfiguracoesSkeleton } from "../components/admin/ConfiguracoesSkeleton";
+import { MeusEspelhosSkeleton } from "../components/espelhos/MeusEspelhosSkeleton";
+import { PontoPageSkeleton } from "../components/PontoPageSkeleton";
+import { PontoViewPageSkeleton } from "../components/PontoViewPageSkeleton";
+import { RegisterFaceSkeleton } from "../components/RegisterFaceSkeleton";
+import { MeusDadosSkeleton } from "../components/profile/MeusDadosSkeleton";
+import { PageSkeleton } from "../components/common/PageSkeleton";
 
-const DashboardOverviewPage = lazyWithRetry(() => import("../pages/admin/DashboardPage").then((m) => ({ default: m.DashboardOverviewPage })));
+// Rotas secundárias em lazy-load
 const FuncionariosPage = lazyWithRetry(() => import("../pages/admin/FuncionariosPage").then((m) => ({ default: m.FuncionariosPage })));
 const PresentesPage = lazyWithRetry(() => import("../pages/admin/PresentesPage").then((m) => ({ default: m.PresentesPage })));
 const FolhaMensalPage = lazyWithRetry(() => import("../pages/admin/FolhaMensalPage").then((m) => ({ default: m.FolhaMensalPage })));
@@ -31,6 +38,18 @@ const ConfiguracoesPage = lazyWithRetry(() => import("../pages/admin/Configuraco
 const MeusEspelhosPage = lazyWithRetry(() => import("../pages/MeusEspelhosPage").then((m) => ({ default: m.MeusEspelhosPage })));
 const PolosTrabalhoPage = lazyWithRetry(() => import("../pages/admin/PolosTrabalhoPage").then((m) => ({ default: m.PolosTrabalhoPage })));
 
+// Rotas de ponto do admin em lazy-load (raramente acessadas no painel do administrador)
+const PontoPage = lazyWithRetry(() => import("../pages/pontoPage").then((m) => ({ default: m.PontoPage })));
+const PontoViewPage = lazyWithRetry(() => import("../pages/pontoViewPage").then((m) => ({ default: m.PontoViewPage })));
+const RegisterFace = lazyWithRetry(() => import("../pages/RegisterFace").then((m) => ({ default: m.RegisterFace })));
+const MeusDadosPage = lazyWithRetry(() => import("../pages/MeusDadosPage").then((m) => ({ default: m.MeusDadosPage })));
+
+const LandingPage = lazyWithRetry(() => import("../pages/LandingPage").then((m) => ({ default: m.LandingPage })));
+const TermosDeUso = lazyWithRetry(() => import("../pages/TermosDeUso").then((m) => ({ default: m.TermosDeUso })));
+const PoliticaPrivacidade = lazyWithRetry(() => import("../pages/PoliticaPrivacidade").then((m) => ({ default: m.PoliticaPrivacidade })));
+const ConsentimentoBiometria = lazyWithRetry(() => import("../pages/ConsentimentoBiometria").then((m) => ({ default: m.ConsentimentoBiometria })));
+const ContratoTratamentoDados = lazyWithRetry(() => import("../pages/ContratoTratamentoDados").then((m) => ({ default: m.ContratoTratamentoDados })));
+
 export function AdminRoutes() {
   const { user } = useAuth();
   const isAllowed = user?.role === "ENTERPRISE_ADMIN" || user?.role === "MASTER";
@@ -40,32 +59,39 @@ export function AdminRoutes() {
   return (
     <ErrorBoundary>
       <Routes>
-        <Route path="/page" element={<LandingPage />} />
-        <Route path="/termos-de-uso" element={<TermosDeUso />} />
-        <Route path="/politica-privacidade" element={<PoliticaPrivacidade />} />
-        <Route path="/consentimento-biometria" element={<ConsentimentoBiometria />} />
-        <Route path="/contrato-de-tratamento-de-dados" element={<ContratoTratamentoDados />} />
+        <Route path="/page" element={<Suspense fallback={<PageSkeleton />}><LandingPage /></Suspense>} />
+        <Route path="/termos-de-uso" element={<Suspense fallback={<PageSkeleton />}><TermosDeUso /></Suspense>} />
+        <Route path="/politica-privacidade" element={<Suspense fallback={<PageSkeleton />}><PoliticaPrivacidade /></Suspense>} />
+        <Route path="/consentimento-biometria" element={<Suspense fallback={<PageSkeleton />}><ConsentimentoBiometria /></Suspense>} />
+        <Route path="/contrato-de-tratamento-de-dados" element={<Suspense fallback={<PageSkeleton />}><ContratoTratamentoDados /></Suspense>} />
+
         <Route path="/" element={<LayoutPage />}>
-          <Route index element={<Suspense fallback={<Loading />}><DashboardOverviewPage /></Suspense>} />
-          <Route path="funcionarios" element={<Suspense fallback={<Loading />}><FuncionariosPage /></Suspense>} />
-          <Route path="presentes" element={<Suspense fallback={<Loading />}><PresentesPage /></Suspense>} />
-          <Route path="folha-mensal" element={<Suspense fallback={<Loading />}><FolhaMensalPage /></Suspense>} />
-          <Route path="horarios" element={<Suspense fallback={<Loading />}><HorariosPage /></Suspense>} />
-          <Route path="polos" element={<Suspense fallback={<Loading />}><PolosTrabalhoPage /></Suspense>} />
-          <Route path="cercas" element={<Suspense fallback={<Loading />}><PolosTrabalhoPage /></Suspense>} />
-          <Route path="plano" element={<Suspense fallback={<Loading />}><PlanoPage /></Suspense>} />
-          <Route path="convites" element={<Suspense fallback={<Loading />}><ConvitesPage /></Suspense>} />
-          <Route path="justificativas" element={<Suspense fallback={<Loading />}><JustificativasAdminPage /></Suspense>} />
-          <Route path="totem" element={<Suspense fallback={<Loading />}><TotemManagePage /></Suspense>} />
-          <Route path="configuracoes" element={<Suspense fallback={<Loading />}><ConfiguracoesPage /></Suspense>} />
-          <Route path="espelhos" element={<Suspense fallback={<Loading />}><MeusEspelhosPage /></Suspense>} />
-          <Route path="espelho" element={<Suspense fallback={<Loading />}><MeusEspelhosPage /></Suspense>} />
-          <Route path="ponto" element={<PontoPage />} />
-          <Route path="pontos" element={<PontoViewPage />} />
-          <Route path="register" element={<RegisterFace />} />
-          <Route path="meus-dados" element={<MeusDadosPage />} />
+          {/* Dashboard padrão importada de forma estática para renderização imediata pós-login */}
+          <Route index element={<DashboardOverviewPage />} />
+
+          {/* Subpáginas administrativas com skeletons especializados */}
+          <Route path="funcionarios" element={<Suspense fallback={<FuncionariosSkeleton />}><FuncionariosPage /></Suspense>} />
+          <Route path="presentes" element={<Suspense fallback={<PresentesSkeleton />}><PresentesPage /></Suspense>} />
+          <Route path="folha-mensal" element={<Suspense fallback={<FolhaMensalSkeleton />}><FolhaMensalPage /></Suspense>} />
+          <Route path="horarios" element={<Suspense fallback={<HorariosSkeleton />}><HorariosPage /></Suspense>} />
+          <Route path="polos" element={<Suspense fallback={<PolosTrabalhoSkeleton />}><PolosTrabalhoPage /></Suspense>} />
+          <Route path="cercas" element={<Suspense fallback={<PolosTrabalhoSkeleton />}><PolosTrabalhoPage /></Suspense>} />
+          <Route path="plano" element={<Suspense fallback={<PlanoSkeleton />}><PlanoPage /></Suspense>} />
+          <Route path="convites" element={<Suspense fallback={<ConvitesSkeleton />}><ConvitesPage /></Suspense>} />
+          <Route path="justificativas" element={<Suspense fallback={<JustificativasSkeleton />}><JustificativasAdminPage /></Suspense>} />
+          <Route path="totem" element={<Suspense fallback={<PageSkeleton />}><TotemManagePage /></Suspense>} />
+          <Route path="configuracoes" element={<Suspense fallback={<ConfiguracoesSkeleton />}><ConfiguracoesPage /></Suspense>} />
+          <Route path="espelhos" element={<Suspense fallback={<MeusEspelhosSkeleton />}><MeusEspelhosPage /></Suspense>} />
+          <Route path="espelho" element={<Suspense fallback={<MeusEspelhosSkeleton />}><MeusEspelhosPage /></Suspense>} />
+
+          {/* Páginas de ponto do colaborador em lazy-load no perfil de administrador */}
+          <Route path="ponto" element={<Suspense fallback={<PontoPageSkeleton />}><PontoPage /></Suspense>} />
+          <Route path="pontos" element={<Suspense fallback={<PontoViewPageSkeleton />}><PontoViewPage /></Suspense>} />
+          <Route path="register" element={<Suspense fallback={<RegisterFaceSkeleton />}><RegisterFace /></Suspense>} />
+          <Route path="meus-dados" element={<Suspense fallback={<MeusDadosSkeleton />}><MeusDadosPage /></Suspense>} />
         </Route>
-        <Route path="totem-app" element={<Suspense fallback={<Loading />}><TotemPage /></Suspense>} />
+
+        <Route path="totem-app" element={<Suspense fallback={<PageSkeleton />}><TotemPage /></Suspense>} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </ErrorBoundary>

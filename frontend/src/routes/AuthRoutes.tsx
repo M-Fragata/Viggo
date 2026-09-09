@@ -1,6 +1,7 @@
 import { Routes, Route } from "react-router";
 import { Suspense } from "react";
-import { Loading } from "../components/Loading";
+import { LoginPageSkeleton } from "../components/auth/LoginPageSkeleton";
+import { PageSkeleton } from "../components/common/PageSkeleton";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { ErrorBoundary } from "../components/common/ErrorBoundary";
 import { lazyWithRetry } from "../utils/lazyWithRetry";
@@ -14,26 +15,24 @@ const TermosDeUso = lazyWithRetry(() => import("../pages/TermosDeUso").then((m) 
 const PoliticaPrivacidade = lazyWithRetry(() => import("../pages/PoliticaPrivacidade").then((m) => ({ default: m.PoliticaPrivacidade })));
 const ConsentimentoBiometria = lazyWithRetry(() => import("../pages/ConsentimentoBiometria").then((m) => ({ default: m.ConsentimentoBiometria })));
 const ContratoTratamentoDados = lazyWithRetry(() => import("../pages/ContratoTratamentoDados").then((m) => ({ default: m.ContratoTratamentoDados })));
-const ForgotPasswordPage = lazyWithRetry(() => import("../pages/ForgotPasswordPage").then((m) => ({ default: m.ForgotPasswordPage })) );
+const ForgotPasswordPage = lazyWithRetry(() => import("../pages/ForgotPasswordPage").then((m) => ({ default: m.ForgotPasswordPage })));
 
 export function AuthRoutes() {
   return (
     <ErrorBoundary>
-      <Suspense fallback={<Loading />}>
-        <Routes>
-          <Route path="/" element={<LoginPage />} />
-          <Route path="/page" element={<LandingPage />} />
-          <Route path="/company/signup" element={<CompanySignupPage />} />
-          <Route path="/accept-invite/:token" element={<AcceptInvitePage />} />
-          <Route path="/planos/custom" element={<CustomPlanPage />} />
-          <Route path="/termos-de-uso" element={<TermosDeUso />} />
-          <Route path="/politica-privacidade" element={<PoliticaPrivacidade />} />
-          <Route path="/consentimento-biometria" element={<ConsentimentoBiometria />} />
-          <Route path="/contrato-de-tratamento-de-dados" element={<ContratoTratamentoDados />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-      </Suspense>
+      <Routes>
+        <Route path="/" element={<Suspense fallback={<LoginPageSkeleton />}><LoginPage /></Suspense>} />
+        <Route path="/page" element={<Suspense fallback={<PageSkeleton />}><LandingPage /></Suspense>} />
+        <Route path="/company/signup" element={<Suspense fallback={<PageSkeleton />}><CompanySignupPage /></Suspense>} />
+        <Route path="/accept-invite/:token" element={<Suspense fallback={<PageSkeleton />}><AcceptInvitePage /></Suspense>} />
+        <Route path="/planos/custom" element={<Suspense fallback={<PageSkeleton />}><CustomPlanPage /></Suspense>} />
+        <Route path="/termos-de-uso" element={<Suspense fallback={<PageSkeleton />}><TermosDeUso /></Suspense>} />
+        <Route path="/politica-privacidade" element={<Suspense fallback={<PageSkeleton />}><PoliticaPrivacidade /></Suspense>} />
+        <Route path="/consentimento-biometria" element={<Suspense fallback={<PageSkeleton />}><ConsentimentoBiometria /></Suspense>} />
+        <Route path="/contrato-de-tratamento-de-dados" element={<Suspense fallback={<PageSkeleton />}><ContratoTratamentoDados /></Suspense>} />
+        <Route path="/forgot-password" element={<Suspense fallback={<PageSkeleton />}><ForgotPasswordPage /></Suspense>} />
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
     </ErrorBoundary>
   );
 }

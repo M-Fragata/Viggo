@@ -37,11 +37,9 @@ export class SessionController {
 
             if (!verifyPassword) return res.status(400).json({ message: "Email e/ou senha incorreto(s), tente novamente" });
 
-            const companyUser = await prisma.company.findUnique({
-                where: { id: user.companyId }
-            })
+            const companyUser = user.company;
 
-            if (!companyUser) return res.status(400).json({ message: "Trabalhador sem empresa" })
+            if (!companyUser) return res.status(400).json({ message: "Trabalhador sem empresa" });
 
             const mustChangePassword = password.toLowerCase().endsWith("@viggo") || password.toLowerCase().endsWith("viggo");
 

@@ -1,6 +1,7 @@
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
+import compression from 'compression';
 
 import { routes } from './routes/index.js';
 import { loggingMiddleware } from './middleware/LoggingMiddleware.js';
@@ -12,6 +13,10 @@ import { Env } from "./utils/environment.js"
 import { devRoutes } from "./routes/devRoutes.js";
 
 const app = express();
+
+app.use(compression({
+  threshold: 1024,
+}));
 
 app.use(cors({
   origin: Env.FRONTEND_URL,

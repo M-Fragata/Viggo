@@ -41,11 +41,17 @@ export const faceValidationLimiter = createLimiter({
 
 export const generalApiLimiter = createLimiter({
   windowMs: 60 * 1000,
-  max: 100,
+  max: 300,
   message: { message: 'Muitas requisições. Tente novamente em 1 minuto.' },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req: Request) => req.user?.id ?? req.ip ?? 'unknown',
+  keyGenerator: (req: Request) => {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      return authHeader.slice(7, 45);
+    }
+    return req.ip ?? 'unknown';
+  },
 });
 
 export const impersonateRateLimit = createLimiter({

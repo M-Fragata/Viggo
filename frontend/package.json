@@ -11,7 +11,6 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
-    "@react-three/fiber": "^9.7.0",
     "@tailwindcss/vite": "^4.2.2",
     "@tensorflow/tfjs": "^4.22.0",
     "date-fns": "^4.4.0",
@@ -28,7 +27,6 @@
     "recharts": "^3.10.1",
     "sonner": "^2.0.7",
     "tailwindcss": "^4.2.2",
-    "three": "^0.185.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -36,7 +34,6 @@
     "@types/node": "^24.12.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@types/three": "^0.185.4",
     "@vitejs/plugin-react": "^6.0.1",
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.0.1",

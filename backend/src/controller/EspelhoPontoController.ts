@@ -56,56 +56,62 @@ export class EspelhoPontoController {
       let criados = 0;
       let atualizados = 0;
 
-      for (const emp of employees) {
-        try {
-          const consolidado = await consolidarEspelhoFuncionario(companyId, emp.id, year, month);
+      const BATCH_SIZE = 5;
+      for (let i = 0; i < employees.length; i += BATCH_SIZE) {
+        const batch = employees.slice(i, i + BATCH_SIZE);
+        await Promise.all(
+          batch.map(async (emp) => {
+            try {
+              const consolidado = await consolidarEspelhoFuncionario(companyId, emp.id, year, month);
 
-          const existing = await extendedPrisma.espelhoPonto.findUnique({
-            where: {
-              companyId_userId_ano_mes: {
-                companyId,
-                userId: emp.id,
-                ano: year,
-                mes: month,
-              },
-            },
-          });
+              const existing = await extendedPrisma.espelhoPonto.findUnique({
+                where: {
+                  companyId_userId_ano_mes: {
+                    companyId,
+                    userId: emp.id,
+                    ano: year,
+                    mes: month,
+                  },
+                },
+              });
 
-          if (existing) {
-            await extendedPrisma.espelhoPonto.update({
-              where: { id: existing.id },
-              data: {
-                periodoInicio: consolidado.periodoInicio,
-                periodoFim: consolidado.periodoFim,
-                hashDocumento: consolidado.hashDocumento,
-                resumoHoras: consolidado.resumoHoras as unknown as Prisma.InputJsonValue,
-                detalhesDias: consolidado.detalhesDias as unknown as Prisma.InputJsonValue,
-                status: "LIBERADO", // Reseta para nova conferência caso seja reliberado
-                motivoRecusa: null,
-                dataContestacao: null,
-              },
-            });
-            atualizados++;
-          } else {
-            await extendedPrisma.espelhoPonto.create({
-              data: {
-                companyId,
-                userId: emp.id,
-                ano: year,
-                mes: month,
-                periodoInicio: consolidado.periodoInicio,
-                periodoFim: consolidado.periodoFim,
-                hashDocumento: consolidado.hashDocumento,
-                resumoHoras: consolidado.resumoHoras as unknown as Prisma.InputJsonValue,
-                detalhesDias: consolidado.detalhesDias as unknown as Prisma.InputJsonValue,
-                status: "LIBERADO",
-              },
-            });
-            criados++;
-          }
-        } catch (empErr) {
-          console.warn(`Erro ao consolidar espelho para colaborador ${emp.id}:`, empErr);
-        }
+              if (existing) {
+                await extendedPrisma.espelhoPonto.update({
+                  where: { id: existing.id },
+                  data: {
+                    periodoInicio: consolidado.periodoInicio,
+                    periodoFim: consolidado.periodoFim,
+                    hashDocumento: consolidado.hashDocumento,
+                    resumoHoras: consolidado.resumoHoras as unknown as Prisma.InputJsonValue,
+                    detalhesDias: consolidado.detalhesDias as unknown as Prisma.InputJsonValue,
+                    status: "LIBERADO", // Reseta para nova conferência caso seja reliberado
+                    motivoRecusa: null,
+                    dataContestacao: null,
+                  },
+                });
+                atualizados++;
+              } else {
+                await extendedPrisma.espelhoPonto.create({
+                  data: {
+                    companyId,
+                    userId: emp.id,
+                    ano: year,
+                    mes: month,
+                    periodoInicio: consolidado.periodoInicio,
+                    periodoFim: consolidado.periodoFim,
+                    hashDocumento: consolidado.hashDocumento,
+                    resumoHoras: consolidado.resumoHoras as unknown as Prisma.InputJsonValue,
+                    detalhesDias: consolidado.detalhesDias as unknown as Prisma.InputJsonValue,
+                    status: "LIBERADO",
+                  },
+                });
+                criados++;
+              }
+            } catch (empErr) {
+              console.warn(`Erro ao consolidar espelho para colaborador ${emp.id}:`, empErr);
+            }
+          })
+        );
       }
 
       return res.status(200).json({
