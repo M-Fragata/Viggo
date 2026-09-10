@@ -109,6 +109,22 @@ export function trackEvent(
     body,
     keepalive: true,
   }).catch(() => {});
+
+  // Google Ads: Dispara a conversão de Inscrição quando o cadastro é concluído com sucesso
+  if (name === "signup_success") {
+    try {
+      const win = window as unknown as { gtag?: (...args: unknown[]) => void };
+      if (typeof win.gtag === "function") {
+        win.gtag("event", "conversion", {
+          send_to: "AW-18443221960/dJA4CJqspfMcEMj3tNpE",
+          value: 1.0,
+          currency: "BRL",
+        });
+      }
+    } catch {
+      // silencioso para não impactar a experiência do usuário
+    }
+  }
 }
 
 export { getVisitorId };
