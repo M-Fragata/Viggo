@@ -23,18 +23,48 @@ import "../scroll-animations.css";
 
 export function LandingPage() {
   useScrollReveal();
-  const [showPreloader, setShowPreloader] = useState(true);
+  const [hasInitialHash] = useState(() => {
+    return typeof window !== "undefined" && Boolean(window.location.hash);
+  });
+  const [showPreloader, setShowPreloader] = useState(!hasInitialHash);
   useSmoothScroll({ damping: 0.065, speed: 0.85, enabled: !showPreloader });
 
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
-  const [startHeroAnimation, setStartHeroAnimation] = useState(false);
+  const [startHeroAnimation, setStartHeroAnimation] = useState(hasInitialHash);
 
   useEffect(() => {
     trackPageView("/page");
   }, []);
 
-  // Bloqueia o scroll e força o topo durante o preloader
+  const scrollToHash = (hash: string) => {
+    if (!hash) return;
+    try {
+      const targetEl = document.querySelector(hash);
+      if (targetEl) {
+        const headerOffset = 80;
+        const elTop = targetEl.getBoundingClientRect().top + window.pageYOffset - headerOffset;
+        window.scrollTo({ top: Math.max(0, elTop), behavior: "smooth" });
+      }
+    } catch {
+      // Ignora erro caso o hash não seja um seletor válido
+    }
+  };
+
+  // Se entrou direto com uma âncora (ex: #precos, #funcionalidades) vindo de anúncio/link externo
+  useEffect(() => {
+    if (hasInitialHash && window.location.hash) {
+      const currentHash = window.location.hash;
+      const t1 = setTimeout(() => scrollToHash(currentHash), 120);
+      const t2 = setTimeout(() => scrollToHash(currentHash), 450);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
+    }
+  }, [hasInitialHash]);
+
+  // Bloqueia o scroll e força o topo apenas durante o preloader
   useEffect(() => {
     if (showPreloader) {
       window.scrollTo(0, 0);
@@ -54,6 +84,10 @@ export function LandingPage() {
   const handlePreloaderComplete = () => {
     setShowPreloader(false);
     setStartHeroAnimation(true);
+
+    if (window.location.hash) {
+      setTimeout(() => scrollToHash(window.location.hash), 80);
+    }
   };
 
   return (
